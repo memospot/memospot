@@ -79,7 +79,7 @@ jobs:
           sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
           sudo rm -f /var/lib/man-db/auto-update
 
-      - name: Install apt packages (Ubuntu)
+      - name: Install Ubuntu dependencies
         uses: awalsh128/cache-apt-pkgs-action@v1.3.1
         if: matrix.settings.platform == 'ubuntu-latest'
         continue-on-error: true
@@ -96,6 +96,12 @@ jobs:
             patchelf
             libappindicator3-dev
           version: 1.0
+
+      - name: Install macOS dependencies
+        uses: maxim-lobanov/setup-xcode@v1
+        if: matrix.settings.platform == 'macos-latest'
+        with:
+          xcode-version: latest-stable
 
       - name: Install pnpm dependencies
         run: pnpm install --frozen-lockfile
