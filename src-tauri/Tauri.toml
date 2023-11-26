@@ -111,5 +111,5 @@ height = 720
 maximized = false
 resizable = true
 title = "Memospot"
-userAgent = "Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0 Memospot/0.0.2"
+userAgent = "Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0 Memospot/0.0.1"
 width = 1280

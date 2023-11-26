@@ -350,6 +350,6 @@ tasks:
       - sh -c "sed -i 's#Memospot/[0-9]\+\.[0-9]\+\.[0-9]\+"#Memospot/{{.CLI_ARGS}}"#' ./src-tauri/Tauri.toml"
       - cd ./src-tauri; cargo set-version --locked {{.CLI_ARGS}}
       - cd ./src-tauri; cargo generate-lockfile
-      - git commit -am "Bump version to {{.CLI_ARGS}}"
-      - git tag -a {{.CLI_ARGS}} -m "Push {{.CLI_ARGS}}"
+      - git commit -am "Bump version to v{{.CLI_ARGS}}"
+      - git tag -a v{{.CLI_ARGS}} -m "Push v{{.CLI_ARGS}}"
       - git push origin main --tags
