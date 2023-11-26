@@ -245,7 +245,7 @@ async fn main() {
             }
 
             // Shadows looks bad on Windows 10 and doesn't work on Linux
-            #[cfg(target_os = "macos")]
+            #[cfg(macos)]
             if let Some(window) = app.get_window("main") {
                 let _ = set_shadow(&window, true);
             }
