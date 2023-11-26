@@ -22,7 +22,7 @@ use tauri::ipc::RemoteDomainAccessScope;
 use tauri::Manager;
 use tauri::State;
 
-#[cfg(macos)]
+#[cfg(target_os = "macos")]
 use window_shadows::set_shadow;
 
 struct MemosPort(Mutex<u16>);
@@ -244,8 +244,8 @@ async fn main() {
                 );
             }
 
-            // Shadows looks bad on Windows
-            #[cfg(macos)]
+            // Shadows looks bad on Windows 10 and doesn't work on Linux
+            #[cfg(target_os = "macos")]
             if let Some(window) = app.get_window("main") {
                 let _ = set_shadow(&window, true);
             }
