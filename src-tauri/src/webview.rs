@@ -1,13 +1,13 @@
 use memospot::panic_dialog;
 use std::process::Command;
 
-#[cfg(target_os = "windows")]
+#[cfg(windows)]
 use {
     memospot::info_dialog, std::io::Cursor, std::path::PathBuf,
     winreg::enums::HKEY_CURRENT_USER, winreg::enums::HKEY_LOCAL_MACHINE, winreg::RegKey,
 };
 
-#[cfg(target_os = "windows")]
+#[cfg(windows)]
 pub fn is_available() -> bool {
     const KEY_WOW64: &str = r"SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}";
     const KEY: &str =
@@ -22,7 +22,7 @@ pub fn is_available() -> bool {
         && hkcu.open_subkey(KEY).is_err())
 }
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(windows))]
 pub fn is_available() -> bool {
     true
 }
@@ -50,7 +50,7 @@ pub fn launch_webview_install_website() {
     }
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(windows)]
 pub async fn install_cleanup(
     installer_path: PathBuf,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -60,7 +60,7 @@ pub async fn install_cleanup(
     Ok(())
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(windows)]
 pub async fn install() -> Result<(), Box<dyn std::error::Error>> {
     const WEBVIEW2_BOOTSTRAPPER_URL: &str = "https://go.microsoft.com/fwlink/p/?LinkId=2124703";
     let mut filename = "MicrosoftEdgeWebview2Setup.exe".to_owned();
@@ -155,7 +155,7 @@ pub async fn install() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(windows))]
 pub async fn install() -> Result<(), Box<dyn std::error::Error>> {
     launch_webview_install_website();
     panic_dialog!(
