@@ -1,0 +1,134 @@
+#:schema https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v1.5.6/core/tauri-config-schema/schema.json
+# See https://tauri.app/v1/references/configuration-files/
+
+[build]
+beforeBuildCommand = "task tauri:hook:before-build"
+beforeBundleCommand = "task tauri:hook:before-bundle"
+beforeDevCommand = "task tauri:hook:before-dev"
+devPath = "../src"
+distDir = "../src"
+runner = "cargo"
+withGlobalTauri = true
+
+[package]
+productName = "Memospot"
+
+[tauri.allowlist]
+all = false
+
+[tauri.allowlist.http]
+all = false
+request = true
+# scope   = ["tauri://*", "http://127.0.0.1:0/*", "http://localhost:0/*"]
+# scope = ["http://*", "https://*", "tauri://*"]
+
+# [tauri.allowlist.fs]
+#   all   = true
+#   scope = ["**"]
+
+[tauri.allowlist.shell]
+all = true
+execute = true
+open = true
+sidecar = true
+
+[tauri.allowlist.process]
+all = false
+exit = true
+relaunch = true
+relaunchDangerousAllowSymlinkMacos = false
+
+[tauri.allowlist.protocol]
+asset = true
+assetScope = ["**"]
+
+[tauri.allowlist.window]
+all = true
+
+[tauri.bundle]
+active = true
+category = "Productivity"
+externalBin = ["../server-dist/memos"]
+icon = [
+    "icons/128x128.png",
+    "icons/128x128@2x.png",
+    "icons/32x32.png",
+    "icons/icon.icns",
+    "icons/icon.ico",
+]
+identifier = "com.memospot.app"
+longDescription = "Memospot is a desktop version of Memos, a beautiful, privacy-first, lightweight note-taking service."
+shortDescription = "Your lightweight note-taking service."
+targets = "all"
+
+[tauri.bundle.windows]
+allowDowngrades = true
+digestAlgorithm = "sha256"
+tsp = false
+webviewInstallMode = { silent = false, type = "embedBootstrapper" }
+[tauri.bundle.windows.wix]
+# wix generate a different installer for each language
+language = ["en-US"]
+
+[tauri.bundle.windows.nsis]
+compression = "lzma"
+displayLanguageSelector = true
+installMode = "currentUser"
+languages = [
+    "Arabic",
+    "Dutch",
+    "English",
+    "French",
+    "German",
+    "Japanese",
+    "Korean",
+    "PortugueseBR",
+    "SimpChinese",
+    "Spanish",
+    "Swedish",
+    "TradChinese",
+    "Turkish",
+]
+
+[tauri.security]
+#   csp = '''default-src * data: mediastream: blob: filesystem: about: ws: wss: 'unsafe-eval' 'wasm-unsafe-eval' 'unsafe-inline';
+# script-src * data: blob: 'unsafe-inline' 'unsafe-eval';
+# connect-src * data: blob: 'unsafe-inline';
+# img-src * data: blob: 'unsafe-inline';
+# frame-src * data: blob: ;
+# style-src * data: blob: 'unsafe-inline';
+# font-src * data: blob: 'unsafe-inline';
+# frame-ancestors * data: blob: 'unsafe-inline';
+# '''
+# dangerousDisableAssetCspModification = true
+dangerousUseHttpScheme = true # external images won't load without this
+
+#  [tauri.security.csp]
+#  scriptSrc = """
+#     base-uri 'self'; default-src https://localhost:*;
+#     """
+
+# allows target _blank links to open in the default browser
+[[tauri.security.dangerousRemoteDomainIpcAccess]]
+domain = "localhost"
+enableTauriAPI = true
+plugins = ["shell"]
+windows = ["main"]
+
+[tauri.updater]
+active = false
+dialog = true
+endpoints = []
+pubkey = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVBRUZBRDAzMjAxQ0U3NUIKUldSYjV4d2dBNjN2V2thd3RQeHg1ckorZUVoSGxjeFVtYWc2NjRFazQ5ZUFyWnZTRUVjaHFSTDEK"
+windows = { installerArgs = [], installMode = "basicUi" }
+
+[[tauri.windows]]
+additionalBrowserArgs = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection"
+center = true
+fullscreen = false
+height = 720
+maximized = false
+resizable = true
+title = "Memospot"
+userAgent = "Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0 Memospot/0.1.0"
+width = 1280

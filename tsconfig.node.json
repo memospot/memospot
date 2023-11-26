@@ -1,0 +1,41 @@
+{
+  "include": [
+    "src-tauri/scripts/**/*.js",
+    "src-tauri/scripts/**/*.ts",
+  ],
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "checkJs": true,
+    "composite": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "esModuleInterop": true,
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "outDir": "types",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "pretty": true,
+    "strict": true,
+    "target": "ESNext",
+    "types": [
+      "node",
+    ],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src-tauri/scripts",
+    ],
+  },
+  "ts-node": {
+    "esm": true
+  }
+}

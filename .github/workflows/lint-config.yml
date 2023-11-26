@@ -1,0 +1,45 @@
+name: Lint config files
+
+on:
+  pull_request:
+    branches:
+      - main
+      - "release/*.*.*"
+    paths:
+      - "**.toml"
+
+  push:
+    branches:
+      - main
+    paths:
+      - "**.toml"
+
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  taplo:
+    name: Lint config files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install go-task
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: go-task/task
+          cache: enable
+          tag: "v3.31.0"
+
+      - name: Install Taplo
+        run: >
+          curl -fsSL https://github.com/tamasfe/taplo/releases/latest/download/taplo-full-linux-x86_64.gz
+          | gzip -d -
+          | install -m 755 /dev/stdin /usr/local/bin/taplo
+        working-directory: ./src-tauri
+
+      - name: lint config
+        run: task lint:config

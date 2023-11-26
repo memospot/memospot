@@ -1,0 +1,335 @@
+version: "3"
+env:
+  RUSTFLAGS: -C target-cpu=native -Copt-level=0
+
+tasks:
+  ##### Tauri Build Hooks #####
+  tauri:hook:before-dev:
+    desc: Before dev scripts
+    cmds:
+      - task: tauri:hook:before-build
+
+  tauri:hook:before-build:
+    desc: Before build scripts
+    summary: |
+      - Download latest versions of Memos server binaries to `server-dist/``
+    cmds:
+      - pnpm ts-node-transpile-only --esm ./src-tauri/scripts/before_build.ts
+    status:
+      - test -f ./server-dist/memos-x86_64-unknown-linux-gnu
+      - test -f ./server-dist/memos-x86_64-pc-windows-msvc.exe
+      - test -f ./server-dist/memos-x86_64-apple-darwin
+      - test -f ./server-dist/memos-arm64-apple-darwin
+
+  tauri:hook:before-bundle:
+    desc: Before bundle scripts
+    summary: |
+      - upx
+    cmds:
+      - pnpm ts-node-transpile-only --esm ./src-tauri/scripts/before_bundle.ts
+  ##### /Build Hooks #####
+
+  ##### Development #####
+  dev:
+    desc: Run the app in development mode
+    summary: |
+      - This will start the app in development mode.
+      - It will automatically reload the app when you make changes.
+      - A fast Rust build is prioritized.
+
+    deps:
+      - task: dev:posix
+      - task: dev:windows
+  dev:posix:
+    platforms: [linux, darwin]
+    internal: true
+    env:
+      RUSTC_WRAPPER:
+        sh: echo "$HOME/.cargo/bin/sccache"
+    cmds:
+      - killall memospot || true
+      - killall memos || true
+      - cargo tauri dev
+      - killall memospot || true
+      - killall memos || true
+  dev:windows:
+    platforms: [windows]
+    internal: true
+    env:
+      RUSTC_WRAPPER:
+        sh: echo "$HOME\.cargo\bin\sccache.exe"
+    cmds:
+      - taskkill /f /t /im memospot.exe || true
+      - taskkill /f /t /im memos.exe || true
+      - cargo tauri dev
+      - taskkill /f /t /im memospot.exe || true
+      - taskkill /f /t /im memos.exe || true
+
+  update-deps:
+    desc: Update project dependencies
+    cmds:
+      - cd ./src-tauri; cargo update
+      - pnpm update
+      - pnpm update @tauri-apps/cli @tauri-apps/api --latest
+
+  update-toolchain:
+    desc: Update project toolchain
+    cmds:
+      - rustup update
+      - rustup self update
+      - rustup component add clippy
+      - pnpm add -g pnpm
+
+  gen:icons:
+    desc: Generate app icons from `assets/app-icon-lossless.webp
+    cmds:
+      - cd ./src-tauri; cargo tauri icon ../assets/app-icon-lossless.webp
+      - sh -c "cp -f ./src-tauri/icons/icon.ico ./src/favicon.ico"
+    sources:
+      - ./assets/app-icon-lossless.webp
+
+  ##### /Development #####
+
+  ##### Build #####
+  build:
+    desc: Build the app for production
+    summary: |
+      - This will create an universal x86-64 optimized build of the app.
+    env:
+      RUSTFLAGS: -Ctarget-cpu=x86-64 -Copt-level=3 -Cstrip=symbols -Ccodegen-units=1
+      RUSTC_WRAPPER:
+        sh: echo "{{if eq OS "windows"}}$HOME\.cargo\bin\sccache.exe{{else}}$HOME/.cargo/bin/sccache{{end}}"
+    cmds:
+      - pnpm install --frozen-lockfile
+      - cargo tauri build
+      - sh -c "mkdir -p ./build"
+      - sh -c "cp -f ./src-tauri/target/release/memos* ./build/"
+      - sh -c "cp -fr ./src-tauri/target/release/bundle/* ./build/"
+
+  ##### /Build #####
+
+  ##### Clean #####
+  clean:
+    desc: Cleanup ALL build artifacts, node modules and downloaded memos binaries.
+    summary: |
+      This will free up nearly 10GB of disk space, but will require a full rebuild.
+      Don't use unless you know what you're doing.
+    deps:
+      - clean:posix
+      - clean:windows
+    ignore_error: true
+    cmds:
+      - sh -c "rm -rf ./src-tauri/target || true"
+      - sh -c "rm -f ./src-tauri/memos.log || true"
+      - sh -c "rm -rf ./build || true"
+      - sh -c "rm -rf ./node_modules || true"
+  clean:posix:
+    platforms: [linux, darwin]
+    internal: true
+    ignore_error: true
+    cmds:
+      - killall memospot || true
+      - killall memos || true
+  clean:windows:
+    platforms: [windows]
+    internal: true
+    ignore_error: true
+    cmds:
+      - taskkill /f /t /im memospot.exe || true
+      - taskkill /f /t /im memos.exe || true
+  ##### /Clean #####
+
+  ##### Code Lint #####
+  lint:
+    aliases:
+      - check
+    desc: Run all checkers/linters in parallel
+    deps:
+      - lint:backend
+      - lint:config
+      - lint:frontend
+  lint:backend:
+    desc: lint backend
+    cmds:
+      - cd ./src-tauri; cargo fmt --check
+      - cd ./src-tauri; cargo check
+      - cd ./src-tauri; cargo clippy --all-features --all
+  lint:config:
+    desc: lint config
+    dir: ./src-tauri
+    cmds:
+      - taplo lint Tauri.toml --schema=https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v1.5.6/core/tauri-config-schema/schema.json
+      - taplo lint Cargo.toml --schema=https://json.schemastore.org/cargo.json
+      - taplo lint .rustfmt.toml --schema=https://json.schemastore.org/rustfmt.json
+  lint:frontend:
+    desc: lint frontend
+    cmds:
+      - cd ./src; pnpm eslint --ext .js,.jsx,.mjs,.cjs,.ts,.tsx,.mts,.cts
+  ##### /Code Lint #####
+
+  ##### Code Format #####
+  format:
+    desc: Run all formatters in parallel
+    aliases:
+      - fmt
+    deps:
+      - format:backend
+      - format:config
+      - format:frontend
+  format:backend:
+    desc: format backend
+    cmds:
+      - cd ./src-tauri; cargo fmt
+      - pnpm prettier ./src-tauri/scripts --write --ignore-path .gitignore --ignore-path .prettierignore
+  format:config:
+    desc: format config
+    ignore_error: true
+    cmds:
+      - taplo format ./src-tauri/.rustfmt.toml
+      - taplo format .taplo.toml
+      - taplo format ./src-tauri/Tauri.toml
+  format:frontend:
+    desc: format frontend
+    cmds:
+      - pnpm prettier ./src --write --ignore-path .gitignore --ignore-path .prettierignore
+
+  ##### /Code Format #####
+
+  ##### Developer Environment Setup #####
+  setup:platformdeps:
+    desc: Install platform-specific dependencies
+    deps:
+      - setup:platformdeps:darwin
+      - setup:platformdeps:linux
+  setup:platformdeps:darwin:
+    platforms: [darwin]
+    internal: true
+    interactive: true
+    cmds:
+      - xcode-select --install
+  setup:platformdeps:linux:
+    platforms: [linux]
+    internal: true
+    interactive: true
+    cmds:
+      - |
+        sudo apt update &&
+        sudo apt install -y \
+          build-essential \
+          curl \
+          file \
+          libgtk-3-dev \
+          librsvg2-dev \
+          libssl-dev \
+          libwebkit2gtk-4.0-dev \
+          patchelf \
+          wget
+      - |
+        sudo apt install -y libappindicator3-dev || true
+        echo -e '\e[33mNOTE: "libayatana-appindicator3-1" may conflict with libappindicator3-dev, its ok to ignore.\e[0m'
+
+  setup:node:
+    desc: "Setup node"
+    deps:
+      - setup:node:posix
+      - setup:node:windows
+  setup:node:posix:
+    platforms: [darwin, linux]
+    internal: true
+    cmds:
+      - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+      - export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"; nvm install 18; nvm use 18
+    status:
+      - test -f "$HOME/.nvm/nvm.sh"
+      - 'if ! [ "`$`(command -v nvm)" ]; then exit 1; fi'
+  setup:node:windows:
+    platforms: [windows]
+    internal: true
+    cmds:
+      - powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -OutFile '$TEMP\nvm-setup.exe' -Uri 'https://github.com/coreybutler/nvm-windows/releases/latest/download/nvm-setup.exe' -UseBasicParsing; Start-Process -Wait '$TEMP\nvm-setup.exe' /silent ; Remove-Item -Path '$TEMP\nvm-setup.exe' -Force;"
+      - export PATH="$PATH;$HOME\.nvm"; nvm install 18; nvm use 18
+    status:
+      - sh -c 'test -f "$HOME/.nvm/nvm.exe"'
+
+  setup:rust:
+    desc: "Setup rust"
+    deps:
+      - setup:rust:posix
+      - setup:rust:windows
+  setup:rust:posix:
+    platforms: [darwin, linux]
+    internal: true
+    cmds:
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - source "$HOME/.cargo/env"; rustup default stable
+    status:
+      - test -f "$HOME/.cargo/bin/rustc"
+  setup:rust:windows:
+    platforms: [windows]
+    internal: true
+    cmds:
+      - winget install --id Rustlang.Rustup
+      - export "PATH=$PATH;$HOME\.cargo\bin"; rustup default stable-msvc
+    status:
+      - sh -c 'test -f "$HOME/.cargo/bin/rustc.exe"'
+
+  setup:
+    desc: Setup the project tooling.
+    env:
+      RUSTFLAGS: -Ctarget-cpu=native -Copt-level=3 -Cstrip=symbols -Ccodegen-units=1
+    deps:
+      - setup:platformdeps
+      - setup:node
+      - setup:rust
+    cmds:
+      - task: setup:posix
+      - task: setup:windows
+
+  setup:posix:
+    platforms: [darwin, linux]
+    internal: true
+    cmds:
+      - echo -e '\e[33mRun "nvm use 18" and repeat this task if you get an error about npm/pnpm not being found.\e[0m'
+      - |
+        (. "$HOME/.nvm/nvm.sh" && nvm use 18) || (export PATH="$PATH:$HOME/.nvm/versions/node/v18.18.2/bin/");
+        npm install -g pnpm || true;
+        pnpm i --frozen-lockfile
+      - |
+        . "$HOME/.cargo/env";
+        rustup component add clippy;
+        cargo install tauri-cli --locked;
+        cargo install taplo-cli --locked;
+        cargo install cargo-edit --locked
+        cargo install sccache --locked
+
+  setup:windows:
+    platforms: [windows]
+    internal: true
+    cmds:
+      - |
+        export PATH="$PATH;$HOME\.nvm\current";
+        nvm use 18;
+        npm install -g pnpm || true;
+        pnpm i --frozen-lockfile
+      - |
+        export PATH="$PATH;$HOME\.cargo\bin";
+        rustup component add clippy;
+        cargo install tauri-cli --locked;
+        cargo install taplo-cli --locked;
+        cargo install cargo-edit --locked
+        cargo install sccache --locked
+
+  ### Git Actions ###
+
+  pushbuild:
+    desc: |
+      Upgrade app version and push a new tag to origin.
+      Usage: `task pushbuild -- 0.0.0`.
+    summary: |
+      - This will trigger a new build on GitHub Actions.
+    cmds:
+      - cd ./src-tauri; cargo set-version --locked {{.CLI_ARGS}}
+      - cd ./src-tauri; cargo generate-lockfile
+      - git commit -am "Bump version to {{.CLI_ARGS}}"
+      - git tag -a {{.CLI_ARGS}} -m "Push {{.CLI_ARGS}}"
+      - git push origin main --tags

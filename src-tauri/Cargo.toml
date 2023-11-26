@@ -1,0 +1,97 @@
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[package]
+authors = ["Lincoln Nogueira"]
+description = "Memospot is a desktop version of Memos, a beautiful, privacy-first, lightweight note-taking service."
+edition = "2021"
+license = "MIT"
+name = "memospot"
+repository = "https://github.com/lincolnthalles/memospot"
+version = "0.0.11"
+
+[build-dependencies.tauri-build]
+default-features = false
+features = ["config-toml"]
+version = "1.5"
+
+[dependencies.home-dir]
+default-features = false
+path = "src/home-dir"
+version = "0.1.1"
+
+[dependencies.log]
+default-features = false
+version = "0.4.20"
+
+[dependencies.native-dialog]
+default-features = false
+version = "0.6.4"
+
+[dependencies.serde_json]
+default-features = false
+version = "1.0"
+
+[dependencies.tauri-cli]
+default-features = false
+version = "1.5.5"
+
+[dependencies.tokio]
+default-features = false
+version = "1.33.0"
+
+[dependencies.winapi]
+default-features = false
+version = "0.3.9"
+
+[target.'cfg(macos)'.dependencies.window-shadows]
+default-features = false
+version = "0.2.2"
+
+[target.'cfg(windows)'.dependencies.winreg]
+default-features = false
+version = "0.51.0"
+
+[dependencies.log4rs]
+default-features = false
+features = ["background_rotation", "config_parsing", "gzip", "yaml_format"]
+version = "1.2.0"
+
+[dependencies.reqwest]
+default-features = false
+features = ["brotli", "deflate", "gzip"]
+version = "0.11.22"
+
+[dependencies.serde]
+default-features = false
+features = ["derive"]
+version = "1.0"
+
+[dependencies.tauri]
+default-features = false
+features = [
+    # "compression",
+    "config-toml",
+    "http-request",
+    "process-exit",
+    "process-relaunch",
+    "protocol-asset",
+    "shell-all",
+    "window-all",
+    "wry",
+]
+version = "1.5"
+
+[dependencies.url]
+default-features = false
+features = ["serde"]
+version = "2"
+
+[features]
+# this feature is used for production builds or when `devPath` points to the filesystem
+# DO NOT REMOVE!!
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+strip = true

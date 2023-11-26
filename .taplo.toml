@@ -1,0 +1,11 @@
+[formatting]
+allowed_blank_lines = 1
+array_auto_collapse = true
+array_auto_expand = true
+column_width = 96
+indent_string = "    "
+maxKeys = 8
+reorder_arrays = true
+reorder_keys = true
+semantic_tokens = true
+trailing_newline = true

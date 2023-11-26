@@ -1,0 +1,83 @@
+### Project-specific ###
+/server-dist/
+logging_config.yaml
+clippy-results.sarif
+build/
+
+# Task
+.task
+
+# Logs
+logs/
+*.log
+
+### Node / npm / react ###
+.DS_*
+.eslintcache
+.npm
+.pnp.*
+.pnpm-debug.log*
+.stylelintcache
+.webpack/
+*.local
+*.tsbuildinfo
+**/*.back.*
+**/*.backup.*
+build/Release
+dist
+dist-ssr
+node_modules
+npm-debug.log*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+web_modules/
+
+### Rust ###
+**/target/**
+**/*.rs.bk
+*.pdb
+rust-project.json
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# OS-generated files #
+.DS_Store
+thumbs.db
+ehthumbs.db
+desktop.ini
+
+### CLion / RustRover ###
+.idea/*
+!.idea/codeStyles
+!.idea/runConfigurations
+
+# Fleet
+.fleet
+
+### SublimeText ###
+*.sublime-workspace
+*.sublime-settings
+
+### Vim ###
+[._]*.s[a-v][a-z]
+!*.svg
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+Session.vim
+Sessionx.vim
+
+### Visual Studio Code ###
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Ignore all local history of files
+.history
+.ionide
+
+# Generated with https://www.toptal.com/developers/gitignore?templates=vim,rust,clion+all,sublimetext,rust-analyzer,visualstudiocode,node,react

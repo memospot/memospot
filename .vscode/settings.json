@@ -1,0 +1,22 @@
+{
+  "deno.enable": false,
+  "editor.formatOnSave": true,
+  "code-runner.cwd": "${workspaceFolder}",
+  "code-runner.ignoreSelection": true,
+  "prettier.enable": true,
+  "files.associations": {
+    "CODEOWNERS": "gitignore"
+  },
+  "rust-analyzer.linkedProjects": [
+    "src-tauri/Cargo.toml"
+  ],
+  "evenBetterToml.schema.associations": {
+    "Cargo.toml": "cargo",
+    "Tauri.toml": "tauri"
+  },
+  "evenBetterToml.completion.maxKeys": 8,
+  "evenBetterToml.schema.enabled": true,
+  "code-runner.executorMapByGlob": {
+    "**/*.ts": "cd $dir && ts-node $fileName",
+  },
+}

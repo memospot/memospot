@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="styles.css" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Memos App</title>
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+        <script type="module" src="/main.js" defer></script>
+        <base target="_blank" />
+    </head>
+
+    <body>
+        <div class="container">
+            <h1>Waiting for the server to start...</h1>
+
+            <div class="row">
+                <a
+                    href="https://usememos.com/"
+                    target="_blank"
+                    referrerpolicy="origin"
+                    title="Click to open Memos website"
+                >
+                    <picture class="logo">
+                        <source
+                            srcset="powered_by_memos_dark.webp"
+                            media="(prefers-color-scheme: dark)"
+                            alt="Memos logo"
+                        />
+                        <img
+                            src="powered_by_memos.webp"
+                            class="logo memos"
+                            alt="Memos logo"
+                        />
+                    </picture>
+                </a>
+            </div>
+
+            <p class="tauri-port" id="port" />
+            <p class="tauri-msg" id="msg" />
+        </div>
+    </body>
+</html>

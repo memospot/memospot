@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "denoland.vscode-deno",
+    "EditorConfig.EditorConfig",
+    "esbenp.prettier-vscode",
+    "oderwat.indent-rainbow",
+    "redhat.vscode-yaml",
+    "rust-lang.rust-analyzer",
+    "tamasfe.even-better-toml",
+    "tauri-apps.tauri-vscode",
+  ],
+  "unwantedRecommendations": [],
+}

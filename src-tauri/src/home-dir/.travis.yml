@@ -1,0 +1,21 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+
+os:
+  - linux
+  - osx
+
+matrix:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+
+before_script:
+  - rustup component add clippy || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy
+script:
+  - cargo clippy -- -D warnings
+  - cargo test
+
