@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - dev
       - "release/*.*.*"
     paths:
       - "src-tauri/**/*.rs"
@@ -12,6 +13,8 @@ on:
   push:
     branches:
       - main
+      - dev
+      - "release/*.*.*"
     paths:
       - "src-tauri/**/*.rs"
       - "src-tauri/**/Cargo.*"
@@ -40,8 +43,6 @@ jobs:
 
       - name: Cargo cache
         uses: swatinem/rust-cache@v2
-        with:
-          cache-on-failure: true
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.2
@@ -49,12 +50,16 @@ jobs:
           version: "v0.7.3"
 
       - name: Run rustfmt
-        run: cargo fmt --check
+        run: cargo fmt --all -- --check
         working-directory: ./src-tauri
 
   clippy:
     name: Clippy
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     permissions:
       actions: read
       contents: read
@@ -63,24 +68,41 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create dummy server binary
+      - name: Create dummy server binary (POSIX)
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: |
           mkdir -p ./server-dist
           touch ./server-dist/memos-$(uname -m)-unknown-linux-gnu
-
-      - name: Install Tauri deps
+      - name: Create dummy server binary (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y \
-            libgtk-3-dev \
-            librsvg2-dev \
-            libssl-dev \
-            libwebkit2gtk-4.0-dev \
-            patchelf
-          sudo apt-get install -y libappindicator3-dev || true
+          New-Item -Type Directory -Path ./server-dist -Force
+          New-Item -Path ./server-dist -Name "memos-x86_64-pc-windows-msvc.exe" -ItemType "file" -Value $null
 
-      - name: Install sarif-fmt
+      - name: Disable initramfs and man-db update (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
+          sudo rm -f /var/lib/man-db/auto-update
+
+      - name: Install apt packages (Ubuntu)
+        uses: awalsh128/cache-apt-pkgs-action@v1.3.1
+        if: matrix.os == 'ubuntu-latest'
+        continue-on-error: true
+        with:
+          packages: >-
+            libgtk-3-dev
+            librsvg2-dev
+            libssl-dev
+            libwebkit2gtk-4.0-dev
+            patchelf
+            libappindicator3-dev
+          version: 1.0
+
+      - name: Install sarif-fmt (Ubuntu)
         uses: jaxxstorm/action-install-gh-release@v1.10.0
+        if: matrix.os == 'ubuntu-latest'
         with:
           repo: psastras/sarif-rs
           cache: enable
@@ -89,14 +111,37 @@ jobs:
           extension-matching: disable
           rename-to: sarif-fmt
           chmod: 0755
-
-      - name: Install clippy-sarif
+      - name: Install sarif-fmt (macOS)
         uses: jaxxstorm/action-install-gh-release@v1.10.0
+        if: matrix.os == 'macos-latest'
+        with:
+          repo: psastras/sarif-rs
+          cache: enable
+          tag: "sarif-fmt-v0.4.2"
+          platform: apple-darwin
+          extension-matching: disable
+          rename-to: sarif-fmt
+          chmod: 0755
+
+      - name: Install clippy-sarif (Ubuntu)
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        if: matrix.os == 'ubuntu-latest'
         with:
           repo: psastras/sarif-rs
           cache: enable
           tag: "clippy-sarif-v0.4.2"
           platform: unknown-linux-gnu
+          extension-matching: disable
+          rename-to: clippy-sarif
+          chmod: 0755
+      - name: Install clippy-sarif (macOS)
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        if: matrix.os == 'macos-latest'
+        with:
+          repo: psastras/sarif-rs
+          cache: enable
+          tag: "clippy-sarif-v0.4.2"
+          platform: apple-darwin
           extension-matching: disable
           rename-to: clippy-sarif
           chmod: 0755
@@ -116,7 +161,8 @@ jobs:
         with:
           version: "v0.7.3"
 
-      - name: Run clippy
+      - name: Run clippy with sarif output (POSIX)
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: >
           cargo clippy --all-features --all --message-format=json
           | clippy-sarif
@@ -124,8 +170,16 @@ jobs:
           | sarif-fmt
         working-directory: ./src-tauri
         continue-on-error: true
+      - name: Run clippy (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          cargo clippy --all-features --all
+        working-directory: ./src-tauri
+        continue-on-error: true
 
-      - name: Upload analysis results to GitHub
+      - name: Upload sarif analysis results to GitHub (POSIX)
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         uses: github/codeql-action/upload-sarif@v2
         continue-on-error: true
         with:
