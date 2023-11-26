@@ -42,14 +42,6 @@ jobs:
         with:
           components: rustfmt
 
-      - name: Cargo cache
-        uses: swatinem/rust-cache@v2
-
-      - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.2
-        with:
-          version: "v0.7.3"
-
       - name: Run rustfmt
         run: cargo fmt --all -- --check
         working-directory: ./src-tauri
@@ -182,6 +174,7 @@ jobs:
           | clippy-sarif
           | tee clippy-results.sarif
           | sarif-fmt
+          cat clippy-results.sarif
         working-directory: ./src-tauri
 
       - name: Upload sarif analysis results to GitHub (POSIX)
