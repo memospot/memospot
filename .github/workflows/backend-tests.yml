@@ -170,7 +170,16 @@ jobs:
         with:
           version: "v0.7.3"
 
-      - name: Run clippy with sarif output
+      - name: Run clippy with sarif output (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: >
+          cargo clippy --version;
+          cargo clippy --all-features --all;
+        working-directory: ./src-tauri
+
+      - name: Run clippy with sarif output (POSIX)
+        if: matrix.os != 'windows-latest'
         continue-on-error: true
         shell: bash
         run: >
@@ -186,6 +195,7 @@ jobs:
         working-directory: ./src-tauri
 
       - name: Upload sarif analysis results to GitHub
+        if: matrix.os != 'windows-latest'
         uses: github/codeql-action/upload-sarif@v2
         continue-on-error: true
         with:
@@ -193,6 +203,7 @@ jobs:
           wait-for-processing: true
 
       - name: Finalize with clippy exit code
+        if: matrix.os != 'windows-latest'
         shell: bash
         run: |
           exit $CLIPPY_EXIT_CODE
