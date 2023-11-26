@@ -32,6 +32,9 @@ function makeTripletFromFileName(file: string): string {
     })();
 
     const arch = (() => {
+        if (file.includes("arm64") && file.includes("darwin")) {
+            return "aarch64";
+        }
         if (file.includes("arm64") || file.includes("aarch64")) {
             return "arm64";
         } else {

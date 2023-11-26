@@ -19,7 +19,7 @@ tasks:
       - test -f ./server-dist/memos-x86_64-unknown-linux-gnu
       - test -f ./server-dist/memos-x86_64-pc-windows-msvc.exe
       - test -f ./server-dist/memos-x86_64-apple-darwin
-      - test -f ./server-dist/memos-arm64-apple-darwin
+      - test -f ./server-dist/memos-aarch64-apple-darwin
 
   tauri:hook:before-bundle:
     desc: Before bundle scripts
