@@ -161,6 +161,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
+          cargo clippy --version
           cargo clippy --all-features --all --
           Exit $LASTEXITCODE
         working-directory: ./src-tauri
@@ -168,12 +169,11 @@ jobs:
       - name: Run clippy with sarif output (POSIX)
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: >
+          set +e;
+          cargo clippy --version;
           CLIPPY=$(cargo clippy --all-features --all --message-format=json);
           echo "CLIPPY_EXIT_CODE=$?" >> $GITHUB_ENV;
-          $CLIPPY
-          | clippy-sarif
-          | tee clippy-results.sarif
-          | sarif-fmt
+          $CLIPPY | clippy-sarif | tee clippy-results.sarif | sarif-fmt ;
           cat clippy-results.sarif
         working-directory: ./src-tauri
 
