@@ -151,9 +151,10 @@ tasks:
   lint:backend:
     desc: lint backend
     cmds:
-      - cd ./src-tauri; cargo fmt --check
+      - cd ./src-tauri; cargo fmt --all --check
       - cd ./src-tauri; cargo check
       - cd ./src-tauri; cargo clippy --all-features --all
+      - cd ./src-tauri/scripts; pnpm eslint --ext .ts,.tsx,.mts,.cts
   lint:config:
     desc: lint config
     dir: ./src-tauri
@@ -167,6 +168,23 @@ tasks:
       - cd ./src; pnpm eslint --ext .js,.jsx,.mjs,.cjs,.ts,.tsx,.mts,.cts
   ##### /Code Lint #####
 
+  ##### Code Fix #####
+  fix:
+    desc: Run all fixers in parallel
+    deps:
+      - fix:backend
+      - fix:frontend
+  fix:backend:
+    desc: fix backend
+    cmds:
+      - cd ./src-tauri; cargo fix
+      - cd ./src-tauri/scripts; pnpm eslint --ext .ts,.tsx,.mts,.cts --fix
+  fix:frontend:
+    desc: fix frontend
+    cmds:
+      - cd ./src; pnpm eslint --ext .js,.jsx,.mjs,.cjs,.ts,.tsx,.mts,.cts --fix
+  ##### /Code Fix #####
+
   ##### Code Format #####
   format:
     desc: Run all formatters in parallel
@@ -179,7 +197,7 @@ tasks:
   format:backend:
     desc: format backend
     cmds:
-      - cd ./src-tauri; cargo fmt
+      - cd ./src-tauri; cargo fmt --all
       - pnpm prettier ./src-tauri/scripts --write --ignore-path .gitignore --ignore-path .prettierignore
   format:config:
     desc: format config
@@ -187,6 +205,7 @@ tasks:
     cmds:
       - taplo format ./src-tauri/.rustfmt.toml
       - taplo format .taplo.toml
+      - taplo format ./src-tauri/Cargo.toml
       - taplo format ./src-tauri/Tauri.toml
   format:frontend:
     desc: format frontend

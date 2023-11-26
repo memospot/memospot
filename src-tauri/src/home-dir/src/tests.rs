@@ -1,14 +1,11 @@
 #[cfg(not(target_os = "windows"))]
-use {
-    super::Error,
-    super::getent
-};
+use {super::getent, super::Error};
 
 use crate::HomeDirExt;
+use home::home_dir;
 use std::env;
 use std::ops::Deref;
-use std::path::{PathBuf, Path};
-use home::home_dir;
+use std::path::{Path, PathBuf};
 
 /// Test that `~` is expanded to the current user's home directory.
 /// Uses some code from the `home` crate.
@@ -39,16 +36,10 @@ fn test_expand() {
     let subpath = Path::new(homepath).join(".vimrc");
 
     #[cfg(not(target_os = "windows"))]
-    assert_eq!(
-        "~/.vimrc".expand_home().unwrap(),
-        subpath
-    );
+    assert_eq!("~/.vimrc".expand_home().unwrap(), subpath);
 
     #[cfg(target_os = "windows")]
-    assert_eq!(
-        r"~\.vimrc".expand_home().unwrap(),
-        subpath
-    );
+    assert_eq!(r"~\.vimrc".expand_home().unwrap(), subpath);
 }
 
 /// Test that paths without `~` are returned as-is.
@@ -78,10 +69,7 @@ fn test_root() {
     const ROOT_DIR: &'static str = "/root";
 
     assert_eq!(getent("root").unwrap(), PathBuf::from(ROOT_DIR));
-    assert_eq!(
-        "~root".expand_home().unwrap(),
-        PathBuf::from(ROOT_DIR)
-    );
+    assert_eq!("~root".expand_home().unwrap(), PathBuf::from(ROOT_DIR));
 }
 
 /// Test that a invalid `~user` returns an error.
