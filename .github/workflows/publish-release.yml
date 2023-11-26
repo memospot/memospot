@@ -1,8 +1,6 @@
 name: "Publish Release"
 on:
   push:
-    branches:
-      - "release/*.*.*"
     tags:
       - "*.*.*"
   workflow_dispatch:
@@ -113,5 +111,5 @@ jobs:
           tagName: app-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version
           releaseName: "Memospot v__VERSION__"
           releaseBody: "See the assets section to download this version and install."
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
