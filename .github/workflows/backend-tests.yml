@@ -67,6 +67,7 @@ jobs:
           mkdir -p ./server-dist
           touch ./server-dist/memos-$(uname -m)-unknown-linux-gnu
           touch ./server-dist/memos-$(uname -m)-apple-darwin
+
       - name: Create dummy server binary (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
@@ -94,6 +95,18 @@ jobs:
             libappindicator3-dev
           version: 1.0
 
+      - name: Install sarif-fmt (macOS)
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        if: matrix.os == 'macos-latest'
+        with:
+          repo: psastras/sarif-rs
+          cache: enable
+          tag: "sarif-fmt-v0.4.2"
+          platform: apple-darwin
+          extension-matching: disable
+          rename-to: sarif-fmt
+          chmod: 0755
+
       - name: Install sarif-fmt (Ubuntu)
         uses: jaxxstorm/action-install-gh-release@v1.10.0
         if: matrix.os == 'ubuntu-latest'
@@ -106,17 +119,11 @@ jobs:
           rename-to: sarif-fmt
           chmod: 0755
 
-      - name: Install sarif-fmt (macOS)
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
-        if: matrix.os == 'macos-latest'
+      - name: Install sarif-fmt (Windows)
+        uses: taiki-e/cache-cargo-install-action@v1
+        if: matrix.os == 'windows-latest'
         with:
-          repo: psastras/sarif-rs
-          cache: enable
-          tag: "sarif-fmt-v0.4.2"
-          platform: apple-darwin
-          extension-matching: disable
-          rename-to: sarif-fmt
-          chmod: 0755
+          tool: sarif-fmt@0.4.2
 
       - name: Install clippy-sarif (Ubuntu)
         uses: jaxxstorm/action-install-gh-release@v1.10.0
@@ -142,6 +149,12 @@ jobs:
           rename-to: clippy-sarif
           chmod: 0755
 
+      - name: Install clippy-sarif (Windows)
+        uses: taiki-e/cache-cargo-install-action@v1
+        if: matrix.os == 'windows-latest'
+        with:
+          tool: clippy-sarif@0.4.2
+
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -157,35 +170,28 @@ jobs:
         with:
           version: "v0.7.3"
 
-      - name: Run clippy (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          cargo clippy --version
-          cargo clippy --all-features --all --
-          Exit $LASTEXITCODE
-        working-directory: ./src-tauri
-
-      - name: Run clippy with sarif output (POSIX)
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+      - name: Run clippy with sarif output
+        continue-on-error: true
+        shell: bash
         run: >
           set +e;
           cargo clippy --version;
-          CLIPPY=$(cargo clippy --all-features --all --message-format=json);
+          cargo clippy --all-features --all;
           echo "CLIPPY_EXIT_CODE=$?" >> $GITHUB_ENV;
-          $CLIPPY | clippy-sarif | tee clippy-results.sarif | sarif-fmt ;
+          cargo clippy --all-features --all --message-format=json
+          | clippy-sarif
+          | tee clippy-results.sarif
+          | sarif-fmt ;
           cat clippy-results.sarif
         working-directory: ./src-tauri
 
-      - name: Upload sarif analysis results to GitHub (POSIX)
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+      - name: Upload sarif analysis results to GitHub
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: ./src-tauri/clippy-results.sarif
           wait-for-processing: true
 
-      - name: Finalize with clippy exit code (POSIX)
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+      - name: Finalize with clippy exit code
+        shell: bash
         run: |
           exit $CLIPPY_EXIT_CODE
-        working-directory: ./src-tauri
