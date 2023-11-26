@@ -119,12 +119,6 @@ jobs:
           rename-to: sarif-fmt
           chmod: 0755
 
-      - name: Install sarif-fmt (Windows)
-        uses: taiki-e/cache-cargo-install-action@v1
-        if: matrix.os == 'windows-latest'
-        with:
-          tool: sarif-fmt@0.4.2
-
       - name: Install clippy-sarif (Ubuntu)
         uses: jaxxstorm/action-install-gh-release@v1.10.0
         if: matrix.os == 'ubuntu-latest'
@@ -149,11 +143,17 @@ jobs:
           rename-to: clippy-sarif
           chmod: 0755
 
-      - name: Install clippy-sarif (Windows)
-        uses: taiki-e/cache-cargo-install-action@v1
-        if: matrix.os == 'windows-latest'
-        with:
-          tool: clippy-sarif@0.4.2
+      # - name: Install sarif-fmt (Windows)
+      #   uses: taiki-e/cache-cargo-install-action@v1
+      #   if: matrix.os == 'windows-latest'
+      #   with:
+      #     tool: sarif-fmt@0.4.2
+
+      # - name: Install clippy-sarif (Windows)
+      #   uses: taiki-e/cache-cargo-install-action@v1
+      #   if: matrix.os == 'windows-latest'
+      #   with:
+      #     tool: clippy-sarif@0.4.2
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -187,6 +187,7 @@ jobs:
 
       - name: Upload sarif analysis results to GitHub
         uses: github/codeql-action/upload-sarif@v2
+        continue-on-error: true
         with:
           sarif_file: ./src-tauri/clippy-results.sarif
           wait-for-processing: true
