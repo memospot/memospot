@@ -61,19 +61,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create dummy server binary (POSIX)
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+      - name: Create dummy server binaries
+        shell: bash
         run: |
           mkdir -p ./server-dist
           touch ./server-dist/memos-$(uname -m)-unknown-linux-gnu
           touch ./server-dist/memos-$(uname -m)-apple-darwin
-
-      - name: Create dummy server binary (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          New-Item -Type Directory -Path ./server-dist -Force
-          New-Item -Path ./server-dist -Name "memos-x86_64-pc-windows-msvc.exe" -ItemType "file" -Value $null
+          touch ./server-dist/memos-$(uname -m)-pc-windows-msvc.exe
 
       - name: Disable initramfs and man-db update (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
