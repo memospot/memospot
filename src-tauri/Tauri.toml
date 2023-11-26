@@ -19,12 +19,6 @@ all = false
 [tauri.allowlist.http]
 all = false
 request = true
-# scope   = ["tauri://*", "http://127.0.0.1:0/*", "http://localhost:0/*"]
-# scope = ["http://*", "https://*", "tauri://*"]
-
-# [tauri.allowlist.fs]
-#   all   = true
-#   scope = ["**"]
 
 [tauri.allowlist.shell]
 all = true
@@ -57,8 +51,8 @@ icon = [
     "icons/icon.ico",
 ]
 identifier = "com.memospot.app"
-longDescription = "Memospot is a desktop version of Memos, a beautiful, privacy-first, lightweight note-taking service."
-shortDescription = "Your lightweight note-taking service."
+longDescription = "Memospot is a desktop version of Memos, a beautiful markdown-based note-taking service."
+shortDescription = "A markdown-based note-taking service."
 targets = "all"
 
 [tauri.bundle.macOS]
@@ -70,7 +64,7 @@ digestAlgorithm = "sha256"
 tsp = false
 webviewInstallMode = { silent = false, type = "embedBootstrapper" }
 [tauri.bundle.windows.wix]
-# wix generate a different installer for each language
+# wix generates a different installer for each language
 language = ["en-US"]
 
 [tauri.bundle.windows.nsis]
@@ -94,22 +88,7 @@ languages = [
 ]
 
 [tauri.security]
-#   csp = '''default-src * data: mediastream: blob: filesystem: about: ws: wss: 'unsafe-eval' 'wasm-unsafe-eval' 'unsafe-inline';
-# script-src * data: blob: 'unsafe-inline' 'unsafe-eval';
-# connect-src * data: blob: 'unsafe-inline';
-# img-src * data: blob: 'unsafe-inline';
-# frame-src * data: blob: ;
-# style-src * data: blob: 'unsafe-inline';
-# font-src * data: blob: 'unsafe-inline';
-# frame-ancestors * data: blob: 'unsafe-inline';
-# '''
-# dangerousDisableAssetCspModification = true
 dangerousUseHttpScheme = true # external images won't load without this
-
-#  [tauri.security.csp]
-#  scriptSrc = """
-#     base-uri 'self'; default-src https://localhost:*;
-#     """
 
 # allows target _blank links to open in the default browser
 [[tauri.security.dangerousRemoteDomainIpcAccess]]
@@ -126,12 +105,11 @@ pubkey = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVBRUZBRDAzMjAxQ0
 windows = { installerArgs = [], installMode = "basicUi" }
 
 [[tauri.windows]]
-additionalBrowserArgs = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection"
 center = true
 fullscreen = false
 height = 720
 maximized = false
 resizable = true
 title = "Memospot"
-userAgent = "Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0 Memospot/0.1.0"
+userAgent = "Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0 Memospot/0.0.2"
 width = 1280

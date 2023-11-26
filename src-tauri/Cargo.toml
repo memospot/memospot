@@ -2,7 +2,7 @@
 
 [package]
 authors = ["Lincoln Nogueira"]
-description = "Memospot is a desktop version of Memos, a beautiful, privacy-first, lightweight note-taking service."
+description = "A markdown-based note-taking service."
 edition = "2021"
 license = "MIT"
 name = "memospot"
