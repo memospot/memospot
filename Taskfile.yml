@@ -205,6 +205,7 @@ tasks:
     cmds:
       - taplo format ./src-tauri/.rustfmt.toml
       - taplo format .taplo.toml
+      - taplo format ./src-tauri/Cargo.toml
       - taplo format ./src-tauri/Tauri.toml
   format:frontend:
     desc: format frontend

@@ -14,8 +14,6 @@ default-features = false
 features = ["config-toml"]
 version = "1.5"
 
-
-
 [dependencies.home-dir]
 default-features = false
 path = "src/home-dir"
@@ -30,7 +28,7 @@ default-features = false
 version = "0.6.4"
 
 [dependencies.serde_json]
-default-features = false
+default-features = true
 version = "1.0"
 
 [dependencies.tauri-cli]

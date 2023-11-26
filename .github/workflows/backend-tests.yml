@@ -165,26 +165,34 @@ jobs:
         with:
           version: "v0.7.3"
 
+      - name: Run clippy (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          cargo clippy --all-features --all --
+          Exit $LASTEXITCODE
+        working-directory: ./src-tauri
+
       - name: Run clippy with sarif output (POSIX)
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: >
-          cargo clippy --all-features --all --message-format=json
+          CLIPPY=$(cargo clippy --all-features --all --message-format=json);
+          echo "CLIPPY_EXIT_CODE=$?" >> $GITHUB_ENV;
+          $CLIPPY
           | clippy-sarif
           | tee clippy-results.sarif
           | sarif-fmt
         working-directory: ./src-tauri
 
-      - name: Run clippy (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          cargo clippy --all-features --all
-        working-directory: ./src-tauri
-
       - name: Upload sarif analysis results to GitHub (POSIX)
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         uses: github/codeql-action/upload-sarif@v2
-        continue-on-error: true
         with:
           sarif_file: ./src-tauri/clippy-results.sarif
           wait-for-processing: true
+
+      - name: Finalize with clippy exit code (POSIX)
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+        run: |
+          exit $CLIPPY_EXIT_CODE
+        working-directory: ./src-tauri
