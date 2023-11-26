@@ -11,24 +11,25 @@ env:
 
 jobs:
   publish-tauri:
+    name: "Publish"
     permissions:
       contents: write
     strategy:
       fail-fast: false
       matrix:
-        settings:
-          # - platform: 'macos-latest'
-          #   args: '--target universal-apple-darwin'
-          - platform: "macos-latest"
-            args: "--target x86_64-apple-darwin"
-          - platform: "macos-latest"
-            args: "--target aarch64-apple-darwin"
-          - platform: "ubuntu-latest"
-            args: "--target x86_64-unknown-linux-gnu"
-          - platform: "windows-latest"
-            args: "--target x86_64-pc-windows-msvc"
+        platform:
+          # - os: 'macos-latest'
+          #   rust_target: 'universal-apple-darwin'
+          - os: "macos-latest"
+            rust_target: "x86_64-apple-darwin"
+          - os: "macos-latest"
+            rust_target: "aarch64-apple-darwin"
+          - os: "ubuntu-latest"
+            rust_target: "x86_64-unknown-linux-gnu"
+          - os: "windows-latest"
+            rust_target: "x86_64-pc-windows-msvc"
 
-    runs-on: ${{ matrix.settings.platform }}
+    runs-on: ${{ matrix.platform.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -40,7 +41,7 @@ jobs:
           tag: "v3.31.0"
 
       - name: Setup UPX (Windows and Linux only)
-        if: matrix.settings.platform != 'macos-latest'
+        if: matrix.platform.os != 'macos-latest'
         uses: crazy-max/ghaction-upx@v3
         with:
           version: latest
@@ -60,6 +61,8 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform.rust_target }}
 
       - name: Setup Cargo cache
         uses: swatinem/rust-cache@v2
@@ -72,14 +75,14 @@ jobs:
           version: "v0.7.3"
 
       - name: Disable initramfs and man-db update (Ubuntu)
-        if: matrix.settings.platform == 'ubuntu-latest'
+        if: matrix.platform.os == 'ubuntu-latest'
         run: |
           sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
           sudo rm -f /var/lib/man-db/auto-update
 
       - name: Install Ubuntu dependencies
         uses: awalsh128/cache-apt-pkgs-action@v1.3.1
-        if: matrix.settings.platform == 'ubuntu-latest'
+        if: matrix.platform.os == 'ubuntu-latest'
         continue-on-error: true
         with:
           packages: >-
@@ -97,7 +100,7 @@ jobs:
 
       - name: Install macOS dependencies
         uses: maxim-lobanov/setup-xcode@v1
-        if: matrix.settings.platform == 'macos-latest'
+        if: matrix.platform.os == 'macos-latest'
         with:
           xcode-version: latest-stable
 
@@ -109,7 +112,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: app-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version
-          releaseName: "Memospot v__VERSION__"
-          releaseBody: "See the assets section to download this version and install."
+          releaseName: "v__VERSION__"
+          releaseBody: "See the assets section to download the app."
           releaseDraft: false
           prerelease: false
+          args: --target ${{ matrix.platform.rust_target }}
