@@ -347,8 +347,10 @@ tasks:
     summary: |
       - This will trigger a new build on GitHub Actions.
     cmds:
+      - git checkout main
       - cd ./src-tauri; cargo set-version --locked {{.CLI_ARGS}}
       - cd ./src-tauri; cargo generate-lockfile
       - git commit -am "Bump version to {{.CLI_ARGS}}"
       - git tag -a {{.CLI_ARGS}} -m "Push {{.CLI_ARGS}}"
       - git push origin main --tags
+      - git checkout -
