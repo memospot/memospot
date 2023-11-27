@@ -54,6 +54,12 @@ If you plan to move your Memos instance to Docker in the future, keep the object
 
 Although, if you are storing huge files, it's a good idea to use `Local Storage` instead, even with this trade-off.
 
+Data storage:
+
+- Windows: data is stored under `%AppData%\memospot`
+  
+- POSIX systems: data is stored under `~/.memospot`
+
 ## Special Thanks
 
 This project is made possible by the following open-source projects:
