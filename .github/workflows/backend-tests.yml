@@ -190,8 +190,7 @@ jobs:
           sarif_file: ./src-tauri/clippy-results.sarif
           wait-for-processing: true
 
-      - name: Finalize with clippy output and exit code
-        if: matrix.os != 'windows-latest'
+      - name: Finalize with clippy output
         shell: bash
         run: |
           cargo clippy --version;
