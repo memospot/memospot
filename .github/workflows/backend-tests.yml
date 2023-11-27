@@ -192,6 +192,7 @@ jobs:
 
       - name: Finalize with clippy output
         shell: bash
+        working-directory: ./src-tauri
         run: |
           cargo clippy --version;
           cargo clippy --all-features --all
