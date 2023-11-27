@@ -197,7 +197,7 @@ async fn main() {
             .envs(memos_env_vars)
             .spawn();
         if cmd.is_err() {
-            panic_dialog!("Failed to spawn memos server");
+            panic_dialog!("Failed to spawn Memos server!");
         }
 
         if !debug_memos {
@@ -232,8 +232,10 @@ async fn main() {
         .setup(move |_app| {
             // Shadows looks bad on Windows 10 and doesn't work on Linux
             #[cfg(target_os = "macos")]
-            if let Some(window) = _app.get_window("main") {
-                let _ = set_shadow(&window, true);
+            {
+                if let Some(window) = _app.get_window("main") {
+                    let _ = set_shadow(&window, true);
+                }
             }
 
             Ok(())

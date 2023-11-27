@@ -170,28 +170,16 @@ jobs:
         with:
           version: "v0.7.3"
 
-      - name: Run clippy with sarif output (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: bash
-        run: >
-          cargo clippy --version;
-          cargo clippy --all-features --all;
-        working-directory: ./src-tauri
-
       - name: Run clippy with sarif output (POSIX)
         if: matrix.os != 'windows-latest'
         continue-on-error: true
         shell: bash
         run: >
           set +e;
-          cargo clippy --version;
-          cargo clippy --all-features --all;
-          echo "CLIPPY_EXIT_CODE=$?" >> $GITHUB_ENV;
           cargo clippy --all-features --all --message-format=json
           | clippy-sarif
           | tee clippy-results.sarif
           | sarif-fmt ;
-          cat clippy-results.sarif
         working-directory: ./src-tauri
 
       - name: Upload sarif analysis results to GitHub
@@ -202,8 +190,9 @@ jobs:
           sarif_file: ./src-tauri/clippy-results.sarif
           wait-for-processing: true
 
-      - name: Finalize with clippy exit code
+      - name: Finalize with clippy output and exit code
         if: matrix.os != 'windows-latest'
         shell: bash
         run: |
-          exit $CLIPPY_EXIT_CODE
+          cargo clippy --version;
+          cargo clippy --all-features --all
