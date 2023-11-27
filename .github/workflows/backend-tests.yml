@@ -187,7 +187,7 @@ jobs:
         shell: bash
         run: >
           set +e;
-          cargo clippy --all-features --workspace --locked --message-format=json
+          cargo clippy --all-features --all-targets --workspace --locked --message-format=json
           | clippy-sarif
           | tee clippy-results.sarif
           | sarif-fmt ;
@@ -206,4 +206,4 @@ jobs:
         working-directory: ./src-tauri
         run: |
           cargo clippy --version;
-          cargo clippy --all-features --workspace --locked
+          cargo clippy --all-features --all-targets --workspace --locked
