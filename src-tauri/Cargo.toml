@@ -2,12 +2,12 @@
 
 [package]
 authors = ["Lincoln Nogueira"]
-description = "A markdown-based note-taking service."
+description = "Memospot is a desktop version of Memos, a beautiful, privacy-first, lightweight note-taking service."
 edition = "2021"
 license = "MIT"
 name = "memospot"
 repository = "https://github.com/lincolnthalles/memospot"
-version = "0.0.1"
+version = "0.1.1"
 
 [build-dependencies.tauri-build]
 features = ["config-toml"]
