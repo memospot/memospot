@@ -352,6 +352,7 @@ tasks:
     summary: |
       - This will trigger a new build on GitHub Actions.
     cmds:
+      - git pull origin main
       - git checkout main
       - sh -c "sed -i 's#Memospot/[0-9]\+\.[0-9]\+\.[0-9]\+"#Memospot/{{.CLI_ARGS}}"#' ./src-tauri/Tauri.toml"
       - cd ./src-tauri; cargo set-version --locked {{.CLI_ARGS}}
