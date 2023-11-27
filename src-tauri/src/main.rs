@@ -22,7 +22,7 @@ use tauri::api::process::{Command, CommandEvent};
 use tauri::State;
 
 #[cfg(target_os = "macos")]
-use window_shadows::set_shadow;
+use {tauri::Manager, window_shadows::set_shadow};
 
 struct MemosPort(Mutex<u16>);
 
