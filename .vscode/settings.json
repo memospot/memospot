@@ -10,6 +10,10 @@
   "rust-analyzer.linkedProjects": [
     "src-tauri/Cargo.toml"
   ],
+  "rust-analyzer.cargo.extraEnv": {
+    "RUSTFLAGS": "-C target-cpu=native -Copt-level=0",
+    "RUSTC_WRAPPER": "sccache",
+  },
   "evenBetterToml.schema.associations": {
     "Cargo.toml": "cargo",
     "Tauri.toml": "tauri"

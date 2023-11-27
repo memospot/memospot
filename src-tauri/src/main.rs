@@ -18,12 +18,11 @@ use std::path::PathBuf;
 use std::process::exit;
 use std::sync::Mutex;
 use tauri::api::process::{Command, CommandEvent};
-use tauri::ipc::RemoteDomainAccessScope;
-use tauri::Manager;
+
 use tauri::State;
 
 #[cfg(target_os = "macos")]
-use window_shadows::set_shadow;
+use {tauri::Manager, window_shadows::set_shadow};
 
 struct MemosPort(Mutex<u16>);
 
@@ -198,7 +197,7 @@ async fn main() {
             .envs(memos_env_vars)
             .spawn();
         if cmd.is_err() {
-            panic_dialog!("Failed to spawn memos server");
+            panic_dialog!("Failed to spawn Memos server!");
         }
 
         if !debug_memos {
@@ -230,24 +229,13 @@ async fn main() {
     });
 
     let tauri_run = tauri::Builder::default()
-        .setup(move |app| {
-            // Note:
-            //  By using `127.0.0.1` to access server, all remote links (target="_blank") opens in the webview (must use the middle mouse button). Some remote websites doesn't work properly when accessed from a webview (sites using Amazon CloudFront).
-            // Using `localhost`, makes all links open in the default browser, fixing those issues.
-            let domains = ["localhost"];
-            for domain in domains.iter() {
-                app.ipc_scope().configure_remote_access(
-                    RemoteDomainAccessScope::new(domain.to_string())
-                        .add_window("main")
-                        .add_plugin("shell")
-                        .enable_tauri_api(),
-                );
-            }
-
+        .setup(move |_app| {
             // Shadows looks bad on Windows 10 and doesn't work on Linux
             #[cfg(target_os = "macos")]
-            if let Some(window) = app.get_window("main") {
-                let _ = set_shadow(&window, true);
+            {
+                if let Some(window) = _app.get_window("main") {
+                    let _ = set_shadow(&window, true);
+                }
             }
 
             Ok(())

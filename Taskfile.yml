@@ -12,7 +12,7 @@ tasks:
   tauri:hook:before-build:
     desc: Before build scripts
     summary: |
-      - Download latest versions of Memos server binaries to `server-dist/``
+      - Download latest versions of Memos server binaries to `server-dist/`
     cmds:
       - pnpm ts-node-transpile-only --esm ./src-tauri/scripts/before_build.ts
     status:
@@ -81,7 +81,7 @@ tasks:
       - pnpm add -g pnpm
 
   gen:icons:
-    desc: Generate app icons from `assets/app-icon-lossless.webp
+    desc: Generate app icons from `assets/app-icon-lossless.webp`
     cmds:
       - cd ./src-tauri; cargo tauri icon ../assets/app-icon-lossless.webp
       - sh -c "cp -f ./src-tauri/icons/icon.ico ./src/favicon.ico"
@@ -152,8 +152,7 @@ tasks:
     desc: lint backend
     cmds:
       - cd ./src-tauri; cargo fmt --all --check
-      - cd ./src-tauri; cargo check
-      - cd ./src-tauri; cargo clippy --all-features --all
+      - cd ./src-tauri; cargo clippy --all-features --workspace --locked
       - cd ./src-tauri/scripts; pnpm eslint --ext .ts,.tsx,.mts,.cts
   lint:config:
     desc: lint config
@@ -339,6 +338,12 @@ tasks:
         cargo install sccache --locked
 
   ### Git Actions ###
+  precommit:
+    desc: Run all checks before committing.
+    cmds:
+      - cd ./src-tauri; cargo generate-lockfile
+      - task: lint
+      - task: format
 
   pushbuild:
     desc: |
@@ -348,9 +353,10 @@ tasks:
       - This will trigger a new build on GitHub Actions.
     cmds:
       - git checkout main
+      - sh -c "sed -i 's#Memospot/[0-9]\+\.[0-9]\+\.[0-9]\+"#Memospot/{{.CLI_ARGS}}"#' ./src-tauri/Tauri.toml"
       - cd ./src-tauri; cargo set-version --locked {{.CLI_ARGS}}
       - cd ./src-tauri; cargo generate-lockfile
-      - git commit -am "Bump version to {{.CLI_ARGS}}"
-      - git tag -a {{.CLI_ARGS}} -m "Push {{.CLI_ARGS}}"
+      - git commit -am "Bump version to v{{.CLI_ARGS}}"
+      - git tag -a v{{.CLI_ARGS}} -m "Push v{{.CLI_ARGS}}"
       - git push origin main --tags
       - git checkout -
