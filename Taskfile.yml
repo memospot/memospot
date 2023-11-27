@@ -152,7 +152,7 @@ tasks:
     desc: lint backend
     cmds:
       - cd ./src-tauri; cargo fmt --all --check
-      - cd ./src-tauri; cargo clippy --all-features --workspace --frozen
+      - cd ./src-tauri; cargo clippy --all-features --workspace --locked
       - cd ./src-tauri/scripts; pnpm eslint --ext .ts,.tsx,.mts,.cts
   lint:config:
     desc: lint config
@@ -338,6 +338,12 @@ tasks:
         cargo install sccache --locked
 
   ### Git Actions ###
+  precommit:
+    desc: Run all checks before committing.
+    cmds:
+      - cd ./src-tauri; cargo generate-lockfile
+      - task: lint
+      - task: format
 
   pushbuild:
     desc: |
