@@ -55,6 +55,9 @@ longDescription = "Memospot is a desktop version of Memos, a beautiful markdown-
 shortDescription = "A markdown-based note-taking service."
 targets = "all"
 
+[tauri.bundle.appimage]
+bundleMediaFramework = true
+
 [tauri.bundle.macOS]
 exceptionDomain = "localhost"
 
