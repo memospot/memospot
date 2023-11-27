@@ -48,15 +48,25 @@ jobs:
 
   clippy:
     name: Clippy
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
     permissions:
       actions: read
       contents: read
       security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          # - os: 'macos-latest'
+          #   rust_target: 'universal-apple-darwin'
+          - os: "macos-latest"
+            rust_target: "x86_64-apple-darwin"
+          - os: "macos-latest"
+            rust_target: "aarch64-apple-darwin"
+          - os: "ubuntu-latest"
+            rust_target: "x86_64-unknown-linux-gnu"
+          - os: "windows-latest"
+            rust_target: "x86_64-pc-windows-msvc"
+    runs-on: ${{ matrix.platform.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -70,14 +80,14 @@ jobs:
           touch ./server-dist/memos-$(uname -m)-pc-windows-msvc.exe
 
       - name: Disable initramfs and man-db update (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.platform.os == 'ubuntu-latest'
         run: |
           sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
           sudo rm -f /var/lib/man-db/auto-update
 
       - name: Install Ubuntu dependencies
         uses: awalsh128/cache-apt-pkgs-action@v1.3.1
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.platform.os == 'ubuntu-latest'
         continue-on-error: true
         with:
           packages: >-
@@ -91,13 +101,13 @@ jobs:
 
       - name: Install macOS dependencies
         uses: maxim-lobanov/setup-xcode@v1
-        if: matrix.os == 'macos-latest'
+        if: matrix.platform.os == 'macos-latest'
         with:
           xcode-version: latest-stable
 
       - name: Install sarif-fmt (macOS)
         uses: jaxxstorm/action-install-gh-release@v1.10.0
-        if: matrix.os == 'macos-latest'
+        if: matrix.platform.os == 'macos-latest'
         with:
           repo: psastras/sarif-rs
           cache: enable
@@ -109,7 +119,7 @@ jobs:
 
       - name: Install sarif-fmt (Ubuntu)
         uses: jaxxstorm/action-install-gh-release@v1.10.0
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.platform.os == 'ubuntu-latest'
         with:
           repo: psastras/sarif-rs
           cache: enable
@@ -121,7 +131,7 @@ jobs:
 
       - name: Install clippy-sarif (Ubuntu)
         uses: jaxxstorm/action-install-gh-release@v1.10.0
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.platform.os == 'ubuntu-latest'
         with:
           repo: psastras/sarif-rs
           cache: enable
@@ -133,7 +143,7 @@ jobs:
 
       - name: Install clippy-sarif (macOS)
         uses: jaxxstorm/action-install-gh-release@v1.10.0
-        if: matrix.os == 'macos-latest'
+        if: matrix.platform.os == 'macos-latest'
         with:
           repo: psastras/sarif-rs
           cache: enable
@@ -145,13 +155,13 @@ jobs:
 
       # - name: Install sarif-fmt (Windows)
       #   uses: taiki-e/cache-cargo-install-action@v1
-      #   if: matrix.os == 'windows-latest'
+      #   if: matrix.platform.os == 'windows-latest'
       #   with:
       #     tool: sarif-fmt@0.4.2
 
       # - name: Install clippy-sarif (Windows)
       #   uses: taiki-e/cache-cargo-install-action@v1
-      #   if: matrix.os == 'windows-latest'
+      #   if: matrix.platform.os == 'windows-latest'
       #   with:
       #     tool: clippy-sarif@0.4.2
 
@@ -159,6 +169,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
+          targets: ${{ matrix.platform.rust_target }}
 
       - name: Setup Cargo cache
         uses: swatinem/rust-cache@v2
@@ -171,19 +182,19 @@ jobs:
           version: "v0.7.3"
 
       - name: Run clippy with sarif output (POSIX)
-        if: matrix.os != 'windows-latest'
+        if: matrix.platform.os != 'windows-latest'
         continue-on-error: true
         shell: bash
         run: >
           set +e;
-          cargo clippy --all-features --all --message-format=json
+          cargo clippy --all-features --workspace --frozen --message-format=json
           | clippy-sarif
           | tee clippy-results.sarif
           | sarif-fmt ;
         working-directory: ./src-tauri
 
       - name: Upload sarif analysis results to GitHub
-        if: matrix.os != 'windows-latest'
+        if: matrix.platform.os != 'windows-latest'
         uses: github/codeql-action/upload-sarif@v2
         continue-on-error: true
         with:
@@ -195,4 +206,4 @@ jobs:
         working-directory: ./src-tauri
         run: |
           cargo clippy --version;
-          cargo clippy --all-features --all
+          cargo clippy --all-features --workspace --frozen

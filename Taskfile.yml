@@ -152,8 +152,7 @@ tasks:
     desc: lint backend
     cmds:
       - cd ./src-tauri; cargo fmt --all --check
-      - cd ./src-tauri; cargo check
-      - cd ./src-tauri; cargo clippy --all-features --all
+      - cd ./src-tauri; cargo clippy --all-features --workspace --frozen
       - cd ./src-tauri/scripts; pnpm eslint --ext .ts,.tsx,.mts,.cts
   lint:config:
     desc: lint config
