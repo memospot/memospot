@@ -1,8 +1,8 @@
-name: "Publish Release"
+name: "Test Build"
 on:
   push:
-    branches:
-      - release
+    tags:
+      - "v*"
   workflow_dispatch:
 
 env:
@@ -13,10 +13,8 @@ env:
   TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
 
 jobs:
-  publish-tauri:
-    name: "Publish"
-    permissions:
-      contents: write
+  test-tauri-build:
+    name: "Test Build"
     strategy:
       fail-fast: false
       matrix:
@@ -112,10 +110,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          # the action automatically replaces \_\_VERSION\_\_ with the app version
-          tagName: v__VERSION__
-          releaseName: "Memospot v__VERSION__"
-          releaseBody: "See the assets section below to download the app."
-          releaseDraft: true
-          prerelease: false
           args: --target ${{ matrix.platform.rust_target }}
