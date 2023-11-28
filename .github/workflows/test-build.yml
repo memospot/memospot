@@ -105,9 +105,24 @@ jobs:
       - name: Install pnpm dependencies
         run: pnpm install --frozen-lockfile
 
+      - uses: actions/cache/restore@v3
+        id: restore-cache
+        with:
+          path: |
+            ./server-dist
+          key: cache-memos-builds-${{ github.run_id }}-${{ github.ref_name }}
+          enableCrossOsArchive: true
+
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: --target ${{ matrix.platform.rust_target }}
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ./server-dist
+          key: cache-memos-builds-${{ github.run_id }}
+          enableCrossOsArchive: true
