@@ -338,26 +338,47 @@ tasks:
         cargo install sccache --locked
 
   ### Git Actions ###
-  precommit:
-    desc: Run all checks before committing.
+  prepush:
+    desc: Run all checks before pushing changes
     cmds:
       - cd ./src-tauri; cargo generate-lockfile
       - task: lint
       - task: format
 
-  pushbuild:
+  checkrepo:
+    desc: Check if git is in a clean state.
+    cmds:
+      - lsf=$(git ls-files --deleted --modified --others --exclude-standard -- :/) && [ -z "$lsf" ] || (echo "Repository is not clean." && exit 1)
+      - git diff-index --quiet --cached HEAD -- || (echo "Files are staged." && exit 1)
+      - git diff-files --quiet || (echo "There are unstaged changes." && exit 1)
+      - echo "Repository is clean."
+
+  bumpversion:
+    internal: true
+    cmds:
+      - cd ./src-tauri; cargo set-version --locked {{.NEW_VERSION}}
+      - sh -c "sed -i 's#Memospot/[0-9]\+\.[0-9]\+\.[0-9]\+"#Memospot/{{.NEW_VERSION}}"#' ./src-tauri/Tauri.toml"
+      - cd ./src-tauri; cargo generate-lockfile
+      - task: lint:config
+      - task: format:config
+      - git add ./src-tauri/Tauri.toml
+      - git add ./src-tauri/Cargo.toml
+      - git add ./src-tauri/Cargo.lock
+      - git add Taskfile.yml
+      - git commit -am "Bump version to v{{.NEW_VERSION}}"
+    requires:
+      vars: [NEW_VERSION]
+
+  pushtag:
     desc: |
       Upgrade app version and push a new tag to origin.
-      Usage: `task pushbuild -- 0.0.0`.
+      Usage: `task pushtag -- 0.0.0`.
     summary: |
-      - This will trigger a new build on GitHub Actions.
+      - This will trigger a test build on GitHub Actions.
     cmds:
-      - git pull origin main
-      - git checkout main
-      - sh -c "sed -i 's#Memospot/[0-9]\+\.[0-9]\+\.[0-9]\+"#Memospot/{{.CLI_ARGS}}"#' ./src-tauri/Tauri.toml"
-      - cd ./src-tauri; cargo set-version --locked {{.CLI_ARGS}}
-      - cd ./src-tauri; cargo generate-lockfile
-      - git commit -am "Bump version to v{{.CLI_ARGS}}"
+      - task: bumpversion
+        vars:
+          NEW_VERSION: "{{ .CLI_ARGS }}"
+      - task: prepush
       - git tag -a v{{.CLI_ARGS}} -m "Push v{{.CLI_ARGS}}"
-      - git push origin main --tags
-      - git checkout -
+      - git push origin --tags
