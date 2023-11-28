@@ -3,22 +3,17 @@
 
 mod webview;
 
-use home_dir::HomeDirExt;
 use log::{error, info};
-use memospot::confirm_dialog;
-use memospot::find_open_port;
-use memospot::panic_dialog;
+use memospot::*;
 use native_dialog::MessageType;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::exit;
 use std::sync::Mutex;
 use tauri::api::process::{Command, CommandEvent};
-
 use tauri::State;
 
 #[cfg(target_os = "macos")]
@@ -122,16 +117,7 @@ async fn setup_logger(data_path: &Path) -> bool {
 
 #[tokio::main]
 async fn main() {
-    let data_path = if std::env::consts::OS == "windows" {
-        std::env::current_exe()
-            .unwrap()
-            .parent()
-            .unwrap()
-            .to_owned()
-    } else {
-        "~/.memospot".expand_home().unwrap()
-    };
-
+    let data_path = get_app_data_path("memospot");
     if !data_path.exists() {
         if let Err(e) = std::fs::create_dir_all(&data_path) {
             panic_dialog!(
@@ -140,6 +126,18 @@ async fn main() {
                 e.to_string()
             );
         }
+    }
+
+    if !writable(&data_path) {
+        panic_dialog!(
+            "Data directory is not writable:\n{}",
+            data_path.to_string_lossy()
+        );
+    }
+
+    let db = data_path.join("memos_prod.db");
+    if db.exists() && !writable(&db) {
+        panic_dialog!("Database is not writable:\n{}", db.to_string_lossy());
     }
 
     let debug_memos = setup_logger(&data_path).await;
@@ -171,7 +169,7 @@ async fn main() {
     let memos_path = std::path::Path::new(&memos_server_bin);
     if !memos_path.exists() {
         panic_dialog!(
-            "Unable to find memos server at:\n{}",
+            "Unable to find Memos server at\n{}",
             memos_server_bin.display()
         );
     }

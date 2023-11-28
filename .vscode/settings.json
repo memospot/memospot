@@ -11,8 +11,9 @@
     "src-tauri/Cargo.toml"
   ],
   "rust-analyzer.cargo.extraEnv": {
-    "RUSTFLAGS": "-C target-cpu=native -Copt-level=0",
+    "RUSTFLAGS": "-Ctarget-cpu=native -Copt-level=0",
     "RUSTC_WRAPPER": "sccache",
+    "CARGO_INCREMENTAL": "0"
   },
   "evenBetterToml.schema.associations": {
     "Cargo.toml": "cargo",

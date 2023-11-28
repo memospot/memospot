@@ -112,7 +112,7 @@ jobs:
         with:
           tagName: v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version
           releaseName: "v__VERSION__"
-          releaseBody: "See the assets section to download the app."
+          releaseBody: "See the assets section below to download the app."
           releaseDraft: true
           prerelease: false
           args: --target ${{ matrix.platform.rust_target }}
