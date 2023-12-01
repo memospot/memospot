@@ -1,35 +1,45 @@
-import { SpawnSyncReturns, spawnSync } from "node:child_process";
-import { resolve } from "node:path";
+/** Run a command synchronously and return the output.
+ * @param command The command to run.
+ * @param args The arguments to pass to the command.
+ * @returns The output of the command.
+ * @throws {Error} An error if the command fails.
+ */
+export function runSync(command: string, args: string[]) {
+    const cmd = new Deno.Command(command, {
+        args: args,
+        stdout: "piped",
+        stderr: "piped",
+    });
 
-export async function run(cmd: string, args: string[]) {
-    let status = 1;
-    let stdout = "";
-    let stderr = "";
-    try {
-        const child = spawnSync(cmd, args, {
-            stdio: "pipe",
-        });
+    const { success, code, stdout, stderr } = cmd.outputSync();
+    const output = new TextDecoder().decode(stdout);
+    const error = new TextDecoder().decode(stderr);
 
-        status = child.status ?? 1;
-        stdout = child.stdout?.toString() ?? "";
-        stderr = child.stderr?.toString() ?? child.error ?? "";
-    } catch (error: any) {
-        const e = error as SpawnSyncReturns<Buffer>;
-        status = e.status ?? 1;
-        stdout = e.stdout?.toString() ?? "";
-        stderr = e.stderr?.toString() ?? "";
+    if (!success || code !== 0 || error !== "") {
+        const fullCommand = [command, ...args].join(" ");
+        throw new Error(
+            `\`${fullCommand}]\` failed with status code ${code}.\n${error}`,
+        );
     }
-    return { code: status, stdout: stdout, stderr: stderr };
+
+    return {
+        success: success,
+        code: code,
+        stdout: output,
+        stderr: error,
+    };
 }
 
-export async function findRepoRoot() {
-    const ret = await run("git", ["rev-parse", "--show-toplevel"]);
-
-    if (ret.code !== 0) {
-        console.log(ret.stdout);
-        throw new Error("Failed to find repo root");
+/** Find the root of this repository.
+ * @returns The path to the repository root.
+ * @throws {Error} An error if the current working directory is not a git repository.
+ */
+export function findRepositoryRoot() {
+    try {
+        const cmd = runSync("git", ["rev-parse", "--show-toplevel"]);
+        const { stdout } = cmd;
+        return stdout.trim();
+    } catch (e) {
+        throw e;
     }
-
-    const repoRoot = ret.stdout.trim();
-    return repoRoot;
 }

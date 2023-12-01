@@ -1,11 +1,3 @@
-export interface CommandLine {
-    [key: string]: {
-        cmd: string;
-        args: string[];
-        ignoreErrors?: boolean;
-    };
-}
-
 export interface GitHubAsset {
     url: string;
     id: number;

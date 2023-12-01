@@ -1,56 +1,95 @@
 /*
- * This script runs before the tauri build command.
- * pnpm ts-node .\src-tauri\scripts\before_build.ts
+ * This script runs before `Tauri build` step.
+ * deno run -A .\src-tauri\scripts\downloadMemosBuildsHook.ts
  */
-import { findRepoRoot } from "./common.ts";
+import { findRepositoryRoot } from "./common.ts";
 import { Readable } from "node:stream";
 import { finished } from "node:stream/promises";
 import * as fs from "node:fs";
 import * as crypto from "node:crypto";
-import decompress from "decompress";
-// import { GitHubRelease, GitHubAsset } from "./types.d.ts";
-import type { GitHubRelease, GitHubAsset } from "./types.d.ts";
-function makeTripletFromFileName(file: string): string {
+import process from "node:process";
+// @deno-types="npm:@types/decompress"
+import decompress from "npm:decompress";
+import type {
+    GitHubRelease,
+    GitHubAsset,
+} from "./downloadMemosBuildsHook.d.ts";
+
+/** Convert a GOOS-GOARCH build file name to a Rust target triple.
+ *
+ * Sample target triples:
+ * - x86_64-pc-windows-msvc
+ * - x86_64-unknown-linux-gnu
+ * - x86_64-apple-darwin
+ * - aarch64-apple-darwin
+ * @param file The file name.
+ * @returns The target triple.
+ */
+export function makeTripletFromFileName(file: string): string {
     const os = (() => {
-        if (file.includes("darwin")) {
-            return "darwin";
-        } else if (file.includes("linux")) {
-            return "linux";
-        } else if (file.includes("windows")) {
-            return "windows";
+        const oses = ["darwin", "linux", "windows"];
+
+        for (const os of oses) {
+            if (file.includes(os)) {
+                return os;
+            }
         }
+
+        return "unknown";
     })();
 
     const platform = (() => {
-        if (file.includes("windows")) {
-            return "pc";
-        } else if (file.includes("linux")) {
-            return "unknown";
-        } else if (file.includes("darwin")) {
-            return "apple";
+        const platformMap: Record<string, string> = {
+            windows: "pc",
+            linux: "unknown",
+            darwin: "apple",
+        };
+
+        for (const [key, value] of Object.entries(platformMap)) {
+            if (file.includes(key)) {
+                return value;
+            }
         }
+
+        return "unknown";
     })();
 
     const arch = (() => {
-        if (file.includes("arm64") && file.includes("darwin")) {
-            return "aarch64";
+        const archMap: Record<string, string> = {
+            x86_64: "x86_64",
+            x64: "x86_64",
+            x86: "i686",
+            '386': 'i686',
+            arm64: "aarch64",
+            aarch64: "aarch64",
+            riscv64: "riscv64gc",
+        };
+
+        for (const [key, value] of Object.entries(archMap)) {
+            if (file.includes(key)) {
+                return value;
+            }
         }
-        if (file.includes("arm64") || file.includes("aarch64")) {
-            return "arm64";
-        } else {
-            return "x86_64";
-        }
+
+        return "unknown";
     })();
 
-    const compiler = (() => {
-        if (file.includes("windows")) {
-            return "msvc";
-        } else if (file.includes("linux")) {
-            return "gnu";
+    const variant = (() => {
+        const variantMap: Record<string, string> = {
+            windows: "msvc",
+            linux: "gnu",
+        };
+
+        for (const [key, value] of Object.entries(variantMap)) {
+            if (file.includes(key)) {
+                return value;
+            }
         }
+
+        return "";
     })();
 
-    const triplet = [arch, platform, os, compiler].join("-");
+    const triplet = [arch, platform, os, variant].join("-");
     if (triplet.endsWith("-")) {
         return triplet.slice(0, -1);
     }
@@ -189,8 +228,8 @@ async function downloadServerBinaries() {
 }
 
 async function main() {
-    const repoRoot = await findRepoRoot();
-    console.log(`Repo root: ${repoRoot}`);
+    const repoRoot = findRepositoryRoot();
+    console.log(`Repository root is \`${repoRoot}\``);
     process.chdir(repoRoot);
     console.log("Running `before build` hooks...");
 
