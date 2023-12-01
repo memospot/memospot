@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <link rel="stylesheet" inline-source href="/src/style.css" />
+    <link rel="stylesheet" href="/src/style.css" />
     <!-- <link rel="icon" type="image/svg+xml" href="/favicon.svg" /> -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Memos Loader</title>
@@ -19,8 +19,8 @@
         <div class="row">
             <a href="https://usememos.com/" target="_blank" referrerpolicy="origin" title="Click to open Memos website">
                 <picture class="logo">
-                    <source srcset="powered_by_memos_dark.webp" media="(prefers-color-scheme: dark)" alt="Memos logo" />
-                    <img inline-source src="powered_by_memos.webp" class="logo memos" alt="Memos logo" />
+                    <source srcset="powered_by_memos_dark.webp" media="(prefers-color-scheme: dark)" />
+                    <img src="powered_by_memos.webp" class="logo memos" alt="Memos logo" />
                 </picture>
             </a>
         </div>
@@ -29,7 +29,7 @@
         <p class="tauri-msg" id="msg"></p>
 
         <button class="button center" role="button" id="manual-redirect-btn">Try again</button>
-
+    </div>
 </body>
 
 </html>
