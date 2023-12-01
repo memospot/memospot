@@ -1,32 +1,62 @@
 version: "3"
 env:
   RUSTFLAGS: -C target-cpu=native -Copt-level=0
+  DENO_DIR: ./.deno
 
 tasks:
   ##### Tauri Build Hooks #####
-  tauri:hook:before-dev:
-    desc: Before dev scripts
+  ui:dev:
+    desc: Run Vite front-end dev server with Deno
+    summary: |
+      - This will start the front-end in development mode.
+      - It will automatically reload the app when you make changes.
+      - Default address: http://localhost:5173
     cmds:
-      - task: tauri:hook:before-build
+      - deno task dev
 
-  tauri:hook:before-build:
-    desc: Before build scripts
+  ui:build:
+    desc: Run Vite front-end build with Deno
+    cmds:
+      - deno task build
+    sources:
+      - "./src-ui/src/**/*"
+    generates:
+      - "./dist-ui/**/*"
+
+  download-memos-binaries:
+    desc: Download Memos server binaries
     summary: |
       - Download latest versions of Memos server binaries to `server-dist/`
     cmds:
-      - pnpm ts-node-transpile-only --esm ./src-tauri/scripts/before_build.ts
+      - deno run -A ./src-tauri/scripts/before_build.ts
     status:
       - test -f ./server-dist/memos-x86_64-unknown-linux-gnu
       - test -f ./server-dist/memos-x86_64-pc-windows-msvc.exe
       - test -f ./server-dist/memos-x86_64-apple-darwin
       - test -f ./server-dist/memos-aarch64-apple-darwin
 
+  tauri:hook:before-dev:
+    desc: Before dev scripts
+    cmds:
+      - task: download-memos-binaries
+      - task: ui:dev
+
+  tauri:hook:before-build:
+    desc: Before build scripts
+    summary: |
+      - Build Frontend with Deno/Vite
+      - Download latest versions of Memos server binaries to `server-dist/`
+    cmds:
+      - task: gen:icons
+      - task: ui:build
+      - task: download-memos-binaries
+
   tauri:hook:before-bundle:
     desc: Before bundle scripts
     summary: |
       - upx
     cmds:
-      - pnpm ts-node-transpile-only --esm ./src-tauri/scripts/before_bundle.ts
+      - deno run -A ./src-tauri/scripts/before_bundle.ts
   ##### /Build Hooks #####
 
   ##### Development #####
@@ -84,7 +114,7 @@ tasks:
     desc: Generate app icons from `assets/app-icon-lossless.webp`
     cmds:
       - cd ./src-tauri; cargo tauri icon ../assets/app-icon-lossless.webp
-      - sh -c "cp -f ./src-tauri/icons/icon.ico ./src/favicon.ico"
+      # - sh -c "cp -f ./src-tauri/icons/icon.ico ./src-ui/public/favicon.ico"
     sources:
       - ./assets/app-icon-lossless.webp
 
@@ -100,11 +130,18 @@ tasks:
       RUSTC_WRAPPER:
         sh: echo "{{if eq OS "windows"}}$HOME\.cargo\bin\sccache.exe{{else}}$HOME/.cargo/bin/sccache{{end}}"
     cmds:
-      - pnpm install --frozen-lockfile
       - cargo tauri build
+      - task: postbuild
+
+  postbuild:
+    cmds:
       - sh -c "mkdir -p ./build"
-      - sh -c "cp -f ./src-tauri/target/release/memos* ./build/"
-      - sh -c "cp -fr ./src-tauri/target/release/bundle/* ./build/"
+      - sh -c "mv -f ./src-tauri/target/release/memos ./build/"
+      - sh -c "mv -f ./src-tauri/target/release/memospot ./build/"
+      - sh -c "mv -f ./src-tauri/target/release/memos.exe ./build/ || true"
+      - sh -c "mv -f ./src-tauri/target/release/memospot.exe ./build/ || true"
+      - sh -c "mv -f ./src-tauri/target/release/bundle/nsis/* ./build/ || true"
+      - sh -c "mv -f ./src-tauri/target/release/bundle/msi/* ./build/ || true"
 
   ##### /Build #####
 
@@ -119,10 +156,14 @@ tasks:
       - clean:windows
     ignore_error: true
     cmds:
-      - sh -c "rm -rf ./src-tauri/target || true"
-      - sh -c "rm -f ./src-tauri/memos.log || true"
-      - sh -c "rm -rf ./build || true"
-      - sh -c "rm -rf ./node_modules || true"
+      - sh -c "rm -rf ./src-tauri/target"
+      - sh -c "rm -rf ./src-ui/.deno"
+      - sh -c "rm -rf ./src-ui/.vite"
+      - sh -c "rm -rf ./build"
+      - sh -c "rm -rf ./dist-ui"
+      - sh -c "rm -rf ./server-dist"
+      - sh -c "rm -rf ./.deno"
+      - sh -c "rm -rf ./.node_modules"
   clean:posix:
     platforms: [linux, darwin]
     internal: true
