@@ -5,8 +5,8 @@
 beforeBuildCommand = "task tauri:hook:before-build"
 beforeBundleCommand = "task tauri:hook:before-bundle"
 beforeDevCommand = "task tauri:hook:before-dev"
-devPath = "../src"
-distDir = "../src"
+devPath = "http://localhost:5173"
+distDir = "../dist-ui"
 runner = "cargo"
 withGlobalTauri = true
 

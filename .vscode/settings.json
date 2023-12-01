@@ -1,5 +1,7 @@
 {
-  "deno.enable": false,
+  "deno.enable": true,
+  "deno.cache": "./.deno",
+  "deno.lint": true,
   "editor.formatOnSave": true,
   "code-runner.cwd": "${workspaceFolder}",
   "code-runner.ignoreSelection": true,
@@ -22,6 +24,7 @@
   "evenBetterToml.completion.maxKeys": 8,
   "evenBetterToml.schema.enabled": true,
   "code-runner.executorMapByGlob": {
-    "**/*.ts": "cd $dir && ts-node $fileName",
+    "**/*.test.ts": "cd $dir && deno test -A $fileName",
+    "**/*.ts": "cd $dir && deno run -A $fileName",
   },
 }

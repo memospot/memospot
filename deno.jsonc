@@ -1,0 +1,56 @@
+{
+  "tasks": {
+    "build": "cd ./src-ui; deno run -A npm:vite build",
+    "dev": "cd ./src-ui; deno run -A npm:vite",
+    "preview": "cd ./src-ui; deno run -A npm:vite preview",
+    "serve": "cd ./src-ui; deno run --allow-net --allow-read https://deno.land/std@0.157.0/http/file_server.ts ./dist/"
+  },
+  "compilerOptions": {
+    "allowJs": false,
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable",
+      "deno.ns"
+    ],
+    "strict": true,
+    "types": [
+      "deno.ns"
+    ]
+  },
+  "fmt": {
+    "include": [
+      "./src-ui/src/**/*.ts"
+    ],
+    "exclude": [
+      "./src-ui/dist/**/**"
+    ],
+    "useTabs": false,
+    "lineWidth": 96,
+    "indentWidth": 4,
+    "semiColons": true,
+    "singleQuote": false,
+    "proseWrap": "preserve"
+  },
+  "lint": {
+    "include": [
+      "./src-ui/src/**/*.ts"
+    ],
+    "exclude": [
+      "./src-ui/dist/**/**"
+    ],
+    "rules": {
+      "tags": [
+        "recommended"
+      ],
+      "include": [
+        "ban-untagged-todo"
+      ],
+      "exclude": [
+        "no-explicit-any"
+      ]
+    }
+  },
+  "nodeModulesDir": true,
+  "imports": {}
+}
