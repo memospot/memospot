@@ -1,0 +1,53 @@
+{
+  "excludes": [
+    "**/node_modules",
+    "**/.deno",
+    "**/target",
+    "**/dist*/*",
+    "deno.lock",
+    "**/*-lock.json"
+  ],
+  "includes": [
+    "**/*.{css,scss,sass,less}",
+    "**/*.{html}",
+    "**/*.{json,jsonc}",
+    "**/*.{md}",
+    "**/*.{toml}",
+    "**/*.{ts,tsx}",
+    "**/*.{yml,yaml}"
+  ],
+  "lineWidth": 96,
+  "indentWidth": 4,
+  "plugins": [
+    "https://plugins.dprint.dev/prettier-0.27.0.json@3557a62b4507c55a47d8cde0683195b14d13c41dda66d0f0b0e111aed107e2fe",
+    "https://plugins.dprint.dev/toml-0.5.4.wasm"
+  ],
+  "toml": {
+    "lineWidth": 96,
+    "useTabs": false,
+    "indentWidth": 4,
+    "newLineKind": "lf",
+    "comment.forceLeadingSpace": false,
+    "cargo.applyConventions": true
+  },
+  "prettier": {
+    "eol": "lf",
+    "printWidth": 96,
+    "proseWrap": "preserve",
+    "singleQuote": false,
+    "tabWidth": 40,
+    "trailingComma": "es5",
+    "useTabs": false,
+    "plugin.jsDoc": true,
+    "css.tabWidth": 4,
+    "html.tabWidth": 4,
+    "json.tabWidth": 2,
+    "jsonc.tabWidth": 2,
+    "md.tabWidth": 2,
+    "toml.tabWidth": 4,
+    "ts.tabWidth": 4,
+    "tsx.tabWidth": 4,
+    "yaml.tabWidth": 2,
+    "yml.tabWidth": 2
+  }
+}

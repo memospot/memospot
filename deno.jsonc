@@ -7,24 +7,12 @@
   },
   "compilerOptions": {
     "allowJs": false,
-    "lib": [
-      "esnext",
-      "dom",
-      "dom.iterable",
-      "deno.ns"
-    ],
+    "lib": ["esnext", "dom", "dom.iterable", "deno.ns"],
     "strict": true,
-    "types": [
-      "deno.ns"
-    ]
+    "types": ["deno.ns"]
   },
   "fmt": {
-    "include": [
-      "./src-ui/src/**/*.ts"
-    ],
-    "exclude": [
-      "./src-ui/dist/**/**"
-    ],
+    "include": ["./build-scripts/*.ts", "./src-ui/**/*.ts"],
     "useTabs": false,
     "lineWidth": 96,
     "indentWidth": 4,
@@ -33,22 +21,11 @@
     "proseWrap": "preserve"
   },
   "lint": {
-    "include": [
-      "./src-ui/src/**/*.ts"
-    ],
-    "exclude": [
-      "./src-ui/dist/**/**"
-    ],
+    "include": ["./build-scripts/*.ts", "./src-ui/**/*.ts"],
     "rules": {
-      "tags": [
-        "recommended"
-      ],
-      "include": [
-        "ban-untagged-todo"
-      ],
-      "exclude": [
-        "no-explicit-any"
-      ]
+      "tags": ["recommended"],
+      "include": ["ban-untagged-todo"],
+      "exclude": ["no-explicit-any"]
     }
   },
   "nodeModulesDir": true,

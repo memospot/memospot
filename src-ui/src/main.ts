@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const button = document.getElementById("manual-redirect-btn")!;
     button.addEventListener("click", reload);
 
-    const memosPort = await invoke("js_get_memos_port") as number;
+    const memosPort = (await invoke("js_get_memos_port")) as number;
     const element = document.querySelector<HTMLParagraphElement>("#port")!;
     element.textContent = "Port: " + memosPort;
 });

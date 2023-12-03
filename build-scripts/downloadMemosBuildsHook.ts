@@ -126,7 +126,7 @@ async function downloadServerBinaries() {
 
     console.log(`Latest ${repo} tag: ${tag}`);
 
-    let selectedFiles: GitHubAsset[] = [];
+    const selectedFiles: GitHubAsset[] = [];
     for (const asset of assets) {
         // glob-like matching
         for (const mask of downloadFilesMask) {
@@ -210,7 +210,7 @@ async function downloadServerBinaries() {
             });
         }
 
-        let exe = fileName.includes("windows") ? ".exe" : "";
+        const exe = fileName.includes("windows") ? ".exe" : "";
 
         // rename memos binary to a target triple
         const triplet = makeTripletFromFileName(fileName);

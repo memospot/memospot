@@ -1,6 +1,7 @@
 {
   "recommendations": [
     "denoland.vscode-deno",
+    "dprint.dprint",
     "EditorConfig.EditorConfig",
     "oderwat.indent-rainbow",
     "redhat.vscode-yaml",
