@@ -1,13 +1,7 @@
-import {
-    assertThrows,
-    assertIsError,
-    assert,
-    assertEquals,
-} from "https://deno.land/std@0.207.0/assert/mod.ts";
-
+import { assertEquals } from "./deps.ts";
 import { makeTripletFromFileName } from "./downloadMemosBuildsHook.ts";
 
-Deno.test("makeTripletFromFileName", async (t) => {
+Deno.test("makeTripletFromFileName", () => {
     const goToRustMap: Record<string, string> = {
         "darwin-arm64": "aarch64-apple-darwin",
         "darwin-x86_64": "x86_64-apple-darwin",
@@ -27,8 +21,8 @@ Deno.test("makeTripletFromFileName", async (t) => {
 
     const randomPrefix = Math.random().toString(36).substring(7);
     for (const [key, value] of Object.entries(goToRustMap)) {
-        const goOsGoArch = [randomPrefix, value].join('-');
-        const rustTriplet = [randomPrefix, makeTripletFromFileName(key)].join('-');
+        const goOsGoArch = [randomPrefix, value].join("-");
+        const rustTriplet = [randomPrefix, makeTripletFromFileName(key)].join("-");
         assertEquals(goOsGoArch, rustTriplet);
     }
 });

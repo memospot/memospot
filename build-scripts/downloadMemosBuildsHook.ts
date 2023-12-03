@@ -10,18 +10,18 @@ import * as crypto from "node:crypto";
 import process from "node:process";
 // @deno-types="npm:@types/decompress"
 import decompress from "npm:decompress";
-import type {
-    GitHubRelease,
-    GitHubAsset,
-} from "./downloadMemosBuildsHook.d.ts";
+import type { GitHubRelease, GitHubAsset } from "./downloadMemosBuildsHook.d.ts";
 
-/** Convert a GOOS-GOARCH build file name to a Rust target triple.
+/**
+ * Convert a GOOS-GOARCH build file name to a Rust target triple.
  *
  * Sample target triples:
- * - x86_64-pc-windows-msvc
- * - x86_64-unknown-linux-gnu
- * - x86_64-apple-darwin
- * - aarch64-apple-darwin
+ *
+ * - `x86_64-pc-windows-msvc`
+ * - `x86_64-unknown-linux-gnu`
+ * - `x86_64-apple-darwin`
+ * - `aarch64-apple-darwin`
+ *
  * @param file The file name.
  * @returns The target triple.
  */
@@ -59,7 +59,7 @@ export function makeTripletFromFileName(file: string): string {
             x86_64: "x86_64",
             x64: "x86_64",
             x86: "i686",
-            '386': 'i686',
+            "386": "i686",
             arm64: "aarch64",
             aarch64: "aarch64",
             riscv64: "riscv64gc",
@@ -186,10 +186,7 @@ async function downloadServerBinaries() {
         const filePath = `./server-dist/${fileName}`;
         // resolve path
         const fileBuffer = (await fs).readFileSync(filePath);
-        const fileHash = crypto
-            .createHash("sha256")
-            .update(fileBuffer)
-            .digest("hex");
+        const fileHash = crypto.createHash("sha256").update(fileBuffer).digest("hex");
         console.log(`Hash: ${fileHash}`);
         if (fileHash !== fileHashes[fileName]) {
             throw new Error(`Hash mismatch for ${fileName}`);
@@ -218,10 +215,7 @@ async function downloadServerBinaries() {
         // rename memos binary to a target triple
         const triplet = makeTripletFromFileName(fileName);
 
-        fs.renameSync(
-            `${extractDir}/memos${exe}`,
-            `./server-dist/memos-${triplet}${exe}`,
-        );
+        fs.renameSync(`${extractDir}/memos${exe}`, `./server-dist/memos-${triplet}${exe}`);
         fs.rmSync(extractDir, { recursive: true });
         fs.rmSync(filePath);
     }

@@ -7,8 +7,7 @@ import { runSync, findRepositoryRoot } from "./common.ts";
 import type { UpxOptions } from "./upxPackHook.d.ts";
 
 const filesToPack = [
-    "./src-tauri/target/release/memospot" +
-    (Deno.build.os === "windows" ? ".exe" : ""),
+    "./src-tauri/target/release/memospot" + (Deno.build.os === "windows" ? ".exe" : ""),
 ];
 
 const upxOptions: UpxOptions = {
@@ -26,7 +25,7 @@ const upxOptions: UpxOptions = {
  */
 export function upxPackHook(options: UpxOptions) {
     const supportedPlatforms = options.supportedPlatforms ?? ["windows", "linux"];
-    let log: string[] = [];
+    const log: string[] = [];
 
     const HandleError = (message: string) => {
         const error = new Error(message);
@@ -36,7 +35,7 @@ export function upxPackHook(options: UpxOptions) {
         } else {
             return { output: log.join("\n"), error: error };
         }
-    }
+    };
 
     if (!supportedPlatforms.includes(Deno.build.os)) {
         return HandleError(`\`UPX pack\` is not supported on ${Deno.build.os}.`);
@@ -74,15 +73,18 @@ export function upxPackHook(options: UpxOptions) {
     if (failed) {
         const total = Object.keys(filesToPack).length;
         log.push(
-            `UPX failed on ${String(failed).padStart(2, '0')}/${String(total).padStart(2, '0')} files.`,
+            `UPX failed on ${String(failed).padStart(2, "0")}/${String(total).padStart(
+                2,
+                "0"
+            )} files.`
         );
     }
 
     return {
-        output: log.join("\n"), error: null,
-    }
+        output: log.join("\n"),
+        error: null,
+    };
 }
-
 
 if (import.meta.main) {
     const { output, error } = upxPackHook(upxOptions);

@@ -1,16 +1,11 @@
-import {
-    assertIsError,
-    assertEquals,
-} from "https://deno.land/std@0.207.0/assert/mod.ts";
-
+import { assertEquals, assertIsError, assertStringIncludes } from "./deps.ts";
 import { upxPackHook } from "./upxPackHook.ts";
 import type { UpxOptions } from "./upxPackHook.d.ts";
-import { assertStringIncludes } from "https://deno.land/std@0.207.0/assert/assert_string_includes.ts";
 
 Deno.test("upxPackHook", async (t) => {
-    await t.step("validate error on unsupported platform", async () => {
+    await t.step("validate error on unsupported platform", () => {
         const expected = "`UPX pack` is not supported on";
-        let upxOptions: UpxOptions = {
+        const upxOptions: UpxOptions = {
             bin: "upx",
             flags: [],
             fileList: [],
@@ -29,9 +24,9 @@ Deno.test("upxPackHook", async (t) => {
         }
     });
 
-    await t.step("validate error on non-existing file", async () => {
+    await t.step("validate error on non-existing file", () => {
         const expected = "`UPX pack` failed for file `non-existing-file`.";
-        let upxOptions: UpxOptions = {
+        const upxOptions: UpxOptions = {
             bin: "upx",
             flags: [],
             fileList: ["non-existing-file"],
@@ -50,9 +45,9 @@ Deno.test("upxPackHook", async (t) => {
         }
     });
 
-    await t.step("validate error on non-existing upx", async () => {
+    await t.step("validate error on non-existing upx", () => {
         const expected = "program not found";
-        let upxOptions: UpxOptions = {
+        const upxOptions: UpxOptions = {
             bin: "non-existing-upx",
             flags: [],
             fileList: ["dummy-file"],
@@ -71,7 +66,7 @@ Deno.test("upxPackHook", async (t) => {
         }
     });
 
-    await t.step("validate error on empty file list", async () => {
+    await t.step("validate error on empty file list", () => {
         const expected = "No files to pack.";
         const upxOptions: UpxOptions = {
             bin: "upx",

@@ -1,4 +1,6 @@
-/** Run a command synchronously and return the output.
+/**
+ * Run a command synchronously and return the output.
+ *
  * @param command The command to run.
  * @param args The arguments to pass to the command.
  * @returns The output of the command.
@@ -17,9 +19,7 @@ export function runSync(command: string, args: string[]) {
 
     if (!success || code !== 0 || error !== "") {
         const fullCommand = [command, ...args].join(" ");
-        throw new Error(
-            `\`${fullCommand}]\` failed with status code ${code}.\n${error}`,
-        );
+        throw new Error(`\`${fullCommand}]\` failed with status code ${code}.\n${error}`);
     }
 
     return {
@@ -30,7 +30,9 @@ export function runSync(command: string, args: string[]) {
     };
 }
 
-/** Find the root of this repository.
+/**
+ * Find the root of this repository.
+ *
  * @returns The path to the repository root.
  * @throws {Error} An error if the current working directory is not a git repository.
  */
