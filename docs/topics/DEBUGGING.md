@@ -23,7 +23,7 @@ However, it is possible to log server output to a file.
 > Windows:
 >
 > ```powershell
-> New-Item -ItemType File -Path "$env:APPDATA\memospot\logging_config.yaml"
+> New-Item -ItemType File -Path "$Env:AppData\memospot\logging_config.yaml"
 > ```
 
 - Launch the Memospot app.
@@ -54,39 +54,42 @@ root:
   appenders:
     - file
 ```
+
 ## Increasing log level
 
-> To log *all* requests handled by server, set `root.level` to `info` or `debug`.
+> To log _all_ requests handled by server, set `root.level` to `info` or `debug`.
 
-Using [yq](https://github.com/mikefarah/yq) (Install via brew, MacPorts, winget, chocolatey, scoop):
+Using [yq](https://github.com/mikefarah/yq) (Install via Homebrew, MacPorts, Winget, Chocolatey or Scoop):
 
 - Linux/macOS:
-    ```bash
-    yq -i '.root.level = "debug"' "~/.memospot/logging_config.yaml"
-    ```
+
+  ```bash
+  yq -i '.root.level = "debug"' "~/.memospot/logging_config.yaml"
+  ```
 
 - Windows:
-    ```powershell
-    yq -i '.root.level = "debug"' "$Env:AppData\memospot\logging_config.yaml"
-    ```
+  ```powershell
+  yq -i '.root.level = "debug"' "$Env:AppData\memospot\logging_config.yaml"
+  ```
 
 Extra configurations options can be found in the [log4rs documentation](https://github.com/estk/log4rs#quick-start)
 
 ## Disabling logging
 
 > It is recommended to disable logging when not needed.
-> 
+>
 > To disable logging entirely, delete the `logging_config.yaml` file.
 > {style="note"}
+
 - Linux/macOS:
-    ```bash
-    rm ~/.memospot/logging_config.yaml
-    ```
+
+  ```bash
+  rm ~/.memospot/logging_config.yaml
+  ```
 
 - Windows:
-    ```powershell
-    Remove-Item "$Env:AppData\memospot\logging_config.yaml"
-    ```
+  ```powershell
+  Remove-Item "$Env:AppData\memospot\logging_config.yaml"
+  ```
 
 > Setting `root.level` to `off` will disable logging to file, but will not disable the server output parsing.
-

@@ -41,7 +41,7 @@ If you only used the default `Database` object storage, you can skip the assets 
 > Note that these files won't exist if the database was closed properly.
 
 > The default Memos data path on a Docker **host** is `~/.memos/`. Within the container, the path is `/var/opt/memos`.
-> 
+>
 > Unless you changed it, `~/.memos/` is where you'll find your assets and database. Stop the container first.
 
 ## Replacing assets paths in the database
@@ -67,29 +67,33 @@ Pick one path style:
 - `__MEMOSPOT_POSIX_PATH__`
 
   Linux/macOS Terminal:
-    ```bash
-    echo "$HOME/.memospot"
-    ```
+
+  ```bash
+  echo "$HOME/.memospot"
+  ```
 
 - `__MEMOSPOT_WINDOWS_PATH__`
- 
-    Windows Powershell:
-    ```powershell
-    Write-Host "$Env:LocalAppData\memospot"
-    ```
+
+  Windows Powershell:
+
+  ```powershell
+  Write-Host "$Env:LocalAppData\memospot"
+  ```
 
 - `__MEMOS_SERVER_WINDOWS_PATH__`
 
   Windows Powershell:
-    ```powershell
-    Write-Host "$Env:ProgramData\memos"
-    ```
 
-> When migrating data **to** a Memos Docker container, you must specify the *internal* Docker volume path.
+  ```powershell
+  Write-Host "$Env:ProgramData\memos"
+  ```
+
+> When migrating data **to** a Memos Docker container, you must specify the _internal_ Docker volume path.
 >
 > You probably shouldn't change `/var/opt/memos`.
 >
 > The host-accessible data path is set later (`~/.memos/`), when you launch the container:
+>
 > ```bash
 > docker run -d \
 > --init \
@@ -97,17 +101,18 @@ Pick one path style:
 > --publish 5230:5230 \
 > --volume ~/.memos/:/var/opt/memos \
 > ghcr.io/usememos/memos:latest
->```
+> ```
+>
 > {style="note"}
 
 Choose what best suits your migration scenario:
 
 #### Windows Memospot -> Memos Docker {collapsible="true" default-state="collapsed"}
- 
+
 SQL query:
 
 ```sql
--- Replace Windows Memospot paths with 
+-- Replace Windows Memospot paths with
 -- default internal Docker volume paths
 UPDATE resource
   SET internal_path = REPLACE(internal_path,
@@ -124,7 +129,7 @@ UPDATE resource
 SQL query:
 
 ```sql
--- Replace Windows Memos Server paths with 
+-- Replace Windows Memos Server paths with
 -- default internal Docker volume paths
 UPDATE resource
   SET internal_path = REPLACE(internal_path,
@@ -141,7 +146,7 @@ UPDATE resource
 SQL query:
 
 ```sql
--- Replace Windows Memos Server paths with 
+-- Replace Windows Memos Server paths with
 -- default internal Docker volume paths
 UPDATE resource
   SET internal_path = REPLACE(internal_path,
@@ -179,9 +184,9 @@ UPDATE resource
 #### Memos Docker -> Linux/macOS Memospot {collapsible="true" default-state="collapsed"}
 
 ```sql
--- Replace default Docker volume paths with Linux/macOS Memospot paths 
-UPDATE resource 
-  SET internal_path = REPLACE(internal_path, 
+-- Replace default Docker volume paths with Linux/macOS Memospot paths
+UPDATE resource
+  SET internal_path = REPLACE(internal_path,
                               '/var/opt/memos',
                               '__MEMOSPOT_POSIX_PATH__');
 ```
@@ -189,9 +194,9 @@ UPDATE resource
 #### Memos Docker -> Windows Memospot {collapsible="true" default-state="collapsed"}
 
 ```sql
--- Replace default Docker volume paths with Windows Memospot paths 
-UPDATE resource 
-  SET internal_path = REPLACE(internal_path, 
+-- Replace default Docker volume paths with Windows Memospot paths
+UPDATE resource
+  SET internal_path = REPLACE(internal_path,
                               '/var/opt/memos',
                               '__MEMOSPOT_WINDOWS_PATH__');
 
@@ -206,9 +211,9 @@ These queries will replace absolute paths with relative paths.
 
 While this method works fine and is simpler (queries may be run as-is), it will let the database with mixed path styles, as new assets will be created with absolute paths. {style="warning"}
 
-> This only works if you have the default prefix ``assets`` in all your paths. {style="warning"}
+> This only works if you have the default prefix `assets` in all your paths. {style="warning"}
 
->Assets with relative paths will be resolved relatively to `MEMOS_DATA`.
+> Assets with relative paths will be resolved relatively to `MEMOS_DATA`.
 
 Choose what best suits your scenario:
 
@@ -216,7 +221,7 @@ Choose what best suits your scenario:
 
 ```sql
 UPDATE resource
-  SET internal_path = REPLACE(internal_path, 
+  SET internal_path = REPLACE(internal_path,
                               SUBSTR(internal_path, 1,
                                      INSTR(internal_path, '/assets')
                               ), '');
@@ -226,7 +231,7 @@ UPDATE resource
 
 ```sql
 UPDATE resource
-  SET internal_path = REPLACE(internal_path, 
+  SET internal_path = REPLACE(internal_path,
                               SUBSTR(internal_path, 1,
                                      INSTR(internal_path, '/assets')
                               ), '');
