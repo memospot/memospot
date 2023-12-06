@@ -42,7 +42,6 @@ tasks:
     desc: Run Vite front-end dev server with Deno
     summary: |
       - This will start the front-end in development mode.
-      - It will automatically reload the app when you make changes.
       - Default address: http://localhost:5173
     cmds:
       - deno task dev
@@ -60,6 +59,8 @@ tasks:
     desc: Download Memos server binaries
     summary: |
       - Download latest versions of Memos server binaries to `server-dist/`
+      - This will be used by the Tauri build process.
+      - Only runs if any of the binaries are missing.
     cmds:
       - deno run -A ./build-scripts/downloadMemosBuildsHook.ts
     status:
@@ -93,6 +94,22 @@ tasks:
       - deno run -A ./build-scripts/upxPackHook.ts
   ##### /Build Hooks #####
 
+  ##### Tests #####
+  test:
+    desc: Run all tests
+    deps:
+      - test:rust
+      - test:build-scripts
+  test:rust:
+    desc: Run all Rust tests
+    cmds:
+      - cd ./src-tauri; cargo test --package memospot --lib -- --nocapture
+  test:build-scripts:
+    desc: Run build scripts tests
+    cmds:
+      - deno task test-build-scripts
+  ##### /Tests #####
+
   ##### Development #####
   dev:
     desc: Run the app in development mode
@@ -108,21 +125,24 @@ tasks:
       - task: sccache:stats
   dev:killprocesses:
     desc: Kill all running Memospot/Memos processes
+    silent: true
     cmds:
       - task: dev:killprocesses:posix
       - task: dev:killprocesses:windows
   dev:killprocesses:posix:
     platforms: [linux, darwin]
     internal: true
+    ignore_error: true
     cmds:
-      - killall memospot || true
-      - killall memos || true
+      - killall memospot
+      - killall memos
   dev:killprocesses:windows:
     platforms: [windows]
     internal: true
+    ignore_error: true
     cmds:
-      - taskkill /f /t /im memospot.exe || true
-      - taskkill /f /t /im memos.exe || true
+      - taskkill /f /t /im memospot.exe
+      - taskkill /f /t /im memos.exe
 
   update-deps:
     desc: Update project dependencies
@@ -156,18 +176,18 @@ tasks:
       RUSTFLAGS: -Ctarget-cpu=x86-64 -Copt-level=3 -Cstrip=symbols -Ccodegen-units=1
     cmds:
       - cargo tauri build
-      - sccache --show-stats || true
+      - task: sccache:stats
       - task: postbuild
-
   postbuild:
+    ignore_error: true
     cmds:
       - sh -c "mkdir -p ./build"
       - sh -c "mv -f ./src-tauri/target/release/memos ./build/"
       - sh -c "mv -f ./src-tauri/target/release/memospot ./build/"
-      - sh -c "mv -f ./src-tauri/target/release/memos.exe ./build/ || true"
-      - sh -c "mv -f ./src-tauri/target/release/memospot.exe ./build/ || true"
-      - sh -c "mv -f ./src-tauri/target/release/bundle/nsis/* ./build/ || true"
-      - sh -c "mv -f ./src-tauri/target/release/bundle/msi/* ./build/ || true"
+      - sh -c "mv -f ./src-tauri/target/release/memos.exe ./build/"
+      - sh -c "mv -f ./src-tauri/target/release/memospot.exe ./build/"
+      - sh -c "mv -f ./src-tauri/target/release/bundle/nsis/* ./build/"
+      - sh -c "mv -f ./src-tauri/target/release/bundle/msi/* ./build/"
 
   ##### /Build #####
 
@@ -178,8 +198,7 @@ tasks:
       This will free up nearly 20GB of disk space, but will require a full rebuild.
       Don't use unless you know what you're doing.
     deps:
-      - clean:posix
-      - clean:windows
+      - dev:killprocesses
     ignore_error: true
     cmds:
       - sh -c "rm -rf ./.deno"
@@ -192,43 +211,20 @@ tasks:
       - sh -c "rm -rf ./server-dist"
       - sh -c "rm -rf ./src-tauri/target"
       - sh -c "rm -rf ./src-ui/.vite"
-
-  clean:posix:
-    platforms: [linux, darwin]
-    internal: true
-    ignore_error: true
-    cmds:
-      - killall memospot || true
-      - killall memos || true
-  clean:windows:
-    platforms: [windows]
-    internal: true
-    ignore_error: true
-    cmds:
-      - taskkill /f /t /im memospot.exe || true
-      - taskkill /f /t /im memos.exe || true
   ##### /Clean #####
 
   ##### Miscellanea #####
   sccache:clear:
     desc: Clear sccache cache
+    ignore_error: true
     cmds:
-      - sccache --show-stats || true
-      - sccache --stop-server || true
-      - sccache --zero-stats || true
-      - sccache --start-server || true
-      - sccache --show-stats || true
+      - sccache --stop-server
+      - sh -c "rm -rf ./.sccache"
   sccache:stats:
     desc: Show sccache stats
     silent: true
     cmds:
-      - |
-        if ! [ -z {{.RUSTC_WRAPPER}} ]; then
-          export RUSTC_WRAPPER={{.RUSTC_WRAPPER}};
-          sccache --show-stats
-          exit 0
-        fi
-        echo "sccache not available"
+      - sccache --show-stats
 
   ##### Code Lint #####
   lint:
