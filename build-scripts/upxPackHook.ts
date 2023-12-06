@@ -3,7 +3,7 @@
  * deno run -A ./build-scripts/upxPackHook.ts
  */
 
-import { runSync, findRepositoryRoot } from "./common.ts";
+import { findRepositoryRoot, runSync } from "./common.ts";
 import type { UpxOptions } from "./upxPackHook.d.ts";
 
 const filesToPack = [

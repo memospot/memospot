@@ -3,7 +3,7 @@
  * deno run -A ./build-scripts/downloadMemosBuildsHook.ts
  */
 
-import type { GitHubRelease, GitHubAsset } from "./downloadMemosBuildsHook.d.ts";
+import type { GitHubAsset, GitHubRelease } from "./downloadMemosBuildsHook.d.ts";
 import { findRepositoryRoot } from "./common.ts";
 import { crypto, encodeHex, existsSync } from "./deps.ts";
 
