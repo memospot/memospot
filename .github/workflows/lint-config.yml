@@ -3,24 +3,20 @@ name: Lint config files
 on:
   pull_request:
     branches:
-      - main
-      - dev
-      - "release/*.*.*"
+      - "*"
     paths:
       - "**.toml"
 
   push:
     branches:
-      - main
-      - dev
-      - "release/*.*.*"
+      - "*"
     paths:
       - "**.toml"
 
   workflow_dispatch:
 
 env:
-  CARGO_TERM_COLOR: always
+  DPRINT_CACHE_DIR: ./.dprint
 
 jobs:
   taplo:
@@ -35,7 +31,14 @@ jobs:
         with:
           repo: go-task/task
           cache: enable
-          tag: "v3.31.0"
+          tag: "v3.32.0"
+
+      - name: Install dprint
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: dprint/dprint
+          cache: enable
+          tag: "0.43.2"
 
       - name: Install Taplo
         run: >
@@ -43,6 +46,18 @@ jobs:
           | gzip -d -
           | install -m 755 /dev/stdin /usr/local/bin/taplo
         working-directory: ./src-tauri
+
+      - name: Set date string
+        shell: bash
+        run: |
+          echo DATE_STRING=$(date +'%Y%m%d') >> $GITHUB_ENV
+
+      - name: Cache dprint plugins
+        uses: actions/cache@v3
+        with:
+          path: ./.dprint
+          key: cache-dprint-${{ env.DATE_STRING }}
+          enableCrossOsArchive: true
 
       - name: lint config
         run: task lint:config
