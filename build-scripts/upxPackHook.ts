@@ -1,6 +1,6 @@
 /*
  * This script runs before `Tauri bundle` step.
- * deno run -A .\src-tauri\scripts\upxPackHook.ts
+ * deno run -A ./build-scripts/upxPackHook.ts
  */
 
 import { runSync, findRepositoryRoot } from "./common.ts";

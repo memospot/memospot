@@ -46,7 +46,7 @@ Deno.test("upxPackHook", async (t) => {
     });
 
     await t.step("validate error on non-existing upx", () => {
-        const expected = "program not found";
+        const expected = "`UPX pack` failed";
         const upxOptions: UpxOptions = {
             bin: "non-existing-upx",
             flags: [],

@@ -1,16 +1,18 @@
 /*
  * This script runs before `Tauri build` step.
- * deno run -A .\src-tauri\scripts\downloadMemosBuildsHook.ts
+ * deno run -A ./build-scripts/downloadMemosBuildsHook.ts
  */
+
+import type { GitHubRelease, GitHubAsset } from "./downloadMemosBuildsHook.d.ts";
 import { findRepositoryRoot } from "./common.ts";
+import { crypto, encodeHex, existsSync } from "./deps.ts";
+
 import { Readable } from "node:stream";
 import { finished } from "node:stream/promises";
 import * as fs from "node:fs";
-import * as crypto from "node:crypto";
-import process from "node:process";
+
 // @deno-types="npm:@types/decompress"
 import decompress from "npm:decompress";
-import type { GitHubRelease, GitHubAsset } from "./downloadMemosBuildsHook.d.ts";
 
 /**
  * Convert a GOOS-GOARCH build file name to a Rust target triple.
@@ -148,7 +150,7 @@ async function downloadServerBinaries() {
         const downloadUrl = file.browser_download_url as string;
         const fileName = file.name;
         const filePath = `./server-dist/${fileName}`;
-        const fileExists = (await fs).existsSync(filePath);
+        const fileExists = existsSync(filePath, { isFile: true });
         if (!fileExists) {
             console.log(`Downloading ${fileName}...`);
             const res = await fetch(downloadUrl);
@@ -177,16 +179,18 @@ async function downloadServerBinaries() {
         fileHashes[fileName] = hash;
     }
 
-    // console.log(fileHashes);
-
     for (const file of selectedFiles) {
         const fileName = file.name;
         console.log(`Checking hash for ${fileName}...`);
 
         const filePath = `./server-dist/${fileName}`;
         // resolve path
-        const fileBuffer = (await fs).readFileSync(filePath);
-        const fileHash = crypto.createHash("sha256").update(fileBuffer).digest("hex");
+        const fileBuffer = Deno.readFileSync(filePath);
+
+        const fileHash = await crypto.subtle.digest("SHA-256", fileBuffer).then((hash) => {
+            return encodeHex(new Uint8Array(hash));
+        });
+
         console.log(`Hash: ${fileHash}`);
         if (fileHash !== fileHashes[fileName]) {
             throw new Error(`Hash mismatch for ${fileName}`);
@@ -195,9 +199,9 @@ async function downloadServerBinaries() {
 
     // extract files
     const extractDir = "./server-dist/extracted";
-    const extractDirExists = fs.existsSync(extractDir);
+    const extractDirExists = existsSync(extractDir, { isDirectory: true });
     if (!extractDirExists) {
-        fs.mkdirSync(extractDir);
+        Deno.mkdirSync(extractDir);
     }
 
     for (const file of selectedFiles) {
@@ -212,39 +216,28 @@ async function downloadServerBinaries() {
 
         const exe = fileName.includes("windows") ? ".exe" : "";
 
-        // rename memos binary to a target triple
         const triplet = makeTripletFromFileName(fileName);
+        Deno.renameSync(`${extractDir}/memos${exe}`, `./server-dist/memos-${triplet}${exe}`);
 
-        fs.renameSync(`${extractDir}/memos${exe}`, `./server-dist/memos-${triplet}${exe}`);
-        fs.rmSync(extractDir, { recursive: true });
-        fs.rmSync(filePath);
+        Deno.removeSync(extractDir, { recursive: true });
+        Deno.removeSync(filePath);
     }
 }
 
 async function main() {
     const repoRoot = findRepositoryRoot();
     console.log(`Repository root is \`${repoRoot}\``);
-    process.chdir(repoRoot);
-    console.log("Running `before build` hooks...");
+    Deno.chdir(repoRoot);
+    console.log("Running pre-build hook `Download Memos Builds` ...");
 
     const serverDistDir = "./server-dist";
-    const serverDistDirExists = fs.existsSync(serverDistDir);
+    const serverDistDirExists = existsSync(serverDistDir, { isDirectory: true });
     if (!serverDistDirExists) {
-        fs.mkdirSync(serverDistDir);
+        Deno.mkdirSync(serverDistDir, { recursive: true, mode: 0o755 });
     }
 
     await downloadServerBinaries();
 }
-//     const rustInfo = (await execa("rustc", ["-vV"])).stdout;
-//     const targetTriple = /host: (\S+)/g.exec(rustInfo)[1];
-//     if (!targetTriple) {
-//         console.error("Failed to determine platform target triple");
-//     }
-//     fs.renameSync(
-//         `src-tauri/binaries/sidecar${extension}`,
-//         `src-tauri/binaries/sidecar-${targetTriple}${extension}`,
-//     );
-// }
 
 main().catch((e) => {
     throw e;
