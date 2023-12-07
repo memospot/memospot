@@ -9,6 +9,7 @@ env:
   CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: short
+  RUSTFLAGS: -Copt-level=0
   RUSTC_WRAPPER: sccache
   TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
 
@@ -38,6 +39,12 @@ jobs:
     runs-on: ${{ matrix.platform.runner }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Disable initramfs and man-db update (Ubuntu)
+        if: matrix.platform.os == 'linux'
+        run: |
+          sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
+          sudo rm -f /var/lib/man-db/auto-update
 
       - if: ${{ matrix.platform.os == 'linux' }}
         name: Install Ubuntu dependencies
@@ -113,12 +120,6 @@ jobs:
         with:
           cache-on-failure: true
 
-      - name: Disable initramfs and man-db update (Ubuntu)
-        if: matrix.platform.os == 'linux'
-        run: |
-          sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
-          sudo rm -f /var/lib/man-db/auto-update
-
       - name: Cache memos builds
         uses: actions/cache@v3
         with:
@@ -131,11 +132,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          tagName: v__VERSION__-dev
+          releaseName: "Memospot v__VERSION__-dev"
+          releaseBody: |
+            This is a development build.
+
+            See the assets section below to download the app.
+          releaseDraft: true
+          prerelease: true
           args: --target ${{ matrix.platform.rust_target }}
 
       - name: Cleanup sccache
         working-directory: ${{ github.workspace }}
         shell: bash
         run: |
-          sccache --show-stats
           sccache --stop-server
