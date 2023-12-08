@@ -144,6 +144,11 @@ tasks:
       - taskkill /f /t /im memospot.exe
       - taskkill /f /t /im memos.exe
 
+  update-deno-lock:
+    desc: Update Deno lock file
+    cmds:
+      - deno cache --reload --lock=deno.lock --lock-write ./build-scripts/deps.ts
+
   update-deps:
     desc: Update project dependencies
     cmds:
