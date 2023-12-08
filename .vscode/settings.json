@@ -22,9 +22,9 @@
   },
   "code-runner.cwd": "${workspaceFolder}",
   "code-runner.executorMapByGlob": {
-    "**/*.test.ts": "cd $dir ; deno test -A $fileName",
-    "**/*.ts": "cd $dir ; deno run -A $fileName",
-    "**/*.{toml,json,jsonc,yml,yaml}|.dprint.jsonc": "cd $dir ; dprint check $fileName && echo \"$fileName is properly formatted.\""
+    "**/*.test.ts": "task coderunner:deno:test -- $fullFileName",
+    "**/*.ts": "task coderunner:deno -- $fullFileName",
+    "**/*.{toml,json,jsonc,yml,yaml}|.dprint.jsonc": "task coderunner:dprint:check -- $fullFileName && echo \"$fileName is properly formatted.\""
   },
   "code-runner.ignoreSelection": true,
   "deno.enable": true,

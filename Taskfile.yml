@@ -94,6 +94,22 @@ tasks:
       - deno run -A ./build-scripts/upxPackHook.ts
   ##### /Build Hooks #####
 
+  #### Code runner ####
+  # Used to overcome limitations of code-runner vscode extension
+  coderunner:deno:
+    desc: Run a script with Deno
+    cmds:
+      - deno run -A {{ .CLI_ARGS }}
+  coderunner:deno:test:
+    desc: Test a script with Deno
+    cmds:
+      - deno test -A {{ .CLI_ARGS }}
+  coderunner:dprint:check:
+    desc: Run dprint check
+    cmds:
+      - cd "{{ trimAll "'" (osDir .CLI_ARGS) }}"; dprint check {{ trimAll "'" (osBase .CLI_ARGS) }}
+  #### /Code runner ####
+
   ##### Tests #####
   test:
     desc: Run all tests
