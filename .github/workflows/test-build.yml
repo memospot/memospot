@@ -8,9 +8,10 @@ on:
 env:
   CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
+  DENO_DIR: ${{github.workspace}}/.deno
   RUST_BACKTRACE: short
-  RUSTFLAGS: -Copt-level=0
   RUSTC_WRAPPER: sccache
+  RUSTFLAGS: -Copt-level=1 -Cstrip=symbols
   SCCACHE_GHA_ENABLED: false
   TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
 
@@ -111,13 +112,15 @@ jobs:
       - name: Setup Cargo cache
         uses: swatinem/rust-cache@v2
         with:
+          prefix-key: cargo-${{ matrix.platform.rust_target }}
           cache-on-failure: true
+          cache-all-crates: true
 
       - name: Cache Deno dependencies
         uses: actions/cache@v3
         with:
-          key: cross-denodeps-${{ hashFiles('**/deno.lock') }}
-          restore-keys: cross-denodeps-
+          key: denodeps-cross-${{ hashFiles('**/deno.lock') }}
+          restore-keys: denodeps-cross-
           enableCrossOsArchive: true
           path: |
             /home/runner/.cache/deno/deps/https/deno.land
@@ -134,8 +137,8 @@ jobs:
       - name: Cache memos builds
         uses: actions/cache@v3
         with:
-          key: cache-memosbuilds-${{ env.DATE_STRING }}
-          restore-keys: cache-memosbuilds-
+          key: memosbuilds-cross-${{ env.DATE_STRING }}
+          restore-keys: memosbuilds-cross-
           enableCrossOsArchive: true
           path: ./server-dist
 
@@ -144,8 +147,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: v__VERSION__-dev
-          releaseName: "Memospot v__VERSION__-dev"
+          tagName: v__VERSION__-pre
+          releaseName: "Memospot v__VERSION__-pre"
           releaseBody: |
             See the assets section below to download the app.
           releaseDraft: true
