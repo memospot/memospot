@@ -14,6 +14,8 @@ env:
       sh -c "mkdir -p '$DPRINT_CACHE_DIR'";
       echo "$DPRINT_CACHE_DIR"
 
+  RUSTFLAGS: -C target-cpu=native -Copt-level=0
+
   RUSTC_WRAPPER:
     sh: |
       sccache="{{ osClean "$HOME/.cargo/bin/sccache" }}{{if eq OS "windows"}}.exe{{end}}"
@@ -117,8 +119,6 @@ tasks:
       - A fast Rust build is prioritized.
     deps:
       - task: dev:killprocesses
-    env:
-      RUSTFLAGS: -C target-cpu=native -Copt-level=0
     cmds:
       - cargo tauri dev
       - task: dev:killprocesses
