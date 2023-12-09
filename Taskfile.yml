@@ -312,11 +312,25 @@ tasks:
       - format:cargo
       - format:dprint
   format:cargo:
+    aliases:
+      - fmt:cargo
+      - fmt:rust
+      - format:rust
     desc: Format with cargo fmt
     cmds:
       - cd ./src-tauri; cargo fmt --all
   format:dprint:
+    aliases:
+      - fmt:dprint
+      - fmt:docs
+      - fmt:config
+      - fmt:ui
+      - format:config
+      - format:docs
+      - format:ui
     desc: Format with dprint
+    summary: |
+      - dprint is configured to format json, toml, yaml, html, css, ts and md files.
     cmds:
       - cd ./src-tauri; dprint fmt
       - cd ./src-ui; dprint fmt
@@ -497,15 +511,9 @@ tasks:
         cargo install sccache --locked;
   ##### /Developer Environment Setup #####
   ### Git Actions ###
-  prepush:
-    desc: Run all checks before pushing changes
-    cmds:
-      - cd ./src-tauri; cargo generate-lockfile
-      - task: lint
-      - task: format
-
   checkrepo:
     desc: Check if git is in a clean state.
+    silent: true
     cmds:
       - lsf=$(git ls-files --deleted --modified --others --exclude-standard -- :/) && [ -z "$lsf" ] || (echo "Repository is not clean." && exit 1)
       - git diff-index --quiet --cached HEAD -- || (echo "Files are staged." && exit 1)
@@ -513,7 +521,17 @@ tasks:
       - echo "Repository is clean."
 
   bumpversion:
+    desc: Bump version
+    summary: |
+      - This will bump the version in `src-tauri/Cargo.toml` and `src-tauri/Tauri.toml`.
+      - It will also run `task lint:toml` and `task format:dprint` to ensure the files are valid.
+    cmds:
+      - task: internal:bumpversion
+        vars:
+          NEW_VERSION: "{{ .CLI_ARGS }}"
+  internal:bumpversion:
     internal: true
+    silent: true
     cmds:
       - cd ./src-tauri; cargo set-version --locked {{.NEW_VERSION}}
       - sh -c "sed -i 's#Memospot/[0-9]\+\.[0-9]\+\.[0-9]\+"#Memospot/{{.NEW_VERSION}}"#' ./src-tauri/Tauri.toml"
@@ -523,7 +541,7 @@ tasks:
       - git add ./src-tauri/Tauri.toml
       - git add ./src-tauri/Cargo.toml
       - git add ./src-tauri/Cargo.lock
-      - git commit -am "Bump version to v{{.NEW_VERSION}}"
+      - git commit -m "Bump version to v{{.NEW_VERSION}}"
     requires:
       vars: [NEW_VERSION]
 
@@ -534,9 +552,8 @@ tasks:
     summary: |
       - This will trigger a test build on GitHub Actions.
     cmds:
-      - task: bumpversion
+      - task: internal:bumpversion
         vars:
           NEW_VERSION: "{{ .CLI_ARGS }}"
-      - task: prepush
       - git tag -a v{{.CLI_ARGS}} -m "Push v{{.CLI_ARGS}}"
       - git push origin --tags
