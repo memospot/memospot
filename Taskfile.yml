@@ -2,40 +2,32 @@ version: "3"
 env:
   REPO_ROOT:
     sh: |
-      echo {{ osClean "$(git rev-parse --show-toplevel)" }}
+      cd "$(git rev-parse --show-toplevel)";
+      echo "$(pwd)"
 
-  # enable sccache for all tasks, if available
+  DENO_DIR: >-
+    {{ osClean (print .REPO_ROOT "/.deno" ) }}
+
+  DPRINT_CACHE_DIR:
+    sh: |
+      DPRINT_CACHE_DIR="{{ osClean (print .REPO_ROOT "/.dprint" ) }}";
+      sh -c "mkdir -p '$DPRINT_CACHE_DIR'";
+      echo "$DPRINT_CACHE_DIR"
+
   RUSTC_WRAPPER:
     sh: |
-      sccache="{{ fromSlash "$HOME/.cargo/bin/sccache" }}{{if eq OS "windows"}}.exe{{end}}"
+      sccache="{{ osClean "$HOME/.cargo/bin/sccache" }}{{if eq OS "windows"}}.exe{{end}}"
       if [ -z $(command -v $sccache) ]; then
         echo "";
       else
         echo "$sccache";
       fi
-  # scoped sccache dir
+
   SCCACHE_DIR:
     sh: |
-      cd {{ .REPO_ROOT }} ;
-      sh -c "mkdir -p ./.sccache" ;
-      cd ./.sccache ;
-      echo {{ osClean "$(pwd)" }}
-
-  # fast build with only host CPU optimizations
-  RUSTFLAGS: -C target-cpu=native -Copt-level=0
-  DENO_DIR:
-    sh: |
-      cd {{ .REPO_ROOT }} ;
-      sh -c "mkdir -p ./.deno" ;
-      cd ./.deno ;
-      echo {{ osClean "$(pwd)" }}
-  # scoped deno cache dir
-  DPRINT_CACHE_DIR:
-    sh: |
-      cd {{ .REPO_ROOT }} ;
-      sh -c "mkdir -p ./.dprint" ;
-      cd ./.dprint ;
-      echo {{ osClean "$(pwd)" }}
+      SCCACHE_DIR="{{ osClean (print .REPO_ROOT "/.sccache" ) }}";
+      sh -c "mkdir -p '$SCCACHE_DIR'";
+      echo "$SCCACHE_DIR"
 
 tasks:
   ui:dev:
@@ -135,6 +127,8 @@ tasks:
       - A fast Rust build is prioritized.
     deps:
       - task: dev:killprocesses
+    env:
+      RUSTFLAGS: -C target-cpu=native -Copt-level=0
     cmds:
       - cargo tauri dev
       - task: dev:killprocesses
@@ -181,13 +175,12 @@ tasks:
     desc: Generate app icons from `assets/app-icon-lossless.webp`
     cmds:
       - |
-        cd ./src-tauri;
         {{ if eq (env "CI") "true" }}
-        tauri icon ../assets/app-icon-lossless.webp
-        {{ else }}
-        cargo tauri icon ../assets/app-icon-lossless.webp
+        exit 0
         {{ end }}
-      # - sh -c "cp -f ./src-tauri/icons/icon.ico ./src-ui/public/favicon.ico"
+
+        cargo tauri icon ../assets/app-icon-lossless.webp
+      - sh -c "cp -f ./src-tauri/icons/icon.ico ./dist-ui/favicon.ico"
     sources:
       - ./assets/app-icon-lossless.webp
 
@@ -261,7 +254,7 @@ tasks:
     deps:
       - lint:cargo
       - lint:deno
-      - lint:taplo
+      - lint:toml
       - lint:dprint
   lint:cargo:
     desc: lint rust with cargo clippy
@@ -282,7 +275,9 @@ tasks:
     cmds:
       - cd ./src-ui; deno lint
       - cd ./build-scripts; deno lint
-  lint:taplo:
+  lint:toml:
+    aliases:
+      - lint:config
     desc: lint config (also check schemas)
     dir: ./src-tauri
     cmds:
@@ -523,12 +518,11 @@ tasks:
       - cd ./src-tauri; cargo set-version --locked {{.NEW_VERSION}}
       - sh -c "sed -i 's#Memospot/[0-9]\+\.[0-9]\+\.[0-9]\+"#Memospot/{{.NEW_VERSION}}"#' ./src-tauri/Tauri.toml"
       - cd ./src-tauri; cargo generate-lockfile
-      - task: lint:config
-      - task: format:config
+      - task: lint:toml
+      - task: format:dprint
       - git add ./src-tauri/Tauri.toml
       - git add ./src-tauri/Cargo.toml
       - git add ./src-tauri/Cargo.lock
-      - git add Taskfile.yml
       - git commit -am "Bump version to v{{.NEW_VERSION}}"
     requires:
       vars: [NEW_VERSION]
