@@ -9,7 +9,6 @@ env:
   CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
   DENO_DIR: ${{github.workspace}}/.deno
-  PKG_CONFIG_ALLOW_CROSS: 1
   RUST_BACKTRACE: short
   RUSTC_WRAPPER: sccache
   RUSTFLAGS: -Copt-level=1 -Cstrip=symbols
@@ -25,13 +24,6 @@ jobs:
         platform:
           - runner: "ubuntu-20.04"
             rust_target: "x86_64-unknown-linux-gnu"
-
-          - runner: "ubuntu-20.04"
-            rust_target: "arm-unknown-linux-gnueabihf"
-            # should cover ARMv6 and ARMv7
-
-          - runner: "ubuntu-20.04"
-            rust_target: "aarch64-unknown-linux-gnu"
 
           - runner: "macos-11"
             rust_target: "aarch64-apple-darwin"
