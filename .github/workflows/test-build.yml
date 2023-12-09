@@ -25,6 +25,13 @@ jobs:
           - runner: "ubuntu-20.04"
             rust_target: "x86_64-unknown-linux-gnu"
 
+          - runner: "ubuntu-20.04"
+            rust_target: "arm-unknown-linux-gnueabihf"
+            # should cover ARMv6 and ARMv7
+
+          - runner: "ubuntu-20.04"
+            rust_target: "aarch64-unknown-linux-gnu"
+
           - runner: "macos-11"
             rust_target: "aarch64-apple-darwin"
 

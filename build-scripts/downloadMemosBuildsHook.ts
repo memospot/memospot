@@ -105,6 +105,8 @@ async function downloadServerBinaries() {
         "memos-*-darwin-arm64.tar.gz",
         "memos-*-darwin-x86_64.tar.gz",
         "memos-*-linux-x86_64.tar.gz",
+        "memos-*-linux-arm64.tar.gz",
+        "memos-*-linux-armv6l.tar.gz",
         "memos-*-windows-x86_64.zip",
     ];
 
