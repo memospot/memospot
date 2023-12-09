@@ -11,6 +11,7 @@ env:
   RUST_BACKTRACE: short
   RUSTFLAGS: -Copt-level=0
   RUSTC_WRAPPER: sccache
+  SCCACHE_GHA_ENABLED: false
   TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
 
 jobs:
@@ -80,30 +81,8 @@ jobs:
           cache: enable
           tag: "v3.32.0"
 
-      - if: ${{ runner.os == 'Linux' }}
-        name: "[Linux] Install sccache"
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
-        with:
-          repo: mozilla/sccache
-          cache: enable
-          tag: "v0.7.4"
-          binaries-location: "sccache-dist-v0.7.4-x86_64-unknown-linux-musl"
-      - if: ${{ runner.os == 'macOS' }}
-        name: "[macOS] Install sccache"
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
-        with:
-          repo: mozilla/sccache
-          cache: enable
-          tag: "v0.7.4"
-          binaries-location: "sccache-v0.7.4-x86_64-apple-darwin"
-      - if: ${{ runner.os == 'Windows' }}
-        name: "[Windows] Install sccache"
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
-        with:
-          repo: mozilla/sccache
-          cache: enable
-          tag: "v0.7.4"
-          binaries-location: "sccache-v0.7.4-x86_64-pc-windows-msvc"
+      - name: Install sccache
+        uses: mozilla-actions/sccache-action@v0.0.3
 
       - name: Initialize sccache environment
         shell: bash

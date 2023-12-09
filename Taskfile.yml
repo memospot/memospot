@@ -180,7 +180,13 @@ tasks:
   gen:icons:
     desc: Generate app icons from `assets/app-icon-lossless.webp`
     cmds:
-      - cd ./src-tauri; cargo tauri icon ../assets/app-icon-lossless.webp
+      - |
+        cd ./src-tauri;
+        {{ if eq (env "CI") "true" }}
+        tauri icon ../assets/app-icon-lossless.webp
+        {{ else }}
+        cargo tauri icon ../assets/app-icon-lossless.webp
+        {{ end }}
       # - sh -c "cp -f ./src-tauri/icons/icon.ico ./src-ui/public/favicon.ico"
     sources:
       - ./assets/app-icon-lossless.webp
