@@ -30,23 +30,6 @@ env:
       echo "$SCCACHE_DIR"
 
 tasks:
-  ui:dev:
-    desc: Run Vite front-end dev server with Deno
-    summary: |
-      - This will start the front-end in development mode.
-      - Default address: http://localhost:5173
-    cmds:
-      - deno task dev
-
-  ui:build:
-    desc: Run Vite front-end build with Deno
-    cmds:
-      - deno task build
-    sources:
-      - "./src-ui/src/**/*"
-    generates:
-      - "./dist-ui/**/*"
-
   download-memos-binaries:
     desc: Download Memos server binaries
     summary: |
@@ -66,7 +49,7 @@ tasks:
     desc: Before dev scripts
     cmds:
       - task: download-memos-binaries
-      - task: ui:dev
+      - task: dev:ui
 
   tauri:hook:before-build:
     desc: Before build scripts
@@ -75,7 +58,7 @@ tasks:
       - Download latest versions of Memos server binaries to `server-dist/`
     cmds:
       - task: gen:icons
-      - task: ui:build
+      - task: build:ui
       - task: download-memos-binaries
 
   tauri:hook:before-bundle:
@@ -119,6 +102,13 @@ tasks:
   ##### /Tests #####
 
   ##### Development #####
+  dev:ui:
+    desc: Run Vite front-end dev server with Deno
+    summary: |
+      - This will start the front-end in development mode.
+      - Default address: http://localhost:5173
+    cmds:
+      - deno task dev
   dev:
     desc: Run the app in development mode
     summary: |
@@ -179,14 +169,23 @@ tasks:
         exit 0
         {{ end }}
 
-        cargo tauri icon ../assets/app-icon-lossless.webp
-      - sh -c "cp -f ./src-tauri/icons/icon.ico ./dist-ui/favicon.ico"
+        cargo tauri icon ./assets/app-icon-lossless.webp
+        sh -c "cp -f ./src-tauri/icons/icon.ico ./src-ui/public/favicon.ico"
     sources:
       - ./assets/app-icon-lossless.webp
 
   ##### /Development #####
 
   ##### Build #####
+  build:ui:
+    desc: Run build front-end with Deno and Vite
+    cmds:
+      - deno task build
+    sources:
+      - "./src-ui/src/**/*"
+    generates:
+      - "./dist-ui/**/*"
+
   build:
     desc: Build the app for production
     summary: |
