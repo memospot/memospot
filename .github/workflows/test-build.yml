@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - runner: "ubuntu-20.04"
+          - runner: "ubuntu-22.04"
             rust_target: "x86_64-unknown-linux-gnu"
 
           - runner: "macos-11"
