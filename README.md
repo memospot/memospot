@@ -48,6 +48,18 @@ Download the latest release for your platform from the [releases page](https://g
 >
 > - On macOS, you may need to [allow the app to run](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac) first.
 
+## Manual server update
+
+Download the latest server release from [memos-builds](https://github.com/lincolnthalles/memos-builds) and replace the `memos` binary in the installation folder.
+
+### Windows Updater script
+
+Open Powershell and run the following command:
+
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lincolnthalles/memospot/main/memos-server-updater.ps1'))
+```
+
 ## Data Portability
 
 If you plan to move your Memos instance to Docker in the future, keep the object storage setting at the default option `Database` for a drop-in migration. Just move `memos_prod.db` to the Docker volume and that's it.
