@@ -43,22 +43,21 @@ if ($MemospotPath.StartsWith($Env:ProgramFiles)) {
   $LastDebugPreference = $DebugPreference
   $DebugPreference = 'SilentlyContinue'
   if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-Host "Memospot was installed system-wide with the MSI installer. Administrator access is required to update files." -f Yellow
+    Write-Host @"
 
-    $runningOnWt = ($null -ne $env:WT_SESSION)
-    $attachedTerminal = ($null -ne $env:TERM_PROGRAM)
-    if (($runningOnWt) -and (-not $attachedTerminal)) {
-      Start-Process wt "new-tab -p `"Windows Powershell`" powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
-      Exit 0
-    }
+    Memospot was installed system-wide with the MSI installer.
 
-    Start-Process (Get-Process -Id $pid).Path "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs;
-    Exit 0
-  }
-  else {
-    Write-Host "This script is running with administrator access." -f Green
+    Administrator access is required to update files on the Program Files folder.
+
+    Please launch Powershell or Windows Terminal as Administrator and run this script again.
+
+"@ -f Yellow
+    Write-Host "`n-> Press any key to exit <-`n" -f Cyan
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    Exit 1
   }
   $DebugPreference = $LastDebugPreference
+  Write-Host "This script is running with administrator access." -f Green
 }
 
 if ($PSVersionTable.PSVersion.Major -lt 6) {
@@ -264,6 +263,9 @@ Remove-Item -Path $ZippedRelease -Force -ErrorAction SilentlyContinue
 
 $readmeFile = [IO.Path]::Combine($MemospotPath, "README.md")
 Remove-Item -Path $readmeFile -Force -ErrorAction SilentlyContinue
+
+$licenseFile = [IO.Path]::Combine($MemospotPath, "LICENSE")
+Remove-Item -Path $licenseFile -Force -ErrorAction SilentlyContinue
 
 Write-Host "Unblocking file: $memosBin" -f Cyan
 Unblock-File -Path $memosBin -ErrorAction SilentlyContinue
