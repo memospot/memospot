@@ -117,6 +117,7 @@ if ([String]::IsNullOrEmpty($HostOS)) {
 }
 
 ##
+$ProgressPreference = 'SilentlyContinue'
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;
 $releases = "https://api.github.com/repos/$GitHubRepo/releases/latest"
 $latest = (Invoke-WebRequest -Uri $releases -UseBasicParsing -ErrorAction Stop | ConvertFrom-Json)[0]
@@ -141,7 +142,7 @@ Write-Host "Release SHA256SUMS: $($sha256Sums)"
 Write-Host "`nNote that this script will not check whether you actually need to update the Memos server.
 The latest available version is always downloaded." -f Yellow
 
-Write-Host "Press any key to continue..."
+Write-Host "`n-> Press any key to continue <-`n" -f Cyan
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 
 $ZippedRelease = [IO.Path]::Combine($MemospotPath, $matchedAsset.name)
@@ -179,7 +180,6 @@ if (-not [IO.File]::Exists($ZippedRelease)) {
   Exit 1
 }
 
-# check hashes
 if ([String]::IsNullOrEmpty($sha256Sums)) {
   Write-Host "Unable to find SHA256SUMS!" -f Red
   Exit 1
