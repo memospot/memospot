@@ -40,15 +40,25 @@ else {
 }
 
 if ($MemospotPath.StartsWith($Env:ProgramFiles)) {
+  $LastDebugPreference = $DebugPreference
   $DebugPreference = 'SilentlyContinue'
   if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Write-Host "Memospot was installed system-wide with the MSI installer. Administrator access is required to update files." -f Yellow
+
+    $runningOnWt = ($null -ne $env:WT_SESSION)
+    $attachedTerminal = ($null -ne $env:TERM_PROGRAM)
+    if (($runningOnWt) -and (-not $attachedTerminal)) {
+      Start-Process wt "new-tab -p `"Windows Powershell`" powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+      Exit 0
+    }
+
     Start-Process (Get-Process -Id $pid).Path "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs;
-    Exit 0;
+    Exit 0
   }
   else {
     Write-Host "This script is running with administrator access." -f Green
   }
+  $DebugPreference = $LastDebugPreference
 }
 
 if ($PSVersionTable.PSVersion.Major -lt 6) {
@@ -259,3 +269,6 @@ Write-Host "Unblocking file: $memosBin" -f Cyan
 Unblock-File -Path $memosBin -ErrorAction SilentlyContinue
 
 Write-Host "`nMemos server successfully updated to $tagName" -f Green
+
+Write-Host "`n-> Press any key to exit <-`n" -f Cyan
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
