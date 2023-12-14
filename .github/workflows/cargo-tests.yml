@@ -10,6 +10,7 @@ on:
       - "**/*.rs"
       - "**/Cargo.*"
       - "**/Tauri.toml"
+
   push:
     branches:
       - main
@@ -19,8 +20,10 @@ on:
       - "src-tauri/**/*.rs"
       - "src-tauri/**/Cargo.*"
       - "src-tauri/**/Tauri.toml"
+
   schedule:
     - cron: "0 12 * * 6"
+
   workflow_dispatch:
 
 env:
@@ -58,7 +61,7 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - runner: "ubuntu-20.04"
+          - runner: "ubuntu-22.04"
             rust_target: "x86_64-unknown-linux-gnu"
 
           - runner: "macos-11"

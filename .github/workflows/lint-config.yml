@@ -5,18 +5,18 @@ on:
     branches:
       - "*"
     paths:
-      - "**.toml"
+      - "**/*.toml"
 
   push:
     branches:
       - "*"
     paths:
-      - "**.toml"
+      - "**/*.toml"
 
   workflow_dispatch:
 
 env:
-  DPRINT_CACHE_DIR: ./.dprint
+  DPRINT_CACHE_DIR: ${{github.workspace}}/.dprint
 
 jobs:
   taplo:
@@ -58,6 +58,7 @@ jobs:
           path: ./.dprint
           key: cache-dprint-${{ env.DATE_STRING }}
           enableCrossOsArchive: true
+          restore-keys: cache-dprint-
 
       - name: lint config
-        run: task lint:config
+        run: task ci:lint:config

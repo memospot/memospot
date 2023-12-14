@@ -1,0 +1,75 @@
+name: Deno Tests
+
+on:
+  pull_request:
+    branches:
+      - "*"
+    paths:
+      - "**/*.ts"
+      - "**/*.tsx"
+      - "**/*.cts"
+      - "**/*.mts"
+      - "**/deno.jsonc"
+      - "**/deno.lock"
+
+  push:
+    branches:
+      - "*"
+    paths:
+      - "**/*.ts"
+      - "**/*.tsx"
+      - "**/*.cts"
+      - "**/*.mts"
+      - "**/deno.jsonc"
+      - "**/deno.lock"
+
+  workflow_dispatch:
+
+env:
+  DENO_DIR: ${{github.workspace}}/.deno
+  DPRINT_CACHE_DIR: ${{github.workspace}}/.dprint
+
+jobs:
+  deno-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - runner: "ubuntu-22.04"
+          - runner: "macos-11"
+          - runner: "windows-2019"
+
+    runs-on: ${{ matrix.platform.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Task
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: go-task/task
+          cache: enable
+          tag: "v3.32.0"
+
+      - name: Cache Deno dependencies
+        uses: actions/cache@v3
+        with:
+          key: denodeps-cross-${{ hashFiles('**/deno.lock') }}
+          restore-keys: denodeps-cross-
+          enableCrossOsArchive: true
+          path: |
+            /home/runner/.cache/deno/deps/https/deno.land
+            ${{github.workspace}}/.deno
+            ${{github.workspace}}/node_modules
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Restore Deno dependencies
+        run: task ci:deno:cache
+
+      - name: Run Deno tests
+        run: task ci:deno:tests
+        continue-on-error: true
+        working-directory: .

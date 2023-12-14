@@ -32,6 +32,25 @@ env:
       echo "$SCCACHE_DIR"
 
 tasks:
+  #### CI ####
+  # Called by GitHub actions
+  ci:deno:cache:
+    cmds:
+      - deno cache --reload --lock=deno.lock ./build-scripts/deps.ts
+  ci:deno:tests:
+    cmds:
+      - task: test:build-scripts
+  ci:lint:config:
+    cmds:
+      - task: lint:toml
+  ci:lint:deno:
+    cmds:
+      - task: lint:deno
+  ci:lint:dprint:
+    cmds:
+      - task: lint:dprint
+  #### /CI ####
+
   download-memos-binaries:
     desc: Download Memos server binaries
     summary: |
@@ -68,7 +87,8 @@ tasks:
     summary: |
       - upx
     cmds:
-      - deno run -A ./build-scripts/upxPackHook.ts
+      []
+      # - deno run -A ./build-scripts/upxPackHook.ts
   ##### /Build Hooks #####
 
   #### Code runner ####
@@ -283,6 +303,9 @@ tasks:
       - taplo lint Tauri.toml
       - taplo lint Cargo.toml
       - taplo lint .rustfmt.toml
+      - dprint check Tauri.toml
+      - dprint check Cargo.toml
+      - dprint check .rustfmt.toml
   lint:dprint:
     desc: lint with dprint
     cmds:
@@ -535,8 +558,8 @@ tasks:
       - cd ./src-tauri; cargo set-version --locked {{.NEW_VERSION}}
       - sh -c "sed -i 's#Memospot/[0-9]\+\.[0-9]\+\.[0-9]\+"#Memospot/{{.NEW_VERSION}}"#' ./src-tauri/Tauri.toml"
       - cd ./src-tauri; cargo generate-lockfile
-      - task: lint:toml
       - task: format:dprint
+      - task: lint:toml
       - git add ./src-tauri/Tauri.toml
       - git add ./src-tauri/Cargo.toml
       - git add ./src-tauri/Cargo.lock

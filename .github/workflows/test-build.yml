@@ -3,6 +3,7 @@ on:
   push:
     tags:
       - "v*"
+
   workflow_dispatch:
 
 env:
@@ -18,19 +19,18 @@ env:
 jobs:
   test-tauri-build:
     name: "Test Build"
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
         platform:
           - runner: "ubuntu-22.04"
             rust_target: "x86_64-unknown-linux-gnu"
-
           - runner: "macos-11"
             rust_target: "aarch64-apple-darwin"
-
           - runner: "macos-11"
             rust_target: "x86_64-apple-darwin"
-
           - runner: "windows-2019"
             rust_target: "x86_64-pc-windows-msvc"
 
@@ -72,8 +72,10 @@ jobs:
         name: "[Windows/Linux] Install UPX"
         uses: crazy-max/ghaction-upx@v3
         with:
-          version: latest
           install-only: true
+      - if: ${{ runner.os != 'macOS' }}
+        name: Check UPX version
+        run: upx --version
 
       - name: Install Task
         uses: jaxxstorm/action-install-gh-release@v1.10.0

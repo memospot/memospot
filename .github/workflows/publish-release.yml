@@ -3,13 +3,17 @@ on:
   push:
     branches:
       - release
+
   workflow_dispatch:
 
 env:
   CARGO_INCREMENTAL: 0
+  CARGO_TERM_COLOR: always
+  DENO_DIR: ${{github.workspace}}/.deno
   RUST_BACKTRACE: short
   RUSTC_WRAPPER: sccache
-  SCCACHE_GHA_ENABLED: true
+  RUSTFLAGS: -Copt-level=3 -Cstrip=symbols -Ccodegen-units=1
+  SCCACHE_GHA_ENABLED: false
   TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
 
 jobs:
@@ -21,68 +25,28 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - os: "macos-latest"
-            rust_target: "x86_64-apple-darwin"
-          - os: "macos-latest"
-            rust_target: "aarch64-apple-darwin"
-          - os: "ubuntu-latest"
+          - runner: "ubuntu-22.04"
             rust_target: "x86_64-unknown-linux-gnu"
-          - os: "windows-latest"
+          - runner: "macos-11"
+            rust_target: "aarch64-apple-darwin"
+          - runner: "macos-11"
+            rust_target: "x86_64-apple-darwin"
+          - runner: "windows-2019"
             rust_target: "x86_64-pc-windows-msvc"
-    runs-on: ${{ matrix.platform.os }}
+
+    runs-on: ${{ matrix.platform.runner }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Task
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
-        with:
-          repo: go-task/task
-          cache: enable
-          tag: "v3.31.0"
-
-      - name: Setup UPX (Windows and Linux only)
-        if: matrix.platform.os != 'macos-latest'
-        uses: crazy-max/ghaction-upx@v3
-        with:
-          version: latest
-          install-only: true
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2.4.0
-        with:
-          version: 8
-
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-          cache: "pnpm"
-          cache-dependency-path: "pnpm-lock.yaml"
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.platform.rust_target }}
-
-      - name: Setup Cargo cache
-        uses: swatinem/rust-cache@v2
-        with:
-          cache-on-failure: true
-
-      - name: Setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.2
-        with:
-          version: "v0.7.3"
-
-      - name: Disable initramfs and man-db update (Ubuntu)
-        if: matrix.platform.os == 'ubuntu-latest'
+      - if: ${{ runner.os == 'Linux' }}
+        name: "[Linux] Disable initramfs and man-db update"
         run: |
           sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
           sudo rm -f /var/lib/man-db/auto-update
 
-      - name: Install Ubuntu dependencies
+      - if: ${{ runner.os == 'Linux' }}
+        name: "[Linux] Install platform dependencies"
         uses: awalsh128/cache-apt-pkgs-action@v1.3.1
-        if: matrix.platform.os == 'ubuntu-latest'
         continue-on-error: true
         with:
           packages: >-
@@ -98,29 +62,93 @@ jobs:
             libappindicator3-dev
           version: 1.0
 
-      - name: Install macOS dependencies
+      - if: ${{ runner.os == 'macOS' }}
+        name: "[macOS] Install platform dependencies"
         uses: maxim-lobanov/setup-xcode@v1
-        if: matrix.platform.os == 'macos-latest'
         with:
           xcode-version: latest-stable
 
-      - name: Install pnpm dependencies
-        run: pnpm install --frozen-lockfile
-
-      - uses: actions/cache/restore@v3
-        id: restore-cache
+      - if: ${{ runner.os != 'macOS' }}
+        name: "[Windows/Linux] Install UPX"
+        uses: crazy-max/ghaction-upx@v3
         with:
-          path: |
-            ./server-dist
-          key: cache-memos-builds-${{ github.run_id }}-${{ github.ref_name }}
+          install-only: true
+      - if: ${{ runner.os != 'macOS' }}
+        name: Check UPX version
+        run: upx --version
+
+      - name: Install Task
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: go-task/task
+          cache: enable
+          tag: "v3.32.0"
+
+      - name: Install sccache
+        uses: mozilla-actions/sccache-action@v0.0.3
+
+      - name: Initialize sccache environment
+        shell: bash
+        run: |
+          echo SCCACHE_CACHE=$(sccache --show-stats | grep Local | cut -d '"' -f2) >> $GITHUB_ENV
+          echo DATE_STRING=$(date +'%Y%m%d') >> $GITHUB_ENV
+          sccache --stop-server
+
+      - name: Setup sccache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.SCCACHE_CACHE }}
+          key: sccache-${{ runner.os }}-0-${{ env.DATE_STRING }}
+          restore-keys: sccache-${{ runner.os }}-0
+
+      - name: Start sccache
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: sccache --start-server
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform.rust_target }}
+
+      - name: Setup Cargo cache
+        uses: swatinem/rust-cache@v2
+        with:
+          prefix-key: cargo-${{ matrix.platform.rust_target }}
+          cache-on-failure: true
+          cache-all-crates: true
+
+      - name: Cache Deno dependencies
+        uses: actions/cache@v3
+        with:
+          key: denodeps-cross-${{ hashFiles('**/deno.lock') }}
+          restore-keys: denodeps-cross-
           enableCrossOsArchive: true
+          path: |
+            /home/runner/.cache/deno/deps/https/deno.land
+            ${{github.workspace}}/.deno
+            ${{github.workspace}}/node_modules
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: Restore Deno dependencies
+        run: deno cache --lock=deno.lock ./build-scripts/deps.ts
+
+      - name: Cache memos builds
+        uses: actions/cache@v3
+        with:
+          key: memosbuilds-cross-${{ env.DATE_STRING }}
+          restore-keys: memosbuilds-cross-
+          enableCrossOsArchive: true
+          path: ./server-dist
 
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          # the action automatically replaces \_\_VERSION\_\_ with the app version
           tagName: v__VERSION__
           releaseName: "Memospot v__VERSION__"
           releaseBody: "See the assets section below to download the app."
@@ -128,9 +156,8 @@ jobs:
           prerelease: false
           args: --target ${{ matrix.platform.rust_target }}
 
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ./server-dist
-          key: cache-memos-builds-${{ github.run_id }}
-          enableCrossOsArchive: true
+      - name: Cleanup sccache
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        run: |
+          sccache --stop-server
