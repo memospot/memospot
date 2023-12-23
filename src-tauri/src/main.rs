@@ -42,7 +42,7 @@ appenders:
     file:
         encoder:
             pattern: "{d(%Y-%m-%d %H:%M:%S)(utc)} - {h({l})}: {m}{n}"
-        path: "%LOGPATH%"
+        path: %LOGPATH%
         kind: rolling_file
         policy:
             trigger:
@@ -50,7 +50,7 @@ appenders:
                 limit: 10 mb
             roller:
                 kind: fixed_window
-                pattern: memos.log.{}.gz
+                pattern: %LOGPATH%.{}.gz
                 count: 5
                 base: 1
 root:
