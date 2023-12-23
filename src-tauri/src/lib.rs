@@ -108,6 +108,11 @@ pub fn get_app_data_path(app_name: &str) -> PathBuf {
         .unwrap_or_default()
 }
 
+/// Check if a path is writable.
+///
+/// If the path is a file, it will be opened with write permissions.
+///
+/// If the path is a directory, a temporary file will be created in it.
 pub fn writable(path: &PathBuf) -> bool {
     if path.is_file() {
         if let Ok(file) = std::fs::OpenOptions::new().write(true).open(path) {
@@ -125,6 +130,9 @@ pub fn writable(path: &PathBuf) -> bool {
         while testfile.exists() {
             testfile.set_extension(&count.to_string());
             count += 1;
+            if count > 100 {
+                return false;
+            }
         }
 
         if let Ok(file) = std::fs::File::create(&testfile) {
