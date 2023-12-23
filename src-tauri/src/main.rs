@@ -41,8 +41,8 @@ static LOGGING_CONFIG_YAML: &str = r#"
 appenders:
     file:
         encoder:
-            pattern: "{d(%Y-%m-%d %H:%M:%S)(utc)} - {h({l})}: {m}{n}"
-        path: %LOGPATH%
+            pattern: "{d(%Y-%m-%d %H:%M:%S)} - {h({l})}: {m}{n}"
+        path: $ENV{MEMOSPOT_DATA}/memos.log
         kind: rolling_file
         policy:
             trigger:
@@ -50,7 +50,7 @@ appenders:
                 limit: 10 mb
             roller:
                 kind: fixed_window
-                pattern: %LOGPATH%.{}.gz
+                pattern: $ENV{MEMOSPOT_DATA}/memos.log.{}.gz
                 count: 5
                 base: 1
 root:
@@ -65,7 +65,7 @@ root:
 /// Return true if logging is enabled
 async fn setup_logger(data_path: &Path) -> bool {
     let log_config: PathBuf = data_path.join("logging_config.yaml");
-    let log_path: PathBuf = data_path.join("memos.log");
+    std::env::set_var("MEMOSPOT_DATA", data_path.to_string_lossy().to_string());
 
     if !std::path::Path::new(&log_config).exists() {
         // logging is disabled
@@ -79,9 +79,7 @@ async fn setup_logger(data_path: &Path) -> bool {
 
     // Logging is enabled, but config is bad
     if let Ok(mut file) = File::create(&log_config) {
-        let config_template = LOGGING_CONFIG_YAML
-            .replace("    ", "  ")
-            .replace("%LOGPATH%", &log_path.to_string_lossy());
+        let config_template = LOGGING_CONFIG_YAML.replace("    ", "  ");
 
         if let Err(e) = file.write_all(config_template.as_bytes()) {
             panic_dialog!(

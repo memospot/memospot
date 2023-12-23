@@ -36,8 +36,8 @@ However, it is possible to log server output to a file.
 appenders:
   file:
     encoder:
-      pattern: "{d(%Y-%m-%d %H:%M:%S)(utc)} - {h({l})}: {m}{n}"
-    path: "memos.log"
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} - {h({l})}: {m}{n}"
+    path: $ENV{MEMOSPOT_DATA}/memos.log
     kind: rolling_file
     policy:
       trigger:
@@ -45,7 +45,7 @@ appenders:
         limit: 10 mb
       roller:
         kind: fixed_window
-        pattern: memos.log.{}.gz
+        pattern: $ENV{MEMOSPOT_DATA}/memos.log.{}.gz
         count: 5
         base: 1
 root:
@@ -54,6 +54,10 @@ root:
   appenders:
     - file
 ```
+
+> If you use this configuration template, you must use absolute paths for the `appenders.file.path` and `appenders.file.policy.roller.pattern` fields, as the working directory of Memospot may be write-protected on some systems.
+>
+> For conveninence, the `$ENV{MEMOSPOT_DATA}` environment variable is available in the configuration file. 
 
 ## Increasing log level
 
