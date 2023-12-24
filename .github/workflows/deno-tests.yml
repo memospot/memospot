@@ -27,7 +27,6 @@ on:
 
 env:
   DENO_DIR: ${{github.workspace}}/.deno
-  DPRINT_CACHE_DIR: ${{github.workspace}}/.dprint
 
 jobs:
   deno-tests:
@@ -48,28 +47,28 @@ jobs:
         with:
           repo: go-task/task
           cache: enable
-          tag: "v3.32.0"
+          tag: "v3.33.1"
+
+      - name: Install Deno
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: denoland/deno
+          cache: enable
+          tag: "v1.39.1"
 
       - name: Cache Deno dependencies
         uses: actions/cache@v3
         with:
           key: denodeps-cross-${{ hashFiles('**/deno.lock') }}
-          restore-keys: denodeps-cross-
+          restore-keys: denodeps-cross
           enableCrossOsArchive: true
           path: |
             /home/runner/.cache/deno/deps/https/deno.land
-            ${{github.workspace}}/.deno
+            ${{ env.DENO_DIR }}
             ${{github.workspace}}/node_modules
-
-      - name: Setup Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.x
 
       - name: Restore Deno dependencies
         run: task ci:deno:cache
 
       - name: Run Deno tests
         run: task ci:deno:tests
-        continue-on-error: true
-        working-directory: .

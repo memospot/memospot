@@ -1,4 +1,4 @@
-import { assertEquals, assertIsError, assertStringIncludes } from "./deps.ts";
+import { assertEquals, assertIsError, assertStringIncludes } from "../deps.ts";
 import { upxPackHook } from "./upxPackHook.ts";
 import type { UpxOptions } from "./upxPackHook.d.ts";
 

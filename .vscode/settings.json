@@ -55,5 +55,6 @@
     "SCCACHE_DIR": "${workspaceFolder}${pathSeparator}.sccache",
     "CARGO_INCREMENTAL": "0"
   },
-  "rust-analyzer.linkedProjects": ["src-tauri/Cargo.toml"]
+  "rust-analyzer.linkedProjects": ["src-tauri/Cargo.toml"],
+  "rust-analyzer.checkOnSave": false
 }

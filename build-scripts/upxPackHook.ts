@@ -8,6 +8,7 @@ import type { UpxOptions } from "./upxPackHook.d.ts";
 
 const filesToPack = [
     "./src-tauri/target/release/memospot" + (Deno.build.os === "windows" ? ".exe" : ""),
+    "./server-dist/memos-x86_64-unknown-linux-gnu",
 ];
 
 const upxOptions: UpxOptions = {

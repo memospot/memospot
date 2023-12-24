@@ -1,4 +1,4 @@
-#:schema https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v1.5.7/core/tauri-config-schema/schema.json
+#:schema https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v1.5.8/core/tauri-config-schema/schema.json
 # See https://tauri.app/v1/references/configuration-files/
 
 [build]

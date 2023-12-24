@@ -1,4 +1,4 @@
-import { assertEquals } from "./deps.ts";
+import { assertEquals } from "../deps.ts";
 import { makeTripletFromFileName } from "./downloadMemosBuildsHook.ts";
 
 Deno.test("makeTripletFromFileName", () => {

@@ -1,4 +1,4 @@
-import { assert, assertThrows, isAbsolute, osPaths } from "./deps.ts";
+import { assert, assertThrows, isAbsolute, osPaths } from "../deps.ts";
 import { findRepositoryRoot } from "./common.ts";
 
 Deno.test("find repository root", async (t) => {

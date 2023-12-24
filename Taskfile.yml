@@ -36,7 +36,7 @@ tasks:
   # Called by GitHub actions
   ci:deno:cache:
     cmds:
-      - deno cache --reload --lock=deno.lock ./deps.ts
+      - deno cache --lock=deno.lock ./deps.ts
   ci:deno:tests:
     cmds:
       - task: test:build-scripts
@@ -65,6 +65,16 @@ tasks:
       - test -f ./server-dist/memos-x86_64-apple-darwin
       - test -f ./server-dist/memos-aarch64-apple-darwin
 
+  upx:
+    desc: Compress built binaries with upx
+    summary: |
+      - UPX is intentionally disabled for Windows to reduce AV false positives.
+      - macOS is not supported by UPX.
+    platforms: [linux]
+    ignore_error: true
+    cmds:
+      - deno run -A ./build-scripts/upxPackHook.ts
+
   ##### Tauri Build Hooks #####
   tauri:hook:before-dev:
     desc: Before dev scripts
@@ -87,8 +97,7 @@ tasks:
     summary: |
       - upx
     cmds:
-      []
-      # - deno run -A ./build-scripts/upxPackHook.ts
+      - task: upx
   ##### /Build Hooks #####
 
   #### Code runner ####
@@ -218,6 +227,7 @@ tasks:
       - task: sccache:stats
       - task: postbuild
   postbuild:
+    desc: Move relevant files to `build/`
     ignore_error: true
     cmds:
       - sh -c "mkdir -p ./build"
@@ -227,6 +237,8 @@ tasks:
       - sh -c "mv -f ./src-tauri/target/release/memospot.exe ./build/"
       - sh -c "mv -f ./src-tauri/target/release/bundle/nsis/* ./build/"
       - sh -c "mv -f ./src-tauri/target/release/bundle/msi/* ./build/"
+      - sh -c "mv -f ./src-tauri/target/release/bundle/deb/*.deb ./build/"
+      - sh -c "mv -f ./src-tauri/target/release/bundle/appimage/*.AppImage ./build/"
 
   ##### /Build #####
 
@@ -293,12 +305,12 @@ tasks:
     desc: lint config (also check schemas)
     dir: ./src-tauri
     cmds:
-      - taplo lint Tauri.toml
-      - taplo lint Cargo.toml
-      - taplo lint .rustfmt.toml
       - dprint check Tauri.toml
       - dprint check Cargo.toml
       - dprint check .rustfmt.toml
+      - taplo lint Tauri.toml
+      - taplo lint Cargo.toml
+      - taplo lint .rustfmt.toml
   lint:dprint:
     desc: lint with dprint
     cmds:
