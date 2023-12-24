@@ -14,6 +14,10 @@ description = "Memospot is a desktop version of Memos, a beautiful, privacy-firs
 features = ["config-toml"]
 version = "1.5"
 
+[dependencies]
+portpicker = "0.1.1"
+serde_yaml = "0.9.29"
+
 [dependencies.home-dir]
 path = "src/home-dir"
 version = "0.1.1"

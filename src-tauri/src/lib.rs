@@ -1,5 +1,11 @@
 use home_dir::HomeDirExt;
 use native_dialog::{MessageDialog, MessageType};
+use portpicker;
+use serde::Deserialize;
+use serde::Serialize;
+use serde_yaml;
+use std::io;
+use std::io::ErrorKind;
 use std::path::PathBuf;
 
 #[macro_export]
@@ -61,20 +67,104 @@ pub fn confirm_dialog(title: &str, msg: &str, icon: MessageType) -> bool {
         .unwrap()
 }
 
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct MemosCfg {
+    pub port: u16,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct MemospotCfg {
+    pub memos: MemosCfg,
+}
+
+impl Default for MemospotCfg {
+    fn default() -> Self {
+        MemospotCfg {
+            memos: MemosCfg { port: 0 },
+        }
+    }
+}
+
+impl MemospotCfg {
+    pub fn new() -> Self {
+        MemospotCfg::default()
+    }
+}
+
+/// Read configuration from supplied path.
+pub fn read_memospot_config(cfg_path: &PathBuf) -> io::Result<MemospotCfg> {
+    let cfg_file = std::fs::File::open(&cfg_path)?;
+    let yaml: Result<MemospotCfg, serde_yaml::Error> = serde_yaml::from_reader(&cfg_file);
+    drop(cfg_file);
+
+    yaml.map_err(|e| io::Error::new(ErrorKind::InvalidData, e))
+}
+
+/// Save configuration to supplied file.
+///
+/// - If the file does not exist, it will be created.
+/// - If the file exists, it will be overwritten.
+/// - Comments are not preserved.
+pub fn save_memospot_config(cfg_path: &PathBuf, cfg: &MemospotCfg) -> io::Result<()> {
+    if cfg_path.exists() {
+        if cfg_path.is_dir() {
+            return Err(io::Error::new(
+                ErrorKind::InvalidInput,
+                "provided path is a directory",
+            ));
+        }
+
+        if !writable(&cfg_path) {
+            return Err(io::Error::new(
+                ErrorKind::PermissionDenied,
+                "file is not writable",
+            ));
+        }
+    }
+
+    let mut last_error = io::Error::new(ErrorKind::Other, "unknown error");
+    for retry in 0..10 {
+        if retry > 0 {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+
+        let file = std::fs::File::create(&cfg_path);
+        let Ok(writer) = file else {
+            last_error = io::Error::new(ErrorKind::Other, file.unwrap_err());
+            continue;
+        };
+
+        let yaml_writer = serde_yaml::to_writer(&writer, cfg);
+        if let Err(e) = yaml_writer {
+            last_error = io::Error::new(ErrorKind::InvalidData, e);
+            continue;
+        };
+        return Ok(());
+    }
+    Err(last_error)
+}
+
+/// Reset Memospot config to default.
+pub fn reset_memospot_config(cfg_path: &PathBuf) -> io::Result<()> {
+    let default_config = MemospotCfg::default();
+    save_memospot_config(cfg_path, &default_config)
+}
+
 /// Find an open port
-pub fn find_open_port() -> u16 {
-    let mut listener = std::net::TcpListener::bind("127.0.0.1:0");
-    if listener.is_err() {
-        listener = std::net::TcpListener::bind("::1:0");
+pub fn find_open_port(preferred_port: u16) -> io::Result<u16> {
+    if preferred_port != 0 && portpicker::is_free(preferred_port) {
+        return Ok(preferred_port);
     }
 
-    if let Ok(listener) = listener {
-        let port = listener.local_addr().unwrap().port();
-        drop(listener);
-        return port;
+    let free_port = portpicker::pick_unused_port();
+    if let Some(port) = free_port {
+        return Ok(port);
     }
 
-    panic_dialog!("Failed to find open port");
+    Err(io::Error::new(
+        ErrorKind::AddrNotAvailable,
+        "no free port found",
+    ))
 }
 
 /// Get the data path to supplied application name.
@@ -115,9 +205,15 @@ pub fn get_app_data_path(app_name: &str) -> PathBuf {
 /// If the path is a directory, a temporary file will be created in it.
 pub fn writable(path: &PathBuf) -> bool {
     if path.is_file() {
-        if let Ok(file) = std::fs::OpenOptions::new().write(true).open(path) {
-            drop(file);
-            return true;
+        for retry in 0..10 {
+            if retry > 0 {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
+
+            if let Ok(file) = std::fs::OpenOptions::new().write(true).open(path) {
+                drop(file);
+                return true;
+            }
         }
         return false;
     }
@@ -130,15 +226,28 @@ pub fn writable(path: &PathBuf) -> bool {
         while testfile.exists() {
             testfile.set_extension(&count.to_string());
             count += 1;
+
             if count > 100 {
                 return false;
             }
         }
 
-        if let Ok(file) = std::fs::File::create(&testfile) {
-            drop(file);
-            let _ = std::fs::remove_file(&testfile);
-            return true;
+        for retry in 0..10 {
+            if retry > 0 {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
+
+            if let Ok(file) = std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&testfile)
+            {
+                drop(file);
+                if std::fs::remove_file(&testfile).is_err() {
+                    continue;
+                }
+                return true;
+            }
         }
     }
     false
@@ -165,12 +274,18 @@ mod tests {
         env::set_var("LOCALAPPDATA", r"C:\Users\foo\AppData\Local");
 
         let data_path = get_app_data_path("memospot");
-        assert!(data_path == PathBuf::from(r"C:\Users\foo\AppData\Local\memospot"));
+        assert_eq!(
+            data_path,
+            PathBuf::from(r"C:\Users\foo\AppData\Local\memospot")
+        );
 
         remove_envvars();
         env::set_var("APPDATA", r"C:\Users\foo\AppData\Roaming");
         let data_path = get_app_data_path("memospot");
-        assert!(data_path == PathBuf::from(r"C:\Users\foo\AppData\Local\memospot"));
+        assert_eq!(
+            data_path,
+            PathBuf::from(r"C:\Users\foo\AppData\Local\memospot")
+        );
 
         remove_envvars();
         let data_path = get_app_data_path("memospot");
@@ -196,7 +311,7 @@ mod tests {
             drop(f);
 
             assert!(writable(&file));
-            assert!(read_to_string(&file).unwrap() == TEST_CONTENT);
+            assert_eq!(read_to_string(&file).unwrap(), TEST_CONTENT);
 
             fs::remove_file(&file).unwrap();
         } else {

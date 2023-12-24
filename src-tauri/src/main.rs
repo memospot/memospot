@@ -133,6 +133,49 @@ async fn main() {
         );
     }
 
+    let cfg_file = data_path.join("memospot.yaml");
+    if !cfg_file.exists() {
+        if let Err(e) = reset_memospot_config(&cfg_file) {
+            panic_dialog!(
+                "Failed to create config file `{}`:\n{}",
+                cfg_file.to_string_lossy(),
+                e.to_string()
+            );
+        }
+    }
+    if !writable(&cfg_file) {
+        panic_dialog!(
+            "Config file is not writable:\n{}",
+            cfg_file.to_string_lossy()
+        );
+    }
+
+    let mut cfg_reader = read_memospot_config(&cfg_file);
+    if let Err(e) = cfg_reader {
+        if !confirm_dialog(
+            "Configuration Error",
+            &format!(
+                "Failed to parse configuration file:\n`{}`\n\n{}\n\n\
+                Do you want to reset the configuration file and start the application with default settings?",
+                cfg_file.to_string_lossy(),
+                e.to_string()
+            ),
+            MessageType::Warning
+        ) {
+            panic_dialog!("You must fix the config file manually and restart the application.");
+        }
+        if let Err(e) = reset_memospot_config(&cfg_file) {
+            panic_dialog!(
+                "Failed to reset config file `{}`:\n{}",
+                cfg_file.to_string_lossy(),
+                e.to_string()
+            );
+        }
+        cfg_reader = Ok(MemospotCfg::default());
+    }
+    let config = cfg_reader.unwrap();
+    let last_port = config.memos.port;
+
     let db = data_path.join("memos_prod.db");
     if db.exists() && !writable(&db) {
         panic_dialog!("Database is not writable:\n{}", db.to_string_lossy());
@@ -143,17 +186,21 @@ async fn main() {
     info!("Data path: {}", data_path.to_string_lossy());
 
     if !webview::is_available() {
-        if confirm_dialog(
-            "Error",
-            "WebView2 is required for this application to work and it's not available on this system!\n\nDo you want to install it?",
+        if !confirm_dialog(
+            "WebView Error",
+            "WebView is required for this application to work and it's not available on this system!\
+            \n\nDo you want to install it?",
             MessageType::Error,
         ) {
-            let _= webview::install().await;
-            if !webview::is_available() {
-                panic_dialog!("WebView2 is still not available!\n\nPlease install it manually and relaunch the application.");
-            }
-        } else {
             exit(1);
+        }
+
+        let _ = webview::install().await;
+        if !webview::is_available() {
+            panic_dialog!(
+                "WebView is still not available!\n\n\
+            Please install it manually and relaunch the application."
+            );
         }
     }
 
@@ -177,7 +224,23 @@ async fn main() {
     #[cfg(not(dev))]
     static MODE: &str = "prod";
 
-    let open_port = find_open_port();
+    let port = find_open_port(last_port);
+    let Ok(open_port) = port else {
+        panic_dialog!("Failed to find an open port!");
+    };
+
+    if open_port != last_port {
+        let mut cfg = config;
+        cfg.memos.port = open_port;
+        if let Err(e) = save_memospot_config(&cfg_file, &cfg) {
+            panic_dialog!(
+                "Failed to save config file:\n`{}`\n\n{}",
+                cfg_file.to_string_lossy(),
+                e.to_string()
+            );
+        }
+    }
+
     let memos_env_vars: HashMap<String, String> = HashMap::from_iter(vec![
         ("MEMOS_MODE".to_owned(), MODE.to_owned()),
         ("MEMOS_PORT".to_owned(), open_port.to_string()),
