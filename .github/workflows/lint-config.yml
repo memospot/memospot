@@ -31,23 +31,22 @@ jobs:
         with:
           repo: go-task/task
           cache: enable
-          tag: "v3.32.0"
+          tag: "v3.33.1"
 
       - name: Install dprint
         uses: jaxxstorm/action-install-gh-release@v1.10.0
         with:
           repo: dprint/dprint
           cache: enable
-          tag: "0.43.2"
+          tag: "0.44.0"
 
       - name: Install Taplo
         run: >
           curl -fsSL https://github.com/tamasfe/taplo/releases/latest/download/taplo-full-linux-x86_64.gz
           | gzip -d -
           | install -m 755 /dev/stdin /usr/local/bin/taplo
-        working-directory: ./src-tauri
 
-      - name: Set date string
+      - name: Set date string env var
         shell: bash
         run: |
           echo DATE_STRING=$(date +'%Y%m%d') >> $GITHUB_ENV
@@ -55,10 +54,10 @@ jobs:
       - name: Cache dprint plugins
         uses: actions/cache@v3
         with:
-          path: ./.dprint
+          path: ${{ env.DPRINT_CACHE_DIR }}
           key: cache-dprint-${{ env.DATE_STRING }}
           enableCrossOsArchive: true
-          restore-keys: cache-dprint-
+          restore-keys: cache-dprint
 
       - name: lint config
         run: task ci:lint:config
