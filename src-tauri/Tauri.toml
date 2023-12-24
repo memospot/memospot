@@ -52,7 +52,7 @@ icon = [
 ]
 identifier = "com.memospot.app"
 longDescription = "Memospot is a desktop version of Memos, a beautiful markdown-based note-taking service."
-shortDescription = "A markdown-based note-taking service."
+shortDescription = "Memospot - a note-taking application"
 targets = "all"
 
 [tauri.bundle.appimage]
@@ -69,10 +69,12 @@ webviewInstallMode = { silent = false, type = "embedBootstrapper" }
 [tauri.bundle.windows.wix]
 # wix generates a different installer for each language
 language = ["en-US"]
+template = "../installer/wix_template.wxs"
 
 [tauri.bundle.windows.nsis]
 compression = "lzma"
 displayLanguageSelector = true
+installerIcon = "icons/icon.ico"
 installMode = "currentUser"
 languages = [
     "Arabic",
@@ -89,6 +91,7 @@ languages = [
     "TradChinese",
     "Turkish",
 ]
+template = "../installer/nsis_template.nsi"
 
 [tauri.security]
 dangerousUseHttpScheme = true # external images won't load without this
