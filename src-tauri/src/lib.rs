@@ -1,9 +1,7 @@
 use home_dir::HomeDirExt;
 use native_dialog::{MessageDialog, MessageType};
-use portpicker;
 use serde::Deserialize;
 use serde::Serialize;
-use serde_yaml;
 use std::io;
 use std::io::ErrorKind;
 use std::path::PathBuf;
@@ -93,7 +91,7 @@ impl MemospotCfg {
 
 /// Read configuration from supplied path.
 pub fn read_memospot_config(cfg_path: &PathBuf) -> io::Result<MemospotCfg> {
-    let cfg_file = std::fs::File::open(&cfg_path)?;
+    let cfg_file = std::fs::File::open(cfg_path)?;
     let yaml: Result<MemospotCfg, serde_yaml::Error> = serde_yaml::from_reader(&cfg_file);
     drop(cfg_file);
 
@@ -114,7 +112,7 @@ pub fn save_memospot_config(cfg_path: &PathBuf, cfg: &MemospotCfg) -> io::Result
             ));
         }
 
-        if !writable(&cfg_path) {
+        if !writable(cfg_path) {
             return Err(io::Error::new(
                 ErrorKind::PermissionDenied,
                 "file is not writable",
@@ -128,7 +126,7 @@ pub fn save_memospot_config(cfg_path: &PathBuf, cfg: &MemospotCfg) -> io::Result
             std::thread::sleep(std::time::Duration::from_millis(100));
         }
 
-        let file = std::fs::File::create(&cfg_path);
+        let file = std::fs::File::create(cfg_path);
         let Ok(writer) = file else {
             last_error = io::Error::new(ErrorKind::Other, file.unwrap_err());
             continue;

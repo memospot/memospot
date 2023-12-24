@@ -158,7 +158,7 @@ async fn main() {
                 "Failed to parse configuration file:\n`{}`\n\n{}\n\n\
                 Do you want to reset the configuration file and start the application with default settings?",
                 cfg_file.to_string_lossy(),
-                e.to_string()
+                e
             ),
             MessageType::Warning
         ) {
