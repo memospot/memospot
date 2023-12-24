@@ -25,3 +25,13 @@ export { osPaths };
 
 // @deno-types="https://cdn.skypack.dev/fflate@0.8.1/lib/index.d.ts#^"
 // export * as fflate from "https://cdn.skypack.dev/fflate@0.8.0?min#^";
+
+export { Readable } from "node:stream";
+export { finished } from "node:stream/promises";
+export * as fs from "node:fs";
+
+// @deno-types="npm:@types/decompress@4.2.7"
+import decompress from "npm:decompress@4.2.1";
+export { decompress };
+
+export { defineConfig } from "npm:vite@^4.5.1";

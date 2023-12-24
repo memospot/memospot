@@ -1,4 +1,4 @@
-import { defineConfig } from "npm:vite@^4.5.1"
+import { defineConfig } from "../deps.ts";
 
 // https://vitejs.dev/config/
 export default defineConfig({

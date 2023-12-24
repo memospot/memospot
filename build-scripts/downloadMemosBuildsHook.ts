@@ -5,14 +5,14 @@
 
 import type { GitHubAsset, GitHubRelease } from "./downloadMemosBuildsHook.d.ts";
 import { findRepositoryRoot } from "./common.ts";
-import { crypto, encodeHex, existsSync } from "./deps.ts";
+import { crypto, encodeHex, existsSync } from "../deps.ts";
 
-import { Readable } from "node:stream";
-import { finished } from "node:stream/promises";
+import { Readable } from "../deps.ts";
+import { finished } from "../deps.ts";
 import * as fs from "node:fs";
 
-// @deno-types="npm:@types/decompress"
-import decompress from "npm:decompress";
+// @deno-types="../deps.ts"
+import { decompress } from "../deps.ts";
 
 /**
  * Convert a GOOS-GOARCH build file name to a Rust target triple.
