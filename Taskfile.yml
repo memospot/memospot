@@ -320,36 +320,13 @@ tasks:
 
   ##### Code Format #####
   format:
-    desc: Run all formatters in parallel
+    desc: Format repo code with dprint
+    summary: |
+      - dprint is configured to format json, rust, toml, yaml, html, css, typescript and markdown files.
     aliases:
       - fmt
-    deps:
-      - format:cargo
-      - format:dprint
-  format:cargo:
-    aliases:
-      - fmt:cargo
-      - fmt:rust
-      - format:rust
-    desc: Format with cargo fmt
     cmds:
-      - cd ./src-tauri; cargo fmt --all
-  format:dprint:
-    aliases:
-      - fmt:dprint
-      - fmt:docs
-      - fmt:config
-      - fmt:ui
-      - format:config
-      - format:docs
-      - format:ui
-    desc: Format with dprint
-    summary: |
-      - dprint is configured to format json, toml, yaml, html, css, ts and md files.
-    cmds:
-      - cd ./src-tauri; dprint fmt
-      - cd ./src-ui; dprint fmt
-      - cd ./build-scripts; dprint fmt
+      - dprint fmt --diff
 
   ##### /Code Format #####
 

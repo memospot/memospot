@@ -57,7 +57,7 @@ root:
 
 > If you use this configuration template, you must use absolute paths for the `appenders.file.path` and `appenders.file.policy.roller.pattern` fields, as the working directory of Memospot may be write-protected on some systems.
 >
-> For conveninence, the `$ENV{MEMOSPOT_DATA}` environment variable is available in the configuration file. 
+> For conveninence, the `$ENV{MEMOSPOT_DATA}` environment variable is available in the configuration file.
 
 ## Increasing log level
 

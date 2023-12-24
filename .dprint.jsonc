@@ -1,17 +1,19 @@
 {
   "excludes": [
-    "**/node_modules",
-    "**/.deno",
-    "**/target",
-    "**/dist*/*",
-    "deno.lock",
-    "**/*-lock.json"
+    "**/node_modules/*",
+    "**/.deno/*",
+    "**/.dprint/*",
+    "**/.git/*",
+    "**/.sccache/*",
+    "**/target/*",
+    "**/dist*/*"
   ],
   "includes": [
     "**/*.{css,scss,sass,less}",
     "**/*.{html}",
     "**/*.{json,jsonc}",
     "**/*.{md}",
+    "**/*.{rs}",
     "**/*.{toml}",
     "**/*.{ts,tsx}",
     "**/*.{yml,yaml}"
@@ -19,9 +21,18 @@
   "lineWidth": 96,
   "indentWidth": 4,
   "plugins": [
-    "https://plugins.dprint.dev/prettier-0.27.0.json@3557a62b4507c55a47d8cde0683195b14d13c41dda66d0f0b0e111aed107e2fe",
+    "https://plugins.dprint.dev/exec-0.4.4.json@c207bf9b9a4ee1f0ecb75c594f774924baf62e8e53a2ce9d873816a408cecbf7",
+    "https://plugins.dprint.dev/prettier-0.30.0.json@17f1975e77b53f95c642a25588bf27b0d3f36ebb70cbe134875f6b3c75736eed",
     "https://plugins.dprint.dev/toml-0.5.4.wasm"
   ],
+  "exec": {
+    "commands": [
+      {
+        "command": "rustfmt --files-with-diff --config-path ./src-tauri/.rustfmt.toml",
+        "exts": ["rs"]
+      }
+    ]
+  },
   "toml": {
     "lineWidth": 96,
     "useTabs": false,
