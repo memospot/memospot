@@ -36,7 +36,7 @@ tasks:
   # Called by GitHub actions
   ci:deno:cache:
     cmds:
-      - deno cache --reload --lock=deno.lock ./build-scripts/deps.ts
+      - deno cache --reload --lock=deno.lock ./deps.ts
   ci:deno:tests:
     cmds:
       - task: test:build-scripts
@@ -167,7 +167,7 @@ tasks:
   update-deno-lock:
     desc: Update Deno lock file
     cmds:
-      - deno cache --reload --lock=deno.lock --lock-write ./build-scripts/deps.ts
+      - deno cache --reload --lock=deno.lock --lock-write ./deps.ts
 
   update-deps:
     desc: Update project dependencies
@@ -282,13 +282,6 @@ tasks:
       - cargo fmt --all --check
       - cargo clippy --all-features --workspace --locked
       - task: sccache:stats
-    method: checksum
-    sources:
-      - ./src/**/*.rs
-      - build.rs
-      - Cargo.toml
-      - Tauri.toml
-      - .rustfmt.toml
   lint:deno:
     desc: lint typescript with deno
     cmds:
