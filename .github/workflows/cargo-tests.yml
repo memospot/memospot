@@ -3,23 +3,21 @@ name: Cargo Tests
 on:
   pull_request:
     branches:
-      - main
-      - dev
-      - "release/*.*.*"
+      - "*"
     paths:
       - "**/*.rs"
-      - "**/Cargo.*"
+      - "**/Cargo.lock"
+      - "**/Cargo.toml"
       - "**/Tauri.toml"
 
   push:
-    branches:
-      - main
-      - dev
+    branches-ignore:
       - "release/*.*.*"
     paths:
-      - "src-tauri/**/*.rs"
-      - "src-tauri/**/Cargo.*"
-      - "src-tauri/**/Tauri.toml"
+      - "**/*.rs"
+      - "**/Cargo.lock"
+      - "**/Cargo.toml"
+      - "**/Tauri.toml"
 
   schedule:
     - cron: "0 12 * * 6"
@@ -35,11 +33,11 @@ env:
   SCCACHE_GHA_ENABLED: false
 
 jobs:
-  rustfmt:
-    name: Rustfmt
+  fmt:
+    name: Check code formatting
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Rust toolchain
@@ -75,12 +73,13 @@ jobs:
 
     runs-on: ${{ matrix.platform.runner }}
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create dummy server binaries
+      - name: Create dummy Tauri build dependencies
         shell: bash
         run: |
+          mkdir -p ./dist-ui
           mkdir -p ./server-dist
           touch ./server-dist/memos-x86_64-unknown-linux-gnu
           touch ./server-dist/memos-x86_64-apple-darwin
@@ -89,26 +88,31 @@ jobs:
 
       - if: ${{ runner.os == 'Linux' }}
         name: "[Linux] Disable initramfs and man-db update"
+        continue-on-error: true
         run: |
-          sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
+          if [ -f /etc/initramfs-tools/update-initramfs.conf ]; then
+            sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
+          else
+            sudo mkdir -p /etc/initramfs-tools/
+            echo 'update_initramfs=no' | sudo tee -a /etc/initramfs-tools/update-initramfs.conf
+          fi
           sudo rm -f /var/lib/man-db/auto-update
 
-      - if: ${{ runner.os == 'Linux' }}
+      - if: ${{ env.ACT }}
+        run: |
+          # Workaround when using nektos/act to run this workflow
+          sudo cp -l /usr/bin/apt-get /usr/local/sbin/apt-fast
+          sudo apt-get update
+
+      - if: ${{ runner.os == 'Linux'  }}
         name: "[Linux] Install platform dependencies"
         uses: awalsh128/cache-apt-pkgs-action@v1.3.1
-        continue-on-error: true
         with:
           packages: >-
-            build-essential
-            curl
-            file
-            wget
+            libappindicator3-dev
             libgtk-3-dev
             librsvg2-dev
-            libssl-dev
             libwebkit2gtk-4.0-dev
-            patchelf
-            libappindicator3-dev
           version: 1.0
 
       - if: ${{ runner.os == 'macOS' }}
@@ -117,127 +121,79 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - if: ${{ runner.os == 'macOS' }}
-        name: "[macOS] Install sarif-fmt"
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
-        with:
-          repo: psastras/sarif-rs
-          cache: enable
-          tag: "sarif-fmt-v0.4.2"
-          platform: apple-darwin
-          extension-matching: disable
-          rename-to: sarif-fmt
-          chmod: 0755
-      - if: ${{ runner.os == 'Linux' }}
-        name: "[Linux] Install sarif-fmt"
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
-        with:
-          repo: psastras/sarif-rs
-          cache: enable
-          tag: "sarif-fmt-v0.4.2"
-          platform: unknown-linux-gnu
-          extension-matching: disable
-          rename-to: sarif-fmt
-          chmod: 0755
-
-      - if: ${{ runner.os == 'Linux' }}
-        name: "[Linux] Install clippy-sarif"
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
-        with:
-          repo: psastras/sarif-rs
-          cache: enable
-          tag: "clippy-sarif-v0.4.2"
-          platform: unknown-linux-gnu
-          extension-matching: disable
-          rename-to: clippy-sarif
-          chmod: 0755
-      - if: ${{ runner.os == 'macOS' }}
-        name: "[macOS] Install clippy-sarif"
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
-        with:
-          repo: psastras/sarif-rs
-          cache: enable
-          tag: "clippy-sarif-v0.4.2"
-          platform: apple-darwin
-          extension-matching: disable
-          rename-to: clippy-sarif
-          chmod: 0755
-
-      # - if: ${{ runner.os == 'Windows' }}
-      #   name: Install sarif-fmt (Windows)
-      #   uses: taiki-e/cache-cargo-install-action@v1
-      #   with:
-      #     tool: sarif-fmt@0.4.2
-      # - if: ${{ runner.os == 'Windows' }}
-      #   name: Install clippy-sarif (Windows)
-      #   uses: taiki-e/cache-cargo-install-action@v1
-      #   with:
-      #     tool: clippy-sarif@0.4.2
-
-      - name: Install sccache
-        uses: mozilla-actions/sccache-action@v0.0.3
-
-      - name: Initialize sccache environment
-        shell: bash
-        run: |
-          echo SCCACHE_CACHE=$(sccache --show-stats | grep Local | cut -d '"' -f2) >> $GITHUB_ENV
-          echo DATE_STRING=$(date +'%Y%m%d') >> $GITHUB_ENV
-          sccache --stop-server
-
-      - name: Setup sccache
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.SCCACHE_CACHE }}
-          key: sccache-${{ runner.os }}-0-${{ env.DATE_STRING }}
-          restore-keys: sccache-${{ runner.os }}-0
-
-      - name: Start sccache
-        shell: bash
-        working-directory: ${{ github.workspace }}
-        run: sccache --start-server
-
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
           targets: ${{ matrix.platform.rust_target }}
 
+      - name: Install sccache
+        uses: taiki-e/install-action@v2
+        with:
+          tool: sccache@0.7.4
+
+      - name: Initialize sccache environment
+        shell: bash
+        run: |
+          echo SCCACHE_CACHE=$(sccache --show-stats | grep Local | cut -d '"' -f2) >> $GITHUB_ENV
+          echo DATE_STRING=$(date +'%Y%m%d') >> $GITHUB_ENV
+          sccache --stop-server > /dev/null
+
+      - name: Setup sccache cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.SCCACHE_CACHE }}
+          key: sccache-${{ runner.os }}-${{ env.DATE_STRING }}
+          restore-keys: sccache-${{ runner.os }}
+
+      - name: Start sccache
+        shell: bash
+        run: sccache --start-server || (sccache --stop-server && sleep 1 && sccache --start-server)
+
       - name: Setup Cargo cache
         uses: swatinem/rust-cache@v2
         with:
           prefix-key: cargo-${{ matrix.platform.rust_target }}
+          workspaces: "./src-tauri/target"
           cache-on-failure: true
           cache-all-crates: true
+          cache-directories: |
+            /root/.cargo/bin
 
-      - if: ${{ runner.os != 'Windows' && github.event_name == 'pull_request' }}
-        name: "[Linux/macOS] Run clippy with sarif output"
+      - if: ${{ github.event_name == 'pull_request' && runner.os != 'Windows' }}
+        # currently, there are no prebuilt binaries of these tools for Windows
+        name: "[POSIX] Install sarif-fmt and clippy-sarif"
+        uses: taiki-e/install-action@v2
+        with:
+          tool: sarif-fmt@0.4.2,clippy-sarif@0.4.2
+
+      - if: ${{ github.event_name == 'pull_request' && runner.os == 'Windows' }}
+        name: "[Windows] Install clippy-sarif and sarif-fmt"
+        run: |
+          cargo install --locked sarif-fmt clippy-sarif --version 0.4.2
+
+      - if: ${{ github.event_name == 'pull_request' }}
+        name: "[PR] Run clippy with SARIF output"
         continue-on-error: true
         shell: bash
         working-directory: ./src-tauri
-        run: >
-          set +e;
-          cargo clippy --all-features --all-targets --workspace --locked --message-format=json
-          | clippy-sarif
-          | tee clippy-results.sarif
-          | sarif-fmt ;
+        run: |
+          set +e
+          cargo clippy --all-features --all-targets --workspace --locked --message-format=json | clippy-sarif | tee clippy-results.sarif | sarif-fmt
 
-      - if: ${{ runner.os != 'Windows' && github.event_name == 'pull_request' }}
-        name: Upload SARIF analysis results to GitHub
-        uses: github/codeql-action/upload-sarif@v2
+      - if: ${{ github.event_name == 'pull_request' }}
+        name: "[PR] Upload SARIF analysis results to GitHub"
+        uses: github/codeql-action/upload-sarif@v3
         continue-on-error: true
         with:
           sarif_file: ./src-tauri/clippy-results.sarif
           wait-for-processing: true
 
-      - name: Cleanup sccache
-        working-directory: ${{ github.workspace }}
-        shell: bash
-        run: |
-          sccache --stop-server
-
-      - name: Finalize with clippy output
-        shell: bash
+      - name: Finalize workflow with clippy output
         working-directory: ./src-tauri
         run: |
-          cargo clippy --version;
+          cargo clippy --version
           cargo clippy --all-features --all-targets --workspace --locked
+
+      - name: Cleanup sccache
+        run: sccache --stop-server
