@@ -179,7 +179,7 @@ jobs:
 
       # Clippy with SARIF output
       - if: ${{ github.event_name == 'pull_request' }}
-        name: "[POSIX] Install sarif-fmt and clippy-sarif"
+        name: "Install sarif-fmt and clippy-sarif"
         uses: taiki-e/install-action@v2
         with:
           tool: sarif-fmt@0.4.2,clippy-sarif@0.4.2

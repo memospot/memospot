@@ -153,8 +153,8 @@ jobs:
       - name: Cache Deno dependencies
         uses: actions/cache@v3
         with:
-          key: denodeps-cross-${{ hashFiles('**/deno.lock') }}
-          restore-keys: denodeps-cross
+          key: denodeps-${{ runner.os }}-${{ hashFiles('**/deno.lock') }}
+          restore-keys: denodeps-${{ runner.os }}
           enableCrossOsArchive: true
           path: |
             /home/runner/.cache/deno/deps/https/deno.land
