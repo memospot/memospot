@@ -13,7 +13,8 @@ env:
   RUST_BACKTRACE: short
   RUSTC_WRAPPER: sccache
   RUSTFLAGS: -Copt-level=3 -Cstrip=symbols -Ccodegen-units=1
-  SCCACHE_GHA_ENABLED: false
+  SCCACHE_DIR: ${{github.workspace}}/.sccache
+  SCCACHE_GHA_ENABLED: false # required to cache everything at once and avoid rate limiting
   TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
 
 jobs:
@@ -36,31 +37,50 @@ jobs:
 
     runs-on: ${{ matrix.platform.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - if: ${{ runner.os == 'Windows' }}
+        name: "[Windows] Fix environment variables"
+        shell: pwsh
+        run: |
+          $DENO_DIR = "${{env.DENO_DIR}}".replace("/", "\")
+          echo "DENO_DIR=$DENO_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          $SCCACHE_DIR = "${{env.SCCACHE_DIR}}".replace("/", "\")
+          echo "SCCACHE_DIR=$SCCACHE_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          $TEMP = "${env:USERPROFILE}\AppData\Local\Temp"
+          echo "TEMP=$TEMP" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "TMP=$TEMP" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - if: ${{ runner.os == 'Linux' }}
         name: "[Linux] Disable initramfs and man-db update"
+        continue-on-error: true
         run: |
-          sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
+          if [ -f /etc/initramfs-tools/update-initramfs.conf ]; then
+            sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
+          else
+            sudo mkdir -p /etc/initramfs-tools/
+            echo 'update_initramfs=no' | sudo tee -a /etc/initramfs-tools/update-initramfs.conf
+          fi
           sudo rm -f /var/lib/man-db/auto-update
 
-      - if: ${{ runner.os == 'Linux' }}
+      - if: ${{ env.ACT }}
+        name: "[ACT] Link apt-get as apt-fast"
+        run: |
+          sudo cp -l /usr/bin/apt-get /usr/local/sbin/apt-fast
+          sudo apt-get update > /dev/null
+      - if: ${{ runner.os == 'Linux'  }}
         name: "[Linux] Install platform dependencies"
         uses: awalsh128/cache-apt-pkgs-action@v1.3.1
-        continue-on-error: true
         with:
           packages: >-
-            build-essential
-            curl
-            file
-            wget
+            libappindicator3-dev
             libgtk-3-dev
             librsvg2-dev
-            libssl-dev
             libwebkit2gtk-4.0-dev
             patchelf
-            libappindicator3-dev
-          version: 1.0
 
       - if: ${{ runner.os == 'macOS' }}
         name: "[macOS] Install platform dependencies"
@@ -82,31 +102,16 @@ jobs:
         with:
           repo: go-task/task
           cache: enable
-          tag: "v3.32.0"
+          tag: "v3.33.1"
 
-      - name: Install sccache
-        uses: mozilla-actions/sccache-action@v0.0.3
-
-      - name: Initialize sccache environment
-        shell: bash
-        run: |
-          echo SCCACHE_CACHE=$(sccache --show-stats | grep Local | cut -d '"' -f2) >> $GITHUB_ENV
-          echo DATE_STRING=$(date +'%Y%m%d') >> $GITHUB_ENV
-          sccache --stop-server
-
-      - name: Setup sccache
-        uses: actions/cache@v3
+      - if: ${{ runner.os == 'Linux' }}
+        name: "[Linux] Install UPX"
+        uses: crazy-max/ghaction-upx@v3
         with:
-          path: ${{ env.SCCACHE_CACHE }}
-          key: sccache-${{ runner.os }}-0-${{ env.DATE_STRING }}
-          restore-keys: sccache-${{ runner.os }}-0
+          install-only: true
 
-      - name: Start sccache
-        shell: bash
-        working-directory: ${{ github.workspace }}
-        run: sccache --start-server
-
-      - name: Setup Rust
+      # Rust
+      - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform.rust_target }}
@@ -115,37 +120,71 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           prefix-key: cargo-${{ matrix.platform.rust_target }}
-          cache-on-failure: true
+          workspaces: "./src-tauri/target"
           cache-all-crates: true
+          cache-directories: |
+            ${{env.USERPROFILE}}\.cargo\bin
+            /home/runner/.cargo/bin
+            /root/.cargo/bin
+      # /Rust
+      # sccache
+      - name: Install sccache
+        uses: taiki-e/install-action@v2
+        with:
+          tool: sccache@0.7.4
+
+      - name: Initialize sccache environment
+        shell: bash
+        run: |
+          echo DATE_STRING=$(date +'%Y%m%d') >> $GITHUB_ENV
+          sccache --stop-server > /dev/null || true
+
+      - name: Setup sccache cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.SCCACHE_DIR }}
+          key: sccache-${{ matrix.platform.rust_target }}-${{ env.DATE_STRING }}
+          restore-keys: sccache-${{ matrix.platform.rust_target }}
+
+      - name: Start sccache
+        shell: bash
+        run: sccache --start-server || (sccache --stop-server && sleep 1 && sccache --start-server)
+      # /sccache
+
+      # Deno
+      - name: Install Deno
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: denoland/deno
+          cache: enable
+          tag: "v1.39.1"
 
       - name: Cache Deno dependencies
         uses: actions/cache@v3
         with:
           key: denodeps-cross-${{ hashFiles('**/deno.lock') }}
-          restore-keys: denodeps-cross-
+          restore-keys: denodeps-cross
           enableCrossOsArchive: true
           path: |
             /home/runner/.cache/deno/deps/https/deno.land
-            ${{github.workspace}}/.deno
+            ${{ env.DENO_DIR }}
             ${{github.workspace}}/node_modules
 
-      - name: Setup Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.x
       - name: Restore Deno dependencies
-        run: deno cache --lock=deno.lock ./build-scripts/deps.ts
+        run: task ci:deno:cache
+      # /Deno
 
       - name: Cache memos builds
         uses: actions/cache@v3
         with:
           key: memosbuilds-cross-${{ env.DATE_STRING }}
-          restore-keys: memosbuilds-cross-
+          restore-keys: memosbuilds-cross
           enableCrossOsArchive: true
           path: ./server-dist
 
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -157,7 +196,4 @@ jobs:
           args: --target ${{ matrix.platform.rust_target }}
 
       - name: Cleanup sccache
-        working-directory: ${{ github.workspace }}
-        shell: bash
-        run: |
-          sccache --stop-server
+        run: sccache --stop-server
