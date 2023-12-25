@@ -28,7 +28,7 @@ env:
   RUSTC_WRAPPER: sccache
   RUSTFLAGS: -Copt-level=1 -Cstrip=symbols
   SCCACHE_DIR: ${{github.workspace}}/.sccache
-  SCCACHE_GHA_ENABLED: false
+  SCCACHE_GHA_ENABLED: false # required to cache everything at once and avoid rate limiting
 
 jobs:
   fmt:
@@ -71,8 +71,11 @@ jobs:
 
     runs-on: ${{ matrix.platform.runner }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - if: ${{ runner.os == 'Windows' }}
-        name: "[Windows] Set dynamic env vars"
+        name: "[Windows] Fix environment variables"
         shell: pwsh
         run: |
           $SCCACHE_DIR = "${{env.SCCACHE_DIR}}".replace("/", "\\")
@@ -81,9 +84,6 @@ jobs:
           $TEMP = "${env:USERPROFILE}\AppData\Local\Temp"
           Write-Host "TEMP=$TEMP" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Write-Host "TMP=$TEMP" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
       - name: Create dummy Tauri build dependencies
         shell: bash
@@ -109,10 +109,9 @@ jobs:
 
       - if: ${{ env.ACT }}
         run: |
-          # Workaround to run this workflow using nektos/act without installing apt-fast
+          # Workaround to run this workflow on nektos/act
           sudo cp -l /usr/bin/apt-get /usr/local/sbin/apt-fast
           sudo apt-get update > /dev/null
-
       - if: ${{ runner.os == 'Linux'  }}
         name: "[Linux] Install platform dependencies"
         uses: awalsh128/cache-apt-pkgs-action@v1.3.1
@@ -135,6 +134,7 @@ jobs:
           components: clippy
           targets: ${{ matrix.platform.rust_target }}
 
+      # sccache
       # - name: Install sccache
       #   uses: mozilla-actions/sccache-action@v0.0.3
       - name: Install sccache
@@ -158,17 +158,26 @@ jobs:
       - name: Start sccache
         shell: bash
         run: sccache --start-server || (sccache --stop-server && sleep 1 && sccache --start-server)
+      # /sccache
 
-      - name: Setup Cargo cache
+      - if: ${{ runner.os != 'Windows' }}
+        name: Setup Cargo cache
         uses: swatinem/rust-cache@v2
         with:
           prefix-key: cargo-${{ matrix.platform.rust_target }}
           workspaces: "./src-tauri/target"
-          cache-on-failure: true
+          cache-all-crates: true
+      - if: ${{ runner.os == 'Windows' }}
+        name: Setup Cargo cache
+        uses: swatinem/rust-cache@v2
+        with:
+          prefix-key: cargo-${{ matrix.platform.rust_target }}
+          workspaces: "./src-tauri/target"
           cache-all-crates: true
           cache-directories: |
-            /root/.cargo/bin
+            ${{env.USERPROFILE}}\.cargo\bin
 
+      # Clippy with SARIF output
       - if: ${{ github.event_name == 'pull_request' }}
         name: "[POSIX] Install sarif-fmt and clippy-sarif"
         uses: taiki-e/install-action@v2
@@ -177,12 +186,11 @@ jobs:
 
       - if: ${{ github.event_name == 'pull_request' }}
         name: "[PR] Run clippy with SARIF output"
-        continue-on-error: true
         shell: bash
         working-directory: ./src-tauri
         run: |
-          set +e
-          cargo clippy --all-features --all-targets --workspace --locked --message-format=json | clippy-sarif | tee clippy-results.sarif | sarif-fmt
+          cargo clippy --all-features --all-targets --workspace --locked --message-format=json | clippy-sarif | tee clippy-results.sarif
+          cat clippy-results.sarif | sarif-fmt --color always
 
       - if: ${{ github.event_name == 'pull_request' }}
         name: "[PR] Upload SARIF analysis results to GitHub"
@@ -191,11 +199,12 @@ jobs:
         with:
           sarif_file: ./src-tauri/clippy-results.sarif
           wait-for-processing: true
+      # /Clippy with SARIF output
 
-      - name: Run clippy with standard output
+      - if: ${{ github.event_name != 'pull_request' }}
+        name: Run clippy with standard output
         working-directory: ./src-tauri
         run: |
-          cargo clippy --version
           cargo clippy --all-features --all-targets --workspace --locked
 
       - name: Cleanup sccache
