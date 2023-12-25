@@ -78,12 +78,12 @@ jobs:
         name: "[Windows] Fix environment variables"
         shell: pwsh
         run: |
-          $SCCACHE_DIR = "${{env.SCCACHE_DIR}}".replace("/", "\\")
-          Write-Host "SCCACHE_DIR=$SCCACHE_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $SCCACHE_DIR = "${{env.SCCACHE_DIR}}".replace("/", "\")
+          echo "SCCACHE_DIR=$SCCACHE_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
           $TEMP = "${env:USERPROFILE}\AppData\Local\Temp"
-          Write-Host "TEMP=$TEMP" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          Write-Host "TMP=$TEMP" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "TEMP=$TEMP" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "TMP=$TEMP" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Create dummy Tauri build dependencies
         shell: bash
