@@ -1,3 +1,4 @@
+#: schema https://json.schemastore.org/rustfmt.json
 edition = "2021"
 max_width = 96
 newline_style = "Unix"

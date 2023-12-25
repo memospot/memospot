@@ -1,0 +1,86 @@
+name: Deno Tests
+
+on:
+  pull_request:
+    branches:
+      - "*"
+    paths:
+      - "**/*.ts"
+      - "**/*.tsx"
+      - "**/*.cts"
+      - "**/*.mts"
+      - "**/deno.jsonc"
+      - "**/deno.lock"
+
+  push:
+    branches:
+      - "*"
+    paths:
+      - "**/*.ts"
+      - "**/*.tsx"
+      - "**/*.cts"
+      - "**/*.mts"
+      - "**/deno.jsonc"
+      - "**/deno.lock"
+
+  workflow_dispatch:
+
+env:
+  DENO_DIR: ${{github.workspace}}/.deno
+
+jobs:
+  deno-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - runner: "ubuntu-22.04"
+          - runner: "macos-11"
+          - runner: "windows-2019"
+
+    runs-on: ${{ matrix.platform.runner }}
+    steps:
+      - if: ${{ runner.os == 'Windows' }}
+        name: "[Windows] Set dynamic env vars"
+        shell: pwsh
+        run: |
+          $DENO_DIR = "${{env.DENO_DIR}}".replace("/", "\")
+          echo "DENO_DIR=$DENO_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          $TEMP = "${env:USERPROFILE}\AppData\Local\Temp"
+          echo "TEMP=$TEMP" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "TMP=$TEMP" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Task
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: go-task/task
+          cache: enable
+          tag: "v3.33.1"
+
+      - name: Install Deno
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: denoland/deno
+          cache: enable
+          tag: "v1.39.1"
+
+      - name: Cache Deno dependencies
+        uses: actions/cache@v3
+        with:
+          key: denodeps-cross-${{ hashFiles('**/deno.lock') }}
+          restore-keys: denodeps-cross
+          enableCrossOsArchive: true
+          path: |
+            /home/runner/.cache/deno/deps/https/deno.land
+            ${{ env.DENO_DIR }}
+            ${{github.workspace}}/node_modules
+
+      - name: Restore Deno dependencies
+        run: task ci:deno:cache
+
+      - name: Run Deno tests
+        run: task ci:deno:tests

@@ -1,37 +1,71 @@
-name: "Publish Release"
+name: Cargo Tests
+
 on:
-  push:
+  pull_request:
     branches:
-      - release
+      - "*"
+    paths:
+      - "**/*.rs"
+      - "**/Cargo.lock"
+      - "**/Cargo.toml"
+      - "**/Tauri.toml"
+
+  push:
+    branches-ignore:
+      - "release/*.*.*"
+    paths:
+      - "**/*.rs"
+      - "**/Cargo.lock"
+      - "**/Cargo.toml"
+      - "**/Tauri.toml"
 
   workflow_dispatch:
 
 env:
   CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
-  DENO_DIR: ${{github.workspace}}/.deno
   RUST_BACKTRACE: short
   RUSTC_WRAPPER: sccache
-  RUSTFLAGS: -Copt-level=3 -Cstrip=symbols -Ccodegen-units=1
+  RUSTFLAGS: -Copt-level=1 -Cstrip=symbols
   SCCACHE_DIR: ${{github.workspace}}/.sccache
   SCCACHE_GHA_ENABLED: false # required to cache everything at once and avoid rate limiting
-  TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
 
 jobs:
-  publish-tauri:
-    name: "Publish"
+  fmt:
+    name: Check Rust code formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Run rustfmt
+        working-directory: ./src-tauri
+        run: cargo fmt --all -- --check
+
+  clippy:
+    name: Lint Rust code with Clippy
     permissions:
-      contents: write
+      actions: read
+      contents: read
+      security-events: write
     strategy:
       fail-fast: false
       matrix:
         platform:
           - runner: "ubuntu-22.04"
             rust_target: "x86_64-unknown-linux-gnu"
+
           - runner: "macos-11"
             rust_target: "aarch64-apple-darwin"
+
           - runner: "macos-11"
             rust_target: "x86_64-apple-darwin"
+
           - runner: "windows-2019"
             rust_target: "x86_64-pc-windows-msvc"
 
@@ -44,15 +78,22 @@ jobs:
         name: "[Windows] Fix environment variables"
         shell: pwsh
         run: |
-          $DENO_DIR = "${{env.DENO_DIR}}".replace("/", "\")
-          echo "DENO_DIR=$DENO_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
           $SCCACHE_DIR = "${{env.SCCACHE_DIR}}".replace("/", "\")
           echo "SCCACHE_DIR=$SCCACHE_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
           $TEMP = "${env:USERPROFILE}\AppData\Local\Temp"
           echo "TEMP=$TEMP" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "TMP=$TEMP" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Create dummy Tauri build dependencies
+        shell: bash
+        run: |
+          mkdir -p ./dist-ui
+          mkdir -p ./server-dist
+          touch ./server-dist/memos-x86_64-unknown-linux-gnu
+          touch ./server-dist/memos-x86_64-apple-darwin
+          touch ./server-dist/memos-aarc64-apple-darwin
+          touch ./server-dist/memos-x86_64-pc-windows-msvc.exe
 
       - if: ${{ runner.os == 'Linux' }}
         name: "[Linux] Disable initramfs and man-db update"
@@ -67,7 +108,7 @@ jobs:
           sudo rm -f /var/lib/man-db/auto-update
 
       - if: ${{ env.ACT }}
-        name: "[ACT] Link apt-get as apt-fast"
+        name: "[ACT] Link apt-fast to apt-get"
         run: |
           sudo cp -l /usr/bin/apt-get /usr/local/sbin/apt-fast
           sudo apt-get update > /dev/null
@@ -80,7 +121,6 @@ jobs:
             libgtk-3-dev
             librsvg2-dev
             libwebkit2gtk-4.0-dev
-            patchelf
 
       - if: ${{ runner.os == 'macOS' }}
         name: "[macOS] Install platform dependencies"
@@ -88,46 +128,15 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - if: ${{ runner.os != 'macOS' }}
-        name: "[Windows/Linux] Install UPX"
-        uses: crazy-max/ghaction-upx@v3
-        with:
-          install-only: true
-      - if: ${{ runner.os != 'macOS' }}
-        name: Check UPX version
-        run: upx --version
-
-      - name: Install Task
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
-        with:
-          repo: go-task/task
-          cache: enable
-          tag: "v3.33.1"
-
-      - if: ${{ runner.os == 'Linux' }}
-        name: "[Linux] Install UPX"
-        uses: crazy-max/ghaction-upx@v3
-        with:
-          install-only: true
-
-      # Rust
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
+          components: clippy
           targets: ${{ matrix.platform.rust_target }}
 
-      - name: Setup Cargo cache
-        uses: swatinem/rust-cache@v2
-        with:
-          prefix-key: cargo-${{ matrix.platform.rust_target }}
-          workspaces: "./src-tauri/target"
-          cache-all-crates: true
-          cache-directories: |
-            ${{env.USERPROFILE}}\.cargo\bin
-            /home/runner/.cargo/bin
-            /root/.cargo/bin
-      # /Rust
       # sccache
+      # - name: Install sccache
+      #   uses: mozilla-actions/sccache-action@v0.0.3
       - name: Install sccache
         uses: taiki-e/install-action@v2
         with:
@@ -151,49 +160,52 @@ jobs:
         run: sccache --start-server || (sccache --stop-server && sleep 1 && sccache --start-server)
       # /sccache
 
-      # Deno
-      - name: Install Deno
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
+      - if: ${{ runner.os != 'Windows' }}
+        name: Setup Cargo cache
+        uses: swatinem/rust-cache@v2
         with:
-          repo: denoland/deno
-          cache: enable
-          tag: "v1.39.1"
-
-      - name: Cache Deno dependencies
-        uses: actions/cache@v3
+          prefix-key: cargo-${{ matrix.platform.rust_target }}
+          workspaces: "./src-tauri/target"
+          cache-all-crates: true
+      - if: ${{ runner.os == 'Windows' }}
+        name: Setup Cargo cache
+        uses: swatinem/rust-cache@v2
         with:
-          key: denodeps-cross-${{ hashFiles('**/deno.lock') }}
-          restore-keys: denodeps-cross
-          enableCrossOsArchive: true
-          path: |
-            /home/runner/.cache/deno/deps/https/deno.land
-            ${{ env.DENO_DIR }}
-            ${{github.workspace}}/node_modules
+          prefix-key: cargo-${{ matrix.platform.rust_target }}
+          workspaces: "./src-tauri/target"
+          cache-all-crates: true
+          cache-directories: |
+            ${{env.USERPROFILE}}\.cargo\bin
 
-      - name: Restore Deno dependencies
-        run: task ci:deno:cache
-      # /Deno
-
-      - name: Cache memos builds
-        uses: actions/cache@v3
+      # Clippy with SARIF output
+      - if: ${{ github.event_name == 'pull_request' }}
+        name: "[POSIX] Install sarif-fmt and clippy-sarif"
+        uses: taiki-e/install-action@v2
         with:
-          key: memosbuilds-cross-${{ env.DATE_STRING }}
-          restore-keys: memosbuilds-cross
-          enableCrossOsArchive: true
-          path: ./server-dist
+          tool: sarif-fmt@0.4.2,clippy-sarif@0.4.2
 
-      - name: Build Tauri App
-        uses: tauri-apps/tauri-action@v0
+      - if: ${{ github.event_name == 'pull_request' }}
+        name: "[PR] Run clippy with SARIF output"
+        shell: bash
+        working-directory: ./src-tauri
+        run: |
+          cargo clippy --all-features --all-targets --workspace --locked --message-format=json | clippy-sarif | tee clippy-results.sarif
+          cat clippy-results.sarif | sarif-fmt --color always
+
+      - if: ${{ github.event_name == 'pull_request' }}
+        name: "[PR] Upload SARIF analysis results to GitHub"
+        uses: github/codeql-action/upload-sarif@v3
         continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: v__VERSION__
-          releaseName: "Memospot v__VERSION__"
-          releaseBody: "See the assets section below to download the app."
-          releaseDraft: true
-          prerelease: false
-          args: --target ${{ matrix.platform.rust_target }}
+          sarif_file: ./src-tauri/clippy-results.sarif
+          wait-for-processing: true
+      # /Clippy with SARIF output
+
+      - if: ${{ github.event_name != 'pull_request' }}
+        name: Run clippy with standard output
+        working-directory: ./src-tauri
+        run: |
+          cargo clippy --all-features --all-targets --workspace --locked
 
       - name: Cleanup sccache
         run: sccache --stop-server

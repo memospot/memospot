@@ -2,17 +2,17 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <link rel="stylesheet" href="styles.css" />
+        <link rel="stylesheet" href="/src/style.css" />
+        <!-- <link rel="icon" type="image/svg+xml" href="/favicon.svg" /> -->
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Memos App</title>
-        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-        <script type="module" src="/main.js" defer></script>
+        <title>Memos Loader</title>
         <base target="_blank" />
+        <script type="module" src="/src/main.ts" defer></script>
     </head>
 
     <body>
         <div class="container">
-            <h1>Waiting for the server to start...</h1>
+            <h1 class="waiting-for-server">Please wait while the server is starting...</h1>
 
             <div class="row">
                 <a
@@ -25,19 +25,18 @@
                         <source
                             srcset="powered_by_memos_dark.webp"
                             media="(prefers-color-scheme: dark)"
-                            alt="Memos logo"
                         />
-                        <img
-                            src="powered_by_memos.webp"
-                            class="logo memos"
-                            alt="Memos logo"
-                        />
+                        <img src="powered_by_memos.webp" class="logo memos" alt="Memos logo" />
                     </picture>
                 </a>
             </div>
 
-            <p class="tauri-port" id="port" />
-            <p class="tauri-msg" id="msg" />
+            <p class="tauri-port" id="port"></p>
+            <p class="tauri-msg" id="msg"></p>
+
+            <button class="button center" role="button" id="manual-redirect-btn">
+                Try again
+            </button>
         </div>
     </body>
 </html>

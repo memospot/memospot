@@ -1,27 +1,60 @@
 {
-  "deno.enable": false,
-  "editor.formatOnSave": true,
+  "[css]": {
+    "editor.defaultFormatter": "dprint.dprint"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "dprint.dprint"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "dprint.dprint"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "dprint.dprint"
+  },
+  "[toml]": {
+    "editor.defaultFormatter": "dprint.dprint"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "dprint.dprint"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "dprint.dprint"
+  },
   "code-runner.cwd": "${workspaceFolder}",
+  "code-runner.executorMapByGlob": {
+    "**/*.test.ts": "task coderunner:deno:test -- $fullFileName",
+    "**/*.ts": "task coderunner:deno -- $fullFileName",
+    "**/*.{toml,json,jsonc,yml,yaml}|.dprint.jsonc": "task coderunner:dprint:check -- $fullFileName && echo \"$fileName is properly formatted.\""
+  },
   "code-runner.ignoreSelection": true,
-  "prettier.enable": true,
+  "deno.enable": true,
+  "deno.cache": "./.deno",
+  "deno.lint": true,
+  "editor.formatOnSave": true,
+  "evenBetterToml.completion.maxKeys": 8,
+  "evenBetterToml.formatter.allowedBlankLines": 2,
+  "evenBetterToml.formatter.columnWidth": 96,
+  "evenBetterToml.formatter.crlf": false,
+  "evenBetterToml.formatter.indentString": "    ",
+  "evenBetterToml.schema.enabled": true,
+  "evenBetterToml.rules": [
+    {
+      "include": ["**/Cargo.toml"],
+      "keys": ["dependencies", "*-dependencies"],
+      "formatting": {
+        "reorder_keys": true
+      }
+    }
+  ],
   "files.associations": {
     "CODEOWNERS": "gitignore"
   },
-  "rust-analyzer.linkedProjects": [
-    "src-tauri/Cargo.toml"
-  ],
   "rust-analyzer.cargo.extraEnv": {
     "RUSTFLAGS": "-Ctarget-cpu=native -Copt-level=0",
     "RUSTC_WRAPPER": "sccache",
+    "SCCACHE_DIR": "${workspaceFolder}${pathSeparator}.sccache",
     "CARGO_INCREMENTAL": "0"
   },
-  "evenBetterToml.schema.associations": {
-    "Cargo.toml": "cargo",
-    "Tauri.toml": "tauri"
-  },
-  "evenBetterToml.completion.maxKeys": 8,
-  "evenBetterToml.schema.enabled": true,
-  "code-runner.executorMapByGlob": {
-    "**/*.ts": "cd $dir && ts-node $fileName",
-  },
+  "rust-analyzer.linkedProjects": ["src-tauri/Cargo.toml"],
+  "rust-analyzer.checkOnSave": false
 }

@@ -270,6 +270,9 @@ Remove-Item -Path $licenseFile -Force -ErrorAction SilentlyContinue
 Write-Host "Unblocking file: $memosBin" -f Cyan
 Unblock-File -Path $memosBin -ErrorAction SilentlyContinue
 
+Write-Host "Removing memos.exe.bak..." -f Cyan
+Remove-Item -Path "$memosBin.bak" -Force -ErrorAction SilentlyContinue
+
 Write-Host "`nMemos server successfully updated to $tagName" -f Green
 
 Write-Host "`n-> Press any key to exit <-`n" -f Cyan

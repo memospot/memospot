@@ -1,56 +1,97 @@
 /*
- * This script runs before the tauri build command.
- * pnpm ts-node .\src-tauri\scripts\before_build.ts
+ * This script runs before `Tauri build` step.
+ * deno run -A ./build-scripts/downloadMemosBuildsHook.ts
  */
-import { findRepoRoot } from "./common.ts";
-import { Readable } from "node:stream";
-import { finished } from "node:stream/promises";
+
+import type { GitHubAsset, GitHubRelease } from "./downloadMemosBuildsHook.d.ts";
+import { findRepositoryRoot } from "./common.ts";
+import { crypto, encodeHex, existsSync } from "../deps.ts";
+
+import { Readable } from "../deps.ts";
+import { finished } from "../deps.ts";
 import * as fs from "node:fs";
-import * as crypto from "node:crypto";
-import decompress from "decompress";
-// import { GitHubRelease, GitHubAsset } from "./types.d.ts";
-import type { GitHubRelease, GitHubAsset } from "./types.d.ts";
-function makeTripletFromFileName(file: string): string {
+
+// @deno-types="../deps.ts"
+import { decompress } from "../deps.ts";
+
+/**
+ * Convert a GOOS-GOARCH build file name to a Rust target triple.
+ *
+ * Sample target triples:
+ *
+ * - `x86_64-pc-windows-msvc`
+ * - `x86_64-unknown-linux-gnu`
+ * - `x86_64-apple-darwin`
+ * - `aarch64-apple-darwin`
+ *
+ * @param file The file name.
+ * @returns The target triple.
+ */
+export function makeTripletFromFileName(file: string): string {
     const os = (() => {
-        if (file.includes("darwin")) {
-            return "darwin";
-        } else if (file.includes("linux")) {
-            return "linux";
-        } else if (file.includes("windows")) {
-            return "windows";
+        const oses = ["darwin", "linux", "windows"];
+
+        for (const os of oses) {
+            if (file.includes(os)) {
+                return os;
+            }
         }
+
+        return "unknown";
     })();
 
     const platform = (() => {
-        if (file.includes("windows")) {
-            return "pc";
-        } else if (file.includes("linux")) {
-            return "unknown";
-        } else if (file.includes("darwin")) {
-            return "apple";
+        const platformMap: Record<string, string> = {
+            windows: "pc",
+            linux: "unknown",
+            darwin: "apple",
+        };
+
+        for (const [key, value] of Object.entries(platformMap)) {
+            if (file.includes(key)) {
+                return value;
+            }
         }
+
+        return "unknown";
     })();
 
     const arch = (() => {
-        if (file.includes("arm64") && file.includes("darwin")) {
-            return "aarch64";
+        const archMap: Record<string, string> = {
+            x86_64: "x86_64",
+            x64: "x86_64",
+            x86: "i686",
+            "386": "i686",
+            arm64: "aarch64",
+            aarch64: "aarch64",
+            riscv64: "riscv64gc",
+        };
+
+        for (const [key, value] of Object.entries(archMap)) {
+            if (file.includes(key)) {
+                return value;
+            }
         }
-        if (file.includes("arm64") || file.includes("aarch64")) {
-            return "arm64";
-        } else {
-            return "x86_64";
-        }
+
+        return "unknown";
     })();
 
-    const compiler = (() => {
-        if (file.includes("windows")) {
-            return "msvc";
-        } else if (file.includes("linux")) {
-            return "gnu";
+    const variant = (() => {
+        const variantMap: Record<string, string> = {
+            windows: "msvc",
+            linux: "gnu",
+        };
+
+        for (const [key, value] of Object.entries(variantMap)) {
+            if (file.includes(key)) {
+                return value;
+            }
         }
+
+        return "";
     })();
 
-    const triplet = [arch, platform, os, compiler].join("-");
+    const triplet = [arch, platform, os, variant].join("-");
     if (triplet.endsWith("-")) {
         return triplet.slice(0, -1);
     }
@@ -87,7 +128,7 @@ async function downloadServerBinaries() {
 
     console.log(`Latest ${repo} tag: ${tag}`);
 
-    let selectedFiles: GitHubAsset[] = [];
+    const selectedFiles: GitHubAsset[] = [];
     for (const asset of assets) {
         // glob-like matching
         for (const mask of downloadFilesMask) {
@@ -109,7 +150,7 @@ async function downloadServerBinaries() {
         const downloadUrl = file.browser_download_url as string;
         const fileName = file.name;
         const filePath = `./server-dist/${fileName}`;
-        const fileExists = (await fs).existsSync(filePath);
+        const fileExists = existsSync(filePath, { isFile: true });
         if (!fileExists) {
             console.log(`Downloading ${fileName}...`);
             const res = await fetch(downloadUrl);
@@ -138,19 +179,18 @@ async function downloadServerBinaries() {
         fileHashes[fileName] = hash;
     }
 
-    // console.log(fileHashes);
-
     for (const file of selectedFiles) {
         const fileName = file.name;
         console.log(`Checking hash for ${fileName}...`);
 
         const filePath = `./server-dist/${fileName}`;
         // resolve path
-        const fileBuffer = (await fs).readFileSync(filePath);
-        const fileHash = crypto
-            .createHash("sha256")
-            .update(fileBuffer)
-            .digest("hex");
+        const fileBuffer = Deno.readFileSync(filePath);
+
+        const fileHash = await crypto.subtle.digest("SHA-256", fileBuffer).then((hash) => {
+            return encodeHex(new Uint8Array(hash));
+        });
+
         console.log(`Hash: ${fileHash}`);
         if (fileHash !== fileHashes[fileName]) {
             throw new Error(`Hash mismatch for ${fileName}`);
@@ -159,9 +199,9 @@ async function downloadServerBinaries() {
 
     // extract files
     const extractDir = "./server-dist/extracted";
-    const extractDirExists = fs.existsSync(extractDir);
+    const extractDirExists = existsSync(extractDir, { isDirectory: true });
     if (!extractDirExists) {
-        fs.mkdirSync(extractDir);
+        Deno.mkdirSync(extractDir);
     }
 
     for (const file of selectedFiles) {
@@ -174,44 +214,30 @@ async function downloadServerBinaries() {
             });
         }
 
-        let exe = fileName.includes("windows") ? ".exe" : "";
+        const exe = fileName.includes("windows") ? ".exe" : "";
 
-        // rename memos binary to a target triple
         const triplet = makeTripletFromFileName(fileName);
+        Deno.renameSync(`${extractDir}/memos${exe}`, `./server-dist/memos-${triplet}${exe}`);
 
-        fs.renameSync(
-            `${extractDir}/memos${exe}`,
-            `./server-dist/memos-${triplet}${exe}`,
-        );
-        fs.rmSync(extractDir, { recursive: true });
-        fs.rmSync(filePath);
+        Deno.removeSync(extractDir, { recursive: true });
+        Deno.removeSync(filePath);
     }
 }
 
 async function main() {
-    const repoRoot = await findRepoRoot();
-    console.log(`Repo root: ${repoRoot}`);
-    process.chdir(repoRoot);
-    console.log("Running `before build` hooks...");
+    const repoRoot = findRepositoryRoot();
+    console.log(`Repository root is \`${repoRoot}\``);
+    Deno.chdir(repoRoot);
+    console.log("Running pre-build hook `Download Memos Builds` ...");
 
     const serverDistDir = "./server-dist";
-    const serverDistDirExists = fs.existsSync(serverDistDir);
+    const serverDistDirExists = existsSync(serverDistDir, { isDirectory: true });
     if (!serverDistDirExists) {
-        fs.mkdirSync(serverDistDir);
+        Deno.mkdirSync(serverDistDir, { recursive: true, mode: 0o755 });
     }
 
     await downloadServerBinaries();
 }
-//     const rustInfo = (await execa("rustc", ["-vV"])).stdout;
-//     const targetTriple = /host: (\S+)/g.exec(rustInfo)[1];
-//     if (!targetTriple) {
-//         console.error("Failed to determine platform target triple");
-//     }
-//     fs.renameSync(
-//         `src-tauri/binaries/sidecar${extension}`,
-//         `src-tauri/binaries/sidecar-${targetTriple}${extension}`,
-//     );
-// }
 
 main().catch((e) => {
     throw e;

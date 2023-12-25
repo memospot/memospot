@@ -6,6 +6,10 @@
         <color-preset>Vivid</color-preset>
         <header-logo>doclogo.png</header-logo>
         <primary-color>halloween</primary-color>
+        <algolia-id>SG16TBWQHE</algolia-id>
+        <algolia-index>memospot_docs</algolia-index>
+        <algolia-api-key>eb75bf4e696fe978166fa0de6d071ad7</algolia-api-key>
+        <web-root>https://lincolnthalles.github.io/memospot/</web-root>
     </variables>
-    <build-profile instance="in" />
+    <build-profile instance="md" />
 </buildprofiles>

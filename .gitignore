@@ -3,6 +3,9 @@
 logging_config.yaml
 clippy-results.sarif
 build/
+/dist-ui/
+.sccache
+.dprint
 
 # Task
 .task
@@ -12,6 +15,8 @@ logs/
 *.log
 
 ### Node / npm / react ###
+.vite
+.deno
 .DS_*
 .eslintcache
 .npm

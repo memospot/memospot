@@ -1,15 +1,15 @@
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
 [package]
 name = "home-dir"
 version = "0.1.1"
 authors = ["eulegang <eulegang@gmail.com>", "Lars Wirzenius", "Lincoln Nogueira"]
 edition = "2018"
-description = "expands home directories in a path"
 license = "MIT"
 repository = "https://github.com/eulegang/home-dir"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "expands home directories in a path"
 
 [dependencies]
-thiserror = "1.0"
-nix = { version = "0.27", features = ["user"] }
 home = "0.5.5"
+nix = { version = "0.27", features = ["user"] }
+thiserror = "1.0"

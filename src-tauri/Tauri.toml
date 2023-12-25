@@ -1,12 +1,12 @@
-#:schema https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v1.5.6/core/tauri-config-schema/schema.json
+#:schema https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v1.5.8/core/tauri-config-schema/schema.json
 # See https://tauri.app/v1/references/configuration-files/
 
 [build]
 beforeBuildCommand = "task tauri:hook:before-build"
 beforeBundleCommand = "task tauri:hook:before-bundle"
 beforeDevCommand = "task tauri:hook:before-dev"
-devPath = "../src"
-distDir = "../src"
+devPath = "http://localhost:5173"
+distDir = "../dist-ui"
 runner = "cargo"
 withGlobalTauri = true
 
@@ -52,7 +52,7 @@ icon = [
 ]
 identifier = "com.memospot.app"
 longDescription = "Memospot is a desktop version of Memos, a beautiful markdown-based note-taking service."
-shortDescription = "A markdown-based note-taking service."
+shortDescription = "Memospot - a note-taking application"
 targets = "all"
 
 [tauri.bundle.appimage]
@@ -69,10 +69,12 @@ webviewInstallMode = { silent = false, type = "embedBootstrapper" }
 [tauri.bundle.windows.wix]
 # wix generates a different installer for each language
 language = ["en-US"]
+template = "../installer/wix_template.wxs"
 
 [tauri.bundle.windows.nsis]
 compression = "lzma"
 displayLanguageSelector = true
+installerIcon = "icons/icon.ico"
 installMode = "currentUser"
 languages = [
     "Arabic",
@@ -89,6 +91,7 @@ languages = [
     "TradChinese",
     "Turkish",
 ]
+template = "../installer/nsis_template.nsi"
 
 [tauri.security]
 dangerousUseHttpScheme = true # external images won't load without this
@@ -114,5 +117,5 @@ height = 720
 maximized = false
 resizable = true
 title = "Memospot"
-userAgent = "Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Memospot/0.1.1"
+userAgent = "Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Memospot/0.1.2"
 width = 1280

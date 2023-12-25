@@ -1,76 +1,187 @@
 version: "3"
 env:
+  REPO_ROOT:
+    sh: |
+      cd "$(git rev-parse --show-toplevel)";
+      echo "$(pwd)"
+
+  DENO_DIR: >-
+    {{ osClean (print .REPO_ROOT "/.deno" ) }}
+
+  DPRINT_CACHE_DIR:
+    sh: |
+      DPRINT_CACHE_DIR="{{ osClean (print .REPO_ROOT "/.dprint" ) }}";
+      sh -c "mkdir -p '$DPRINT_CACHE_DIR'";
+      echo "$DPRINT_CACHE_DIR"
+
   RUSTFLAGS: -C target-cpu=native -Copt-level=0
 
-tasks:
-  ##### Tauri Build Hooks #####
-  tauri:hook:before-dev:
-    desc: Before dev scripts
-    cmds:
-      - task: tauri:hook:before-build
+  RUSTC_WRAPPER:
+    sh: |
+      sccache="{{ osClean "$HOME/.cargo/bin/sccache" }}{{if eq OS "windows"}}.exe{{end}}"
+      if [ -z $(command -v $sccache) ]; then
+        echo "";
+      else
+        echo "$sccache";
+      fi
 
-  tauri:hook:before-build:
-    desc: Before build scripts
+  SCCACHE_DIR:
+    sh: |
+      SCCACHE_DIR="{{ osClean (print .REPO_ROOT "/.sccache" ) }}";
+      sh -c "mkdir -p '$SCCACHE_DIR'";
+      echo "$SCCACHE_DIR"
+
+tasks:
+  #### CI ####
+  # Called by GitHub actions
+  ci:deno:cache:
+    cmds:
+      - deno cache --lock=deno.lock ./deps.ts
+  ci:deno:tests:
+    cmds:
+      - task: test:build-scripts
+  ci:lint:config:
+    cmds:
+      - task: lint:toml
+  ci:lint:deno:
+    cmds:
+      - task: lint:deno
+  ci:lint:dprint:
+    cmds:
+      - task: lint:dprint
+  #### /CI ####
+
+  download-memos-binaries:
+    desc: Download Memos server binaries
     summary: |
       - Download latest versions of Memos server binaries to `server-dist/`
+      - This will be used by the Tauri build process.
+      - Only runs if any of the binaries are missing.
     cmds:
-      - pnpm ts-node-transpile-only --esm ./src-tauri/scripts/before_build.ts
+      - deno run -A ./build-scripts/downloadMemosBuildsHook.ts
     status:
       - test -f ./server-dist/memos-x86_64-unknown-linux-gnu
       - test -f ./server-dist/memos-x86_64-pc-windows-msvc.exe
       - test -f ./server-dist/memos-x86_64-apple-darwin
       - test -f ./server-dist/memos-aarch64-apple-darwin
 
+  upx:
+    desc: Compress built binaries with upx
+    summary: |
+      - UPX is intentionally disabled for Windows to reduce AV false positives.
+      - macOS is not supported by UPX.
+    platforms: [linux]
+    ignore_error: true
+    cmds:
+      - deno run -A ./build-scripts/upxPackHook.ts
+
+  ##### Tauri Build Hooks #####
+  tauri:hook:before-dev:
+    desc: Before dev scripts
+    cmds:
+      - task: download-memos-binaries
+      - task: dev:ui
+
+  tauri:hook:before-build:
+    desc: Before build scripts
+    summary: |
+      - Build Frontend with Deno/Vite
+      - Download latest versions of Memos server binaries to `server-dist/`
+    cmds:
+      - task: gen:icons
+      - task: build:ui
+      - task: download-memos-binaries
+
   tauri:hook:before-bundle:
     desc: Before bundle scripts
     summary: |
       - upx
     cmds:
-      - pnpm ts-node-transpile-only --esm ./src-tauri/scripts/before_bundle.ts
+      - task: upx
   ##### /Build Hooks #####
 
+  #### Code runner ####
+  # Used to overcome limitations of code-runner vscode extension
+  coderunner:deno:
+    desc: Run a script with Deno
+    cmds:
+      - deno run -A {{ .CLI_ARGS }}
+  coderunner:deno:test:
+    desc: Test a script with Deno
+    cmds:
+      - deno test -A {{ .CLI_ARGS }}
+  coderunner:dprint:check:
+    desc: Run dprint check
+    cmds:
+      - cd "{{ trimAll "'" (osDir .CLI_ARGS) }}"; dprint check {{ trimAll "'" (osBase .CLI_ARGS) }}
+  #### /Code runner ####
+
+  ##### Tests #####
+  test:
+    desc: Run all tests
+    deps:
+      - test:rust
+      - test:build-scripts
+  test:rust:
+    desc: Run all Rust tests
+    cmds:
+      - cd ./src-tauri; cargo test --package memospot --lib -- --nocapture
+  test:build-scripts:
+    desc: Run build scripts tests
+    cmds:
+      - deno task test-build-scripts
+  ##### /Tests #####
+
   ##### Development #####
+  dev:ui:
+    desc: Run Vite front-end dev server with Deno
+    summary: |
+      - This will start the front-end in development mode.
+      - Default address: http://localhost:5173
+    cmds:
+      - deno task dev
   dev:
     desc: Run the app in development mode
     summary: |
       - This will start the app in development mode.
       - It will automatically reload the app when you make changes.
       - A fast Rust build is prioritized.
-
     deps:
-      - task: dev:posix
-      - task: dev:windows
-  dev:posix:
+      - task: dev:killprocesses
+    cmds:
+      - cargo tauri dev
+      - task: dev:killprocesses
+      - task: sccache:stats
+  dev:killprocesses:
+    desc: Kill all running Memospot/Memos processes
+    silent: true
+    cmds:
+      - task: dev:killprocesses:posix
+      - task: dev:killprocesses:windows
+  dev:killprocesses:posix:
     platforms: [linux, darwin]
     internal: true
-    env:
-      RUSTC_WRAPPER:
-        sh: echo "$HOME/.cargo/bin/sccache"
+    ignore_error: true
     cmds:
-      - killall memospot || true
-      - killall memos || true
-      - cargo tauri dev
-      - killall memospot || true
-      - killall memos || true
-  dev:windows:
+      - killall memospot
+      - killall memos
+  dev:killprocesses:windows:
     platforms: [windows]
     internal: true
-    env:
-      RUSTC_WRAPPER:
-        sh: echo "$HOME\.cargo\bin\sccache.exe"
+    ignore_error: true
     cmds:
-      - taskkill /f /t /im memospot.exe || true
-      - taskkill /f /t /im memos.exe || true
-      - cargo tauri dev
-      - taskkill /f /t /im memospot.exe || true
-      - taskkill /f /t /im memos.exe || true
+      - taskkill /f /t /im memospot.exe
+      - taskkill /f /t /im memos.exe
+
+  update-deno-lock:
+    desc: Update Deno lock file
+    cmds:
+      - deno cache --reload --lock=deno.lock --lock-write ./deps.ts
 
   update-deps:
     desc: Update project dependencies
     cmds:
       - cd ./src-tauri; cargo update
-      - pnpm update
-      - pnpm update @tauri-apps/cli @tauri-apps/api --latest
 
   update-toolchain:
     desc: Update project toolchain
@@ -78,66 +189,93 @@ tasks:
       - rustup update
       - rustup self update
       - rustup component add clippy
-      - pnpm add -g pnpm
 
   gen:icons:
     desc: Generate app icons from `assets/app-icon-lossless.webp`
     cmds:
-      - cd ./src-tauri; cargo tauri icon ../assets/app-icon-lossless.webp
-      - sh -c "cp -f ./src-tauri/icons/icon.ico ./src/favicon.ico"
+      - |
+        {{ if eq (env "CI") "true" }}
+        exit 0
+        {{ end }}
+
+        cargo tauri icon ./assets/app-icon-lossless.webp
+        sh -c "cp -f ./src-tauri/icons/icon.ico ./src-ui/public/favicon.ico"
     sources:
       - ./assets/app-icon-lossless.webp
 
   ##### /Development #####
 
   ##### Build #####
+  build:ui:
+    desc: Run build front-end with Deno and Vite
+    cmds:
+      - deno task build
+    sources:
+      - "./src-ui/src/**/*"
+    generates:
+      - "./dist-ui/**/*"
+
   build:
     desc: Build the app for production
     summary: |
       - This will create an universal x86-64 optimized build of the app.
     env:
+      # optimized universal x86-64 build
       RUSTFLAGS: -Ctarget-cpu=x86-64 -Copt-level=3 -Cstrip=symbols -Ccodegen-units=1
-      RUSTC_WRAPPER:
-        sh: echo "{{if eq OS "windows"}}$HOME\.cargo\bin\sccache.exe{{else}}$HOME/.cargo/bin/sccache{{end}}"
     cmds:
-      - pnpm install --frozen-lockfile
       - cargo tauri build
+      - task: sccache:stats
+      - task: postbuild
+  postbuild:
+    desc: Move relevant files to `build/`
+    ignore_error: true
+    cmds:
       - sh -c "mkdir -p ./build"
-      - sh -c "cp -f ./src-tauri/target/release/memos* ./build/"
-      - sh -c "cp -fr ./src-tauri/target/release/bundle/* ./build/"
+      - sh -c "mv -f ./src-tauri/target/release/memos ./build/"
+      - sh -c "mv -f ./src-tauri/target/release/memospot ./build/"
+      - sh -c "mv -f ./src-tauri/target/release/memos.exe ./build/"
+      - sh -c "mv -f ./src-tauri/target/release/memospot.exe ./build/"
+      - sh -c "mv -f ./src-tauri/target/release/bundle/nsis/* ./build/"
+      - sh -c "mv -f ./src-tauri/target/release/bundle/msi/* ./build/"
+      - sh -c "mv -f ./src-tauri/target/release/bundle/deb/*.deb ./build/"
+      - sh -c "mv -f ./src-tauri/target/release/bundle/appimage/*.AppImage ./build/"
 
   ##### /Build #####
 
   ##### Clean #####
   clean:
-    desc: Cleanup ALL build artifacts, node modules and downloaded memos binaries.
+    desc: Cleanup ALL build artifacts, deno/node modules and downloaded memos binaries.
     summary: |
-      This will free up nearly 10GB of disk space, but will require a full rebuild.
+      This will free up nearly 20GB of disk space, but will require a full rebuild.
       Don't use unless you know what you're doing.
     deps:
-      - clean:posix
-      - clean:windows
+      - dev:killprocesses
     ignore_error: true
     cmds:
-      - sh -c "rm -rf ./src-tauri/target || true"
-      - sh -c "rm -f ./src-tauri/memos.log || true"
-      - sh -c "rm -rf ./build || true"
-      - sh -c "rm -rf ./node_modules || true"
-  clean:posix:
-    platforms: [linux, darwin]
-    internal: true
-    ignore_error: true
-    cmds:
-      - killall memospot || true
-      - killall memos || true
-  clean:windows:
-    platforms: [windows]
-    internal: true
-    ignore_error: true
-    cmds:
-      - taskkill /f /t /im memospot.exe || true
-      - taskkill /f /t /im memos.exe || true
+      - sh -c "rm -rf ./.deno"
+      - sh -c "rm -rf ./.dprint"
+      - sh -c "rm -rf ./.sccache"
+      - sh -c "rm -rf ./.task"
+      - sh -c "rm -rf ./build"
+      - sh -c "rm -rf ./dist-ui"
+      - sh -c "rm -rf ./.node_modules"
+      - sh -c "rm -rf ./server-dist"
+      - sh -c "rm -rf ./src-tauri/target"
+      - sh -c "rm -rf ./src-ui/.vite"
   ##### /Clean #####
+
+  ##### Miscellanea #####
+  sccache:clear:
+    desc: Clear sccache cache
+    ignore_error: true
+    cmds:
+      - sccache --stop-server
+      - sh -c "rm -rf ./.sccache"
+  sccache:stats:
+    desc: Show sccache stats
+    silent: true
+    cmds:
+      - sccache --show-stats
 
   ##### Code Lint #####
   lint:
@@ -145,71 +283,62 @@ tasks:
       - check
     desc: Run all checkers/linters in parallel
     deps:
-      - lint:backend
-      - lint:config
-      - lint:frontend
-  lint:backend:
-    desc: lint backend
-    cmds:
-      - cd ./src-tauri; cargo fmt --all --check
-      - cd ./src-tauri; cargo clippy --all-features --workspace --locked
-      - cd ./src-tauri/scripts; pnpm eslint --ext .ts,.tsx,.mts,.cts
-  lint:config:
-    desc: lint config
+      - lint:cargo
+      - lint:deno
+      - lint:toml
+      - lint:dprint
+  lint:cargo:
+    desc: lint rust with cargo clippy
     dir: ./src-tauri
     cmds:
-      - taplo lint Tauri.toml --schema=https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v1.5.6/core/tauri-config-schema/schema.json
-      - taplo lint Cargo.toml --schema=https://json.schemastore.org/cargo.json
-      - taplo lint .rustfmt.toml --schema=https://json.schemastore.org/rustfmt.json
-  lint:frontend:
-    desc: lint frontend
+      - cargo fmt --all --check
+      - cargo clippy --all-features --workspace --locked
+      - task: sccache:stats
+  lint:deno:
+    desc: lint typescript with deno
     cmds:
-      - cd ./src; pnpm eslint --ext .js,.jsx,.mjs,.cjs,.ts,.tsx,.mts,.cts
+      - cd ./src-ui; deno lint
+      - cd ./build-scripts; deno lint
+  lint:toml:
+    aliases:
+      - lint:config
+    desc: lint config (also check schemas)
+    dir: ./src-tauri
+    cmds:
+      - dprint check Tauri.toml
+      - dprint check Cargo.toml
+      - dprint check .rustfmt.toml
+      - taplo lint Tauri.toml
+      - taplo lint Cargo.toml
+      - taplo lint .rustfmt.toml
+  lint:dprint:
+    desc: lint with dprint
+    cmds:
+      - cd ./src-ui; dprint check
+      - cd ./build-scripts; dprint check
   ##### /Code Lint #####
 
   ##### Code Fix #####
   fix:
     desc: Run all fixers in parallel
     deps:
-      - fix:backend
-      - fix:frontend
-  fix:backend:
-    desc: fix backend
+      - fix:cargo
+  fix:cargo:
+    desc: Run cargo fix
     cmds:
       - cd ./src-tauri; cargo fix
-      - cd ./src-tauri/scripts; pnpm eslint --ext .ts,.tsx,.mts,.cts --fix
-  fix:frontend:
-    desc: fix frontend
-    cmds:
-      - cd ./src; pnpm eslint --ext .js,.jsx,.mjs,.cjs,.ts,.tsx,.mts,.cts --fix
+
   ##### /Code Fix #####
 
   ##### Code Format #####
   format:
-    desc: Run all formatters in parallel
+    desc: Format repo code with dprint
+    summary: |
+      - dprint is configured to format json, rust, toml, yaml, html, css, typescript and markdown files.
     aliases:
       - fmt
-    deps:
-      - format:backend
-      - format:config
-      - format:frontend
-  format:backend:
-    desc: format backend
     cmds:
-      - cd ./src-tauri; cargo fmt --all
-      - pnpm prettier ./src-tauri/scripts --write --ignore-path .gitignore --ignore-path .prettierignore
-  format:config:
-    desc: format config
-    ignore_error: true
-    cmds:
-      - taplo format ./src-tauri/.rustfmt.toml
-      - taplo format .taplo.toml
-      - taplo format ./src-tauri/Cargo.toml
-      - taplo format ./src-tauri/Tauri.toml
-  format:frontend:
-    desc: format frontend
-    cmds:
-      - pnpm prettier ./src --write --ignore-path .gitignore --ignore-path .prettierignore
+      - dprint fmt --diff
 
   ##### /Code Format #####
 
@@ -231,7 +360,7 @@ tasks:
     interactive: true
     cmds:
       - |
-        sudo apt update &&
+        sudo apt update -y &&
         sudo apt install -y \
           build-essential \
           curl \
@@ -246,107 +375,149 @@ tasks:
         sudo apt install -y libappindicator3-dev || true
         echo -e '\e[33mNOTE: "libayatana-appindicator3-1" may conflict with libappindicator3-dev, its ok to ignore.\e[0m'
 
-  setup:node:
-    desc: "Setup node"
-    deps:
-      - setup:node:posix
-      - setup:node:windows
-  setup:node:posix:
+  setup:deno:
+    desc: "Setup Deno"
+    cmds:
+      - task: setup:deno:posix
+      - task: setup:deno:windows
+    status:
+      - sh -c 'if [ -z $(command -v deno) ]; then exit 1; fi'
+  setup:deno:posix:
     platforms: [darwin, linux]
     internal: true
+    silent: true
     cmds:
-      - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
-      - export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"; nvm install 18; nvm use 18
-    status:
-      - test -f "$HOME/.nvm/nvm.sh"
-      - 'if ! [ "`$`(command -v nvm)" ]; then exit 1; fi'
-  setup:node:windows:
+      - |
+        if ! [ -z $(command -v brew) ]; then
+          brew install deno
+          exit 0
+        fi
+        echo -e '\e[33mERROR: Homebrew not found. Please install Deno manually.
+
+        Alternatively, install Homebrew and run this task again.\e[0m'
+
+        echo -e '\e[34m
+        https://deno.com
+        https://brew.sh
+        \e[0m'
+  setup:deno:windows:
     platforms: [windows]
     internal: true
+    silent: true
     cmds:
-      - powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -OutFile '$TEMP\nvm-setup.exe' -Uri 'https://github.com/coreybutler/nvm-windows/releases/latest/download/nvm-setup.exe' -UseBasicParsing; Start-Process -Wait '$TEMP\nvm-setup.exe' /silent ; Remove-Item -Path '$TEMP\nvm-setup.exe' -Force;"
-      - export PATH="$PATH;$HOME\.nvm"; nvm install 18; nvm use 18
-    status:
-      - sh -c 'test -f "$HOME/.nvm/nvm.exe"'
+      - |
+        if ! [ -z $(command -v choco) ]; then
+          echo "Installing Deno via Chocolatey..."
+          powershell -Command 'Start-Process -Wait -Verb RunAs -FilePath "choco" -ArgumentList "install deno -y"'
+          exit 0
+        fi
+        if ! [ -z $(command -v winget) ]; then
+          echo "Installing Deno via Winget..."
+          winget install --id Denoland.deno
+          exit 0
+        fi
+        if ! [ -z $(command -v scoop) ]; then
+          echo "Installing Deno via Scoop..."
+          scoop install deno
+          exit 0
+        fi
+        echo -e '\e[33mERROR: No package manager found. Please install Deno manually.
+
+        Alternatively, install Chocolatey, Winget or Scoop and run this task again.\e[0m'
+
+        echo -e '\e[34m
+        https://deno.com
+        https://chocolatey.org/install
+        https://apps.microsoft.com/detail/9NBLGGH4NNS1
+        https://scoop.sh/
+        \e[0m'
 
   setup:rust:
     desc: "Setup rust"
-    deps:
+    cmds:
       - setup:rust:posix
       - setup:rust:windows
+      - rustup default stable
+    status:
+      - sh -c 'if [ -z $(command -v rustup) ]; then exit 1; fi'
+      - sh -c 'if [ -z $(command -v rustc) ]; then exit 1; fi'
   setup:rust:posix:
     platforms: [darwin, linux]
     internal: true
+    silent: true
     cmds:
-      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-      - source "$HOME/.cargo/env"; rustup default stable
-    status:
-      - test -f "$HOME/.cargo/bin/rustc"
+      - |
+        if ! [ -z $(command -v brew) ]; then
+          brew install rustup-init
+          rustup-init -y
+          source "$HOME/.cargo/env"; rustup default stable
+          exit 0
+        fi
+        echo -e '\e[34mHomebrew not found. Falling back to official install script.\e[0m'
+        nohup curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        source "$HOME/.cargo/env"; rustup default stable
+        \e[0m'
   setup:rust:windows:
     platforms: [windows]
     internal: true
+    silent: true
     cmds:
-      - winget install --id Rustlang.Rustup
-      - export "PATH=$PATH;$HOME\.cargo\bin"; rustup default stable-msvc
-    status:
-      - sh -c 'test -f "$HOME/.cargo/bin/rustc.exe"'
+      - |
+        if ! [ -z $(command -v choco) ]; then
+          echo "Installing Rustup via Chocolatey..."
+          powershell -Command 'Start-Process -Wait -Verb RunAs -FilePath "choco" -ArgumentList "install rustup.install -y"'
+          exit 0
+        fi
+        if ! [ -z $(command -v winget) ]; then
+          echo "Installing Rustup via Winget..."
+          winget install --id Rustlang.Rustup
+          exit 0
+        fi
+        if ! [ -z $(command -v scoop) ]; then
+          echo "Installing Rustup via Scoop..."
+          scoop install rustup
+          exit 0
+        fi
+        echo -e '\e[33mERROR: No package manager found. Please install Rustup manually.
+
+        Alternatively, install Chocolatey, Winget or Scoop and run this task again.\e[0m'
+
+        echo -e '\e[34m
+        https://rustup.rs
+
+        https://chocolatey.org/install
+        https://apps.microsoft.com/detail/9NBLGGH4NNS1
+        https://scoop.sh/
+        \e[0m'
 
   setup:
     desc: Setup the project tooling.
     env:
+      # slow build with all optimizations
       RUSTFLAGS: -Ctarget-cpu=native -Copt-level=3 -Cstrip=symbols -Ccodegen-units=1
     deps:
       - setup:platformdeps
-      - setup:node
+      - setup:deno
       - setup:rust
     cmds:
-      - task: setup:posix
-      - task: setup:windows
-
-  setup:posix:
-    platforms: [darwin, linux]
-    internal: true
-    cmds:
-      - echo -e '\e[33mRun "nvm use 18" and repeat this task if you get an error about npm/pnpm not being found.\e[0m'
       - |
-        (. "$HOME/.nvm/nvm.sh" && nvm use 18) || (export PATH="$PATH:$HOME/.nvm/versions/node/v18.18.2/bin/");
-        npm install -g pnpm || true;
-        pnpm i --frozen-lockfile
-      - |
-        . "$HOME/.cargo/env";
-        rustup component add clippy;
-        cargo install tauri-cli --locked;
-        cargo install taplo-cli --locked;
-        cargo install cargo-edit --locked
-        cargo install sccache --locked
-
-  setup:windows:
-    platforms: [windows]
-    internal: true
-    cmds:
-      - |
-        export PATH="$PATH;$HOME\.nvm\current";
-        nvm use 18;
-        npm install -g pnpm || true;
-        pnpm i --frozen-lockfile
-      - |
+        {{if eq OS "windows"}}
         export PATH="$PATH;$HOME\.cargo\bin";
+        {{else}}
+        . "$HOME/.cargo/env";
+        {{end}}
         rustup component add clippy;
         cargo install tauri-cli --locked;
         cargo install taplo-cli --locked;
-        cargo install cargo-edit --locked
-        cargo install sccache --locked
-
+        cargo install cargo-edit --locked;
+        cargo install dprint --locked;
+        export RUSTC_WRAPPER="";
+        cargo install sccache --locked;
+  ##### /Developer Environment Setup #####
   ### Git Actions ###
-  prepush:
-    desc: Run all checks before pushing changes
-    cmds:
-      - cd ./src-tauri; cargo generate-lockfile
-      - task: lint
-      - task: format
-
   checkrepo:
     desc: Check if git is in a clean state.
+    silent: true
     cmds:
       - lsf=$(git ls-files --deleted --modified --others --exclude-standard -- :/) && [ -z "$lsf" ] || (echo "Repository is not clean." && exit 1)
       - git diff-index --quiet --cached HEAD -- || (echo "Files are staged." && exit 1)
@@ -354,18 +525,27 @@ tasks:
       - echo "Repository is clean."
 
   bumpversion:
+    desc: Bump version
+    summary: |
+      - This will bump the version in `src-tauri/Cargo.toml` and `src-tauri/Tauri.toml`.
+      - It will also run `task lint:toml` and `task format:dprint` to ensure the files are valid.
+    cmds:
+      - task: internal:bumpversion
+        vars:
+          NEW_VERSION: "{{ .CLI_ARGS }}"
+  internal:bumpversion:
     internal: true
+    silent: true
     cmds:
       - cd ./src-tauri; cargo set-version --locked {{.NEW_VERSION}}
       - sh -c "sed -i 's#Memospot/[0-9]\+\.[0-9]\+\.[0-9]\+"#Memospot/{{.NEW_VERSION}}"#' ./src-tauri/Tauri.toml"
       - cd ./src-tauri; cargo generate-lockfile
-      - task: lint:config
-      - task: format:config
+      - task: format:dprint
+      - task: lint:toml
       - git add ./src-tauri/Tauri.toml
       - git add ./src-tauri/Cargo.toml
       - git add ./src-tauri/Cargo.lock
-      - git add Taskfile.yml
-      - git commit -am "Bump version to v{{.NEW_VERSION}}"
+      - git commit -m "Bump version to v{{.NEW_VERSION}}"
     requires:
       vars: [NEW_VERSION]
 
@@ -376,9 +556,8 @@ tasks:
     summary: |
       - This will trigger a test build on GitHub Actions.
     cmds:
-      - task: bumpversion
+      - task: internal:bumpversion
         vars:
           NEW_VERSION: "{{ .CLI_ARGS }}"
-      - task: prepush
       - git tag -a v{{.CLI_ARGS}} -m "Push v{{.CLI_ARGS}}"
       - git push origin --tags
