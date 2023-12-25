@@ -108,8 +108,8 @@ jobs:
           sudo rm -f /var/lib/man-db/auto-update
 
       - if: ${{ env.ACT }}
+        name: "[ACT] Link apt-fast to apt-get"
         run: |
-          # Workaround to run this workflow on nektos/act
           sudo cp -l /usr/bin/apt-get /usr/local/sbin/apt-fast
           sudo apt-get update > /dev/null
       - if: ${{ runner.os == 'Linux'  }}
