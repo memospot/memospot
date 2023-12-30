@@ -128,12 +128,21 @@ jobs:
         with:
           xcode-version: latest-stable
 
+      # Rust
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: clippy
           targets: ${{ matrix.platform.rust_target }}
+          components: clippy
 
+      - name: Setup Cargo cache
+        uses: swatinem/rust-cache@v2
+        with:
+          prefix-key: cargo-${{ matrix.platform.rust_target }}
+          cache-all-crates: true
+          workspaces: |
+            src-tauri -> target
+      # /Rust
       # sccache
       # - name: Install sccache
       #   uses: mozilla-actions/sccache-action@v0.0.3
@@ -159,27 +168,6 @@ jobs:
         shell: bash
         run: sccache --start-server || (sccache --stop-server && sleep 1 && sccache --start-server)
       # /sccache
-
-      - if: ${{ runner.os != 'Windows' }}
-        name: Setup Cargo cache
-        uses: swatinem/rust-cache@v2
-        with:
-          prefix-key: cargo-${{ matrix.platform.rust_target }}
-          cache-all-crates: true
-          workspaces: |
-            src-tauri -> target
-      - if: ${{ runner.os == 'Windows' }}
-        # this is due to sarif-fmt and clippy-sarif being installed
-        # via binstall on Windows; May be removed in the future
-        name: "[Windows] Setup Cargo cache"
-        uses: swatinem/rust-cache@v2
-        with:
-          prefix-key: cargo-${{ matrix.platform.rust_target }}
-          cache-all-crates: true
-          workspaces: |
-            src-tauri -> target
-          cache-directories: |
-            ${{env.USERPROFILE}}\.cargo\bin
 
       # Clippy with SARIF output
       - if: ${{ github.event_name == 'pull_request' }}
