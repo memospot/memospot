@@ -120,12 +120,9 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           prefix-key: cargo-${{ matrix.platform.rust_target }}
-          workspaces: "./src-tauri/target"
           cache-all-crates: true
-          cache-directories: |
-            ${{env.USERPROFILE}}\.cargo\bin
-            /home/runner/.cargo/bin
-            /root/.cargo/bin
+          workspaces: |
+            src-tauri -> target
       # /Rust
       # sccache
       - name: Install sccache

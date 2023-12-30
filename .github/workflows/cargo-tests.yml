@@ -165,15 +165,19 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           prefix-key: cargo-${{ matrix.platform.rust_target }}
-          workspaces: "./src-tauri/target"
           cache-all-crates: true
+          workspaces: |
+            src-tauri -> target
       - if: ${{ runner.os == 'Windows' }}
-        name: Setup Cargo cache
+        # this is due to sarif-fmt and clippy-sarif being installed
+        # via binstall on Windows; May be removed in the future
+        name: "[Windows] Setup Cargo cache"
         uses: swatinem/rust-cache@v2
         with:
           prefix-key: cargo-${{ matrix.platform.rust_target }}
-          workspaces: "./src-tauri/target"
           cache-all-crates: true
+          workspaces: |
+            src-tauri -> target
           cache-directories: |
             ${{env.USERPROFILE}}\.cargo\bin
 
