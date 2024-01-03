@@ -46,9 +46,24 @@ Download the latest release for your platform from the [releases page](https://g
 > - Binaries are packed with UPX. This may trigger false positives on some antivirus software. You can unpack the binaries with `upx -d memos*`, if you will.
 > - On macOS, you may need to [allow the app to run](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac) first.
 
+## Troubleshooting
+
+### Linux
+
+If Memospot starts but doesn't get past the loading screen, or the screen stays white, you may have an issue with hardware acceleration on your GPU driver. Try disabling the WebView acceleration with the following command:
+
+```bash
+echo 'WEBKIT_DISABLE_COMPOSITING_MODE=1' | sudo tee -a /etc/environment
+# You must restart your computer for this to take effect
+```
+
 ## Manual server update
 
 Download the latest server release from [memos-builds](https://github.com/lincolnthalles/memos-builds) and replace the `memos` binary in the installation folder.
+
+> Note that while this works on most cases, it's discouraged for anything other than patch version upgrades (version scheme is `Major.Minor.Patch`).
+>
+> Manual server update can break things, and you can't easily go back to the previous version due to database changes that usually happen between major and minor versions. If you need to revert an update, you'll have to restore a database backup.
 
 ### Windows Updater script
 
@@ -126,14 +141,3 @@ This project is made possible by the following open-source projects:
   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=lincolnthalles/memospot,lincolnthalles/memos-builds&usememos/memos&type=Date" />
   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=lincolnthalles/memospot,lincolnthalles/memos-builds&usememos/memos&type=Date" />
 </picture>
-
-## Support
-
-If you like this project, don't forget to [⭐star](https://github.com/lincolnthalles/memospot) it and consider supporting my work:
-
-<p align="center" width="100%">
-
-  <a href="https://www.buymeacoffee.com/lincolnthalles">
-    <img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" />
-  </a>
-</p>

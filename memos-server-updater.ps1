@@ -239,12 +239,37 @@ else {
   Exit 1
 }
 
+$dateString = $(Get-Date -Format "yyyyMMdd_HHmmss")
 $memosBin = [IO.Path]::Combine($MemospotPath, "memos.exe")
+
 if ([IO.File]::Exists($memosBin)) {
-  Write-Host "Backing up current memos.exe to: ``$memosBin.bak``"
-  Move-Item -Path $memosBin -Destination "$memosBin.bak" -Force -ErrorAction Stop
+  $memosBinBackup = "${memosBin}_${dateString}_before_${tagName}.zip"
+  Write-Host "Backing up current memos.exe"
+  Compress-Archive -Path $memosBin -DestinationPath "$memosBinBackup" -Force -ErrorAction Stop
   if ($null -eq $?) {
-    Write-Host "Failed to backup file. Make sure Memos is stopped and that you have write permissions to: $memosBin" -f Red
+    Write-Host "Failed to backup file. Make sure Memos is stopped and that you have write permissions to: $memosBinBackup" -f Red
+    Exit 1
+  }
+}
+
+$databasePath = [IO.Path]::Combine($MemospotPath, "memos_prod.db")
+$databasePathWAL = [IO.Path]::Combine($MemospotPath, "memos_prod.db-wal")
+$databasePathSHM = [IO.Path]::Combine($MemospotPath, "memos_prod.db-shm")
+if ([IO.File]::Exists($databasePath)) {
+  $databaseBackup = "${databasePath}_${dateString}_before_${tagName}.zip"
+  Write-Host "Backing up current database"
+
+  $fileList = [System.Collections.ArrayList]@($databasePath)
+  if ([IO.File]::Exists($databasePathWAL)) {
+    $fileList += $databasePathWAL
+  }
+  if ([IO.File]::Exists($databasePathSHM)) {
+    $fileList += $databasePathSHM
+  }
+
+  Compress-Archive -Path $fileList -DestinationPath "$databaseBackup" -Force -ErrorAction Stop
+  if ($null -eq $?) {
+    Write-Host "Failed to backup file. Make sure Memos is stopped and that you have write permissions to: $databaseBackup" -f Red
     Exit 1
   }
 }
