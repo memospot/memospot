@@ -10,7 +10,6 @@ env:
   CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
   DENO_DIR: ${{github.workspace}}/.deno
-  NODE_MODULES: ${{github.workspace}}/node_modules
   RUST_BACKTRACE: short
   RUSTC_WRAPPER: sccache
   RUSTFLAGS: -Copt-level=1 -Cstrip=symbols
@@ -40,22 +39,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      # Set env vars
-      - if: ${{ runner.os == 'Windows' }}
-        name: "[Windows] Set env vars"
-        shell: bash
-        run: |
-          DENO_DIR="$GITHUB_WORKSPACE\\.deno"
-          echo "DENO_DIR=$DENO_DIR" >> $GITHUB_ENV
-
-          NODE_MODULES="$GITHUB_WORKSPACE\\node_modules"
-          echo "NODE_MODULES=$NODE_MODULES" >> $GITHUB_ENV
-
-          TEMP="$LOCALAPPDATA\\Temp"
-          echo "TEMP=$TEMP" >> $GITHUB_ENV
-          echo "TMP=$TEMP" >> $GITHUB_ENV
-      # /Set env vars
 
       - if: ${{ runner.os == 'Linux' }}
         name: "[Linux] Disable initramfs and man-db update"
@@ -148,15 +131,26 @@ jobs:
           cache: enable
           tag: "v1.39.1"
 
-      - name: Cache Deno dependencies
+      - if: ${{ runner.os != 'Windows' }}
+        name: Cache Deno dependencies
         uses: actions/cache@v3
         with:
           key: denodeps-${{ runner.os }}-${{ hashFiles('**/deno.lock') }}
           restore-keys: denodeps-${{ runner.os }}
-          enableCrossOsArchive: false
           path: |
             ${{env.DENO_DIR}}
-            ${{env.NODE_MODULES}}
+            ${{github.workspace}}/node_modules
+
+      - if: ${{ runner.os == 'Windows' }}
+        name: Cache Deno dependencies
+        uses: actions/cache@v3
+        with:
+          key: denodeps-${{ runner.os }}-${{ hashFiles('**/deno.lock') }}
+          restore-keys: denodeps-${{ runner.os }}
+          path: |
+            ${{env.DENO_DIR}}
+          # node_modules is not cached on Windows as it breaks subsequent
+          # runs, probably because this folder relies on symlinks
 
       - name: Restore Deno dependencies
         run: task ci:deno:cache

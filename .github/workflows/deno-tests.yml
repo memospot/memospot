@@ -27,7 +27,6 @@ on:
 
 env:
   DENO_DIR: ${{github.workspace}}/.deno
-  NODE_MODULES: ${{github.workspace}}/node_modules
 
 jobs:
   deno-tests:
@@ -41,22 +40,6 @@ jobs:
 
     runs-on: ${{ matrix.platform.runner }}
     steps:
-      # Set env vars
-      - if: ${{ runner.os == 'Windows' }}
-        name: "[Windows] Set env vars"
-        shell: bash
-        run: |
-          DENO_DIR="$GITHUB_WORKSPACE\\.deno"
-          echo "DENO_DIR=$DENO_DIR" >> $GITHUB_ENV
-
-          NODE_MODULES="$GITHUB_WORKSPACE\\node_modules"
-          echo "NODE_MODULES=$NODE_MODULES" >> $GITHUB_ENV
-
-          TEMP="$LOCALAPPDATA\\Temp"
-          echo "TEMP=$TEMP" >> $GITHUB_ENV
-          echo "TMP=$TEMP" >> $GITHUB_ENV
-      # /Set env vars
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -67,6 +50,7 @@ jobs:
           cache: enable
           tag: "v3.33.1"
 
+      # Deno
       - name: Install Deno
         uses: jaxxstorm/action-install-gh-release@v1.10.0
         with:
@@ -74,18 +58,30 @@ jobs:
           cache: enable
           tag: "v1.39.1"
 
-      - name: Cache Deno dependencies
+      - if: ${{ runner.os != 'Windows' }}
+        name: Cache Deno dependencies
         uses: actions/cache@v3
         with:
           key: denodeps-${{ runner.os }}-${{ hashFiles('**/deno.lock') }}
           restore-keys: denodeps-${{ runner.os }}
-          enableCrossOsArchive: false
           path: |
             ${{env.DENO_DIR}}
-            ${{env.NODE_MODULES}}
+            ${{github.workspace}}/node_modules
+
+      - if: ${{ runner.os == 'Windows' }}
+        name: Cache Deno dependencies
+        uses: actions/cache@v3
+        with:
+          key: denodeps-${{ runner.os }}-${{ hashFiles('**/deno.lock') }}
+          restore-keys: denodeps-${{ runner.os }}
+          path: |
+            ${{env.DENO_DIR}}
+          # node_modules is not cached on Windows as it breaks subsequent
+          # runs, probably because this folder relies on symlinks
 
       - name: Restore Deno dependencies
         run: task ci:deno:cache
+      # /Deno
 
       - name: Run Deno tests
         run: task ci:deno:tests

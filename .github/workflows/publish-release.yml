@@ -157,15 +157,26 @@ jobs:
           cache: enable
           tag: "v1.39.1"
 
-      - name: Cache Deno dependencies
+      - if: ${{ runner.os != 'Windows' }}
+        name: Cache Deno dependencies
         uses: actions/cache@v3
         with:
           key: denodeps-${{ runner.os }}-${{ hashFiles('**/deno.lock') }}
           restore-keys: denodeps-${{ runner.os }}
-          enableCrossOsArchive: false
           path: |
             ${{env.DENO_DIR}}
-            ${{env.NODE_MODULES}}
+            ${{github.workspace}}/node_modules
+
+      - if: ${{ runner.os == 'Windows' }}
+        name: Cache Deno dependencies
+        uses: actions/cache@v3
+        with:
+          key: denodeps-${{ runner.os }}-${{ hashFiles('**/deno.lock') }}
+          restore-keys: denodeps-${{ runner.os }}
+          path: |
+            ${{env.DENO_DIR}}
+          # node_modules is not cached on Windows as it breaks subsequent
+          # runs, probably because this folder relies on symlinks
 
       - name: Restore Deno dependencies
         run: task ci:deno:cache
