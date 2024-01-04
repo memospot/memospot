@@ -38,34 +38,10 @@ jobs:
     runs-on: ${{ matrix.platform.runner }}
     steps:
       # Set env vars
-      - if: ${{ runner.os == 'Linux' }}
-        name: "[Linux] Set env vars"
-        run: |
-          DENO_DIR="${{github.workspace}}/.deno"
-          echo "DENO_DIR=$DENO_DIR" >> $GITHUB_ENV
-
-          DENO_CACHE="$HOME/.cache/deno"
-          echo "DENO_CACHE=$DENO_CACHE" >> $GITHUB_ENV
-
-      - if: ${{ runner.os == 'macOS' }}
-        name: "[macOS] Set env vars"
-        run: |
-          DENO_DIR="${{github.workspace}}/.deno"
-          echo "DENO_DIR=$DENO_DIR" >> $GITHUB_ENV
-
-          DENO_CACHE="$HOME/Library/Caches/deno"
-          echo "DENO_CACHE=$DENO_CACHE" >> $GITHUB_ENV
-
       - if: ${{ runner.os == 'Windows' }}
         name: "[Windows] Set env vars"
         shell: bash
         run: |
-          DENO_DIR="${{github.workspace}}\\.deno"
-          echo "DENO_DIR=$DENO_DIR" >> $GITHUB_ENV
-
-          DENO_CACHE="$LOCALAPPDATA\\deno"
-          echo "DENO_CACHE=$DENO_CACHE" >> $GITHUB_ENV
-
           TEMP="$LOCALAPPDATA\\Temp"
           echo "TEMP=$TEMP" >> $GITHUB_ENV
           echo "TMP=$TEMP" >> $GITHUB_ENV
@@ -95,8 +71,7 @@ jobs:
           restore-keys: denodeps-${{ runner.os }}
           enableCrossOsArchive: false
           path: |
-            ${{ env.DENO_CACHE }}
-            ${{ env.DENO_DIR }}
+            ${{github.workspace}}/.deno
             ${{github.workspace}}/node_modules
 
       - name: Restore Deno dependencies
