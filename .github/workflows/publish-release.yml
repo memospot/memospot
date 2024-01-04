@@ -120,10 +120,8 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           prefix-key: cargo-${{ matrix.platform.rust_target }}
-          cache-all-crates: true
-          workspaces: |
-            src-tauri -> target
       # /Rust
+
       # sccache
       - name: Install sccache
         uses: taiki-e/install-action@v2

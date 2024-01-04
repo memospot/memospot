@@ -1,9 +1,5 @@
-use home_dir::HomeDirExt;
+use homedir::HomeDirExt;
 use native_dialog::{MessageDialog, MessageType};
-use serde::Deserialize;
-use serde::Serialize;
-use std::io;
-use std::io::ErrorKind;
 use std::path::PathBuf;
 
 #[macro_export]
@@ -63,106 +59,6 @@ pub fn confirm_dialog(title: &str, msg: &str, icon: MessageType) -> bool {
         .set_text(msg)
         .show_confirm()
         .unwrap()
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct MemosCfg {
-    pub port: u16,
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct MemospotCfg {
-    pub memos: MemosCfg,
-}
-
-impl Default for MemospotCfg {
-    fn default() -> Self {
-        MemospotCfg {
-            memos: MemosCfg { port: 0 },
-        }
-    }
-}
-
-impl MemospotCfg {
-    pub fn new() -> Self {
-        MemospotCfg::default()
-    }
-}
-
-/// Read configuration from supplied path.
-pub fn read_memospot_config(cfg_path: &PathBuf) -> io::Result<MemospotCfg> {
-    let cfg_file = std::fs::File::open(cfg_path)?;
-    let yaml: Result<MemospotCfg, serde_yaml::Error> = serde_yaml::from_reader(&cfg_file);
-    drop(cfg_file);
-
-    yaml.map_err(|e| io::Error::new(ErrorKind::InvalidData, e))
-}
-
-/// Save configuration to supplied file.
-///
-/// - If the file does not exist, it will be created.
-/// - If the file exists, it will be overwritten.
-/// - Comments are not preserved.
-pub fn save_memospot_config(cfg_path: &PathBuf, cfg: &MemospotCfg) -> io::Result<()> {
-    if cfg_path.exists() {
-        if cfg_path.is_dir() {
-            return Err(io::Error::new(
-                ErrorKind::InvalidInput,
-                "provided path is a directory",
-            ));
-        }
-
-        if !writable(cfg_path) {
-            return Err(io::Error::new(
-                ErrorKind::PermissionDenied,
-                "file is not writable",
-            ));
-        }
-    }
-
-    let mut last_error = io::Error::new(ErrorKind::Other, "unknown error");
-    for retry in 0..10 {
-        if retry > 0 {
-            std::thread::sleep(std::time::Duration::from_millis(100));
-        }
-
-        let file = std::fs::File::create(cfg_path);
-        let Ok(writer) = file else {
-            last_error = io::Error::new(ErrorKind::Other, file.unwrap_err());
-            continue;
-        };
-
-        let yaml_writer = serde_yaml::to_writer(&writer, cfg);
-        if let Err(e) = yaml_writer {
-            last_error = io::Error::new(ErrorKind::InvalidData, e);
-            continue;
-        };
-        return Ok(());
-    }
-    Err(last_error)
-}
-
-/// Reset Memospot config to default.
-pub fn reset_memospot_config(cfg_path: &PathBuf) -> io::Result<()> {
-    let default_config = MemospotCfg::default();
-    save_memospot_config(cfg_path, &default_config)
-}
-
-/// Find an open port
-pub fn find_open_port(preferred_port: u16) -> io::Result<u16> {
-    if preferred_port != 0 && portpicker::is_free(preferred_port) {
-        return Ok(preferred_port);
-    }
-
-    let free_port = portpicker::pick_unused_port();
-    if let Some(port) = free_port {
-        return Ok(port);
-    }
-
-    Err(io::Error::new(
-        ErrorKind::AddrNotAvailable,
-        "no free port found",
-    ))
 }
 
 /// Get the data path to supplied application name.

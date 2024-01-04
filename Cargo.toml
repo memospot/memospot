@@ -1,0 +1,19 @@
+[workspace]
+members = ["src-tauri", "crates/*"]
+resolver = "2"
+
+[profile.dev]
+# Disabling debug info speeds up builds
+debug = 0
+lto = "off"
+
+[profile.dev.package]
+# tests depending on serde runs faster with higher optimization level
+serde.opt-level = 3
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

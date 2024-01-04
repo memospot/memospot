@@ -1,0 +1,21 @@
+[package]
+name = "config"
+version = "0.0.1"
+authors = ["Lincoln Nogueira"]
+edition = "2021"
+license = "MIT"
+description = "Memospot configuration library"
+
+[dependencies]
+serde_yaml = "0.9.29"
+
+[dependencies.figment]
+version = "0.10.12"
+features = ["env", "yaml"]
+
+[dependencies.serde]
+features = ["derive"]
+version = "1.0"
+
+[dev-dependencies]
+tempfile = "3.8.1"

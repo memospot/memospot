@@ -28,7 +28,7 @@
   "exec": {
     "commands": [
       {
-        "command": "rustfmt --files-with-diff --config-path ./src-tauri/.rustfmt.toml",
+        "command": "rustfmt --files-with-diff --config-path .rustfmt.toml",
         "exts": ["rs"]
       }
     ]

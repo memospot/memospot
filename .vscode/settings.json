@@ -20,17 +20,23 @@
   "[typescript]": {
     "editor.defaultFormatter": "dprint.dprint"
   },
+  "[rust]": {
+    "editor.defaultFormatter": "dprint.dprint"
+  },
   "code-runner.cwd": "${workspaceFolder}",
   "code-runner.executorMapByGlob": {
+    "**/*.rs": "task coderunner:cargo:clippy --",
     "**/*.test.ts": "task coderunner:deno:test -- $fullFileName",
     "**/*.ts": "task coderunner:deno -- $fullFileName",
-    "**/*.{toml,json,jsonc,yml,yaml}|.dprint.jsonc": "task coderunner:dprint:check -- $fullFileName && echo \"$fileName is properly formatted.\""
+    "**/*.{toml,json,jsonc,yml,yaml,md}|.dprint.jsonc": "task coderunner:dprint:check -- $fullFileName && echo \"$fileName is properly formatted.\""
   },
   "code-runner.ignoreSelection": true,
   "deno.enable": true,
   "deno.cache": "./.deno",
   "deno.lint": true,
   "editor.formatOnSave": true,
+  "editor.wordBasedSuggestions": "off",
+  "editor.quickSuggestionsDelay": 200,
   "evenBetterToml.completion.maxKeys": 8,
   "evenBetterToml.formatter.allowedBlankLines": 2,
   "evenBetterToml.formatter.columnWidth": 96,
@@ -50,11 +56,13 @@
     "CODEOWNERS": "gitignore"
   },
   "rust-analyzer.cargo.extraEnv": {
-    "RUSTFLAGS": "-Ctarget-cpu=native -Copt-level=0",
-    "RUSTC_WRAPPER": "sccache",
-    "SCCACHE_DIR": "${workspaceFolder}${pathSeparator}.sccache",
-    "CARGO_INCREMENTAL": "0"
+    "RUST_BACKTRACE": "full"
   },
-  "rust-analyzer.linkedProjects": ["src-tauri/Cargo.toml"],
-  "rust-analyzer.checkOnSave": false
+  "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.checkOnSave": true,
+  "rust-analyzer.server.extraEnv": {
+    "RUSTUP_TOOLCHAIN": "stable"
+  },
+  "rust-analyzer.cargo.buildScripts.useRustcWrapper": true,
+  "rust-analyzer.check.allTargets": false
 }

@@ -1,0 +1,10 @@
+[package]
+name = "portpicker"
+version = "0.0.1"
+authors = ["Lincoln Nogueira"]
+edition = "2021"
+license = "MIT"
+description = "Slim TCP port picker"
+
+[dependencies.rand]
+version = "0.8.5"

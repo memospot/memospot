@@ -1,7 +1,7 @@
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [package]
-name = "home-dir"
+name = "homedir"
 version = "0.1.1"
 authors = ["eulegang <eulegang@gmail.com>", "Lars Wirzenius", "Lincoln Nogueira"]
 edition = "2018"

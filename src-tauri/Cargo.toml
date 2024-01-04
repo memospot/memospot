@@ -14,13 +14,21 @@ description = "Memospot is a desktop version of Memos, a beautiful, privacy-firs
 features = ["config-toml"]
 version = "1.5"
 
-[dependencies]
-portpicker = "0.1.1"
-serde_yaml = "0.9.29"
+[dependencies.config]
+path = "../crates/config"
+version = "0.0.1"
 
-[dependencies.home-dir]
-path = "src/home-dir"
+[dependencies.homedir]
+path = "../crates/homedir"
 version = "0.1.1"
+
+[dependencies.portpicker]
+path = "../crates/portpicker"
+version = "0.0.1"
+
+[dependencies.serde_yaml]
+version = "0.9.29"
+default-features = false
 
 [dependencies.log]
 version = "0.4.20"
@@ -79,8 +87,3 @@ version = "2"
 # this feature is used for production builds or when `devPath` points to the filesystem
 # DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]
-
-[profile.release]
-codegen-units = 1
-lto = "fat"
-strip = true

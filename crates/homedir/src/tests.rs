@@ -4,7 +4,6 @@ use {super::getent, super::Error};
 use crate::HomeDirExt;
 use home::home_dir;
 use std::env;
-use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
 /// Test that `~` is expanded to the current user's home directory.
@@ -28,10 +27,10 @@ fn test_expand() {
     let homepath = Path::new(HOME);
 
     env::set_var("HOME", homepath.as_os_str());
-    assert_ne!(home_dir().as_ref().map(Deref::deref), Some(homepath));
+    assert_ne!(home_dir().as_deref(), Some(homepath));
 
     env::set_var("USERPROFILE", HOME);
-    assert_eq!(home_dir().as_ref().map(Deref::deref), Some(homepath));
+    assert_eq!(home_dir().as_deref(), Some(homepath));
 
     let subpath = Path::new(homepath).join(".vimrc");
 

@@ -14,7 +14,7 @@ env:
       sh -c "mkdir -p '$DPRINT_CACHE_DIR'";
       echo "$DPRINT_CACHE_DIR"
 
-  RUSTFLAGS: -C target-cpu=native -Copt-level=0
+  RUST_BACKTRACE: full
 
   RUSTC_WRAPPER:
     sh: |
@@ -30,6 +30,14 @@ env:
       SCCACHE_DIR="{{ osClean (print .REPO_ROOT "/.sccache" ) }}";
       sh -c "mkdir -p '$SCCACHE_DIR'";
       echo "$SCCACHE_DIR"
+
+  CARGO_INCREMENTAL:
+    sh: |
+      if [ -z $(command -v sccache) ]; then
+        echo "1";
+      else
+        echo "0";
+      fi
 
 tasks:
   #### CI ####
@@ -102,6 +110,10 @@ tasks:
 
   #### Code runner ####
   # Used to overcome limitations of code-runner vscode extension
+  coderunner:cargo:clippy:
+    desc: Run cargo clippy
+    cmds:
+      - cargo clippy --all-features --all-targets --locked
   coderunner:deno:
     desc: Run a script with Deno
     cmds:
@@ -120,12 +132,21 @@ tasks:
   test:
     desc: Run all tests
     deps:
-      - test:rust
+      - test:tauri
+      - test:crates
       - test:build-scripts
   test:rust:
     desc: Run all Rust tests
     cmds:
-      - cd ./src-tauri; cargo test --package memospot --lib -- --nocapture
+      - time cargo test --workspace --lib -- --nocapture
+  test:tauri:
+    desc: Run all Tauri tests
+    cmds:
+      - time cargo test --package memospot --lib -- --nocapture
+  test:crates:
+    desc: Run side crates tests
+    cmds:
+      - time cargo test --workspace --exclude memospot --lib -- --nocapture
   test:build-scripts:
     desc: Run build scripts tests
     cmds:
@@ -181,7 +202,7 @@ tasks:
   update-deps:
     desc: Update project dependencies
     cmds:
-      - cd ./src-tauri; cargo update
+      - cargo update
 
   update-toolchain:
     desc: Update project toolchain
@@ -231,14 +252,14 @@ tasks:
     ignore_error: true
     cmds:
       - sh -c "mkdir -p ./build"
-      - sh -c "mv -f ./src-tauri/target/release/memos ./build/"
-      - sh -c "mv -f ./src-tauri/target/release/memospot ./build/"
-      - sh -c "mv -f ./src-tauri/target/release/memos.exe ./build/"
-      - sh -c "mv -f ./src-tauri/target/release/memospot.exe ./build/"
-      - sh -c "mv -f ./src-tauri/target/release/bundle/nsis/* ./build/"
-      - sh -c "mv -f ./src-tauri/target/release/bundle/msi/* ./build/"
-      - sh -c "mv -f ./src-tauri/target/release/bundle/deb/*.deb ./build/"
-      - sh -c "mv -f ./src-tauri/target/release/bundle/appimage/*.AppImage ./build/"
+      - sh -c "mv -f ./target/release/memos ./build/ || true"
+      - sh -c "mv -f ./target/release/memospot ./build/ || true"
+      - sh -c "mv -f ./target/release/memos.exe ./build/ || true"
+      - sh -c "mv -f ./target/release/memospot.exe ./build/ || true"
+      - sh -c "mv -f ./target/release/bundle/nsis/* ./build/ || true"
+      - sh -c "mv -f ./target/release/bundle/msi/* ./build/ || true"
+      - sh -c "mv -f ./target/release/bundle/deb/*.deb ./build/ || true"
+      - sh -c "mv -f ./target/release/bundle/appimage/*.AppImage ./build/ || true"
 
   ##### /Build #####
 
@@ -260,8 +281,9 @@ tasks:
       - sh -c "rm -rf ./dist-ui"
       - sh -c "rm -rf ./.node_modules"
       - sh -c "rm -rf ./server-dist"
-      - sh -c "rm -rf ./src-tauri/target"
+      - sh -c "rm -rf ./target"
       - sh -c "rm -rf ./src-ui/.vite"
+      - cargo cache -a
   ##### /Clean #####
 
   ##### Miscellanea #####
@@ -289,10 +311,10 @@ tasks:
       - lint:dprint
   lint:cargo:
     desc: lint rust with cargo clippy
-    dir: ./src-tauri
+    ignore_error: true
     cmds:
       - cargo fmt --all --check
-      - cargo clippy --all-features --workspace --locked
+      - cargo clippy --all-features --all-targets --workspace --locked
       - task: sccache:stats
   lint:deno:
     desc: lint typescript with deno
@@ -303,14 +325,15 @@ tasks:
     aliases:
       - lint:config
     desc: lint config (also check schemas)
-    dir: ./src-tauri
     cmds:
-      - dprint check Tauri.toml
-      - dprint check Cargo.toml
       - dprint check .rustfmt.toml
-      - taplo lint Tauri.toml
-      - taplo lint Cargo.toml
+      - dprint check Cargo.toml
+      - dprint check ./src-tauri/Tauri.toml
+      - dprint check ./src-tauri/Cargo.toml
       - taplo lint .rustfmt.toml
+      - taplo lint Cargo.toml
+      - taplo lint ./src-tauri/Tauri.toml
+      - taplo lint ./src-tauri/Cargo.toml
   lint:dprint:
     desc: lint with dprint
     cmds:
@@ -326,7 +349,7 @@ tasks:
   fix:cargo:
     desc: Run cargo fix
     cmds:
-      - cd ./src-tauri; cargo fix
+      - cargo fix
 
   ##### /Code Fix #####
 
@@ -507,11 +530,16 @@ tasks:
         . "$HOME/.cargo/env";
         {{end}}
         rustup component add clippy;
+        rustup target add aarch64-apple-darwin;
+        rustup target add x86_64-apple-darwin;
+        rustup target add x86_64-pc-windows-msvc;
+        rustup target add x86_64-unknown-linux-gnu;
+        export RUSTC_WRAPPER="";
         cargo install tauri-cli --locked;
         cargo install taplo-cli --locked;
         cargo install cargo-edit --locked;
+        cargo install cargo-cache --locked;
         cargo install dprint --locked;
-        export RUSTC_WRAPPER="";
         cargo install sccache --locked;
   ##### /Developer Environment Setup #####
   ### Git Actions ###
@@ -539,12 +567,12 @@ tasks:
     cmds:
       - cd ./src-tauri; cargo set-version --locked {{.NEW_VERSION}}
       - sh -c "sed -i 's#Memospot/[0-9]\+\.[0-9]\+\.[0-9]\+"#Memospot/{{.NEW_VERSION}}"#' ./src-tauri/Tauri.toml"
-      - cd ./src-tauri; cargo generate-lockfile
+      - cd cargo generate-lockfile
       - task: format:dprint
       - task: lint:toml
       - git add ./src-tauri/Tauri.toml
       - git add ./src-tauri/Cargo.toml
-      - git add ./src-tauri/Cargo.lock
+      - git add ./Cargo.lock
       - git commit -m "Bump version to v{{.NEW_VERSION}}"
     requires:
       vars: [NEW_VERSION]

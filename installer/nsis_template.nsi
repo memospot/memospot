@@ -6,7 +6,8 @@ Unicode true
   SetCompressor /SOLID "{{compression}}"
 !endif
 
-!addplugindir "../../../../../installer"
+; This is resolved from within ./target/release/bundle/nsis and should point to ./installer
+!addplugindir "../../../../installer"
 
 !include MUI2.nsh
 !include FileFunc.nsh

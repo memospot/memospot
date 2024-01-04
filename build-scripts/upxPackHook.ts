@@ -7,7 +7,7 @@ import { findRepositoryRoot, runSync } from "./common.ts";
 import type { UpxOptions } from "./upxPackHook.d.ts";
 
 const filesToPack = [
-    "./src-tauri/target/release/memospot" + (Deno.build.os === "windows" ? ".exe" : ""),
+    "./target/release/memospot" + (Deno.build.os === "windows" ? ".exe" : ""),
     "./server-dist/memos-x86_64-unknown-linux-gnu",
 ];
 
