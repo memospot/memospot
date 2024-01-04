@@ -63,10 +63,10 @@ jobs:
           DENO_DIR="${{github.workspace}}\\.deno"
           echo "DENO_DIR=$DENO_DIR" >> $GITHUB_ENV
 
-          DENO_CACHE = "$LOCALAPPDATA\\deno"
+          DENO_CACHE="$LOCALAPPDATA\\deno"
           echo "DENO_CACHE=$DENO_CACHE" >> $GITHUB_ENV
 
-          TEMP = "$LOCALAPPDATA\\Temp"
+          TEMP="$LOCALAPPDATA\\Temp"
           echo "TEMP=$TEMP" >> $GITHUB_ENV
           echo "TMP=$TEMP" >> $GITHUB_ENV
       # /Set env vars
