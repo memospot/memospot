@@ -25,6 +25,10 @@ on:
 
   workflow_dispatch:
 
+env:
+  DENO_DIR: ${{github.workspace}}/.deno
+  NODE_MODULES: ${{github.workspace}}/node_modules
+
 jobs:
   deno-tests:
     strategy:
@@ -42,6 +46,12 @@ jobs:
         name: "[Windows] Set env vars"
         shell: bash
         run: |
+          DENO_DIR="$GITHUB_WORKSPACE\\.deno"
+          echo "DENO_DIR=$DENO_DIR" >> $GITHUB_ENV
+
+          NODE_MODULES="$GITHUB_WORKSPACE\\node_modules"
+          echo "NODE_MODULES=$NODE_MODULES" >> $GITHUB_ENV
+
           TEMP="$LOCALAPPDATA\\Temp"
           echo "TEMP=$TEMP" >> $GITHUB_ENV
           echo "TMP=$TEMP" >> $GITHUB_ENV
@@ -71,8 +81,8 @@ jobs:
           restore-keys: denodeps-${{ runner.os }}
           enableCrossOsArchive: false
           path: |
-            ${{github.workspace}}/.deno
-            ${{github.workspace}}/node_modules
+            ${{env.DENO_DIR}}
+            ${{env.NODE_MODULES}}
 
       - name: Restore Deno dependencies
         run: task ci:deno:cache
