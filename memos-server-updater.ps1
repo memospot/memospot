@@ -18,10 +18,12 @@ Write-Host @"
 
 $GitHubRepo = "lincolnthalles/memos-builds"
 
+$DataPath = [IO.Path]::Combine($Env:LocalAppData, "memospot")
+
 $MemospotPath = {
   $searchPaths = @(
     [IO.Path]::Combine($Env:ProgramFiles, "Memospot"),
-    [IO.Path]::Combine($Env:LocalAppData, "memospot")
+    $DataPath
   )
   foreach ($dir in $searchPaths) {
     $memosBin = [IO.Path]::Combine($dir, "memos.exe")
@@ -125,6 +127,16 @@ if ([String]::IsNullOrEmpty($HostOS)) {
   Exit 1
 }
 
+$BackupsPath = [IO.Path]::Combine($DataPath, "server-updater-backups")
+if (-not [IO.Directory]::Exists($BackupsPath)) {
+  Write-Host "Creating backups directory: $BackupsPath" -f Cyan
+  New-Item -Path $BackupsPath -ItemType Directory -Force -ErrorAction Stop
+  if ($null -eq $?) {
+    Write-Host "Failed to create directory. Make sure you have write permissions to: $DataPath" -f Red
+    Exit 1
+  }
+}
+
 ##
 $ProgressPreference = 'SilentlyContinue'
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;
@@ -202,9 +214,6 @@ if ($null -eq $?) {
 
 $hashes = [System.Text.Encoding]::UTF8.GetString($hashes.Content)
 
-# sample hash line:
-# d0d23eeb74de8decb6ebbf8e5cafe10fd2e1b8b7ee3909d3bc2ffeb381a53edb  memos-v0.18.0-windows-x86_64.zip
-
 $hash = $null
 foreach ($line in $hashes.Split("`n")) {
   if ([String]::IsNullOrEmpty($line)) {
@@ -240,23 +249,12 @@ else {
 }
 
 $dateString = $(Get-Date -Format "yyyyMMdd_HHmmss")
-$memosBin = [IO.Path]::Combine($MemospotPath, "memos.exe")
-
-if ([IO.File]::Exists($memosBin)) {
-  $memosBinBackup = "${memosBin}_${dateString}_before_${tagName}.zip"
-  Write-Host "Backing up current memos.exe"
-  Compress-Archive -Path $memosBin -DestinationPath "$memosBinBackup" -Force -ErrorAction Stop
-  if ($null -eq $?) {
-    Write-Host "Failed to backup file. Make sure Memos is stopped and that you have write permissions to: $memosBinBackup" -f Red
-    Exit 1
-  }
-}
 
 $databasePath = [IO.Path]::Combine($MemospotPath, "memos_prod.db")
 $databasePathWAL = [IO.Path]::Combine($MemospotPath, "memos_prod.db-wal")
 $databasePathSHM = [IO.Path]::Combine($MemospotPath, "memos_prod.db-shm")
 if ([IO.File]::Exists($databasePath)) {
-  $databaseBackup = "${databasePath}_${dateString}_before_${tagName}.zip"
+  $databaseBackup = [IO.Path]::Combine($BackupsPath, "db_${dateString}_before_${tagName}.zip")
   Write-Host "Backing up current database"
 
   $fileList = [System.Collections.ArrayList]@($databasePath)
@@ -274,17 +272,51 @@ if ([IO.File]::Exists($databasePath)) {
   }
 }
 
+$distPath = [IO.Path]::Combine($MemospotPath, "dist");
+$memosBin = [IO.Path]::Combine($MemospotPath, "memos.exe")
+$memosBinBackup = [IO.Path]::Combine($BackupsPath, "memos_${dateString}_before_${tagName}.zip");
+if ([IO.File]::Exists($memosBin)) {
+  Write-Host "Backing up current memos.exe"
+  if ([IO.Directory]::Exists($distPath)) {
+    $fileList = [System.Collections.ArrayList]@($memosBin, $distPath)
+  }
+  else {
+    $fileList = [System.Collections.ArrayList]@($memosBin)
+  }
+
+  Compress-Archive -Path $fileList -DestinationPath "$memosBinBackup" -Force -ErrorAction Stop
+  if ($null -eq $?) {
+    Write-Host "Failed to backup file. Make sure Memos is stopped and that you have write permissions to: $BackupsPath" -f Red
+    Exit 1
+  }
+}
+
+Remove-Item -Path $distPath -Recurse -Force -ErrorAction SilentlyContinue
+
 Write-Host "Extracting Memos to: $MemospotPath"
 Expand-Archive -Path $ZippedRelease -DestinationPath $MemospotPath -Force
 if ($null -eq $?) {
   Write-Host "Failed to extract file." -f Red
-  if ([IO.File]::Exists("$memosBin.bak")) {
-    Write-Host "Restoring backup file: $memosBin.bak" -f Cyan
-    Move-Item -Path "$memosBin.bak" -Destination $memosBin -Force -ErrorAction Stop
+  if ([IO.File]::Exists($memosBinBackup)) {
+    Write-Host "Restoring Memos backup" -f Cyan
+    Remove-Item -Path $distPath -Recurse -Force -ErrorAction SilentlyContinue
+    Expand-Archive -Path $memosBinBackup -DestinationPath $MemospotPath -Force
   }
   Exit 1
 }
 Remove-Item -Path $ZippedRelease -Force -ErrorAction SilentlyContinue
+
+# If MSI installer was used, copy dist folder to LocalAppData
+# This should increase compatibility with multiple versions of Memospot
+if ($MemospotPath.StartsWith($Env:ProgramFiles)) {
+  $distPathLocal = [IO.Path]::Combine($DataPath, "dist");
+  if ([IO.Directory]::Exists($distPathLocal)) {
+    Write-Host "Removing old dist folder: $distPathLocal" -f Cyan
+    Remove-Item -Path $distPathLocal -Recurse -Force -ErrorAction SilentlyContinue
+  }
+  Write-Host "Copying dist folder to: $distPathLocal" -f Cyan
+  Copy-Item -Path $distPath -Destination $distPathLocal -Recurse -Force -ErrorAction Stop
+}
 
 $readmeFile = [IO.Path]::Combine($MemospotPath, "README.md")
 Remove-Item -Path $readmeFile -Force -ErrorAction SilentlyContinue
@@ -294,9 +326,6 @@ Remove-Item -Path $licenseFile -Force -ErrorAction SilentlyContinue
 
 Write-Host "Unblocking file: $memosBin" -f Cyan
 Unblock-File -Path $memosBin -ErrorAction SilentlyContinue
-
-Write-Host "Removing memos.exe.bak..." -f Cyan
-Remove-Item -Path "$memosBin.bak" -Force -ErrorAction SilentlyContinue
 
 Write-Host "`nMemos server successfully updated to $tagName" -f Green
 
