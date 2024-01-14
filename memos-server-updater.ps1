@@ -314,8 +314,10 @@ if ($MemospotPath.StartsWith($Env:ProgramFiles)) {
     Write-Host "Removing old dist folder: $distPathLocal" -f Cyan
     Remove-Item -Path $distPathLocal -Recurse -Force -ErrorAction SilentlyContinue
   }
-  Write-Host "Copying dist folder to: $distPathLocal" -f Cyan
-  Copy-Item -Path $distPath -Destination $distPathLocal -Recurse -Force -ErrorAction Stop
+  if ([IO.Directory]::Exists($distPath)) {
+    Write-Host "Copying dist folder to: $distPathLocal" -f Cyan
+    Copy-Item -Path $distPath -Destination $distPathLocal -Recurse -Force -ErrorAction Stop
+  }
 }
 
 $readmeFile = [IO.Path]::Combine($MemospotPath, "README.md")
