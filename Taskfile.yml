@@ -1,3 +1,11 @@
+# https://taskfile.dev/#/installation
+
+# To use this Taskfile on Windows, add Git\usr\bin to PATH.
+# This allows using Git's bundled GNU Core Utils (rm, mv, etc).
+#
+# To add git\usr\bin to the current powershell session PATH:
+#* $Env:Path += ";$Env:ProgramFiles\Git\usr\bin";
+
 version: "3"
 env:
   REPO_ROOT:
@@ -11,11 +19,10 @@ env:
   DPRINT_CACHE_DIR:
     sh: |
       DPRINT_CACHE_DIR="{{ osClean (print .REPO_ROOT "/.dprint" ) }}";
-      sh -c "mkdir -p '$DPRINT_CACHE_DIR'";
+      mkdir -p "$DPRINT_CACHE_DIR";
       echo "$DPRINT_CACHE_DIR"
 
   RUST_BACKTRACE: full
-
   RUSTC_WRAPPER:
     sh: |
       sccache="{{ osClean "$HOME/.cargo/bin/sccache" }}{{if eq OS "windows"}}.exe{{end}}"
@@ -28,7 +35,7 @@ env:
   SCCACHE_DIR:
     sh: |
       SCCACHE_DIR="{{ osClean (print .REPO_ROOT "/.sccache" ) }}";
-      sh -c "mkdir -p '$SCCACHE_DIR'";
+      mkdir -p "$SCCACHE_DIR";
       echo "$SCCACHE_DIR"
 
   CARGO_INCREMENTAL:
@@ -72,6 +79,7 @@ tasks:
       - test -f ./server-dist/memos-x86_64-pc-windows-msvc.exe
       - test -f ./server-dist/memos-x86_64-apple-darwin
       - test -f ./server-dist/memos-aarch64-apple-darwin
+      - test -d ./server-dist/dist
 
   upx:
     desc: Compress built binaries with upx
@@ -175,7 +183,6 @@ tasks:
       - task: sccache:stats
   dev:killprocesses:
     desc: Kill all running Memospot/Memos processes
-    silent: true
     cmds:
       - task: dev:killprocesses:posix
       - task: dev:killprocesses:windows
@@ -183,16 +190,18 @@ tasks:
     platforms: [linux, darwin]
     internal: true
     ignore_error: true
+    silent: true
     cmds:
-      - killall memospot
-      - killall memos
+      - killall memospot > /dev/null 2>&1
+      - killall memos > /dev/null 2>&1
   dev:killprocesses:windows:
     platforms: [windows]
     internal: true
     ignore_error: true
+    silent: true
     cmds:
-      - taskkill /f /t /im memospot.exe
-      - taskkill /f /t /im memos.exe
+      - taskkill /f /t /im memospot.exe >nul 2>&1
+      - taskkill /f /t /im memos.exe >nul 2>&1
 
   update-deno-lock:
     desc: Update Deno lock file
@@ -216,13 +225,16 @@ tasks:
     cmds:
       - |
         {{ if eq (env "CI") "true" }}
-        exit 0
+          exit 0
         {{ end }}
 
         cargo tauri icon ./assets/app-icon-lossless.webp
-        sh -c "cp -f ./src-tauri/icons/icon.ico ./src-ui/public/favicon.ico"
+        cp -f ./src-tauri/icons/icon.ico ./src-ui/public/favicon.ico
     sources:
       - ./assets/app-icon-lossless.webp
+    generates:
+      - ./src-tauri/icons/*
+      - ./src-ui/public/favicon.ico
 
   ##### /Development #####
 
@@ -242,7 +254,7 @@ tasks:
       - This will create an universal x86-64 optimized build of the app.
     env:
       # optimized universal x86-64 build
-      RUSTFLAGS: -Ctarget-cpu=x86-64 -Copt-level=3 -Cstrip=symbols -Ccodegen-units=1
+      RUSTFLAGS: -Ctarget-cpu=x86-64 -Copt-level=3 -Cstrip=symbols -Ccodegen-units=8
     cmds:
       - cargo tauri build
       - task: sccache:stats
@@ -251,15 +263,16 @@ tasks:
     desc: Move relevant files to `build/`
     ignore_error: true
     cmds:
-      - sh -c "mkdir -p ./build"
-      - sh -c "mv -f ./target/release/memos ./build/ || true"
-      - sh -c "mv -f ./target/release/memospot ./build/ || true"
-      - sh -c "mv -f ./target/release/memos.exe ./build/ || true"
-      - sh -c "mv -f ./target/release/memospot.exe ./build/ || true"
-      - sh -c "mv -f ./target/release/bundle/nsis/* ./build/ || true"
-      - sh -c "mv -f ./target/release/bundle/msi/* ./build/ || true"
-      - sh -c "mv -f ./target/release/bundle/deb/*.deb ./build/ || true"
-      - sh -c "mv -f ./target/release/bundle/appimage/*.AppImage ./build/ || true"
+      - mkdir -p ./build
+      - mv -f ./target/release/memos ./build/ || true
+      - mv -f ./target/release/memospot ./build/ || true
+      - mv -f ./target/release/memos.exe ./build/ || true
+      - mv -f ./target/release/dist/ ./build/ || true
+      - mv -f ./target/release/memospot.exe ./build/ || true
+      - mv -f ./target/release/bundle/nsis/* ./build/ || true
+      - mv -f ./target/release/bundle/msi/* ./build/ || true
+      - mv -f ./target/release/bundle/deb/*.deb ./build/ || true
+      - mv -f ./target/release/bundle/appimage/*.AppImage ./build/ || true
 
   ##### /Build #####
 
@@ -273,16 +286,16 @@ tasks:
       - dev:killprocesses
     ignore_error: true
     cmds:
-      - sh -c "rm -rf ./.deno"
-      - sh -c "rm -rf ./.dprint"
-      - sh -c "rm -rf ./.sccache"
-      - sh -c "rm -rf ./.task"
-      - sh -c "rm -rf ./build"
-      - sh -c "rm -rf ./dist-ui"
-      - sh -c "rm -rf ./.node_modules"
-      - sh -c "rm -rf ./server-dist"
-      - sh -c "rm -rf ./target"
-      - sh -c "rm -rf ./src-ui/.vite"
+      - rm -rf ./.deno
+      - rm -rf ./.dprint
+      - rm -rf ./.sccache
+      - rm -rf ./.task
+      - rm -rf ./build
+      - rm -rf ./dist-ui
+      - rm -rf ./.node_modules
+      - rm -rf ./server-dist
+      - rm -rf ./target
+      - rm -rf ./src-ui/.vite
       - cargo cache -a
   ##### /Clean #####
 
@@ -292,7 +305,7 @@ tasks:
     ignore_error: true
     cmds:
       - sccache --stop-server
-      - sh -c "rm -rf ./.sccache"
+      - rm -rf ./.sccache
   sccache:stats:
     desc: Show sccache stats
     silent: true
@@ -404,7 +417,7 @@ tasks:
       - task: setup:deno:posix
       - task: setup:deno:windows
     status:
-      - sh -c 'if [ -z $(command -v deno) ]; then exit 1; fi'
+      - if [ -z $(command -v deno) ]; then exit 1; fi
   setup:deno:posix:
     platforms: [darwin, linux]
     internal: true
@@ -462,8 +475,8 @@ tasks:
       - setup:rust:windows
       - rustup default stable
     status:
-      - sh -c 'if [ -z $(command -v rustup) ]; then exit 1; fi'
-      - sh -c 'if [ -z $(command -v rustc) ]; then exit 1; fi'
+      - if [ -z $(command -v rustup) ]; then exit 1; fi
+      - if [ -z $(command -v rustc) ]; then exit 1; fi
   setup:rust:posix:
     platforms: [darwin, linux]
     internal: true
@@ -517,7 +530,7 @@ tasks:
     desc: Setup the project tooling.
     env:
       # slow build with all optimizations
-      RUSTFLAGS: -Ctarget-cpu=native -Copt-level=3 -Cstrip=symbols -Ccodegen-units=1
+      RUSTFLAGS: -Ctarget-cpu=native -Copt-level=3 -Cstrip=symbols -Ccodegen-units=8
     deps:
       - setup:platformdeps
       - setup:deno
@@ -525,9 +538,9 @@ tasks:
     cmds:
       - |
         {{if eq OS "windows"}}
-        export PATH="$PATH;$HOME\.cargo\bin";
+          export PATH="$PATH;$HOME\.cargo\bin";
         {{else}}
-        . "$HOME/.cargo/env";
+          . "$HOME/.cargo/env";
         {{end}}
         rustup component add clippy;
         rustup target add aarch64-apple-darwin;
@@ -586,6 +599,6 @@ tasks:
     cmds:
       - task: internal:bumpversion
         vars:
-          NEW_VERSION: "{{ .CLI_ARGS }}"
-      - git tag -a v{{.CLI_ARGS}} -m "Push v{{.CLI_ARGS}}"
+          NEW_VERSION: '{{trimPrefix "v" .CLI_ARGS}}'
+      - git tag -a v{{trimPrefix "v" .CLI_ARGS}} -m "Push v{{trimPrefix "v" .CLI_ARGS}}"
       - git push origin --tags
