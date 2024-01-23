@@ -29,17 +29,17 @@ jobs:
           echo DATE_STRING=$(date +'%Y%m%d') >> $GITHUB_ENV
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
       - name: Install go-task
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        uses: jaxxstorm/action-install-gh-release@c5ead9a448b4660cf1e7866ee22e4dc56538031a
         with:
           repo: go-task/task
           cache: enable
           tag: "v3.33.1"
 
       - name: Install dprint
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        uses: jaxxstorm/action-install-gh-release@c5ead9a448b4660cf1e7866ee22e4dc56538031a
         with:
           repo: dprint/dprint
           cache: enable
@@ -52,7 +52,7 @@ jobs:
           | install -m 755 /dev/stdin /usr/local/bin/taplo
 
       - name: Cache dprint plugins
-        uses: actions/cache@v3
+        uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2
         with:
           path: ${{ env.DPRINT_CACHE_DIR }}
           key: cache-dprint-${{ env.DATE_STRING }}

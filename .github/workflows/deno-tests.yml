@@ -5,23 +5,15 @@ on:
     branches:
       - "*"
     paths:
-      - "**/*.ts"
-      - "**/*.tsx"
-      - "**/*.cts"
-      - "**/*.mts"
-      - "**/deno.jsonc"
-      - "**/deno.lock"
+      - "**/*.{ts,tsx,cts,mts}"
+      - "**/deno.{jsonc,lock}"
 
   push:
     branches:
       - "*"
     paths:
-      - "**/*.ts"
-      - "**/*.tsx"
-      - "**/*.cts"
-      - "**/*.mts"
-      - "**/deno.jsonc"
-      - "**/deno.lock"
+      - "**/*.{ts,tsx,cts,mts}"
+      - "**/deno.{jsonc,lock}"
 
   workflow_dispatch:
 
@@ -41,10 +33,10 @@ jobs:
     runs-on: ${{ matrix.platform.runner }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
       - name: Install Task
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        uses: jaxxstorm/action-install-gh-release@c5ead9a448b4660cf1e7866ee22e4dc56538031a
         with:
           repo: go-task/task
           cache: enable
@@ -52,7 +44,7 @@ jobs:
 
       # Deno
       - name: Install Deno
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        uses: jaxxstorm/action-install-gh-release@c5ead9a448b4660cf1e7866ee22e4dc56538031a
         with:
           repo: denoland/deno
           cache: enable
@@ -60,7 +52,7 @@ jobs:
 
       - if: ${{ runner.os != 'Windows' }}
         name: Cache Deno dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2
         with:
           key: denodeps-${{ runner.os }}-${{ hashFiles('**/deno.lock') }}
           restore-keys: denodeps-${{ runner.os }}
@@ -70,7 +62,7 @@ jobs:
 
       - if: ${{ runner.os == 'Windows' }}
         name: Cache Deno dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2
         with:
           key: denodeps-${{ runner.os }}-${{ hashFiles('**/deno.lock') }}
           restore-keys: denodeps-${{ runner.os }}
