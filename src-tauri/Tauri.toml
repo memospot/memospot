@@ -16,6 +16,9 @@ productName = "Memospot"
 [tauri.allowlist]
 all = false
 
+[tauri.allowlist.fs]
+scope = ["$RESOURCE/*"]
+
 [tauri.allowlist.http]
 all = false
 request = true
@@ -42,7 +45,6 @@ all = true
 [tauri.bundle]
 active = true
 category = "Productivity"
-externalBin = ["../server-dist/memos"]
 icon = [
     "icons/128x128.png",
     "icons/128x128@2x.png",
@@ -54,6 +56,13 @@ identifier = "com.memospot.app"
 longDescription = "Memospot is a desktop version of Memos, a beautiful markdown-based note-taking service."
 shortDescription = "Memospot - a note-taking application"
 targets = "all"
+
+# Memos back-end
+externalBin = ["../server-dist/memos"]
+
+[tauri.bundle.resources]
+# Memos front-end
+"../server-dist/dist/" = "./dist/"
 
 [tauri.bundle.appimage]
 bundleMediaFramework = true

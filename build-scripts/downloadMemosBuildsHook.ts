@@ -219,6 +219,11 @@ async function downloadServerBinaries() {
         const triplet = makeTripletFromFileName(fileName);
         Deno.renameSync(`${extractDir}/memos${exe}`, `./server-dist/memos-${triplet}${exe}`);
 
+        // move front-end dist folder, only once, as it's the same for all platforms
+        if (!existsSync("./server-dist/dist", { isDirectory: true })) {
+            Deno.renameSync(`${extractDir}/dist`, `./server-dist/dist`);
+        }
+
         Deno.removeSync(extractDir, { recursive: true });
         Deno.removeSync(filePath);
     }
@@ -234,6 +239,11 @@ async function main() {
     const serverDistDirExists = existsSync(serverDistDir, { isDirectory: true });
     if (!serverDistDirExists) {
         Deno.mkdirSync(serverDistDir, { recursive: true, mode: 0o755 });
+    }
+
+    // remove a previous dist folder, if it exists
+    if (serverDistDirExists && existsSync("./server-dist/dist", { isDirectory: true })) {
+        Deno.removeSync("./server-dist/dist", { recursive: true });
     }
 
     await downloadServerBinaries();
