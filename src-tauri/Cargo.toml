@@ -52,7 +52,7 @@ version = "0.3.9"
 version = "0.2.2"
 
 [target.'cfg(windows)'.dependencies.winreg]
-version = "0.51.0"
+version = "0.52.0"
 
 [dependencies.log4rs]
 features = ["background_rotation", "config_parsing", "gzip", "yaml_format"]
