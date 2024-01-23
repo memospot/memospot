@@ -10,7 +10,7 @@ description = "Memospot configuration library"
 serde_yaml = "0.9.29"
 
 [dependencies.figment]
-version = "0.10.12"
+version = "0.10.14"
 features = ["env", "yaml"]
 
 [dependencies.serde]
