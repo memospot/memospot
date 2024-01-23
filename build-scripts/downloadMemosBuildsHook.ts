@@ -5,7 +5,7 @@
 
 import type { GitHubAsset, GitHubRelease } from "./downloadMemosBuildsHook.d.ts";
 import { findRepositoryRoot } from "./common.ts";
-import { crypto, encodeHex, existsSync } from "../deps.ts";
+import { crypto, encodeHex, existsSync, globToRegExp } from "../deps.ts";
 
 import { Readable } from "../deps.ts";
 import { finished } from "../deps.ts";
@@ -101,7 +101,9 @@ export function makeTripletFromFileName(file: string): string {
 async function downloadServerBinaries() {
     const repo = "lincolnthalles/memos-builds";
     const repoUrl = `https://api.github.com/repos/${repo}/releases/latest`;
-    const downloadFilesMask = [
+
+    // Match only platforms that Memospot also supports
+    const downloadFilesGlob = [
         "memos-*-darwin-arm64.tar.gz",
         "memos-*-darwin-x86_64.tar.gz",
         "memos-*-linux-x86_64.tar.gz",
@@ -131,8 +133,8 @@ async function downloadServerBinaries() {
     const selectedFiles: GitHubAsset[] = [];
     for (const asset of assets) {
         // glob-like matching
-        for (const mask of downloadFilesMask) {
-            const regex = new RegExp(mask.replace("*", ".*"));
+        for (const mask of downloadFilesGlob) {
+            const regex = new RegExp(globToRegExp(mask));
             if (asset.name.match(regex)) {
                 selectedFiles.push(asset);
             }
