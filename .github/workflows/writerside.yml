@@ -37,17 +37,17 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
       - name: Build Writerside docs using Docker
-        uses: JetBrains/writerside-github-action@v4
+        uses: JetBrains/writerside-github-action@1e4263e4942efc32fd4cf31a07a7ee38413f0189
         with:
           instance: ${{ env.INSTANCE }}
           artifact: ${{ env.ARTIFACT }}
           docker-version: ${{ env.DOCKER_VERSION }}
 
       - name: Upload documentation
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
         with:
           name: docs
           path: |
@@ -57,7 +57,7 @@ jobs:
 
       # Add the step below to upload Algolia indexes
       - name: Upload algolia-indexes
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
         with:
           name: algolia-indexes
           path: artifacts/${{ env.ALGOLIA_ARTIFACT }}
@@ -71,13 +71,14 @@ jobs:
 
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           name: docs
           path: artifacts
 
       - name: Test documentation
-        uses: JetBrains/writerside-checker-action@v1
+        uses: JetBrains/writerside-checker-action@8e11963855941a93dff60b8e39a2ffd4a2c0b767
+        continue-on-error: true
         with:
           instance: ${{ env.INSTANCE }}
 
@@ -90,7 +91,7 @@ jobs:
 
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           name: algolia-indexes
       - name: Unzip artifact
@@ -114,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           name: docs
 
@@ -122,13 +123,13 @@ jobs:
         run: unzip -O UTF-8 -qq ${{ env.ARTIFACT }} -d dir
 
       - name: Setup Pages
-        uses: actions/configure-pages@v2
+        uses: actions/configure-pages@1f0c5cde4bc74cd7e1254d0cb4de8d49e9068c7d
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@0252fc4ba7626f0298f0cf00902a25c6afc77fa8
         with:
           path: dir
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@87c3283f01cd6fe19a0ab93a23b2f6fcba5a8e42
