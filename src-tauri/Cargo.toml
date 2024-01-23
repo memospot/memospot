@@ -34,7 +34,7 @@ default-features = false
 version = "0.4.20"
 
 [dependencies.native-dialog]
-version = "0.6.4"
+version = "0.7.0"
 
 [dependencies.serde_json]
 version = "1.0"
