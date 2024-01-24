@@ -4,8 +4,7 @@
     "test-ui": "cd ./src-ui; deno test -A",
     "build": "cd ./src-ui; deno run -A npm:vite@^4.5.1 build",
     "dev": "cd ./src-ui; deno run -A npm:vite@^4.5.1",
-    "preview": "cd ./src-ui; deno run -A npm:vite@^4.5.1 preview",
-    "serve": "cd ./src-ui; deno run --allow-net --allow-read https://deno.land/std@0.157.0/http/file_server.ts ./dist-ui/"
+    "preview": "cd ./src-ui; deno run -A npm:vite@^4.5.1 preview"
   },
   "compilerOptions": {
     "allowJs": false,
