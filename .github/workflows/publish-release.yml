@@ -127,7 +127,7 @@ jobs:
 
       # sccache
       - name: Install sccache
-        uses: taiki-e/install-action@5be08121a64dab5197b48a185ea5e0aedb0ccbb5
+        uses: taiki-e/install-action@bee85d7ea77c01f7a403c22ac2c802b431b093df
         with:
           tool: sccache@0.7.6
 
