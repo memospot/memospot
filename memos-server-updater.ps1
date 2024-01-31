@@ -250,9 +250,9 @@ else {
 
 $dateString = $(Get-Date -Format "yyyyMMdd_HHmmss")
 
-$databasePath = [IO.Path]::Combine($MemospotPath, "memos_prod.db")
-$databasePathWAL = [IO.Path]::Combine($MemospotPath, "memos_prod.db-wal")
-$databasePathSHM = [IO.Path]::Combine($MemospotPath, "memos_prod.db-shm")
+$databasePath = [IO.Path]::Combine($DataPath, "memos_prod.db")
+$databasePathWAL = [IO.Path]::Combine($DataPath, "memos_prod.db-wal")
+$databasePathSHM = [IO.Path]::Combine($DataPath, "memos_prod.db-shm")
 if ([IO.File]::Exists($databasePath)) {
   $databaseBackup = [IO.Path]::Combine($BackupsPath, "db_${dateString}_before_${tagName}.zip")
   Write-Host "Backing up current database"
