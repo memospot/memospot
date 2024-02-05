@@ -43,7 +43,7 @@ version = "1.0"
 version = "1.5.5"
 
 [dependencies.tokio]
-version = "1.33.0"
+version = "1.36.0"
 
 [target.'cfg(windows)'.dependencies.winapi]
 version = "0.3.9"
