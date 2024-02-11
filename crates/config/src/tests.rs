@@ -1,5 +1,5 @@
 #[cfg(test)]
-use crate::*;
+use {crate::Config, serde_yaml, std::fs, std::io, tempfile};
 
 /// Test that provided config is merged with
 /// default config in case of missing fields.
@@ -93,4 +93,11 @@ fn test_reset() {
     let cfg = Config::parse_file(&tmp_yaml).unwrap();
     let yaml = serde_yaml::to_string(&cfg).unwrap();
     assert_eq!(yaml, default_yaml);
+}
+
+#[test]
+fn test_show() {
+    let default_config = Config::default();
+    let default_yaml = serde_yaml::to_string(&default_config).unwrap();
+    println!("{}", default_yaml);
 }

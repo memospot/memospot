@@ -2,14 +2,17 @@
 
 [package]
 name = "homedir"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["eulegang <eulegang@gmail.com>", "Lars Wirzenius", "Lincoln Nogueira"]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 repository = "https://github.com/eulegang/home-dir"
 description = "expands home directories in a path"
 
 [dependencies]
 home = "0.5.5"
-nix = { version = "0.27", features = ["user"] }
 thiserror = "1.0"
+
+[target.'cfg(not(target_os = "windows"))'.dependencies.nix]
+version = "0.27"
+features = ["user"]

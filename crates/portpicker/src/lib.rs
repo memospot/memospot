@@ -4,28 +4,31 @@
 //! [portpicker](https://github.com/Dentosal/portpicker-rs) crate.
 //!
 
-use rand::prelude::*;
 use std::net::{Ipv4Addr, SocketAddrV4, TcpListener, ToSocketAddrs};
-use std::ops::Range;
 pub type Port = u16;
+
+#[cfg(feature = "rand")]
+use {rand::prelude::*, std::ops::Range};
+
+#[cfg(feature = "rand")]
+/// Range for random port selection.
+static RANDOM_PORT_RANGE: Range<u16> = 15000..45000;
+
+#[cfg(feature = "rand")]
+/// Maximum number of retries for random port selection.
+static MAX_RANDOM_PORT_RETRIES: u8 = 10;
 
 /// Upper bound for server port.
 ///
 /// Running Memospot in dev mode adds 1 to last used port,
-/// so we need to make extra room for that.
+/// so we need to make extra room for that, just in case.
 static UPPER_PORT: u16 = 65534;
 
 /// Probe address for checking if a port is free.
 ///
-/// Listening on `0.0.0.0` triggers Windows Firewall
-/// and causes a pop-up, so we use `127.0.0.1` instead.
+/// Listening on `0.0.0.0` triggers Windows Firewall and
+/// it shows a pop-up, so we use `127.0.0.1` instead.
 static PROBE_ADDR: Ipv4Addr = Ipv4Addr::LOCALHOST;
-
-/// Range for random port selection.
-static RANDOM_PORT_RANGE: Range<u16> = 15000..45000;
-
-/// Maximum number of retries for random port selection.
-static MAX_RANDOM_PORT_RETRIES: u8 = 10;
 
 /// Try to bind to a socket using TCP.
 fn test_bind_tcp<A: ToSocketAddrs>(addr: A) -> Option<Port> {
@@ -46,8 +49,9 @@ pub fn get_free_tcp() -> Option<Port> {
     test_bind_tcp(addr)
 }
 
+#[cfg(feature = "rand")]
 /// Get a random port between specified range.
-pub fn get_random_port(range: Range<u16>, retries: u8) -> Option<Port> {
+pub fn get_random_free_port(range: Range<u16>, retries: u8) -> Option<Port> {
     let mut rng = rand::thread_rng();
     for _ in 0..retries {
         let port = rng.gen_range(range.clone());
@@ -58,10 +62,10 @@ pub fn get_random_port(range: Range<u16>, retries: u8) -> Option<Port> {
     None
 }
 
-/// Find an open port.
+/// Find a free port.
 ///
 /// Probes the preferred port first, then ask the OS for a free port.
-pub fn find_open_port(preferred_port: Port) -> Option<Port> {
+pub fn find_free_port(preferred_port: Port) -> Option<Port> {
     if preferred_port != 0 && preferred_port < UPPER_PORT && is_free_tcp(preferred_port) {
         return Some(preferred_port);
     }
@@ -75,5 +79,9 @@ pub fn find_open_port(preferred_port: Port) -> Option<Port> {
     }
 
     // Fall back to random port
-    get_random_port(RANDOM_PORT_RANGE.to_owned(), MAX_RANDOM_PORT_RETRIES)
+    #[cfg(feature = "rand")]
+    return get_random_free_port(RANDOM_PORT_RANGE.to_owned(), MAX_RANDOM_PORT_RETRIES);
+
+    #[cfg(not(feature = "rand"))]
+    None
 }

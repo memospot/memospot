@@ -2,117 +2,44 @@
 
 mod tests;
 
-use figment::providers::Env;
-use figment::providers::Format;
-use figment::providers::Serialized;
-use figment::providers::Yaml;
-use figment::Figment;
-use figment::Profile;
-use serde::Deserialize;
-use serde::Serialize;
-use std::fs;
-use std::io;
-use std::io::ErrorKind;
+pub mod default;
+mod log;
+mod memos;
+mod memospot;
+
+use crate::memos::Memos;
+use crate::memospot::Memospot;
+
+use figment::providers::{Env, Format, Serialized, Yaml};
+use figment::{Figment, Profile};
+use serde::{Deserialize, Serialize};
+
+use std::io::{Error, ErrorKind, Result};
 use std::path::Path;
-use std::thread;
 use std::time::Duration;
+use std::{fs, io, thread};
 
-pub type Error = io::Error;
-
-// https://github.com/estk/log4rs/blob/main/docs/Configuration.md
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
-pub struct LogRotation {
-    pub enabled: bool,
-    pub max_size: String,
-    pub amount: u16,
-    pub path_mask: String,
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
-pub struct Log {
-    pub enabled: bool,
-    pub file: String,
-    pub level: String,
-    pub pattern: String,
-    pub rotation: LogRotation,
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
-pub struct Memos {
-    pub mode: String,
-    pub addr: String,
-    pub port: u16,
-    pub data: String,
-    pub driver: String,
-    pub dsn: String,
-    pub telemetry: bool,
-    pub log: Log,
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
-pub struct Memospot {
-    pub log: Log,
-}
-
-/// Memospot configuration.
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Config {
     pub memos: Memos,
     pub memospot: Memospot,
 }
 
-impl Default for Config {
-    fn default() -> Config {
-        Config {
-            memos: Memos {
-                mode: "prod".to_owned(),
-                addr: "127.0.0.1".to_owned(),
-                port: 0,
-                data: "".to_owned(),
-                driver: "sqlite".to_owned(),
-                dsn: "".to_owned(),
-                telemetry: true,
-                log: Log {
-                    enabled: false,
-                    file: "memos.log".to_owned(),
-                    level: "info".to_owned(),
-                    pattern: "{d(%Y-%m-%d %H:%M:%S)} - {h({l})}: {m}{n}".to_owned(),
-                    rotation: LogRotation {
-                        enabled: true,
-                        max_size: "10 mb".to_owned(),
-                        amount: 5,
-                        path_mask: "$ENV{MEMOSPOT_DATA}/memos.log.{}.gz".to_owned(),
-                    },
-                },
-            },
-            memospot: Memospot {
-                log: Log {
-                    enabled: false,
-                    file: "memospot.log".to_owned(),
-                    level: "info".to_owned(),
-                    pattern: "{d(%Y-%m-%d %H:%M:%S)} - {h({l})}: {m}{n}".to_owned(),
-                    rotation: LogRotation {
-                        enabled: true,
-                        max_size: "10 mb".to_owned(),
-                        amount: 5,
-                        path_mask: "$ENV{MEMOSPOT_DATA}/memospot.log.{}.gz".to_owned(),
-                    },
-                },
-            },
-        }
-    }
-}
-
 impl Config {
-    const CONFIG_HEADER: &'static str = r#"
-# Memospot configuration file.
+    const CONFIG_HEADER: &'static str = r#"#
+#! User comments on this file will be lost whenever the configuration is updated by Memospot.
 #
-# Some fields are automatically set by the application.
-#! User comments will be lost when the file is rewritten.
-
+# To specify custom environment variables for Memos, use the `env` key, like so:
+# memos:
+#     env:
+#         NEW_ENV_VAR: "my value" # always quote custom env values.
+#
+# You may specify a custom data directory for Memos, like a synced folder or a network share:
+# memos:
+#     data: "/path/to/data"
 "#;
 
-    pub fn to_string(&self) -> io::Result<String> {
+    pub fn to_string(&self) -> Result<String> {
         serde_yaml::to_string(&self).map_err(|e| Error::new(ErrorKind::InvalidData, e))
     }
 
@@ -137,7 +64,7 @@ impl Config {
     }
 
     /// Parse configuration file.
-    pub fn parse_file(cfg_path: &Path) -> io::Result<Config> {
+    pub fn parse_file(cfg_path: &Path) -> Result<Config> {
         Figment::new()
             .merge(Yaml::file(cfg_path.to_str().unwrap_or_default()))
             .extract::<Config>()
@@ -145,7 +72,7 @@ impl Config {
     }
 
     /// Save configuration to supplied file.
-    pub fn save_file(cfg_path: &Path, config: &Config) -> io::Result<()> {
+    pub fn save_file(cfg_path: &Path, config: &Config) -> Result<()> {
         if cfg_path.is_dir() {
             return Err(Error::new(
                 ErrorKind::InvalidInput,
@@ -179,7 +106,7 @@ impl Config {
     }
 
     /// Reset configuration file to defaults.
-    pub fn reset_file(cfg_path: &Path) -> io::Result<()> {
+    pub fn reset_file(cfg_path: &Path) -> Result<()> {
         let default_config = Config::default();
         Config::save_file(cfg_path, &default_config)
     }

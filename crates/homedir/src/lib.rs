@@ -15,11 +15,12 @@
 //! let public_html = "~/public_html".expand_home().unwrap();
 //! ```
 
+use home::home_dir;
+use std::path::{Component, Path, PathBuf};
+
 #[cfg(not(target_os = "windows"))]
 use nix::unistd::{Uid, User};
 
-use home::home_dir;
-use std::path::{Component, Path, PathBuf};
 #[cfg(test)]
 mod tests;
 

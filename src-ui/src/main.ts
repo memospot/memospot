@@ -57,7 +57,7 @@ async function pingMemosServer(endpoint: string): Promise<boolean> {
 }
 
 async function redirectOnResponse() {
-    const memosPort = await invoke("js_get_memos_port");
+    const memosPort = await invoke("get_memos_port");
     const pingAPI = `api/v1/ping`;
     const memosUrl = `http://localhost:${memosPort}`;
     const MemosPingEndpoint = [memosUrl, pingAPI].join("/");

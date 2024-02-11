@@ -6,5 +6,9 @@ edition = "2021"
 license = "MIT"
 description = "Slim TCP port picker"
 
+[features]
+rand = ["dep:rand"]
+
 [dependencies.rand]
 version = "0.8.5"
+optional = true

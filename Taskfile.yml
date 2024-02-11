@@ -190,7 +190,6 @@ tasks:
     platforms: [linux, darwin]
     internal: true
     ignore_error: true
-    silent: true
     cmds:
       - killall memospot > /dev/null 2>&1
       - killall memos > /dev/null 2>&1
@@ -198,7 +197,6 @@ tasks:
     platforms: [windows]
     internal: true
     ignore_error: true
-    silent: true
     cmds:
       - taskkill /f /t /im memospot.exe >nul 2>&1
       - taskkill /f /t /im memos.exe >nul 2>&1
