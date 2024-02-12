@@ -23,7 +23,7 @@ fn test_file() -> Result<()> {
     let temp_file = tempfile::NamedTempFile::new()?;
     let temp_file_path = temp_file.path();
 
-    if let Ok(mut file) = File::create(&temp_file_path) {
+    if let Ok(mut file) = File::create(temp_file_path) {
         let uuid = Uuid::new_v4();
         let test_content: &str = &uuid.to_string();
         println!("test_content: {}", test_content);

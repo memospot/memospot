@@ -62,10 +62,10 @@ fn test_expand_nonexpansion() {
 #[test]
 fn test_root() {
     #[cfg(target_os = "macos")]
-    const ROOT_DIR: &'static str = "/var/root";
+    const ROOT_DIR: &str = "/var/root";
 
     #[cfg(target_os = "linux")]
-    const ROOT_DIR: &'static str = "/root";
+    const ROOT_DIR: &str = "/root";
 
     assert_eq!(getent("root").unwrap(), PathBuf::from(ROOT_DIR));
     assert_eq!("~root".expand_home().unwrap(), PathBuf::from(ROOT_DIR));

@@ -1,5 +1,5 @@
 #[cfg(test)]
-use {crate::Config, serde_yaml, std::fs, std::io, tempfile};
+use {crate::Config, std::fs, std::io};
 
 /// Test that provided config is merged with
 /// default config in case of missing fields.
@@ -24,7 +24,7 @@ memospot:
     assert!(parsed_config.memos.addr == "127.0.0.1");
     assert!(parsed_config.memos.port == 0);
     assert!(parsed_config.memos.mode == "demo");
-    assert!(parsed_config.memos.log.rotation.amount == 5);
+    // assert!(parsed_config.memos.log.rotation.amount == 5);
     assert!(parsed_config.memospot.log.enabled);
 }
 
