@@ -79,7 +79,7 @@ jobs:
         with:
           repo: go-task/task
           cache: enable
-          tag: "v3.33.1"
+          tag: "v3.34.1"
 
       - if: ${{ runner.os == 'Linux' }}
         name: "[Linux] Install UPX"

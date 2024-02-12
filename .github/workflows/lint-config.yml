@@ -36,14 +36,14 @@ jobs:
         with:
           repo: go-task/task
           cache: enable
-          tag: "v3.33.1"
+          tag: "v3.34.1"
 
       - name: Install dprint
         uses: jaxxstorm/action-install-gh-release@c5ead9a448b4660cf1e7866ee22e4dc56538031a
         with:
           repo: dprint/dprint
           cache: enable
-          tag: "0.44.0"
+          tag: "0.45.0"
 
       - name: Install taplo
         run: >
