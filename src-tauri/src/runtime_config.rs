@@ -18,6 +18,7 @@ pub struct RuntimeConfigPaths {
     /// Memospot data directory path.
     pub memospot_data: PathBuf,
 }
+
 pub struct RuntimeConfig {
     /// Store paths used throughout the app.
     pub paths: RuntimeConfigPaths,

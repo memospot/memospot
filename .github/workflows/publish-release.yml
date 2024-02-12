@@ -56,7 +56,6 @@ jobs:
           echo "TEMP=$TEMP" >> $GITHUB_ENV
           echo "TMP=$TEMP" >> $GITHUB_ENV
       # /Set env vars
-
       - if: ${{ runner.os == 'Linux' }}
         name: "[Linux] Disable initramfs and man-db update"
         continue-on-error: true
