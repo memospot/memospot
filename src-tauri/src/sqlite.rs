@@ -1,15 +1,12 @@
+use crate::runtime_config::RuntimeConfig;
+use chrono::prelude::*;
 use log::{debug, error, info};
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::SqlitePool;
 use std::collections::HashMap;
-use std::fmt::Display;
-use std::future::Future;
 use std::io::{Error, ErrorKind, Result};
 use std::path::Path;
-use std::time::SystemTime;
 use tokio::time::Instant;
-
-use crate::runtime_config::RuntimeConfig;
 
 /// Create a database connection pool and return an open connection.
 pub async fn create_pool(db: &Path) -> Result<SqlitePool> {
@@ -61,31 +58,63 @@ pub async fn write_migration_history(
     migration_fn: &str,
     rconfig: &mut RuntimeConfig,
 ) -> Result<()> {
-    let migration_record: HashMap<String, u64> = HashMap::from_iter(vec![(
+    let migration_record: HashMap<String, i64> = HashMap::from_iter(vec![(
         migration_fn.to_string(),
-        SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_secs(),
+        chrono::offset::Utc::now().timestamp(),
     )]);
 
     // Add timestamp to current_config.memospot.database_migrations.history.
-    match rconfig.yaml.memospot.database_migrations.history {
+    match rconfig.yaml.memospot.migrations.history {
         Some(ref mut migration_history) => {
             migration_history.extend(migration_record);
-            rconfig.yaml.memospot.database_migrations.history = Some(migration_history.clone());
+            rconfig.yaml.memospot.migrations.history = Some(migration_history.clone());
         }
         None => {
-            rconfig.yaml.memospot.database_migrations.history = Some(migration_record);
+            rconfig.yaml.memospot.migrations.history = Some(migration_record);
         }
     };
     Ok(())
 }
 
+pub async fn get_migration_ts(rconfig: &RuntimeConfig, name: &str) -> Option<i64> {
+    if let Some(migration) = rconfig.yaml.memospot.migrations.history.as_ref().cloned() {
+        if migration.contains_key(name) {
+            return Some(*migration.get(name).unwrap());
+        }
+    }
+    None
+}
+
 /// Run programatic database migrations.
+///
+/// Stores migration history in the configuration file.
+/// History is used to prevent running the same migration multiple times,
+/// and also makes possible to update a migration code and invalidate a previous run.
 pub async fn migrate(rconfig: &mut RuntimeConfig) -> Result<()> {
-    migrate_local_resource_paths(rconfig).await?;
-    write_migration_history("migrate_local_resource_paths", rconfig).await?;
+    if !rconfig.yaml.memospot.migrations.enabled {
+        info!("Database migrations are disabled.");
+        return Ok(());
+    }
+
+    const KEY_LOCAL_RESOURCE_PATHS: &str = "db_local_resource_paths";
+    let migrate_local_resource_paths_ts = get_migration_ts(rconfig, KEY_LOCAL_RESOURCE_PATHS)
+        .await
+        .unwrap_or(0);
+
+    const TS_2024_02_11: i64 = 1707682533;
+    if TS_2024_02_11 < migrate_local_resource_paths_ts {
+        let dt: DateTime<Utc> =
+            DateTime::from_timestamp(migrate_local_resource_paths_ts, 0).unwrap();
+        debug!(
+            "Database migration `{}` has already been run on {}.",
+            KEY_LOCAL_RESOURCE_PATHS,
+            dt.format("%Y-%m-%d %H:%M:%S UTC")
+        );
+    } else {
+        info!("Running database migration `{}`.", KEY_LOCAL_RESOURCE_PATHS);
+        migration_db_local_resource_paths(rconfig).await?;
+        write_migration_history(KEY_LOCAL_RESOURCE_PATHS, rconfig).await?;
+    }
 
     Ok(())
 }
@@ -104,7 +133,9 @@ pub async fn migrate(rconfig: &mut RuntimeConfig) -> Result<()> {
 /// Notes:
 /// - Migrating 300k resources takes about 10 seconds on a modern NVMe SSD and a decent CPU.
 /// - Migration will first check if any path is absolute and then update the database in a single transaction.
-pub async fn migrate_local_resource_paths(rconfig: &RuntimeConfig) -> Result<()> {
+///
+/// Returns `true` if any paths were migrated, otherwise `false`.
+pub async fn migration_db_local_resource_paths(rconfig: &RuntimeConfig) -> Result<bool> {
     fn norm_path(path: &str) -> String {
         path.replace(r#"\\"#, r#"\"#).replace("//", "/")
     }
@@ -148,7 +179,7 @@ pub async fn migrate_local_resource_paths(rconfig: &RuntimeConfig) -> Result<()>
     match migration_check {
         None => {
             debug!("Resource internal path migration is not required.");
-            return Ok(());
+            return Ok(false);
         }
         Some(_) => {
             info!("Migrating resource internal paths from absolute to relative.");
@@ -231,10 +262,21 @@ pub async fn migrate_local_resource_paths(rconfig: &RuntimeConfig) -> Result<()>
 
         migrated_count += 1;
         if migrated_count < 100 || migrated_count % log_interval == 0 {
-            info!(
-                "[Running] Migrated {}/{} paths. Last: {} => {}",
-                migrated_count, total_resources, &resource.internal_path, new_path
-            );
+            match log::max_level() {
+                log::LevelFilter::Info => {
+                    info!(
+                        "[Running] Migrated {}/{} paths.",
+                        migrated_count, total_resources,
+                    );
+                }
+                log::LevelFilter::Debug => {
+                    debug!(
+                        "[Running] Migrated {}/{} paths.\nLast: {} => {}",
+                        migrated_count, total_resources, &resource.internal_path, new_path
+                    );
+                }
+                _ => {}
+            }
         }
     }
 
@@ -250,5 +292,5 @@ pub async fn migrate_local_resource_paths(rconfig: &RuntimeConfig) -> Result<()>
 
     let _ = db_pool.close().await;
     let _ = db_pool.close_event().await;
-    Ok(())
+    Ok(true)
 }
