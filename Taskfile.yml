@@ -578,7 +578,7 @@ tasks:
     cmds:
       - cd ./src-tauri; cargo set-version --locked {{.NEW_VERSION}}
       - sh -c "sed -i 's#Memospot/[0-9]\+\.[0-9]\+\.[0-9]\+"#Memospot/{{.NEW_VERSION}}"#' ./src-tauri/Tauri.toml"
-      - cd cargo generate-lockfile
+      - cargo generate-lockfile
       - task: format:dprint
       - task: lint:toml
       - git add ./src-tauri/Tauri.toml

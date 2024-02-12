@@ -21,6 +21,10 @@ path-clean = "1.0.1"
 version = "0.7.3"
 features = ["runtime-tokio", "sqlite"]
 
+[dependencies.chrono]
+version = "0.4.34"
+no-default-features = true
+
 [dependencies.config]
 path = "../crates/config"
 version = "0.0.1"
