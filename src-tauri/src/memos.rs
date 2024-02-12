@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 use std::env;
+use std::env::consts::OS;
 use std::io::{Error, ErrorKind, Result};
 use std::path::PathBuf;
 
 use log::debug;
 
 use crate::RuntimeConfig;
+use tauri_utils::PackageInfo;
 
 /// Spawn Memos server.
 ///
@@ -38,15 +40,33 @@ pub fn spawn(rconfig: &RuntimeConfig) -> Result<()> {
 /// On Linux, it will fail to access a `dist` folder under /usr/bin (where Tauri places the binary),
 /// so we place the front-end in the data directory instead and change the working directory to there.
 pub fn get_cwd(rconfig: &RuntimeConfig) -> PathBuf {
-    if cfg!(dev) {
-        return rconfig.paths.memospot_cwd.clone();
-    }
+    // if cfg!(dev) {
+    //     return rconfig.paths.memospot_cwd.clone();
+    // }
 
     let mut search_paths: Vec<PathBuf> = vec![
         rconfig.paths.memospot_data.clone(),
         rconfig.paths.memospot_cwd.clone(),
     ];
     search_paths.dedup();
+
+    if OS == "linux" {
+        let version = semver::Version::parse("0.1.3").unwrap();
+        let package_info = PackageInfo {
+            name: "memospot".into(),
+            version,
+            authors: "",
+            description: "",
+        };
+        if let Ok(resource_dir) =
+            tauri::utils::platform::resource_dir(&package_info, &tauri::Env::default())
+        {
+            debug!("Resource directory: {}", resource_dir.to_string_lossy());
+            search_paths.push(resource_dir);
+        }
+
+        // search_paths.push(PathBuf::from("/usr/lib/memospot"))
+    }
 
     // Prefer user-provided working_dir for Memos if it's not empty or ".".
     if let Some(working_dir) = &rconfig.yaml.memos.working_dir {

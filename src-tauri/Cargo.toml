@@ -51,6 +51,9 @@ version = "1.0.1"
 features = ["gzip"]
 version = "0.11.24"
 
+[dependencies.semver]
+version = "1"
+
 [dependencies.serde]
 features = ["derive"]
 version = "1.0"
@@ -78,6 +81,10 @@ features = [
     "shell-all",
     "window-all",
 ]
+
+[dependencies.tauri-utils]
+version = "1.5.2"
+default-features = false
 
 [dependencies.tempfile]
 version = "3.8.1"
