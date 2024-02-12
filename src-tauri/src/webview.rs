@@ -54,8 +54,6 @@ pub async fn install() -> Result<()> {
     let client = reqwest::Client::builder()
         .user_agent("Tauri")
         .gzip(true)
-        .brotli(true)
-        .deflate(true)
         .build()
         .map_err(|e| Error::new(ErrorKind::Other, e))?;
 
