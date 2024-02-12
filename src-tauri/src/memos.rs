@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::env;
 use std::io::{Error, ErrorKind, Result};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use log::debug;
 
@@ -17,7 +17,8 @@ pub fn spawn(rconfig: &RuntimeConfig) -> Result<()> {
     debug!("Memos environment: {:#?}", env_vars);
 
     let command = rconfig.paths.memos_bin.to_string_lossy().to_string();
-    let cwd = decide_cwd(rconfig);
+    let cwd = get_cwd(rconfig);
+    debug!("Memos server working directory: {}", cwd.to_string_lossy());
     tauri::async_runtime::spawn(async move {
         tauri::api::process::Command::new(command)
             .env_clear()
@@ -29,34 +30,30 @@ pub fn spawn(rconfig: &RuntimeConfig) -> Result<()> {
     Ok(())
 }
 
-/// Decide which current working directory to use for Memos server.
+/// Decide which working directory to use for Memos server.
 ///
 /// Front-end is not embedded in v0.18.2+ and Memos expects to
-/// find the `dist` folder in its current working directory.
+/// find the `dist` folder in its working directory.
 ///
 /// On Linux, it will fail to access a `dist` folder under /usr/bin (where Tauri places the binary),
-/// so we place the front-end in the data directory instead and change the current working directory to there.
-pub fn decide_cwd(rconfig: &RuntimeConfig) -> PathBuf {
-    let bin_parent = rconfig
-        .paths
-        .memos_bin
-        .parent()
-        .unwrap_or(Path::new("."))
-        .to_path_buf();
+/// so we place the front-end in the data directory instead and change the working directory to there.
+pub fn get_cwd(rconfig: &RuntimeConfig) -> PathBuf {
     if cfg!(dev) {
-        return bin_parent;
+        return rconfig.paths.memospot_cwd.clone();
     }
 
     let mut search_paths: Vec<PathBuf> = vec![
         rconfig.paths.memospot_data.clone(),
         rconfig.paths.memospot_cwd.clone(),
-        bin_parent.clone(),
     ];
+    search_paths.dedup();
 
-    // Prefer user-provided Memos cwd if it's not empty or ".".
-    let yaml_bin = rconfig.yaml.memos.cwd.as_str().trim();
-    if !yaml_bin.is_empty() {
-        search_paths.insert(0, PathBuf::from(yaml_bin));
+    // Prefer user-provided working_dir for Memos if it's not empty or ".".
+    if let Some(working_dir) = &rconfig.yaml.memos.working_dir {
+        let yaml_wd = working_dir.as_str().trim();
+        if !yaml_wd.is_empty() {
+            search_paths.insert(0, PathBuf::from(yaml_wd));
+        }
     }
 
     for path in search_paths {

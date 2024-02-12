@@ -6,19 +6,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Migrations {
     pub enabled: bool,
-    pub history: Option<HashMap<String, u64>>,
-    // pub last_run: String,
-    // pub last_run_version: String,
+    pub history: Option<HashMap<String, i64>>,
 }
-// #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
-// pub struct UnmanagedServer {
-//     pub enabled: bool,
-//     pub full_url: String,
-// }
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Memospot {
-    pub database_migrations: Migrations,
+    pub migrations: Migrations,
     // pub unmanaged_server: UnmanagedServer,
     pub log: Log,
 }

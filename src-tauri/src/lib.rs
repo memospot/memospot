@@ -43,7 +43,7 @@ pub fn panic_dialog(msg: &str) {
         .set_title(FATAL_ERROR)
         .set_text(msg)
         .show_alert()
-        .unwrap();
+        .unwrap_or_default();
     error!("{}: {}", FATAL_ERROR, msg);
     panic!("{}: {}", FATAL_ERROR, msg);
 }
@@ -54,7 +54,7 @@ pub fn info_dialog(msg: &str) {
         .set_title("Info")
         .set_text(msg)
         .show_alert()
-        .unwrap();
+        .unwrap_or_default();
 }
 
 pub fn warn_dialog(msg: &str) {
@@ -63,7 +63,7 @@ pub fn warn_dialog(msg: &str) {
         .set_title("Warning")
         .set_text(msg)
         .show_alert()
-        .unwrap();
+        .unwrap_or_default();
 }
 
 pub fn error_dialog(msg: &str) {
@@ -72,7 +72,7 @@ pub fn error_dialog(msg: &str) {
         .set_title("Error")
         .set_text(msg)
         .show_alert()
-        .unwrap();
+        .unwrap_or_default();
 }
 
 pub fn confirm_dialog(title: &str, msg: &str, icon: MessageType) -> bool {
@@ -81,7 +81,7 @@ pub fn confirm_dialog(title: &str, msg: &str, icon: MessageType) -> bool {
         .set_title(title)
         .set_text(msg)
         .show_confirm()
-        .unwrap()
+        .unwrap_or_default()
 }
 
 /// Get the data path to supplied application name.
@@ -103,7 +103,7 @@ pub fn get_app_data_path(app_name: &str) -> PathBuf {
         if let Ok(appdata) = std::env::var("APPDATA") {
             return PathBuf::from(appdata)
                 .parent()
-                .unwrap()
+                .unwrap_or(Path::new("."))
                 .join("Local")
                 .join(app_name);
         }

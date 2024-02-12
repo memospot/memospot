@@ -8,9 +8,11 @@ use std::collections::HashMap;
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Memos {
     /// Memos server binary path.
-    pub bin: String,
+    pub binary_path: Option<String>,
     /// Memos server current working directory.
-    pub cwd: String,
+    pub working_dir: Option<String>,
+    /// Directory where Memos will store its database and assets.
+    pub data: Option<String>,
     /// Server mode. Each mode uses a different database file.
     ///
     /// Can be one of:
@@ -28,8 +30,6 @@ pub struct Memos {
     ///
     /// Memospot will try to reuse this port on subsequent runs, and will find a new free port if the previous one is already in use or if this value is set to 0.
     pub port: u16,
-    /// Directory where Memos will store its database and assets.
-    pub data: String,
     /// Memos server telemetry.
     pub metric: bool,
     /// Custom environment variables to pass to Memos.

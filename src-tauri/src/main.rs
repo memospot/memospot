@@ -42,8 +42,7 @@ fn main() {
     rconfig.paths.memos_data = init::memos_data(&rconfig);
     rconfig.paths.memos_db_file = init::database(&rconfig);
 
-    // TODO: fix logger.
-    let _debug_memos = init::setup_logger(&rconfig);
+    init::setup_logger(&rconfig);
 
     info!("Starting Memospot");
     info!(
@@ -68,7 +67,7 @@ fn main() {
         if let Err(e) = sqlite::migrate(&mut rconfig).await {
             panic_dialog!("Failed to run database migrations:\n{}", e.to_string());
         }
-        info!("Database migrations completed successfully.");
+        debug!("Database migrations completed successfully.");
     });
 
     // Save the config file, if it has changed.
