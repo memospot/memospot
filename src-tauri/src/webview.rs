@@ -136,8 +136,8 @@ pub async fn install() -> Result<()> {
 
 #[cfg(not(windows))]
 pub async fn install() -> Result<()> {
-    return Err(Error::new(
+    Err(Error::new(
         ErrorKind::Other,
         "unable to auto-install WebView on this system.",
-    ));
+    ))
 }
