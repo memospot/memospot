@@ -41,6 +41,10 @@ fn main() {
     rconfig.yaml.memos.port = init::memos_port(&rconfig);
     rconfig.paths.memos_data = init::memos_data(&rconfig);
     rconfig.paths.memos_db_file = init::database(&rconfig);
+    info!(
+        "Memos data directory: {}",
+        rconfig.paths.memos_data.to_string_lossy()
+    );
 
     init::setup_logger(&rconfig);
 
@@ -53,15 +57,6 @@ fn main() {
     rconfig.paths.memospot_bin = std::env::current_exe().unwrap();
     rconfig.paths.memospot_cwd = rconfig.paths.memospot_bin.parent().unwrap().to_path_buf();
     rconfig.paths.memos_bin = init::find_memos(&rconfig);
-
-    info!(
-        "Memos server found at: {}",
-        rconfig.paths.memos_bin.to_string_lossy()
-    );
-    info!(
-        "Memos data directory: {}",
-        rconfig.paths.memos_data.to_string_lossy()
-    );
 
     tauri::async_runtime::block_on(async {
         if let Err(e) = sqlite::migrate(&mut rconfig).await {

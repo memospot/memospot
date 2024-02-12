@@ -4,7 +4,7 @@
 //! Main purpose is to unclutter `main.rs`.
 use crate::{webview, RuntimeConfig};
 use config::Config;
-use log::{info, warn};
+use log::{debug, info, warn};
 use memospot::*;
 use native_dialog::MessageType;
 use std::env;
@@ -249,15 +249,12 @@ pub fn find_memos(rconfig: &RuntimeConfig) -> PathBuf {
         search_paths.push(PathBuf::from("/var/opt/memos"));
         search_paths.push(PathBuf::from("/usr/local/memos"));
     }
-    info!("Searching for Memos server at: {:?}", search_paths);
 
+    debug!("Searching for Memos server at: {:?}", search_paths);
     for path in search_paths {
         let memos_path = path.join(memos_bin_name);
-        info!(
-            "Checking for Memos server at: {}",
-            memos_path.to_string_lossy()
-        );
         if memos_path.exists() && memos_path.is_file() {
+            info!("Memos server found at: {}", memos_path.to_string_lossy());
             return memos_path;
         }
     }
