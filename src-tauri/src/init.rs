@@ -4,7 +4,7 @@
 //! Main purpose is to unclutter `main.rs`.
 use crate::{webview, RuntimeConfig};
 use config::Config;
-use log::warn;
+use log::{info, warn};
 use memospot::*;
 use native_dialog::MessageType;
 use std::env;
@@ -42,7 +42,17 @@ pub fn data_path(app_name: &str) -> PathBuf {
 /// Use the Memospot data directory if user-provided path is empty or ".".
 /// Optionally, resolve a user-provided Memos data directory.
 pub fn memos_data(rconfig: &RuntimeConfig) -> PathBuf {
-    let data_str = rconfig.yaml.memos.data.as_str().trim();
+    let data_str = rconfig
+        .yaml
+        .memos
+        .data
+        .as_ref()
+        .map(|s| s.as_str().trim())
+        .unwrap_or("");
+
+    // Use Memospot data directory if user-provided path is empty or ".".
+    // Prevents resolving data path to a non-writable directory,
+    // like /usr/local/bin or "Program Files".
     if data_str.is_empty() || data_str == "." {
         return rconfig.paths.memospot_data.to_path_buf();
     }
@@ -178,7 +188,6 @@ pub fn config(config_path: &PathBuf) -> Config {
         // Use Memos in demo mode during development,
         // as it's already seeded with some data.
         // config.memos.mode = "demo".into();
-
         if config.memos.port != 0 {
             config.memos.port += 1;
         }
@@ -201,23 +210,33 @@ pub fn memos_port(rconfig: &RuntimeConfig) -> u16 {
 /// Locate Memos server binary.
 ///
 /// Search for Memos server binary in the following order:
-/// 1. Memospot current working directory
-/// 2. provided directories
+/// 1. Provided Memos binary path from the configuration file.
+/// 2. Memospot current working directory
+/// 3. Memospot data directory
+/// 4. ProgramData/memos (Windows only)
+/// 5. /usr/local/bin, /var/opt/memos, /usr/local/memos (POSIX only)
 pub fn find_memos(rconfig: &RuntimeConfig) -> PathBuf {
+    // Prefer Memos binary path from the configuration file.
+    if let Some(binary_path) = &rconfig.yaml.memos.binary_path {
+        let yaml_bin = binary_path.as_str().trim();
+        if !yaml_bin.is_empty() {
+            if let Ok(canonical) = PathBuf::from(yaml_bin).canonicalize() {
+                if canonical.exists() && canonical.is_file() {
+                    return canonical;
+                }
+            }
+        }
+    }
+
     let memos_bin_name = match OS {
         "windows" => "memos.exe",
         _ => "memos",
     };
 
-    let mut search_paths: Vec<PathBuf> = vec![rconfig.paths.memospot_cwd.clone()];
-
-    // Prefer user-provided Memos binary path.
-    let yaml_bin = rconfig.yaml.memos.bin.as_str().trim();
-    if !yaml_bin.is_empty() {
-        if let Ok(canonical) = PathBuf::from(yaml_bin).canonicalize() {
-            search_paths.insert(0, canonical);
-        }
-    }
+    let mut search_paths: Vec<PathBuf> = vec![
+        rconfig.paths.memospot_cwd.clone(),
+        rconfig.paths.memospot_data.clone(),
+    ];
 
     // Windows fall back.
     if OS == "windows" {
@@ -230,9 +249,14 @@ pub fn find_memos(rconfig: &RuntimeConfig) -> PathBuf {
         search_paths.push(PathBuf::from("/var/opt/memos"));
         search_paths.push(PathBuf::from("/usr/local/memos"));
     }
+    info!("Searching for Memos server at: {:?}", search_paths);
 
     for path in search_paths {
         let memos_path = path.join(memos_bin_name);
+        info!(
+            "Checking for Memos server at: {}",
+            memos_path.to_string_lossy()
+        );
         if memos_path.exists() && memos_path.is_file() {
             return memos_path;
         }
@@ -242,7 +266,11 @@ pub fn find_memos(rconfig: &RuntimeConfig) -> PathBuf {
 }
 
 static LOGGING_CONFIG_YAML: &str = r#"
+# Log4rs configuration file.
 # https://github.com/estk/log4rs#quick-start
+#
+# Use absolute paths for file appender. Otherwise, it'll try to write next to the application binary.
+# Data directory is available as: $ENV{MEMOSPOT_DATA}
 appenders:
     file:
         encoder:
@@ -260,7 +288,7 @@ appenders:
                 base: 1
 root:
     # debug | info | warn | error | off
-    level: error
+    level: info
     appenders:
         - file
 "#;
@@ -269,17 +297,14 @@ root:
 ///
 /// Return true if logging is enabled
 pub fn setup_logger(rconfig: &RuntimeConfig) -> bool {
+    if !rconfig.yaml.memospot.log.enabled {
+        return false;
+    }
     let log_config: PathBuf = rconfig.paths.memospot_data.join("logging_config.yaml");
     std::env::set_var(
         "MEMOSPOT_DATA",
         rconfig.paths.memospot_data.to_string_lossy().to_string(),
     );
-
-    if !std::path::Path::new(&log_config).exists() {
-        // logging is disabled
-        return false;
-    }
-
     if log4rs::init_file(&log_config, Default::default()).is_ok() {
         // logging is enabled and config is ok
         return true;
@@ -288,7 +313,6 @@ pub fn setup_logger(rconfig: &RuntimeConfig) -> bool {
     // Logging is enabled, but config is bad
     if let Ok(mut file) = File::create(&log_config) {
         let config_template = LOGGING_CONFIG_YAML.replace("    ", "  ");
-
         if let Err(e) = file.write_all(config_template.as_bytes()) {
             panic_dialog!(
                 "Failed to write to `{}`:\n{}",
