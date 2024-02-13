@@ -1,6 +1,8 @@
+const globalThis = window;
+
 const invoke = ((func: string, ...args: any[]) => {
-    if (window.__TAURI__) {
-        return window.__TAURI__.tauri.invoke(func, ...args);
+    if (globalThis.__TAURI__) {
+        return globalThis.__TAURI__.tauri.invoke(func, ...args);
     }
     // Used to test the UI in a browser.
     return new Error("Not running in Tauri");
@@ -8,7 +10,7 @@ const invoke = ((func: string, ...args: any[]) => {
 
 document.addEventListener("DOMContentLoaded", async () => {
     const reload = () => {
-        window.location.replace("/");
+        globalThis.location.replace("/");
     };
     const button = document.getElementById("manual-redirect-btn")!;
     button.addEventListener("click", reload);
@@ -68,7 +70,7 @@ async function redirectOnResponse() {
     while (true) {
         if (await pingMemosServer(MemosPingEndpoint)) {
             logoBlinker.stop();
-            window.location.replace(memosUrl);
+            globalThis.location.replace(memosUrl);
             break;
         }
 
