@@ -5,8 +5,7 @@ on:
   # Replace `main` with your branch’s name
   push:
     branches: ["**"]
-    paths:
-      - "docs/**"
+    paths: "docs/**"
   # Specify to run a workflow manually from the Actions tab on GitHub
   workflow_dispatch:
 
@@ -30,6 +29,10 @@ env:
   ALGOLIA_KEY: ${{ secrets.ALGOLIA_KEY }}
   CONFIG_JSON_PRODUCT: memospot
   CONFIG_JSON_VERSION: 1.0
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -72,15 +75,12 @@ jobs:
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
-        with:
-          name: docs
-          path: artifacts
+        with: { name: "docs", path: "artifacts" }
 
       - name: Test documentation
         uses: JetBrains/writerside-checker-action@8e11963855941a93dff60b8e39a2ffd4a2c0b767
         continue-on-error: true
-        with:
-          instance: ${{ env.INSTANCE }}
+        with: { instance: "${{ env.INSTANCE }}" }
 
   publish-indexes:
     # Requires the build-job results
@@ -92,8 +92,7 @@ jobs:
     steps:
       - name: Download artifact
         uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
-        with:
-          name: algolia-indexes
+        with: { name: "algolia-indexes" }
       - name: Unzip artifact
         run: |
           unzip -O UTF-8 -qq ${{ env.ALGOLIA_ARTIFACT }} -d algolia-indexes
@@ -116,8 +115,7 @@ jobs:
     steps:
       - name: Download artifact
         uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
-        with:
-          name: docs
+        with: { name: "docs" }
 
       - name: Unzip artifact
         run: unzip -O UTF-8 -qq ${{ env.ARTIFACT }} -d dir
@@ -127,8 +125,7 @@ jobs:
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@0252fc4ba7626f0298f0cf00902a25c6afc77fa8
-        with:
-          path: dir
+        with: { path: "dir" }
 
       - name: Deploy to GitHub Pages
         id: deployment

@@ -1,8 +1,8 @@
 name: "Test Build"
 on:
   push:
-    tags:
-      - "v*"
+    tags: "v*"
+    branches: "*"
 
   workflow_dispatch:
 
@@ -17,6 +17,10 @@ env:
   SCCACHE_GHA_ENABLED: false # required to cache everything at once and avoid rate limiting
   TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-tauri-build:
     name: "Test Build"
@@ -26,14 +30,10 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - runner: "ubuntu-22.04"
-            rust_target: "x86_64-unknown-linux-gnu"
-          - runner: "macos-11"
-            rust_target: "aarch64-apple-darwin"
-          - runner: "macos-11"
-            rust_target: "x86_64-apple-darwin"
-          - runner: "windows-2019"
-            rust_target: "x86_64-pc-windows-msvc"
+          - { runner: ubuntu-22.04, rust_target: x86_64-unknown-linux-gnu }
+          - { runner: macos-11, rust_target: aarch64-apple-darwin }
+          - { runner: macos-11, rust_target: x86_64-apple-darwin }
+          - { runner: windows-2019, rust_target: x86_64-pc-windows-msvc }
 
     runs-on: ${{ matrix.platform.runner }}
     steps:
@@ -71,21 +71,16 @@ jobs:
       - if: ${{ runner.os == 'macOS' }}
         name: "[macOS] Install platform dependencies"
         uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd
-        with:
-          xcode-version: latest-stable
+        with: { xcode-version: latest-stable }
 
       - name: Install Task
         uses: jaxxstorm/action-install-gh-release@71d17cb091aa850acb2a1a4cf87258d183eb941b
-        with:
-          repo: go-task/task
-          cache: enable
-          tag: "v3.34.1"
+        with: { repo: go-task/task, cache: enable, tag: v3.34.1 }
 
       - if: ${{ runner.os == 'Linux' }}
         name: "[Linux] Install UPX"
         uses: crazy-max/ghaction-upx@0fc45e912669ba9e8fa2b430e97c8da2a632e29b
-        with:
-          install-only: true
+        with: { install-only: true }
 
       # Rust
       - name: Setup Rust toolchain
@@ -95,15 +90,13 @@ jobs:
 
       - name: Setup Cargo cache
         uses: swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84
-        with:
-          prefix-key: cargo-${{ matrix.platform.rust_target }}
+        with: { prefix-key: "cargo-${{ matrix.platform.rust_target }}" }
       # /Rust
 
       # sccache
       - name: Install sccache
         uses: taiki-e/install-action@5794068c211bc8f5f4514b7c3f03d6adbe66f1b7
-        with:
-          tool: sccache@0.7.7
+        with: { tool: sccache@0.7.7 }
 
       - name: Initialize sccache environment
         shell: bash
@@ -126,10 +119,7 @@ jobs:
       # Deno
       - name: Install Deno
         uses: jaxxstorm/action-install-gh-release@71d17cb091aa850acb2a1a4cf87258d183eb941b
-        with:
-          repo: denoland/deno
-          cache: enable
-          tag: "v1.39.1"
+        with: { repo: denoland/deno, cache: enable, tag: v1.39.1 }
 
       - if: ${{ runner.os != 'Windows' }}
         name: Cache Deno dependencies
@@ -147,8 +137,7 @@ jobs:
         with:
           key: denodeps-${{ runner.os }}-${{ hashFiles('**/deno.lock') }}
           restore-keys: denodeps-${{ runner.os }}
-          path: |
-            ${{env.DENO_DIR}}
+          path: ${{env.DENO_DIR}}
           # node_modules is not cached on Windows as it breaks subsequent
           # runs, probably because this folder relies on symlinks
 
@@ -167,8 +156,7 @@ jobs:
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@8e393664005b532fa959fbd1a59c1d2235ff9248
         continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
         with:
           tagName: v__VERSION__-pre
           releaseName: "Memospot v__VERSION__-pre"
@@ -178,5 +166,4 @@ jobs:
           prerelease: true
           args: --verbose --target ${{ matrix.platform.rust_target }}
 
-      - name: Cleanup sccache
-        run: sccache --stop-server
+      - { name: "Cleanup sccache", run: "sccache --stop-server" }
