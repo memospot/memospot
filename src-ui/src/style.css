@@ -160,7 +160,7 @@ h1 {
         --tw-text-opacity: 1;
         color: rgb(229 231 235 / var(--tw-text-opacity));
         --tw-bg-opacity: 1;
-        background: rgb(39 39 42 / var(--tw-bg-opacity));
+        background-color: rgb(24 24 27 / var(--tw-bg-opacity));
     }
 
     a:hover {
@@ -186,7 +186,7 @@ h1 {
         color: rgb(31 41 55 / var(--tw-text-opacity));
 
         --tw-bg-opacity: 1;
-        background: rgb(244 244 245 / var(--tw-bg-opacity));
+        background-color: rgb(250 250 250 / var(--tw-bg-opacity));
     }
 
     a:hover {
