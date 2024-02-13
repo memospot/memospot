@@ -6,10 +6,7 @@
 import { findRepositoryRoot, runSync } from "./common.ts";
 import type { UpxOptions } from "./upxPackHook.d.ts";
 
-const filesToPack = [
-    "./target/release/memospot" + (Deno.build.os === "windows" ? ".exe" : ""),
-    "./server-dist/memos-x86_64-unknown-linux-gnu",
-];
+const filesToPack = ["./target/release/memospot" + (Deno.build.os === "windows" ? ".exe" : "")];
 
 const upxOptions: UpxOptions = {
     bin: "upx" + (Deno.build.os === "windows" ? ".exe" : ""),

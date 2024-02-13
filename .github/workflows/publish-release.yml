@@ -88,22 +88,14 @@ jobs:
         uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd
         with: { xcode-version: "latest-stable" }
 
-      - if: ${{ runner.os != 'macOS' }}
-        name: "[Windows/Linux] Install UPX"
-        uses: crazy-max/ghaction-upx@0fc45e912669ba9e8fa2b430e97c8da2a632e29b
-        with: { install-only: true }
-      - if: ${{ runner.os != 'macOS' }}
-        name: Check UPX version
-        run: upx --version
-
-      - name: Install Task
-        uses: jaxxstorm/action-install-gh-release@71d17cb091aa850acb2a1a4cf87258d183eb941b
-        with: { repo: go-task/task, cache: enable, tag: "v3.34.1" }
-
       - if: ${{ runner.os == 'Linux' }}
         name: "[Linux] Install UPX"
         uses: crazy-max/ghaction-upx@0fc45e912669ba9e8fa2b430e97c8da2a632e29b
         with: { install-only: true }
+
+      - name: Install Task
+        uses: jaxxstorm/action-install-gh-release@71d17cb091aa850acb2a1a4cf87258d183eb941b
+        with: { repo: go-task/task, cache: enable, tag: "v3.34.1" }
 
       # Rust
       - name: Setup Rust toolchain
