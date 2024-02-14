@@ -21,22 +21,22 @@ scope = ["$RESOURCE/*"]
 
 [tauri.allowlist.http]
 all = false
-request = true
+request = false
 
 [tauri.allowlist.shell]
-all = true
-execute = true
+all = false
+execute = false
 open = true
-sidecar = true
+sidecar = true # Required to spawn the server
 
 [tauri.allowlist.process]
 all = false
-exit = true
-relaunch = true
+exit = false
+relaunch = false
 relaunchDangerousAllowSymlinkMacos = false
 
 [tauri.allowlist.protocol]
-asset = true
+asset = false
 assetScope = ["**"]
 
 [tauri.allowlist.window]
@@ -58,6 +58,7 @@ shortDescription = "Memospot - a note-taking application"
 targets = "all"
 
 # Memos back-end
+# Tauri inherits permissions from the file, so it must have execute permissions before bundling
 externalBin = ["../server-dist/memos"]
 
 [tauri.bundle.resources]

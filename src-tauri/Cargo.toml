@@ -34,6 +34,10 @@ version = "0.0.1"
 version = "0.4.34"
 default-features = false
 
+[dependencies.itertools]
+version = "0.12.1"
+default-features = false
+
 [dependencies.log]
 version = "0.4.20"
 
@@ -70,17 +74,9 @@ version = "0.7.3"
 features = ["runtime-tokio", "sqlite"]
 
 [dependencies.tauri]
-version = "1.5"
+version = "1.5.4"
 default-features = true
-features = [
-    "config-toml",
-    "http-request",
-    "process-exit",
-    "process-relaunch",
-    "protocol-asset",
-    "shell-all",
-    "window-all",
-]
+features = ["shell-sidecar", "shell-open", "config-toml", "window-all"]
 
 [dependencies.tauri-utils]
 version = "1.5.2"

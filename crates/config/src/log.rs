@@ -4,5 +4,5 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Log {
-    pub enabled: bool,
+    pub enabled: Option<bool>,
 }

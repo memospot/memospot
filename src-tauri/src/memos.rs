@@ -1,13 +1,12 @@
+use itertools::Itertools;
+use log::{debug, info};
+use memospot::absolute_path;
 use std::collections::HashMap;
 use std::env;
-use std::env::consts::OS;
 use std::io::{Error, ErrorKind, Result};
-use std::path::PathBuf;
-
-use log::debug;
+use std::path::{Path, PathBuf};
 
 use crate::RuntimeConfig;
-use tauri_utils::PackageInfo;
 
 /// Spawn Memos server.
 ///
@@ -16,11 +15,11 @@ pub fn spawn(rconfig: &RuntimeConfig) -> Result<()> {
     let mut env_vars: HashMap<String, String> = prepare_env(rconfig);
     env_vars.extend(get_minimal_env());
 
-    debug!("Memos environment: {:#?}", env_vars);
+    debug!("Memos's environment: {:#?}", env_vars);
 
     let command = rconfig.paths.memos_bin.to_string_lossy().to_string();
     let cwd = get_cwd(rconfig);
-    debug!("Memos server working directory: {}", cwd.to_string_lossy());
+    info!("Memos's working directory: {}", cwd.to_string_lossy());
     tauri::async_runtime::spawn(async move {
         tauri::api::process::Command::new(command)
             .env_clear()
@@ -32,51 +31,54 @@ pub fn spawn(rconfig: &RuntimeConfig) -> Result<()> {
     Ok(())
 }
 
-/// Decide which working directory to use for Memos server.
+/// Decide which working directory use for Memos's server.
 ///
 /// Front-end is not embedded in v0.18.2+ and Memos expects to
 /// find the `dist` folder in its working directory.
 ///
-/// On Linux, it will fail to access a `dist` folder under /usr/bin (where Tauri places the binary),
-/// so we place the front-end in the data directory instead and change the working directory to there.
+/// On Linux, Memos will fail to access a `dist` folder under /usr/bin
+/// (where Tauri places the binary), so we look for the `dist` folder
+/// following this order of precedence:
+/// 1. User-provided working directory from the yaml file.
+/// 2. Tauri's resource directory.
+/// 3. Memospot's data directory.
+/// 4. Memospot's current working directory.
+///
+/// Finally, if no `dist` folder is found, fall back to Memospot's data directory.
 pub fn get_cwd(rconfig: &RuntimeConfig) -> PathBuf {
-    // if cfg!(dev) {
-    //     return rconfig.paths.memospot_cwd.clone();
-    // }
+    let mut search_paths: Vec<PathBuf> = Vec::new();
 
-    let mut search_paths: Vec<PathBuf> = vec![
-        rconfig.paths.memospot_data.clone(),
-        rconfig.paths.memospot_cwd.clone(),
-    ];
-    search_paths.dedup();
-
-    if OS == "linux" {
-        let version = semver::Version::parse("0.1.3").unwrap();
-        let package_info = PackageInfo {
-            name: "memospot".into(),
-            version,
-            authors: "",
-            description: "",
-        };
-        if let Ok(resource_dir) =
-            tauri::utils::platform::resource_dir(&package_info, &tauri::Env::default())
-        {
-            debug!("Resource directory: {}", resource_dir.to_string_lossy());
-            search_paths.push(resource_dir);
-        }
-
-        // search_paths.push(PathBuf::from("/usr/lib/memospot"))
-    }
-
-    // Prefer user-provided working_dir for Memos if it's not empty or ".".
+    // Prefer user-provided working_dir, if it's not empty.
     if let Some(working_dir) = &rconfig.yaml.memos.working_dir {
         let yaml_wd = working_dir.as_str().trim();
         if !yaml_wd.is_empty() {
-            search_paths.insert(0, PathBuf::from(yaml_wd));
+            let path = absolute_path(Path::new(yaml_wd)).unwrap_or_default();
+            search_paths.push(path);
         }
     }
+    let binding = rconfig
+        .paths
+        ._memospot_resources
+        .as_os_str()
+        .to_string_lossy();
 
-    for path in search_paths {
+    // Tauri uses `canonicalize()` to resolve the resource directory,
+    // which adds a `\\?\` prefix on Windows.
+    let resources = binding.trim_start_matches("\\\\?\\");
+
+    search_paths.extend(Vec::from([
+        PathBuf::from(resources),
+        rconfig.paths.memospot_data.clone(),
+        rconfig.paths.memospot_cwd.clone(),
+    ]));
+
+    let deduped: Vec<PathBuf> = search_paths.into_iter().unique().collect();
+    debug!("Looking for Memos's `dist` folder at {:#?}", deduped);
+
+    for path in deduped {
+        if path.as_os_str().is_empty() {
+            continue;
+        }
         let dist = path.join("dist");
         if dist.exists() && dist.is_dir() {
             return path;
@@ -86,7 +88,7 @@ pub fn get_cwd(rconfig: &RuntimeConfig) -> PathBuf {
     rconfig.paths.memospot_data.clone()
 }
 
-/// Make environment variable key suitable for Memos server.
+/// Make environment variable key suitable for Memos's server.
 fn make_env_key(key: &str) -> String {
     let uppercased_key = key.to_uppercase();
     if uppercased_key.starts_with("MEMOS_") {
@@ -99,12 +101,13 @@ fn make_env_key(key: &str) -> String {
 pub fn prepare_env(rconfig: &RuntimeConfig) -> HashMap<String, String> {
     // Use the runtime-checked memos_data variable instead of the one from the yaml file.
     let memos_data = rconfig.paths.memos_data.to_string_lossy();
+    let yaml = rconfig.yaml.memos.clone();
     let managed_vars: HashMap<&str, String> = HashMap::from_iter(vec![
-        ("mode", rconfig.yaml.memos.mode.to_string()),
-        ("addr", rconfig.yaml.memos.addr.to_string()),
-        ("port", rconfig.yaml.memos.port.to_string()),
+        ("mode", yaml.mode.unwrap_or_default()),
+        ("addr", yaml.addr.unwrap_or_default()),
+        ("port", yaml.port.unwrap_or_default().to_string()),
         ("data", memos_data.to_string()),
-        ("metric", rconfig.yaml.memos.metric.to_string()),
+        ("metric", yaml.metric.unwrap_or_default().to_string()),
     ]);
 
     let mut env_vars: HashMap<String, String> = HashMap::new();
@@ -116,19 +119,20 @@ pub fn prepare_env(rconfig: &RuntimeConfig) -> HashMap<String, String> {
         }
     }
 
-    // Add managed environment variables.
+    // Add managed environment variables. The default insert()
+    // behavior will overwrite the value of an existing key.
     for (key, value) in managed_vars {
         env_vars.insert(make_env_key(key), value);
     }
     env_vars
 }
 
-/// Filter out system environment variables that Memos (and many other console programs) doesn't need.
+/// Filter out system environment variables that Memos doesn't need.
 ///
 /// Used after passing `.env_clear()` to `spawn`.
 pub fn get_minimal_env() -> HashMap<String, String> {
     let minimal_vars = [
-        "PATH",
+        // "PATH",
         "PWD",
         "SHELL",
         "SHLVL",

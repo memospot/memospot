@@ -2,23 +2,28 @@ use config::Config;
 
 use std::path::PathBuf;
 
+#[derive(Debug, PartialEq, Clone)]
 pub struct RuntimeConfigPaths {
-    /// Memos binary file path.
+    /// Memos's binary file path.
     pub memos_bin: PathBuf,
-    /// Memos data directory path.
+    /// Memos's data directory path.
     pub memos_data: PathBuf,
-    /// Memos database file path.
+    /// Memos's database file path.
     pub memos_db_file: PathBuf,
-    /// Memospot binary file path.
+    /// Memospot's binary file path.
     pub memospot_bin: PathBuf,
-    /// Memospot configuration file path.
+    /// Memospot's configuration file path.
     pub memospot_config_file: PathBuf,
-    /// Memospot current working directory path.
+    /// Memospot's current working directory path.
     pub memospot_cwd: PathBuf,
-    /// Memospot data directory path.
+    /// Memospot's data directory path.
     pub memospot_data: PathBuf,
+    /// Memospot's resources directory path.
+    ///
+    /// This field is set at later stage, at Tauri's Builder.
+    pub _memospot_resources: PathBuf,
 }
-
+#[derive(Debug, PartialEq, Clone)]
 pub struct RuntimeConfig {
     /// Store paths used throughout the app.
     pub paths: RuntimeConfigPaths,
@@ -26,7 +31,8 @@ pub struct RuntimeConfig {
     ///
     /// This is the main configuration object used throughout the app.
     pub yaml: Config,
-    /// Store initial YAML to compare with current YAML and save if changed.
+    /// Store initial YAML to compare with current YAML and save the file
+    /// if configuration changed.
     ///
     /// DO NOT modify this field after app startup.
     pub __yaml__: Config,

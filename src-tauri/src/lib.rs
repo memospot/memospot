@@ -115,6 +115,7 @@ pub fn get_app_data_path(app_name: &str) -> PathBuf {
         .unwrap_or_default()
 }
 
+/// Get the absolute path to supplied path.
 pub fn absolute_path(path: impl AsRef<Path>) -> Result<PathBuf> {
     let path = path.as_ref();
 

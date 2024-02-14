@@ -1,4 +1,7 @@
 //! Default configuration for Memospot and Memos.
+//!
+//! This allows creating a default configuration file and also
+//! calling the method `.unwrap_or_default()` on optional configuration fields.
 
 use crate::log::Log;
 use crate::memos::Memos;
@@ -12,44 +15,22 @@ impl Default for Config {
                 binary_path: None,
                 working_dir: None,
                 data: None,
-                mode: "prod".into(),
-                addr: "127.0.0.1".into(),
-                port: 0,
-                metric: true,
+                mode: Some("prod".to_string()),
+                addr: Some("127.0.0.1".to_string()),
+                port: Some(0),
+                metric: Some(true),
                 env: None,
-                // log: Log {
-                //     enabled: false,
-                //     file: "memos.log".into(),
-                //     level: "info".into(),
-                //     pattern: "{d(%Y-%m-%d %H:%M:%S)} - {h({l})}: {m}{n}".into(),
-                //     rotation: LogRotation {
-                //         enabled: true,
-                //         max_size: "10 mb".into(),
-                //         amount: 5,
-                //         path_mask: "$ENV{MEMOSPOT_DATA}/memos.log.{}.gz".into(),
-                //     },
-                // },
+                log: Log {
+                    enabled: Some(false),
+                },
             },
             memospot: Memospot {
-                // unmanaged_server: UnmanagedServer {
-                //     enabled: false,
-                //     full_url: "http://server_addr:port/".into(),
-                // },
                 migrations: Migrations {
-                    enabled: false,
+                    enabled: Some(false),
                     history: None,
                 },
                 log: Log {
-                    enabled: false,
-                    // file: "memospot.log".into(),
-                    // level: "info".into(),
-                    // pattern: "{d(%Y-%m-%d %H:%M:%S)} - {h({l})}: {m}{n}".into(),
-                    // rotation: LogRotation {
-                    //     enabled: true,
-                    //     max_size: "10 mb".into(),
-                    //     amount: 5,
-                    //     path_mask: "$ENV{MEMOSPOT_DATA}/memospot.log.{}.gz".into(),
-                    // },
+                    enabled: Some(false),
                 },
             },
         }

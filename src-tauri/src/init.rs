@@ -1,7 +1,7 @@
-//! Runtime checks and initialization code.
-//!
-//! Functions in this module panics with native dialogs instead of returning errors.
-//! Main purpose is to unclutter `main.rs`.
+/// Runtime checks and initialization code.
+///
+/// Functions in this module panics with native dialogs instead of returning errors.
+/// Main purpose is to unclutter `main.rs`.
 use crate::{webview, RuntimeConfig};
 use config::Config;
 use log::{debug, info, warn};
@@ -11,7 +11,7 @@ use std::env;
 use std::env::consts::OS;
 use std::fs::File;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::exit;
 use writable::PathExt;
 
@@ -37,10 +37,10 @@ pub fn data_path(app_name: &str) -> PathBuf {
     data_path
 }
 
-/// Ensure that Memos data directory exists and is writable.
+/// Ensure that Memos's data directory exists and is writable.
 ///
-/// Use the Memospot data directory if user-provided path is empty or ".".
-/// Optionally, resolve a user-provided Memos data directory.
+/// Use Memospot's data directory if user-provided path is empty or ".".
+/// Optionally, resolve a user-provided data directory.
 pub fn memos_data(rconfig: &RuntimeConfig) -> PathBuf {
     let data_str = rconfig
         .yaml
@@ -71,7 +71,10 @@ pub fn memos_data(rconfig: &RuntimeConfig) -> PathBuf {
 
 /// Ensure that database files are writable, if they exist.
 pub fn database(rconfig: &RuntimeConfig) -> PathBuf {
-    let db_file = &format!("memos_{}.db", rconfig.yaml.memos.mode);
+    let db_file = &format!(
+        "memos_{}.db",
+        rconfig.yaml.memos.mode.clone().unwrap_or_default()
+    );
     let db_path = rconfig.paths.memos_data.join(db_file);
     let files = vec![
         db_path.with_extension("db"),
@@ -187,9 +190,10 @@ pub fn config(config_path: &PathBuf) -> Config {
     if cfg!(dev) {
         // Use Memos in demo mode during development,
         // as it's already seeded with some data.
-        // config.memos.mode = "demo".into();
-        if config.memos.port != 0 {
-            config.memos.port += 1;
+        config.memos.mode = Some("demo".to_string());
+        let current_port = config.memos.port.unwrap_or_default();
+        if current_port != 0 {
+            config.memos.port = Some(current_port + 1);
         }
     }
     config
@@ -200,43 +204,44 @@ pub fn config(config_path: &PathBuf) -> Config {
 /// Tries to find a free port if the configured one is already
 /// in use and updates the referenced configuration in place.
 pub fn memos_port(rconfig: &RuntimeConfig) -> u16 {
-    if let Some(free_port) = portpicker::find_free_port(rconfig.yaml.memos.port) {
+    if let Some(free_port) =
+        portpicker::find_free_port(rconfig.yaml.memos.port.unwrap_or_default())
+    {
         return free_port;
     }
 
     panic_dialog!("Failed to find an open port!");
 }
 
-/// Locate Memos server binary.
+/// Locate Memos's server binary.
 ///
-/// Search for Memos server binary in the following order:
-/// 1. Provided Memos binary path from the configuration file.
-/// 2. Memospot current working directory
-/// 3. Memospot data directory
-/// 4. ProgramData/memos (Windows only)
-/// 5. /usr/local/bin, /var/opt/memos, /usr/local/memos (POSIX only)
+/// Look for Memos's server binary in the following order:
+/// 1. Provided Memos's binary path from the configuration file.
+/// 2. Memospot's current working directory.
+/// 3. Memospot's data directory.
+/// 4. ProgramData/memos (Windows only).
+/// 5. /usr/local/bin, /var/opt/memos, /usr/local/memos (POSIX only).
 pub fn find_memos(rconfig: &RuntimeConfig) -> PathBuf {
-    // Prefer Memos binary path from the configuration file.
+    // Prefer path from the configuration file if it's valid.
     if let Some(binary_path) = &rconfig.yaml.memos.binary_path {
         let yaml_bin = binary_path.as_str().trim();
         if !yaml_bin.is_empty() {
-            if let Ok(canonical) = PathBuf::from(yaml_bin).canonicalize() {
-                if canonical.exists() && canonical.is_file() {
-                    return canonical;
-                }
+            let path = absolute_path(Path::new(yaml_bin)).unwrap_or_default();
+            if path.exists() && path.is_file() {
+                return path;
             }
         }
     }
 
-    let memos_bin_name = match OS {
+    let binary_name = match OS {
         "windows" => "memos.exe",
         _ => "memos",
     };
 
-    let mut search_paths: Vec<PathBuf> = vec![
+    let mut search_paths: Vec<PathBuf> = Vec::from([
         rconfig.paths.memospot_cwd.clone(),
         rconfig.paths.memospot_data.clone(),
-    ];
+    ]);
 
     // Windows fall back.
     if OS == "windows" {
@@ -250,11 +255,11 @@ pub fn find_memos(rconfig: &RuntimeConfig) -> PathBuf {
         search_paths.push(PathBuf::from("/usr/local/memos"));
     }
 
-    debug!("Searching for Memos server at: {:?}", search_paths);
+    debug!("Looking for Memos server at: {:?}", search_paths);
     for path in search_paths {
-        let memos_path = path.join(memos_bin_name);
+        let memos_path = path.join(binary_name);
         if memos_path.exists() && memos_path.is_file() {
-            info!("Memos server found at: {}", memos_path.to_string_lossy());
+            info!("Memos's server found at: {}", memos_path.to_string_lossy());
             return memos_path;
         }
     }
@@ -290,14 +295,18 @@ root:
         - file
 "#;
 
-/// Enable logging if logging_config.yaml exists
+/// Setup logging if it's enabled.
 ///
-/// Return true if logging is enabled
+/// - Validates `logging_config.yaml`.
+///
+/// Return true if logging is enabled.
 pub fn setup_logger(rconfig: &RuntimeConfig) -> bool {
-    if !rconfig.yaml.memospot.log.enabled {
+    if !rconfig.yaml.memospot.log.enabled.unwrap_or_default() {
         return false;
     }
     let log_config: PathBuf = rconfig.paths.memospot_data.join("logging_config.yaml");
+
+    // Allows using $ENV{MEMOSPOT_DATA} in log4rs config.
     std::env::set_var(
         "MEMOSPOT_DATA",
         rconfig.paths.memospot_data.to_string_lossy().to_string(),
@@ -307,7 +316,7 @@ pub fn setup_logger(rconfig: &RuntimeConfig) -> bool {
         return true;
     }
 
-    // Logging is enabled, but config is bad
+    // Logging is enabled, but config is bad.
     if let Ok(mut file) = File::create(&log_config) {
         let config_template = LOGGING_CONFIG_YAML.replace("    ", "  ");
         if let Err(e) = file.write_all(config_template.as_bytes()) {
@@ -332,7 +341,7 @@ pub fn setup_logger(rconfig: &RuntimeConfig) -> bool {
     }
 
     if log4rs::init_file(&log_config, Default::default()).is_ok() {
-        // logging is enabled and config was reset
+        // Logging is enabled and config was reset.
         return true;
     }
 

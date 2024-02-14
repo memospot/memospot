@@ -1,5 +1,6 @@
 use crate::runtime_config::RuntimeConfig;
 use chrono::prelude::*;
+use itertools::Itertools;
 use log::{debug, error, info};
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::SqlitePool;
@@ -63,7 +64,7 @@ pub async fn write_migration_history(
         chrono::offset::Utc::now().timestamp(),
     )]);
 
-    // Add timestamp to current_config.memospot.database_migrations.history.
+    // Add timestamp to memospot.database_migrations.history.
     match rconfig.yaml.memospot.migrations.history {
         Some(ref mut migration_history) => {
             migration_history.extend(migration_record);
@@ -85,14 +86,16 @@ pub async fn get_migration_ts(rconfig: &RuntimeConfig, name: &str) -> Option<i64
     None
 }
 
-/// Run programatic database migrations.
+/// Run programmatic database migrations.
 ///
-/// Stores migration history in the configuration file.
-/// History is used to prevent running the same migration multiple times,
-/// and also makes possible to update a migration code and invalidate a previous run.
+/// Stores migration history in the configuration file. History is used to prevent
+/// running the same migration multiple times, and also makes it possible to update
+/// a migration code and invalidate a previous run.
+///
+/// Receives a mutable reference to `RuntimeConfig` to write back migration history.
 pub async fn migrate(rconfig: &mut RuntimeConfig) -> Result<()> {
-    if !rconfig.yaml.memospot.migrations.enabled {
-        info!("Database migrations are disabled.");
+    if !rconfig.yaml.memospot.migrations.enabled.unwrap_or_default() {
+        debug!("Database migrations are disabled.");
         return Ok(());
     }
 
@@ -230,8 +233,11 @@ pub async fn migration_db_local_resource_paths(rconfig: &RuntimeConfig) -> Resul
     };
     let log_interval = total_resources / log_step;
 
-    let mut migrate_paths = vec![memos_docker, memos_data, memospot_data];
-    migrate_paths.dedup();
+    let migrate_paths: Vec<String> = [memos_docker, memos_data, memospot_data]
+        .into_iter()
+        .unique()
+        .collect();
+
     for resource in resources.iter() {
         let internal_path = norm_path(&resource.internal_path);
 

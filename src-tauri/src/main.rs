@@ -11,7 +11,7 @@ mod webview;
 use config::Config;
 use memospot::*;
 
-use log::{debug, info};
+use log::info;
 use std::env;
 use std::path::PathBuf;
 
@@ -33,24 +33,25 @@ fn main() {
             memospot_config_file: config_path.clone(),
             memospot_cwd: PathBuf::new(),
             memospot_data: memospot_data.clone(),
+            _memospot_resources: PathBuf::new(),
         },
         yaml: yaml_config.clone(),
         __yaml__: yaml_config.clone(),
     };
 
-    rconfig.yaml.memos.port = init::memos_port(&rconfig);
+    rconfig.yaml.memos.port = Some(init::memos_port(&rconfig));
     rconfig.paths.memos_data = init::memos_data(&rconfig);
     rconfig.paths.memos_db_file = init::database(&rconfig);
     info!(
-        "Memos data directory: {}",
+        "Memos's data directory: {}",
         rconfig.paths.memos_data.to_string_lossy()
     );
 
     init::setup_logger(&rconfig);
 
-    info!("Starting Memospot");
+    info!("Starting Memospot.");
     info!(
-        "Data path: {}",
+        "Memospot's data path: {}",
         rconfig.paths.memospot_data.to_string_lossy()
     );
 
@@ -62,10 +63,9 @@ fn main() {
         if let Err(e) = sqlite::migrate(&mut rconfig).await {
             panic_dialog!("Failed to run database migrations:\n{}", e.to_string());
         }
-        debug!("Database migrations completed successfully.");
     });
 
-    // Save the config file, if it has changed.
+    // Save the config file if it has changed.
     if rconfig.yaml != rconfig.__yaml__ {
         if let Err(e) = Config::save_file(&config_path, &rconfig.yaml) {
             panic_dialog!(
@@ -76,13 +76,23 @@ fn main() {
         }
     }
 
-    if let Err(err) = memos::spawn(&rconfig) {
-        panic_dialog!("Failed to spawn Memos server:\n{}", err);
-    };
-
+    let mut rconfig_setup = rconfig.clone();
     let Ok(tauri_app) = tauri::Builder::default()
-        .manage(js_handler::MemosPort::manage(rconfig.yaml.memos.port))
+        .manage(js_handler::MemosPort::manage(
+            rconfig.yaml.memos.port.unwrap_or_default(),
+        ))
         .invoke_handler(tauri::generate_handler![js_handler::get_memos_port])
+        .setup(move |app| {
+            // Add Tauri's resource directory as `_memospot_resources`.
+            rconfig_setup.paths._memospot_resources =
+                app.path_resolver().resource_dir().unwrap();
+            tauri::async_runtime::spawn(async move {
+                if let Err(err) = memos::spawn(&rconfig_setup) {
+                    panic_dialog!("Failed to spawn Memos server:\n{}", err);
+                };
+            });
+            Ok(())
+        })
         .build(tauri::generate_context!())
     else {
         panic_dialog!("Failed to build Tauri application!");
@@ -92,13 +102,13 @@ fn main() {
         if let tauri::RunEvent::ExitRequested { api, .. } = event {
             api.prevent_exit();
 
-            // Handle Memos shutdown
+            // Handle Memos shutdown.
             tauri::api::process::kill_children();
             tauri::async_runtime::block_on(async {
                 sqlite::checkpoint(&rconfig).await;
             });
 
-            debug!("Memospot closed");
+            info!("Memospot closed.");
             app_handle.exit(0);
         }
     });
