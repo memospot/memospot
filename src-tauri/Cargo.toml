@@ -40,7 +40,7 @@ version = "0.7.0"
 version = "1.0"
 
 [dependencies.tauri-cli]
-version = "1.5.5"
+version = "1.5.10"
 
 [dependencies.tokio]
 version = "1.36.0"
