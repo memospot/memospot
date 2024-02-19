@@ -27,7 +27,7 @@ path = "../crates/portpicker"
 version = "0.0.1"
 
 [dependencies.serde_yaml]
-version = "0.9.31"
+version = "0.9.32"
 default-features = false
 
 [dependencies.log]
