@@ -77,7 +77,7 @@ features = [
     "shell-all",
     "window-all",
 ]
-version = "1.5"
+version = "1.6"
 
 [dependencies.url]
 features = ["serde"]
