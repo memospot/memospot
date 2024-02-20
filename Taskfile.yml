@@ -324,6 +324,7 @@ tasks:
     desc: lint rust with cargo clippy
     ignore_error: true
     cmds:
+      - mkdir -p dist-ui
       - cargo fmt --all --check
       - cargo clippy --all-features --all-targets --workspace --locked
       - task: sccache:stats
