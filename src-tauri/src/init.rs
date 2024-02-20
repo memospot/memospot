@@ -1,18 +1,23 @@
+use crate::runtime_config::RuntimeConfig;
+use crate::sqlite;
 /// Runtime checks and initialization code.
 ///
 /// Functions in this module panics with native dialogs instead of returning errors.
 /// Main purpose is to unclutter `main.rs`.
-use crate::{webview, RuntimeConfig};
+use crate::webview;
 use config::Config;
 use log::{debug, info, warn};
 use memospot::*;
+use migration::{Migrator, MigratorTrait};
 use native_dialog::MessageType;
+use sea_orm::ConnectionTrait;
 use std::env;
 use std::env::consts::OS;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::exit;
+use tokio::time::Instant;
 use writable::PathExt;
 
 /// Ensure that data directory exists and is writable.
@@ -87,6 +92,77 @@ pub fn database(rconfig: &RuntimeConfig) -> PathBuf {
         }
     }
     db_path
+}
+
+/// Run database migrations.
+pub fn migrate_database(rconfig: RuntimeConfig) {
+    if !rconfig.yaml.memospot.migrations.enabled.unwrap_or_default() {
+        return;
+    }
+    let database_url = format!("sqlite://{}", rconfig.paths.memos_db_file.to_string_lossy());
+
+    tauri::async_runtime::spawn(async move {
+        let mut opt = sea_orm::ConnectOptions::new(&database_url);
+        opt.sqlx_logging(false);
+
+        let connection = sqlite::get_database_connection(&rconfig)
+            .await
+            .unwrap_or_else(|e| {
+                panic_dialog!("Failed to connect to the database:\n{}", e.to_string());
+            });
+
+        if database_url.starts_with("sqlite") {
+            connection
+                .execute_unprepared("PRAGMA foreign_keys = 0;")
+                .await
+                .unwrap_or_else(|e| {
+                    panic_dialog!(
+                        "Failed to disable foreign key constraints:\n{}",
+                        e.to_string()
+                    );
+                });
+
+            connection
+                .execute_unprepared("PRAGMA cache_size = -16000;")
+                .await
+                .unwrap_or_else(|e| {
+                    panic_dialog!("Failed to set database cache size:\n{}", e.to_string());
+                });
+        }
+
+        let migration_amount = Migrator::get_pending_migrations(&connection)
+            .await
+            .unwrap_or_default()
+            .len();
+
+        if migration_amount == 0 {
+            return;
+        }
+
+        let user_confirmed = confirm_dialog(
+                "Pending database migrations",
+                "Make sure to keep Memospot open until you receive another notification indicating that the process is complete.\n\nDo you want to apply the database migrations now?",
+                MessageType::Warning,
+            );
+        if !user_confirmed {
+            return;
+        }
+
+        let start_time = Instant::now();
+
+        if let Err(e) = Migrator::up(&connection, None).await {
+            panic_dialog!("Failed to run database migrations:\n{}", e.to_string());
+        }
+
+        connection.close().await.unwrap_or_else(|e| {
+            panic_dialog!("Failed to close database connection:\n{}", e.to_string());
+        });
+
+        info_dialog!(
+                "Database migrations completed successfully!\n\n{} migrations were applied.\nOperation took {:?}.\n\nIt is safe to close Memospot now.",
+                migration_amount, start_time.elapsed()
+            );
+    });
 }
 
 /// Ensure that WebView is available.
@@ -190,8 +266,9 @@ pub fn config(config_path: &PathBuf) -> Config {
     if cfg!(dev) {
         // Use Memos in demo mode during development,
         // as it's already seeded with some data.
-        config.memos.mode = Some("demo".to_string());
+        // config.memos.mode = Some("demo".to_string());
         let current_port = config.memos.port.unwrap_or_default();
+        // Use an upper port to use a dedicated WebView cache for development.
         if current_port != 0 {
             config.memos.port = Some(current_port + 1);
         }

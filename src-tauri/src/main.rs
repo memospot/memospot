@@ -8,6 +8,7 @@ mod runtime_config;
 mod sqlite;
 mod webview;
 
+use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
 use config::Config;
 use memospot::*;
 
@@ -15,8 +16,7 @@ use log::info;
 use std::env;
 use std::path::PathBuf;
 
-use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
-
+#[warn(unused_extern_crates)]
 fn main() {
     init::ensure_webview();
 
@@ -58,12 +58,6 @@ fn main() {
     rconfig.paths.memospot_bin = std::env::current_exe().unwrap();
     rconfig.paths.memospot_cwd = rconfig.paths.memospot_bin.parent().unwrap().to_path_buf();
     rconfig.paths.memos_bin = init::find_memos(&rconfig);
-
-    tauri::async_runtime::block_on(async {
-        if let Err(e) = sqlite::migrate(&mut rconfig).await {
-            panic_dialog!("Failed to run database migrations:\n{}", e.to_string());
-        }
-    });
 
     // Save the config file if it has changed.
     if rconfig.yaml != rconfig.__yaml__ {

@@ -27,7 +27,6 @@ impl Default for Config {
             memospot: Memospot {
                 migrations: Migrations {
                     enabled: Some(false),
-                    history: None,
                 },
                 log: Log {
                     enabled: Some(false),
