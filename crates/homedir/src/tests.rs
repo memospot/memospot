@@ -1,7 +1,5 @@
 use crate::*;
-use home::home_dir;
 use std::env;
-use std::path::{Path, PathBuf};
 
 #[cfg(not(target_os = "windows"))]
 use {super::getent, super::Error};

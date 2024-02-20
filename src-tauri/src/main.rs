@@ -13,7 +13,6 @@ use config::Config;
 use memospot::*;
 
 use log::info;
-use std::env;
 use std::path::PathBuf;
 
 #[warn(unused_extern_crates)]
@@ -24,7 +23,7 @@ fn main() {
     let config_path = memospot_data.join("memospot.yaml");
     let yaml_config = init::config(&config_path);
 
-    let mut rconfig = RuntimeConfig {
+    let mut rtcfg = RuntimeConfig {
         paths: RuntimeConfigPaths {
             memos_bin: PathBuf::new(),
             memos_data: PathBuf::new(),
@@ -39,29 +38,31 @@ fn main() {
         __yaml__: yaml_config.clone(),
     };
 
-    rconfig.yaml.memos.port = Some(init::memos_port(&rconfig));
-    rconfig.paths.memos_data = init::memos_data(&rconfig);
-    rconfig.paths.memos_db_file = init::database(&rconfig);
+    rtcfg.yaml.memos.port = Some(init::memos_port(&rtcfg));
+    rtcfg.paths.memos_data = init::memos_data(&rtcfg);
+    rtcfg.paths.memos_db_file = init::database(&rtcfg);
     info!(
         "Memos's data directory: {}",
-        rconfig.paths.memos_data.to_string_lossy()
+        rtcfg.paths.memos_data.to_string_lossy()
     );
 
-    init::setup_logger(&rconfig);
+    init::setup_logger(&rtcfg);
 
     info!("Starting Memospot.");
     info!(
         "Memospot's data path: {}",
-        rconfig.paths.memospot_data.to_string_lossy()
+        rtcfg.paths.memospot_data.to_string_lossy()
     );
 
-    rconfig.paths.memospot_bin = std::env::current_exe().unwrap();
-    rconfig.paths.memospot_cwd = rconfig.paths.memospot_bin.parent().unwrap().to_path_buf();
-    rconfig.paths.memos_bin = init::find_memos(&rconfig);
+    rtcfg.paths.memospot_bin = std::env::current_exe().unwrap();
+    rtcfg.paths.memospot_cwd = rtcfg.paths.memospot_bin.parent().unwrap().to_path_buf();
+    rtcfg.paths.memos_bin = init::find_memos(&rtcfg);
+
+    init::migrate_database(&rtcfg);
 
     // Save the config file if it has changed.
-    if rconfig.yaml != rconfig.__yaml__ {
-        if let Err(e) = Config::save_file(&config_path, &rconfig.yaml) {
+    if rtcfg.yaml != rtcfg.__yaml__ {
+        if let Err(e) = Config::save_file(&config_path, &rtcfg.yaml) {
             panic_dialog!(
                 "Failed to save config file:\n`{}`\n\n{}",
                 config_path.to_string_lossy(),
@@ -70,18 +71,17 @@ fn main() {
         }
     }
 
-    let mut rconfig_setup = rconfig.clone();
+    let mut rtcfg_setup = rtcfg.clone();
     let Ok(tauri_app) = tauri::Builder::default()
         .manage(js_handler::MemosPort::manage(
-            rconfig.yaml.memos.port.unwrap_or_default(),
+            rtcfg.yaml.memos.port.unwrap_or_default(),
         ))
         .invoke_handler(tauri::generate_handler![js_handler::get_memos_port])
         .setup(move |app| {
             // Add Tauri's resource directory as `_memospot_resources`.
-            rconfig_setup.paths._memospot_resources =
-                app.path_resolver().resource_dir().unwrap();
+            rtcfg_setup.paths._memospot_resources = app.path_resolver().resource_dir().unwrap();
             tauri::async_runtime::spawn(async move {
-                if let Err(err) = memos::spawn(&rconfig_setup) {
+                if let Err(err) = memos::spawn(&rtcfg_setup) {
                     panic_dialog!("Failed to spawn Memos server:\n{}", err);
                 };
             });
@@ -99,7 +99,7 @@ fn main() {
             // Handle Memos shutdown.
             tauri::api::process::kill_children();
             tauri::async_runtime::block_on(async {
-                sqlite::checkpoint(&rconfig).await;
+                sqlite::checkpoint(&rtcfg).await;
             });
 
             info!("Memospot closed.");

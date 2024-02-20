@@ -11,14 +11,14 @@ use crate::RuntimeConfig;
 /// Spawn Memos server.
 ///
 /// Spawns a managed child process with custom environment variables.
-pub fn spawn(rconfig: &RuntimeConfig) -> Result<()> {
-    let mut env_vars: HashMap<String, String> = prepare_env(rconfig);
+pub fn spawn(rtcfg: &RuntimeConfig) -> Result<()> {
+    let mut env_vars: HashMap<String, String> = prepare_env(rtcfg);
     env_vars.extend(get_minimal_env());
 
     debug!("Memos's environment: {:#?}", env_vars);
 
-    let command = rconfig.paths.memos_bin.to_string_lossy().to_string();
-    let cwd = get_cwd(rconfig);
+    let command = rtcfg.paths.memos_bin.to_string_lossy().to_string();
+    let cwd = get_cwd(rtcfg);
     info!("Memos's working directory: {}", cwd.to_string_lossy());
     tauri::async_runtime::spawn(async move {
         tauri::api::process::Command::new(command)
@@ -45,18 +45,18 @@ pub fn spawn(rconfig: &RuntimeConfig) -> Result<()> {
 /// 4. Memospot's current working directory.
 ///
 /// Finally, if no `dist` folder is found, fall back to Memospot's data directory.
-pub fn get_cwd(rconfig: &RuntimeConfig) -> PathBuf {
+pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
     let mut search_paths: Vec<PathBuf> = Vec::new();
 
     // Prefer user-provided working_dir, if it's not empty.
-    if let Some(working_dir) = &rconfig.yaml.memos.working_dir {
+    if let Some(working_dir) = &rtcfg.yaml.memos.working_dir {
         let yaml_wd = working_dir.as_str().trim();
         if !yaml_wd.is_empty() {
             let path = absolute_path(Path::new(yaml_wd)).unwrap_or_default();
             search_paths.push(path);
         }
     }
-    let binding = rconfig
+    let binding = rtcfg
         .paths
         ._memospot_resources
         .as_os_str()
@@ -68,8 +68,8 @@ pub fn get_cwd(rconfig: &RuntimeConfig) -> PathBuf {
 
     search_paths.extend(Vec::from([
         PathBuf::from(resources),
-        rconfig.paths.memospot_data.clone(),
-        rconfig.paths.memospot_cwd.clone(),
+        rtcfg.paths.memospot_data.clone(),
+        rtcfg.paths.memospot_cwd.clone(),
     ]));
 
     let deduped: Vec<PathBuf> = search_paths.into_iter().unique().collect();
@@ -85,7 +85,7 @@ pub fn get_cwd(rconfig: &RuntimeConfig) -> PathBuf {
         }
     }
 
-    rconfig.paths.memospot_data.clone()
+    rtcfg.paths.memospot_data.clone()
 }
 
 /// Make environment variable key suitable for Memos's server.
@@ -98,10 +98,10 @@ fn make_env_key(key: &str) -> String {
 }
 
 /// Prepare environment variables for Memos server.
-pub fn prepare_env(rconfig: &RuntimeConfig) -> HashMap<String, String> {
+pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
     // Use the runtime-checked memos_data variable instead of the one from the yaml file.
-    let memos_data = rconfig.paths.memos_data.to_string_lossy();
-    let yaml = rconfig.yaml.memos.clone();
+    let memos_data = rtcfg.paths.memos_data.to_string_lossy();
+    let yaml = rtcfg.yaml.memos.clone();
     let managed_vars: HashMap<&str, String> = HashMap::from_iter(vec![
         ("mode", yaml.mode.unwrap_or_default()),
         ("addr", yaml.addr.unwrap_or_default()),
@@ -113,7 +113,7 @@ pub fn prepare_env(rconfig: &RuntimeConfig) -> HashMap<String, String> {
     let mut env_vars: HashMap<String, String> = HashMap::new();
 
     // Add user's environment variables
-    if let Some(memos_env) = &rconfig.yaml.memos.env {
+    if let Some(memos_env) = &rtcfg.yaml.memos.env {
         for (key, value) in memos_env {
             env_vars.insert(make_env_key(key), value.into());
         }

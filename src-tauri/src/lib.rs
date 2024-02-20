@@ -1,8 +1,7 @@
 use homedir::HomeDirExt;
-use path_clean::PathClean;
-
 use log::error;
 use native_dialog::{MessageDialog, MessageType};
+use path_clean::PathClean;
 use std::env;
 use std::io::Result;
 use std::path::{Path, PathBuf};
@@ -132,8 +131,6 @@ pub fn absolute_path(path: impl AsRef<Path>) -> Result<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::env;
-    use std::path::PathBuf;
 
     fn remove_envvars() {
         env::remove_var("HOME");
