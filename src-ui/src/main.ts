@@ -1,5 +1,4 @@
 const globalThis = window;
-
 const invoke = ((func: string, ...args: any[]) => {
     if (globalThis.__TAURI__) {
         return globalThis.__TAURI__.tauri.invoke(func, ...args);
@@ -15,7 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const button = document.getElementById("manual-redirect-btn")!;
     button.addEventListener("click", reload);
 
-    const memosPort = (await invoke("js_get_memos_port")) as number;
+    const memosPort = (await invoke("get_memos_port")) as number;
     const element = document.querySelector<HTMLParagraphElement>("#port")!;
     element.textContent = "Port: " + memosPort;
 });
@@ -60,7 +59,7 @@ async function pingMemosServer(endpoint: string): Promise<boolean> {
 
 async function redirectOnResponse() {
     const memosPort = await invoke("get_memos_port");
-    const pingAPI = `api/v1/ping`;
+    const pingAPI = `healthz`;
     const memosUrl = `http://localhost:${memosPort}`;
     const MemosPingEndpoint = [memosUrl, pingAPI].join("/");
 
@@ -74,7 +73,7 @@ async function redirectOnResponse() {
             break;
         }
 
-        if (tries > 10) {
+        if (tries > 30) {
             logoBlinker.stopWithError();
 
             const noResponseError =

@@ -61,7 +61,6 @@ impl MigrationTrait for Migration {
             .all(db)
             .await?;
 
-        let mut migrated_count = 0;
         let total_resources = resources.len();
         let log_step = match total_resources {
             0..=100 => 1,
@@ -73,6 +72,7 @@ impl MigrationTrait for Migration {
         };
         let log_interval = total_resources / log_step;
 
+        let mut migrated_count = 0;
         let transaction = db.begin().await?;
         for resource in resources {
             let mut new_path = resource.internal_path.clone();

@@ -58,8 +58,6 @@ fn main() {
     rtcfg.paths.memospot_cwd = rtcfg.paths.memospot_bin.parent().unwrap().to_path_buf();
     rtcfg.paths.memos_bin = init::find_memos(&rtcfg);
 
-    init::migrate_database(&rtcfg);
-
     // Save the config file if it has changed.
     if rtcfg.yaml != rtcfg.__yaml__ {
         if let Err(e) = Config::save_file(&config_path, &rtcfg.yaml) {
@@ -81,6 +79,8 @@ fn main() {
             // Add Tauri's resource directory as `_memospot_resources`.
             rtcfg_setup.paths._memospot_resources = app.path_resolver().resource_dir().unwrap();
             tauri::async_runtime::spawn(async move {
+                init::migrate_database(&rtcfg_setup).await;
+
                 if let Err(err) = memos::spawn(&rtcfg_setup) {
                     panic_dialog!("Failed to spawn Memos server:\n{}", err);
                 };

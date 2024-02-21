@@ -3,8 +3,8 @@
 //! Handlers and state management must be registered
 //! in `tauri::Builder`, at `main.rs`.
 
-use std::sync::Mutex;
 use tauri::{command, State};
+use tokio::sync::Mutex;
 
 pub struct MemosPort(pub Mutex<u16>);
 impl MemosPort {
@@ -14,6 +14,6 @@ impl MemosPort {
 }
 
 #[command]
-pub fn get_memos_port(memos_port: State<MemosPort>) -> u16 {
-    *memos_port.0.lock().unwrap()
+pub async fn get_memos_port(memos_port: State<'_, MemosPort>) -> Result<u16, String> {
+    Ok(*memos_port.0.lock().await)
 }

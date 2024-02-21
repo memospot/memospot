@@ -9,12 +9,30 @@ pub async fn get_database_connection(rtcfg: &RuntimeConfig) -> Result<DatabaseCo
     let mut opt = ConnectOptions::new(&database_url);
     opt.sqlx_logging(false);
 
-    Database::connect(opt).await.map_err(|err| {
+    let db = Database::connect(opt).await.map_err(|err| {
         Error::new(
             ErrorKind::ConnectionRefused,
             format!("Failed to connect to database: {}", err),
         )
-    })
+    })?;
+
+    if database_url.starts_with("sqlite") {
+        let pragmas = [
+            "PRAGMA foreign_keys = 0;",
+            "PRAGMA cache_size = -16000;",
+            "PRAGMA busy_timeout = 10000;",
+        ]
+        .join("\n");
+
+        db.execute_unprepared(pragmas.as_str()).await.map_err(|e| {
+            error!("Failed to set database PRAGMA: {}", e);
+            Error::new(
+                ErrorKind::Other,
+                format!("Failed to set database PRAGMA: {}", e),
+            )
+        })?;
+    }
+    Ok(db)
 }
 
 /// Checkpoint database WAL.

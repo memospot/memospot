@@ -10,7 +10,6 @@ use log::{debug, info, warn};
 use memospot::*;
 use migration::{Migrator, MigratorTrait};
 use native_dialog::MessageType;
-use sea_orm::ConnectionTrait;
 use std::env;
 use std::env::consts::OS;
 use std::fs::File;
@@ -95,63 +94,38 @@ pub fn database(rtcfg: &RuntimeConfig) -> PathBuf {
 }
 
 /// Run database migrations.
-pub fn migrate_database(rtcfg: &RuntimeConfig) {
+pub async fn migrate_database(rtcfg: &RuntimeConfig) {
     if !rtcfg.yaml.memospot.migrations.enabled.unwrap_or_default() {
         return;
     }
-    let rtc = rtcfg.clone();
-    let database_url = format!("sqlite://{}", &rtcfg.paths.memos_db_file.to_string_lossy());
+    if !rtcfg.paths.memos_db_file.exists() {
+        return;
+    }
 
-    tauri::async_runtime::spawn(async move {
-        let connection = sqlite::get_database_connection(&rtc)
-            .await
-            .unwrap_or_else(|e| {
-                panic_dialog!("Failed to connect to the database:\n{}", e.to_string());
-            });
-
-        if database_url.starts_with("sqlite") {
-            connection
-                .execute_unprepared("PRAGMA foreign_keys = 0;")
-                .await
-                .unwrap_or_else(|e| {
-                    panic_dialog!(
-                        "Failed to disable foreign key constraints:\n{}",
-                        e.to_string()
-                    );
-                });
-
-            connection
-                .execute_unprepared("PRAGMA cache_size = -16000;")
-                .await
-                .unwrap_or_else(|e| {
-                    panic_dialog!("Failed to set database cache size:\n{}", e.to_string());
-                });
-        }
-
-        let migration_amount = Migrator::get_pending_migrations(&connection)
-            .await
-            .unwrap_or_default()
-            .len();
-        if migration_amount == 0 {
-            return;
-        }
-
-        info!("Applying {} database migrations...", migration_amount);
-
-        let start_time = Instant::now();
-        if let Err(e) = Migrator::up(&connection, None).await {
-            panic_dialog!("Failed to run database migrations:\n{}", e.to_string());
-        }
-
-        connection.close().await.unwrap_or_else(|e| {
-            panic_dialog!("Failed to close database connection:\n{}", e.to_string());
+    let db = sqlite::get_database_connection(rtcfg)
+        .await
+        .unwrap_or_else(|e| {
+            panic_dialog!("Failed to connect to the database:\n{}", e.to_string());
         });
 
-        info!(
-                "Database migrations completed successfully! {} migrations were applied. Operation took {:?}.",
-                migration_amount, start_time.elapsed()
-            );
+    let migration_amount = Migrator::get_pending_migrations(&db)
+        .await
+        .unwrap_or_default()
+        .len();
+    if migration_amount == 0 {
+        return;
+    }
+
+    let start_time = Instant::now();
+    if let Err(e) = Migrator::up(&db, None).await {
+        panic_dialog!("Failed to run database migrations:\n{}", e.to_string());
+    }
+
+    db.close().await.unwrap_or_else(|e| {
+        panic_dialog!("Failed to close database connection:\n{}", e.to_string());
     });
+
+    info!("Database migrations completed successfully! Applied {} migrations. Operation took {:?}.", migration_amount, start_time.elapsed());
 }
 
 /// Ensure that WebView is available.
