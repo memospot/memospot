@@ -7,6 +7,7 @@ use crate::sqlite;
 use crate::webview;
 use crate::zip;
 use config::Config;
+use homedir::HomeDirExt;
 use log::{debug, info, warn};
 use memospot::*;
 use migration::{Migrator, MigratorTrait};
@@ -62,7 +63,8 @@ pub fn memos_data(rtcfg: &RuntimeConfig) -> PathBuf {
         return rtcfg.paths.memospot_data.to_path_buf();
     }
 
-    let path = absolute_path(PathBuf::from(data_str))
+    let expanded_path = PathBuf::from(data_str).expand_home().unwrap_or_default();
+    let path = absolute_path(expanded_path)
         .unwrap_or_else(|_| rtcfg.paths.memospot_data.to_path_buf());
     if path.exists() && path.is_dir() {
         return path;
@@ -97,7 +99,8 @@ pub fn backup_directory(rtcfg: &RuntimeConfig) -> PathBuf {
     let path: PathBuf = if cfg_path.is_empty() || cfg_path == "." || cfg_path == folder_name {
         default_path
     } else {
-        absolute_path(PathBuf::from(cfg_path)).unwrap_or(default_path)
+        let expanded_path = PathBuf::from(cfg_path).expand_home().unwrap_or_default();
+        absolute_path(expanded_path).unwrap_or(default_path)
     };
 
     if !path.exists() {
@@ -347,7 +350,8 @@ pub fn find_memos(rtcfg: &RuntimeConfig) -> PathBuf {
     if let Some(binary_path) = &rtcfg.yaml.memos.binary_path {
         let yaml_bin = binary_path.as_str().trim();
         if !yaml_bin.is_empty() {
-            let path = absolute_path(Path::new(yaml_bin)).unwrap_or_default();
+            let expanded_path = Path::new(yaml_bin).expand_home().unwrap_or_default();
+            let path = absolute_path(expanded_path).unwrap_or_default();
             if path.exists() && path.is_file() {
                 return path;
             }

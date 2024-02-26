@@ -27,7 +27,7 @@ impl Default for Config {
             memospot: Memospot {
                 backup: Backup {
                     enabled: Some(true),
-                    path: Some("".to_string()),
+                    path: None,
                 },
                 log: Log {
                     enabled: Some(false),

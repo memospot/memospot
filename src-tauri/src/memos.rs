@@ -1,3 +1,4 @@
+use homedir::HomeDirExt;
 use itertools::Itertools;
 use log::{debug, info};
 use memospot::absolute_path;
@@ -52,7 +53,8 @@ pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
     if let Some(working_dir) = &rtcfg.yaml.memos.working_dir {
         let yaml_wd = working_dir.as_str().trim();
         if !yaml_wd.is_empty() {
-            let path = absolute_path(Path::new(yaml_wd)).unwrap_or_default();
+            let expanded_path = Path::new(yaml_wd).expand_home().unwrap_or_default();
+            let path = absolute_path(expanded_path).unwrap_or_default();
             search_paths.push(path);
         }
     }
