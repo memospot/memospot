@@ -134,7 +134,7 @@ jobs:
       # - name: Install sccache
       #   uses: mozilla-actions/sccache-action@8417cffc2ec64127ad83077aceaa8631f7cdc83e
       - name: Install sccache
-        uses: taiki-e/install-action@b7add58e53e52e624966da65007ce24524f3dcf3
+        uses: taiki-e/install-action@4ce8785db2a8a56c9ede16f705c2c49c5c61669c
         with: { tool: sccache@0.7.7 }
 
       - name: Initialize sccache environment
@@ -158,7 +158,7 @@ jobs:
       # Clippy with SARIF output
       - if: ${{ github.event_name == 'pull_request' }}
         name: "Install sarif-fmt and clippy-sarif"
-        uses: taiki-e/install-action@b7add58e53e52e624966da65007ce24524f3dcf3
+        uses: taiki-e/install-action@4ce8785db2a8a56c9ede16f705c2c49c5c61669c
         with: { tool: "sarif-fmt@0.4.2,clippy-sarif@0.4.2" }
 
       - if: ${{ github.event_name == 'pull_request' }}
