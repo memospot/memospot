@@ -109,7 +109,8 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
         ("addr", yaml.addr.unwrap_or_default()),
         ("port", yaml.port.unwrap_or_default().to_string()),
         ("data", memos_data.to_string()),
-        ("metric", yaml.metric.unwrap_or_default().to_string()),
+        // Metrics were removed from Memos v0.20+, that's why false is hardcoded.
+        ("metric", "false".to_string()),
     ]);
 
     let mut env_vars: HashMap<String, String> = HashMap::new();

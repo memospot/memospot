@@ -30,8 +30,6 @@ pub struct Memos {
     /// Memospot will try to reuse this port on subsequent runs, and will find a new
     /// free port if the previous one is already in use or if this value is set to 0.
     pub port: Option<u16>,
-    /// Memos server telemetry.
-    pub metric: Option<bool>,
     /// Custom environment variables to pass to Memos.
     pub env: Option<HashMap<String, String>>,
     // Memos server log settings.
