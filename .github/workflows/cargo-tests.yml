@@ -105,7 +105,7 @@ jobs:
           sudo apt-get update > /dev/null
       - if: ${{ runner.os == 'Linux'  }}
         name: "[Linux] Install platform dependencies"
-        uses: awalsh128/cache-apt-pkgs-action@44c33b32f808cdddd5ac0366d70595ed63661ed8
+        uses: awalsh128/cache-apt-pkgs-action@2555a377dfb0ca4763693499998da808e8d5afa0
         with:
           packages: >-
             libappindicator3-dev
