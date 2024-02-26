@@ -12,7 +12,7 @@
 
     <body>
         <div class="container">
-            <h1 class="waiting-for-server">Please wait while the server is starting...</h1>
+            <h1 class="waiting-for-server">Please wait while the server starts</h1>
 
             <div class="row">
                 <a
@@ -34,8 +34,13 @@
             <p class="tauri-port" id="port"></p>
             <p class="tauri-msg" id="msg"></p>
 
-            <button class="button center" role="button" id="manual-redirect-btn">
-                Try again
+            <button
+                class="button center"
+                role="button"
+                id="manual-redirect-btn"
+                title="Check again if the server has started"
+            >
+                Check again
             </button>
         </div>
     </body>

@@ -77,7 +77,7 @@ async function redirectOnResponse() {
             logoBlinker.stopWithError();
 
             const noResponseError =
-                "Server did not respond in a feasible time.<br />Try restarting Memospot.";
+                "The server did not respond within a reasonable time.<br />Try restarting Memospot.";
 
             const msg = document.querySelector<Element>("#msg")!;
             msg.innerHTML = noResponseError;
