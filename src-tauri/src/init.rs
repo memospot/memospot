@@ -159,11 +159,11 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
         .unwrap_or_else(|e| {
             panic_dialog!("Failed to connect to the database:\n{}", e.to_string());
         });
-
     let migration_amount = Migrator::get_pending_migrations(&db)
         .await
         .unwrap_or_default()
         .len();
+    let _ = db.close().await;
     if migration_amount == 0 {
         debug!("No pending migrations found.");
         return;
@@ -194,10 +194,14 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
     }
 
     let start_time = Instant::now();
+    let db = sqlite::get_database_connection(rtcfg)
+        .await
+        .unwrap_or_else(|e| {
+            panic_dialog!("Failed to connect to the database:\n{}", e.to_string());
+        });
     if let Err(e) = Migrator::up(&db, None).await {
         panic_dialog!("Failed to run database migrations:\n{}", e.to_string());
     }
-
     db.close().await.unwrap_or_else(|e| {
         panic_dialog!("Failed to close database connection:\n{}", e.to_string());
     });
