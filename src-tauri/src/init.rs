@@ -87,7 +87,7 @@ pub fn backup_directory(rtcfg: &RuntimeConfig) -> PathBuf {
     let cfg_path = rtcfg
         .yaml
         .memospot
-        .backup
+        .backups
         .path
         .as_ref()
         .map(|s| s.as_str().trim())
@@ -172,7 +172,7 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
         return;
     }
 
-    if rtcfg.yaml.memospot.backup.enabled.unwrap_or_default() {
+    if rtcfg.yaml.memospot.backups.enabled.unwrap_or_default() {
         let datetime = chrono::Local::now().format("%Y%m%d-%H%M%S").to_string();
         let backup_name = format!("db-{}-pre-migration.zst.zip", datetime);
         let backup_path = rtcfg.paths._memospot_backups.join(&backup_name);

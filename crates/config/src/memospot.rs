@@ -7,7 +7,7 @@ pub struct Migrations {
 }
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
-pub struct Backup {
+pub struct Backups {
     pub enabled: Option<bool>,
     pub path: Option<String>,
 }
@@ -15,7 +15,7 @@ pub struct Backup {
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Memospot {
     /// Directory where Memospot will store backups.
-    pub backup: Backup,
+    pub backups: Backups,
     pub migrations: Migrations,
     pub log: Log,
 }

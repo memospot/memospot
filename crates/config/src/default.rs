@@ -5,7 +5,7 @@
 
 use crate::log::Log;
 use crate::memos::Memos;
-use crate::memospot::{Backup, Memospot, Migrations};
+use crate::memospot::{Backups, Memospot, Migrations};
 use crate::Config;
 
 impl Default for Config {
@@ -19,12 +19,9 @@ impl Default for Config {
                 addr: Some("127.0.0.1".to_string()),
                 port: Some(0),
                 env: None,
-                // log: Log {
-                //     enabled: Some(false),
-                // },
             },
             memospot: Memospot {
-                backup: Backup {
+                backups: Backups {
                     enabled: Some(true),
                     path: None,
                 },
