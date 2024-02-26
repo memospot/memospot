@@ -24,7 +24,6 @@ memospot:
     assert!(parsed_config.memos.addr == Some("127.0.0.1".to_string()));
     assert!(parsed_config.memos.port == Some(0));
     assert!(parsed_config.memos.mode == Some("demo".to_string()));
-    assert!(!parsed_config.memos.log.enabled.unwrap());
     assert!(parsed_config.memospot.log.enabled.unwrap());
 }
 

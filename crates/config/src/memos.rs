@@ -1,6 +1,5 @@
 //! Memos configuration
 
-use crate::log::Log;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -36,5 +35,5 @@ pub struct Memos {
     /// Custom environment variables to pass to Memos.
     pub env: Option<HashMap<String, String>>,
     // Memos server log settings.
-    pub log: Log,
+    // pub log: Log,
 }

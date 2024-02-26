@@ -5,6 +5,7 @@ use crate::sqlite;
 /// Functions in this module panics with native dialogs instead of returning errors.
 /// Main purpose is to unclutter `main.rs`.
 use crate::webview;
+use crate::zip;
 use config::Config;
 use log::{debug, info, warn};
 use memospot::*;
@@ -73,6 +74,56 @@ pub fn memos_data(rtcfg: &RuntimeConfig) -> PathBuf {
     );
 }
 
+/// Ensure that backup directory exists and is writable.
+///
+/// Use Memospot's data directory if user-provided path is empty or ".".
+/// Optionally, resolve a user-provided directory.
+pub fn backup_directory(rtcfg: &RuntimeConfig) -> PathBuf {
+    let folder_name = "backups";
+    let default_path = rtcfg.paths.memospot_data.join(folder_name);
+
+    let cfg_path = rtcfg
+        .yaml
+        .memospot
+        .backup
+        .path
+        .as_ref()
+        .map(|s| s.as_str().trim())
+        .unwrap_or("");
+
+    // Use default directory if user-provided path is empty or ".".
+    // Prevents resolving data path to a non-writable directory,
+    // like /usr/local/bin or "Program Files".
+    let path: PathBuf = if cfg_path.is_empty() || cfg_path == "." || cfg_path == folder_name {
+        default_path
+    } else {
+        absolute_path(PathBuf::from(cfg_path)).unwrap_or(default_path)
+    };
+
+    if !path.exists() {
+        if let Err(e) = std::fs::create_dir_all(&path) {
+            panic_dialog!(
+                "Failed to create backup directory `{}`:\n{}",
+                path.to_string_lossy(),
+                e.to_string()
+            );
+        }
+    }
+
+    if path.is_file() {
+        panic_dialog!("Backup directory is a file:\n{}", path.to_string_lossy());
+    }
+
+    if !&path.is_writable() {
+        panic_dialog!(
+            "Backup directory is not writable:\n{}",
+            path.to_string_lossy()
+        );
+    }
+
+    path
+}
+
 /// Ensure that database files are writable, if they exist.
 pub fn database(rtcfg: &RuntimeConfig) -> PathBuf {
     let db_file = &format!(
@@ -96,6 +147,7 @@ pub fn database(rtcfg: &RuntimeConfig) -> PathBuf {
 /// Run database migrations.
 pub async fn migrate_database(rtcfg: &RuntimeConfig) {
     if !rtcfg.yaml.memospot.migrations.enabled.unwrap_or_default() {
+        warn!("Database migrations were disabled via configuration.");
         return;
     }
     if !rtcfg.paths.memos_db_file.exists() {
@@ -113,7 +165,32 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
         .unwrap_or_default()
         .len();
     if migration_amount == 0 {
+        debug!("No pending migrations found.");
         return;
+    }
+
+    if rtcfg.yaml.memospot.backup.enabled.unwrap_or_default() {
+        let datetime = chrono::Local::now().format("%Y%m%d-%H%M%S").to_string();
+        let backup_name = format!("db-{}-pre-migration.zst.zip", datetime);
+        let backup_path = rtcfg.paths._memospot_backups.join(&backup_name);
+        let start_time = Instant::now();
+        let backup = zip::related_files(
+            &rtcfg.paths.memos_db_file,
+            &["db-wal", "db-shm"],
+            &backup_path,
+        );
+        match backup.await {
+            Ok(_) => {
+                info!(
+                    "Database backup completed successfully! Operation took {:?}. Backup file: {}",
+                    start_time.elapsed(),
+                    backup_path.to_string_lossy()
+                );
+            }
+            Err(e) => {
+                warn_dialog!("Failed to backup Memos's database:\n{}", e);
+            }
+        }
     }
 
     let start_time = Instant::now();

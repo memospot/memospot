@@ -18,13 +18,13 @@ version = "1.5"
 path = "../crates/config"
 version = "0.0.1"
 
-[dependencies.homedir]
-path = "../crates/homedir"
-version = "0.1.1"
-
 [dependencies.entity]
 path = "../crates/entity"
 version = "0.18.2"
+
+[dependencies.homedir]
+path = "../crates/homedir"
+version = "0.1.1"
 
 [dependencies.migration]
 path = "../crates/migration"
@@ -37,6 +37,13 @@ version = "0.0.1"
 [dependencies.writable]
 path = "../crates/writable"
 version = "0.0.1"
+
+[dependencies.anyhow]
+version = "1.0.80"
+
+[dependencies.async_zip]
+version = "0.0.16"
+features = ["zstd", "tokio-fs"]
 
 [dependencies.chrono]
 version = "0.4.34"

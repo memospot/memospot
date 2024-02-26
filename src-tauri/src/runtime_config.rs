@@ -9,7 +9,16 @@ pub struct RuntimeConfigPaths {
     /// Memos's data directory path.
     pub memos_data: PathBuf,
     /// Memos's database file path.
+    ///
+    /// File name can be one of:
+    /// - memos_prod.db
+    /// - memos_dev.db
+    /// - memos_demo.db
     pub memos_db_file: PathBuf,
+    /// Memospot's backup directory path.
+    ///
+    /// This field is set after RuntimeConfig is created.
+    pub _memospot_backups: PathBuf,
     /// Memospot's binary file path.
     pub memospot_bin: PathBuf,
     /// Memospot's configuration file path.
