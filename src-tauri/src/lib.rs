@@ -1,6 +1,10 @@
 use homedir::HomeDirExt;
+use log::error;
 use native_dialog::{MessageDialog, MessageType};
-use std::path::PathBuf;
+use path_clean::PathClean;
+use std::env;
+use std::io::Result;
+use std::path::{Path, PathBuf};
 
 #[macro_export]
 macro_rules! panic_dialog {
@@ -24,14 +28,23 @@ macro_rules! warn_dialog {
     };
 }
 
+#[macro_export]
+macro_rules! error_dialog {
+    ($($arg:tt)*) => {
+        error_dialog(&format!($($arg)*));
+    };
+}
+
 pub fn panic_dialog(msg: &str) {
+    const FATAL_ERROR: &str = "Fatal error";
     MessageDialog::new()
         .set_type(MessageType::Error)
-        .set_title("Fatal error")
+        .set_title(FATAL_ERROR)
         .set_text(msg)
         .show_alert()
-        .unwrap();
-    panic!("Fatal error: {}", msg);
+        .unwrap_or_default();
+    error!("{}: {}", FATAL_ERROR, msg);
+    panic!("{}: {}", FATAL_ERROR, msg);
 }
 
 pub fn info_dialog(msg: &str) {
@@ -40,7 +53,7 @@ pub fn info_dialog(msg: &str) {
         .set_title("Info")
         .set_text(msg)
         .show_alert()
-        .unwrap();
+        .unwrap_or_default();
 }
 
 pub fn warn_dialog(msg: &str) {
@@ -49,7 +62,16 @@ pub fn warn_dialog(msg: &str) {
         .set_title("Warning")
         .set_text(msg)
         .show_alert()
-        .unwrap();
+        .unwrap_or_default();
+}
+
+pub fn error_dialog(msg: &str) {
+    MessageDialog::new()
+        .set_type(MessageType::Error)
+        .set_title("Error")
+        .set_text(msg)
+        .show_alert()
+        .unwrap_or_default();
 }
 
 pub fn confirm_dialog(title: &str, msg: &str, icon: MessageType) -> bool {
@@ -58,7 +80,7 @@ pub fn confirm_dialog(title: &str, msg: &str, icon: MessageType) -> bool {
         .set_title(title)
         .set_text(msg)
         .show_confirm()
-        .unwrap()
+        .unwrap_or_default()
 }
 
 /// Get the data path to supplied application name.
@@ -80,7 +102,7 @@ pub fn get_app_data_path(app_name: &str) -> PathBuf {
         if let Ok(appdata) = std::env::var("APPDATA") {
             return PathBuf::from(appdata)
                 .parent()
-                .unwrap()
+                .unwrap_or(Path::new("."))
                 .join("Local")
                 .join(app_name);
         }
@@ -92,69 +114,23 @@ pub fn get_app_data_path(app_name: &str) -> PathBuf {
         .unwrap_or_default()
 }
 
-/// Check if a path is writable.
-///
-/// If the path is a file, it will be opened with write permissions.
-///
-/// If the path is a directory, a temporary file will be created in it.
-pub fn writable(path: &PathBuf) -> bool {
-    if path.is_file() {
-        for retry in 0..10 {
-            if retry > 0 {
-                std::thread::sleep(std::time::Duration::from_millis(100));
-            }
+/// Get the absolute path to supplied path.
+pub fn absolute_path(path: impl AsRef<Path>) -> Result<PathBuf> {
+    let path = path.as_ref();
 
-            if let Ok(file) = std::fs::OpenOptions::new().write(true).open(path) {
-                drop(file);
-                return true;
-            }
-        }
-        return false;
+    let absolute_path = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        env::current_dir()?.join(path)
     }
+    .clean();
 
-    if path.is_dir() {
-        let mut testfile = path.to_owned();
-        testfile = testfile.join("write_test");
-
-        let mut count = 0;
-        while testfile.exists() {
-            testfile.set_extension(&count.to_string());
-            count += 1;
-
-            if count > 100 {
-                return false;
-            }
-        }
-
-        for retry in 0..10 {
-            if retry > 0 {
-                std::thread::sleep(std::time::Duration::from_millis(100));
-            }
-
-            if let Ok(file) = std::fs::OpenOptions::new()
-                .write(true)
-                .create_new(true)
-                .open(&testfile)
-            {
-                drop(file);
-                if std::fs::remove_file(&testfile).is_err() {
-                    continue;
-                }
-                return true;
-            }
-        }
-    }
-    false
+    Ok(absolute_path)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use fs::read_to_string;
-    use std::env;
-    use std::fs;
-    use std::io::Write;
-    use std::path::PathBuf;
 
     fn remove_envvars() {
         env::remove_var("HOME");
@@ -186,30 +162,5 @@ mod tests {
         assert!(data_path.has_root());
         assert!(data_path.is_absolute());
         assert!(data_path.ends_with(".memospot"));
-    }
-
-    #[test]
-    fn test_writable() {
-        let tmp_dir = env::temp_dir();
-        let unwritable = PathBuf::from("/");
-
-        // test directory
-        assert!(writable(&tmp_dir));
-        assert!(!writable(&unwritable));
-
-        let file = tmp_dir.join("memospot_writable_test");
-        if let Ok(mut f) = std::fs::File::create(&file) {
-            static TEST_CONTENT: &str = "test content";
-
-            f.write_all(TEST_CONTENT.as_bytes()).unwrap();
-            drop(f);
-
-            assert!(writable(&file));
-            assert_eq!(read_to_string(&file).unwrap(), TEST_CONTENT);
-
-            fs::remove_file(&file).unwrap();
-        } else {
-            panic!("Failed to create file for testing");
-        }
     }
 }

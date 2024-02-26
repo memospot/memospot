@@ -220,6 +220,10 @@ async function downloadServerBinaries() {
 
         const triplet = makeTripletFromFileName(fileName);
         Deno.renameSync(`${extractDir}/memos${exe}`, `./server-dist/memos-${triplet}${exe}`);
+        // chmod +x downloaded file
+        if (Deno.build.os !== "windows") {
+            Deno.chmodSync(`./server-dist/memos-${triplet}${exe}`, 0o755);
+        }
 
         // move front-end dist folder, only once, as it's the same for all platforms
         if (!existsSync("./server-dist/dist", { isDirectory: true })) {

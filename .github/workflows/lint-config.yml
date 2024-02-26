@@ -2,21 +2,21 @@ name: Lint config files
 
 on:
   pull_request:
-    branches:
-      - "*"
-    paths:
-      - "**/*.toml"
+    branches: "*"
+    paths: "**/*.toml"
 
   push:
-    branches:
-      - "*"
-    paths:
-      - "**/*.toml"
+    branches: "*"
+    paths: "**/*.toml"
 
   workflow_dispatch:
 
 env:
   DPRINT_CACHE_DIR: ${{github.workspace}}/.dprint
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   taplo:
@@ -25,25 +25,18 @@ jobs:
     steps:
       - name: Set dynamic env vars
         shell: bash
-        run: |
-          echo DATE_STRING=$(date +'%Y%m%d') >> $GITHUB_ENV
+        run: echo DATE_STRING=$(date +'%Y%m%d') >> $GITHUB_ENV
 
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
       - name: Install go-task
         uses: jaxxstorm/action-install-gh-release@71d17cb091aa850acb2a1a4cf87258d183eb941b
-        with:
-          repo: go-task/task
-          cache: enable
-          tag: "v3.33.1"
+        with: { repo: "go-task/task", cache: "enable", tag: "v3.34.1" }
 
       - name: Install dprint
         uses: jaxxstorm/action-install-gh-release@71d17cb091aa850acb2a1a4cf87258d183eb941b
-        with:
-          repo: dprint/dprint
-          cache: enable
-          tag: "0.44.0"
+        with: { repo: "dprint/dprint", cache: "enable", tag: "0.45.0" }
 
       - name: Install taplo
         run: >
@@ -59,5 +52,4 @@ jobs:
           enableCrossOsArchive: true
           restore-keys: cache-dprint
 
-      - name: Lint config
-        run: task ci:lint:config
+      - { name: "Lint config", run: "task ci:lint:config" }

@@ -6,6 +6,8 @@ build/
 /dist-ui/
 .sccache
 .dprint
+*.db
+*.gz
 
 # Task
 .task

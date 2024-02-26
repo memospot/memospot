@@ -190,7 +190,6 @@ tasks:
     platforms: [linux, darwin]
     internal: true
     ignore_error: true
-    silent: true
     cmds:
       - killall memospot > /dev/null 2>&1
       - killall memos > /dev/null 2>&1
@@ -198,7 +197,6 @@ tasks:
     platforms: [windows]
     internal: true
     ignore_error: true
-    silent: true
     cmds:
       - taskkill /f /t /im memospot.exe >nul 2>&1
       - taskkill /f /t /im memos.exe >nul 2>&1
@@ -326,6 +324,7 @@ tasks:
     desc: lint rust with cargo clippy
     ignore_error: true
     cmds:
+      - mkdir -p dist-ui
       - cargo fmt --all --check
       - cargo clippy --all-features --all-targets --workspace --locked
       - task: sccache:stats
@@ -381,9 +380,10 @@ tasks:
   ##### Developer Environment Setup #####
   setup:platformdeps:
     desc: Install platform-specific dependencies
+    interactive: true
     deps:
-      - setup:platformdeps:darwin
-      - setup:platformdeps:linux
+      - task: setup:platformdeps:darwin
+      - task: setup:platformdeps:linux
   setup:platformdeps:darwin:
     platforms: [darwin]
     internal: true
@@ -395,21 +395,22 @@ tasks:
     internal: true
     interactive: true
     cmds:
-      - |
-        sudo apt update -y &&
-        sudo apt install -y \
-          build-essential \
-          curl \
-          file \
-          libgtk-3-dev \
-          librsvg2-dev \
-          libssl-dev \
-          libwebkit2gtk-4.0-dev \
-          patchelf \
-          wget
-      - |
-        sudo apt install -y libappindicator3-dev || true
-        echo -e '\e[33mNOTE: "libayatana-appindicator3-1" may conflict with libappindicator3-dev, its ok to ignore.\e[0m'
+      - ignore_error: true
+        silent: true
+        cmd: |
+          apt update -y && \
+          apt install -y \
+            build-essential \
+            curl \
+            file \
+            libgtk-3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libwebkit2gtk-4.0-dev \
+            patchelf \
+            wget
+          apt install -y libappindicator3-dev || true
+          echo -e '\e[33mNOTE: "libayatana-appindicator3-1" may conflict with libappindicator3-dev, it is ok to ignore.\e[0m'
 
   setup:deno:
     desc: "Setup Deno"
@@ -449,7 +450,7 @@ tasks:
         fi
         if ! [ -z $(command -v winget) ]; then
           echo "Installing Deno via Winget..."
-          winget install --id Denoland.deno
+          winget install --id Denola nd.deno
           exit 0
         fi
         if ! [ -z $(command -v scoop) ]; then
@@ -471,9 +472,11 @@ tasks:
   setup:rust:
     desc: "Setup rust"
     cmds:
-      - setup:rust:posix
-      - setup:rust:windows
-      - rustup default stable
+      - task: setup:rust:posix
+      - task: setup:rust:windows
+      - |
+        source "$HOME/.cargo/env"
+        rustup default stable
     status:
       - if [ -z $(command -v rustup) ]; then exit 1; fi
       - if [ -z $(command -v rustc) ]; then exit 1; fi
@@ -492,7 +495,6 @@ tasks:
         echo -e '\e[34mHomebrew not found. Falling back to official install script.\e[0m'
         nohup curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
         source "$HOME/.cargo/env"; rustup default stable
-        \e[0m'
   setup:rust:windows:
     platforms: [windows]
     internal: true
@@ -528,32 +530,35 @@ tasks:
 
   setup:
     desc: Setup the project tooling.
+    interactive: true
     env:
       # slow build with all optimizations
       RUSTFLAGS: -Ctarget-cpu=native -Copt-level=3 -Cstrip=symbols -Ccodegen-units=8
     deps:
-      - setup:platformdeps
-      - setup:deno
-      - setup:rust
+      - task: setup:platformdeps
+      - task: setup:deno
+      - task: setup:rust
     cmds:
-      - |
-        {{if eq OS "windows"}}
-          export PATH="$PATH;$HOME\.cargo\bin";
-        {{else}}
-          . "$HOME/.cargo/env";
-        {{end}}
-        rustup component add clippy;
-        rustup target add aarch64-apple-darwin;
-        rustup target add x86_64-apple-darwin;
-        rustup target add x86_64-pc-windows-msvc;
-        rustup target add x86_64-unknown-linux-gnu;
-        export RUSTC_WRAPPER="";
-        cargo install tauri-cli --locked;
-        cargo install taplo-cli --locked;
-        cargo install cargo-edit --locked;
-        cargo install cargo-cache --locked;
-        cargo install dprint --locked;
-        cargo install sccache --locked;
+      - silent: true
+        cmd: |
+          {{if eq OS "windows"}}
+            export PATH="$PATH;$HOME\.cargo\bin"
+          {{else}}
+            . "$HOME/.cargo/env"
+          {{end}}
+          rustup component add clippy
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+          rustup target add x86_64-pc-windows-msvc
+          rustup target add x86_64-unknown-linux-gnu
+          export RUSTC_WRAPPER=""
+          cargo install cargo-binstall --locked
+          cargo binstall tauri-cli --locked -y
+          cargo binstall taplo-cli --locked -y
+          cargo binstall cargo-edit --locked -y
+          cargo binstall cargo-cache --locked -y
+          cargo binstall dprint --locked -y
+          cargo binstall sccache --locked -y
   ##### /Developer Environment Setup #####
   ### Git Actions ###
   checkrepo:
@@ -578,10 +583,10 @@ tasks:
     internal: true
     silent: true
     cmds:
-      - cd ./src-tauri; cargo set-version --locked {{.NEW_VERSION}}
+      - cd ./src-tauri; cargo set-version --package memospot --locked {{.NEW_VERSION}}
       - sh -c "sed -i 's#Memospot/[0-9]\+\.[0-9]\+\.[0-9]\+"#Memospot/{{.NEW_VERSION}}"#' ./src-tauri/Tauri.toml"
-      - cd cargo generate-lockfile
-      - task: format:dprint
+      - cargo generate-lockfile
+      - task: format
       - task: lint:toml
       - git add ./src-tauri/Tauri.toml
       - git add ./src-tauri/Cargo.toml

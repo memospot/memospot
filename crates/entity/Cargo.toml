@@ -1,0 +1,19 @@
+[package]
+name = "entity"
+version = "0.18.2"
+authors = ["Lincoln Nogueira"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/lincolnthalles/memospot"
+description = "Memos's database entities"
+
+[lib]
+name = "entity"
+path = "src/lib.rs"
+
+[dependencies.sea-orm]
+version = "0.12"
+
+[dependencies.serde]
+features = ["derive"]
+version = "1.0"

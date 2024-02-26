@@ -1,5 +1,5 @@
 #[cfg(test)]
-use crate::*;
+use {crate::Config, std::fs, std::io};
 
 /// Test that provided config is merged with
 /// default config in case of missing fields.
@@ -21,11 +21,10 @@ memospot:
 
     let parsed_config = Config::init(&partial_yaml_path).unwrap();
 
-    assert!(parsed_config.memos.addr == "127.0.0.1");
-    assert!(parsed_config.memos.port == 0);
-    assert!(parsed_config.memos.mode == "demo");
-    assert!(parsed_config.memos.log.rotation.amount == 5);
-    assert!(parsed_config.memospot.log.enabled);
+    assert!(parsed_config.memos.addr == Some("127.0.0.1".to_string()));
+    assert!(parsed_config.memos.port == Some(0));
+    assert!(parsed_config.memos.mode == Some("demo".to_string()));
+    assert!(parsed_config.memospot.log.enabled.unwrap());
 }
 
 #[test]
@@ -56,7 +55,7 @@ fn test_parse() {
     let tmp_yaml = tmp_dir.path().join("memospot.yaml");
 
     let mut config = Config::init(&tmp_yaml).unwrap();
-    config.memos.addr = "0.0.0.0".to_string();
+    config.memos.addr = Some("0.0.0.0".to_string());
 
     Config::save_file(&tmp_yaml, &config).unwrap();
     let parsed = Config::parse_file(&tmp_yaml).unwrap();
@@ -68,7 +67,7 @@ fn test_parse() {
 #[test]
 fn test_edit() {
     let mut default_config = Config::default();
-    default_config.memos.addr = "0.0.0.0".to_string();
+    default_config.memos.addr = Some("0.0.0.0".to_string());
 
     let tmp_dir = tempfile::tempdir().unwrap();
     let tmp_yaml = tmp_dir.path().join("memospot.yaml");
@@ -93,4 +92,11 @@ fn test_reset() {
     let cfg = Config::parse_file(&tmp_yaml).unwrap();
     let yaml = serde_yaml::to_string(&cfg).unwrap();
     assert_eq!(yaml, default_yaml);
+}
+
+#[test]
+fn test_show() {
+    let default_config = Config::default();
+    let default_yaml = serde_yaml::to_string(&default_config).unwrap();
+    println!("{}", default_yaml);
 }

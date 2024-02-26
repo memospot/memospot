@@ -2,16 +2,14 @@ name: Cargo Tests
 
 on:
   pull_request:
-    branches:
-      - "*"
+    branches: "*"
     paths:
       - "**/*.rs"
       - "**/Cargo.{lock,toml}"
       - "**/Tauri.toml"
 
   push:
-    branches-ignore:
-      - "release/*.*.*"
+    branches-ignore: "release/*.*.*"
     paths:
       - "**/*.rs"
       - "**/Cargo.{lock,toml}"
@@ -28,6 +26,10 @@ env:
   SCCACHE_DIR: ${{github.workspace}}/.sccache
   SCCACHE_GHA_ENABLED: false # required to cache everything at once and avoid rate limiting
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   fmt:
     name: Check Rust code formatting
@@ -38,11 +40,9 @@ jobs:
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@78c6b5541adb5849f5d72d15da722aedb26327ca
-        with:
-          components: rustfmt
+        with: { components: rustfmt }
 
-      - name: Run rustfmt
-        run: cargo fmt --all -- --check
+      - { name: Run rustfmt, run: cargo fmt --all -- --check }
 
   clippy:
     name: Lint Rust code with Clippy
@@ -54,21 +54,14 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - runner: "ubuntu-22.04"
-            rust_target: "x86_64-unknown-linux-gnu"
-
-          - runner: "macos-11"
-            rust_target: "aarch64-apple-darwin"
-
-          - runner: "macos-11"
-            rust_target: "x86_64-apple-darwin"
-
-          - runner: "windows-2019"
-            rust_target: "x86_64-pc-windows-msvc"
+          - { runner: ubuntu-22.04, rust_target: x86_64-unknown-linux-gnu }
+          - { runner: macos-11, rust_target: aarch64-apple-darwin }
+          - { runner: macos-11, rust_target: x86_64-apple-darwin }
+          - { runner: windows-2019, rust_target: x86_64-pc-windows-msvc }
 
     runs-on: ${{ matrix.platform.runner }}
     steps:
-      - name: Checkout repository
+      - name: Checkout repository,
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
       - if: ${{ runner.os == 'Windows' }}
@@ -123,8 +116,7 @@ jobs:
       - if: ${{ runner.os == 'macOS' }}
         name: "[macOS] Install platform dependencies"
         uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd
-        with:
-          xcode-version: latest-stable
+        with: { xcode-version: latest-stable }
 
       # Rust
       - name: Setup Rust toolchain
@@ -135,8 +127,7 @@ jobs:
 
       - name: Setup Cargo cache
         uses: swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84
-        with:
-          prefix-key: cargo-${{ matrix.platform.rust_target }}
+        with: { prefix-key: "cargo-${{ matrix.platform.rust_target }}" }
       # /Rust
 
       # sccache
@@ -144,8 +135,7 @@ jobs:
       #   uses: mozilla-actions/sccache-action@8417cffc2ec64127ad83077aceaa8631f7cdc83e
       - name: Install sccache
         uses: taiki-e/install-action@5794068c211bc8f5f4514b7c3f03d6adbe66f1b7
-        with:
-          tool: sccache@0.7.6
+        with: { tool: sccache@0.7.7 }
 
       - name: Initialize sccache environment
         shell: bash
@@ -169,8 +159,7 @@ jobs:
       - if: ${{ github.event_name == 'pull_request' }}
         name: "Install sarif-fmt and clippy-sarif"
         uses: taiki-e/install-action@5794068c211bc8f5f4514b7c3f03d6adbe66f1b7
-        with:
-          tool: sarif-fmt@0.4.2,clippy-sarif@0.4.2
+        with: { tool: "sarif-fmt@0.4.2,clippy-sarif@0.4.2" }
 
       - if: ${{ github.event_name == 'pull_request' }}
         name: "[PR] Run clippy with SARIF output"
@@ -183,15 +172,11 @@ jobs:
         name: "[PR] Upload SARIF analysis results to GitHub"
         uses: github/codeql-action/upload-sarif@65c74964a9ed8c44ed9f19d4bbc5757a6a8e9ab9
         continue-on-error: true
-        with:
-          sarif_file: ./clippy-results.sarif
-          wait-for-processing: true
+        with: { sarif_file: ./clippy-results.sarif, wait-for-processing: true }
       # /Clippy with SARIF output
 
       - if: ${{ github.event_name != 'pull_request' }}
         name: Run clippy with standard output
-        run: |
-          cargo clippy --all-features --all-targets --workspace --locked
+        run: cargo clippy --all-features --all-targets --workspace --locked
 
-      - name: Cleanup sccache
-        run: sccache --stop-server
+      - { name: Cleanup sccache, run: sccache --stop-server }

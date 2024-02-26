@@ -35,7 +35,6 @@ Download the latest release for your platform from the [releases page](https://g
 
 > - On Windows, you may get a warning from Windows Defender SmartScreen. This is because the app is not signed.
 >   Just click `More info` and `Run anyway`.
-> - Binaries are packed with UPX. This may trigger false positives on some antivirus software. You can unpack the binaries with `upx -d memos*`, if you will.
 > - On macOS, you may need to [allow the app to run](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac) first.
 
 ## Data Portability {collapsible="true" default-state="expanded"}

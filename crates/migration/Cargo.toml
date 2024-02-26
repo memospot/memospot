@@ -1,0 +1,37 @@
+[package]
+name = "migration"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "migration"
+path = "src/lib.rs"
+
+[dependencies.entity]
+path = "../entity"
+version = "0.18.2"
+
+[dependencies.homedir]
+path = "../homedir"
+version = "0.1.1"
+
+[dependencies.itertools]
+version = "0.12.1"
+default-features = false
+
+[dependencies.log]
+version = "0.4.20"
+
+[dependencies.sea-orm]
+version = "0.12"
+features = ["sqlx-sqlite", "runtime-tokio-native-tls"]
+
+[dependencies.sea-orm-migration]
+version = "0.12"
+# https://www.sea-ql.org/SeaORM/docs/install-and-config/database-and-async-runtime/
+features = ["sqlx-sqlite", "runtime-tokio-native-tls"] # runtime-tokio-rustls
+
+[dependencies.tokio]
+version = "1.36"
+features = ["rt", "rt-multi-thread", "macros"]

@@ -1,10 +1,8 @@
+use crate::*;
+use std::env;
+
 #[cfg(not(target_os = "windows"))]
 use {super::getent, super::Error};
-
-use crate::HomeDirExt;
-use home::home_dir;
-use std::env;
-use std::path::{Path, PathBuf};
 
 /// Test that `~` is expanded to the current user's home directory.
 /// Uses some code from the `home` crate.
@@ -62,10 +60,10 @@ fn test_expand_nonexpansion() {
 #[test]
 fn test_root() {
     #[cfg(target_os = "macos")]
-    const ROOT_DIR: &'static str = "/var/root";
+    const ROOT_DIR: &str = "/var/root";
 
     #[cfg(target_os = "linux")]
-    const ROOT_DIR: &'static str = "/root";
+    const ROOT_DIR: &str = "/root";
 
     assert_eq!(getent("root").unwrap(), PathBuf::from(ROOT_DIR));
     assert_eq!("~root".expand_home().unwrap(), PathBuf::from(ROOT_DIR));

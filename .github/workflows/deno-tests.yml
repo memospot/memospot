@@ -2,17 +2,15 @@ name: Deno Tests
 
 on:
   pull_request:
-    branches:
-      - "*"
+    branches: "*"
     paths:
-      - "**/*.{ts,tsx,cts,mts}"
+      - "**/*.{cts,mts,ts,tsx}"
       - "**/deno.{jsonc,lock}"
 
   push:
-    branches:
-      - "*"
+    branches: "*"
     paths:
-      - "**/*.{ts,tsx,cts,mts}"
+      - "**/*.{cts,mts,ts,tsx}"
       - "**/deno.{jsonc,lock}"
 
   workflow_dispatch:
@@ -20,15 +18,19 @@ on:
 env:
   DENO_DIR: ${{github.workspace}}/.deno
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deno-tests:
     strategy:
       fail-fast: false
       matrix:
         platform:
-          - runner: "ubuntu-22.04"
-          - runner: "macos-11"
-          - runner: "windows-2019"
+          - runner: ubuntu-22.04
+          - runner: macos-11
+          - runner: windows-2019
 
     runs-on: ${{ matrix.platform.runner }}
     steps:
@@ -37,18 +39,12 @@ jobs:
 
       - name: Install Task
         uses: jaxxstorm/action-install-gh-release@71d17cb091aa850acb2a1a4cf87258d183eb941b
-        with:
-          repo: go-task/task
-          cache: enable
-          tag: "v3.33.1"
+        with: { repo: "go-task/task", cache: "enable", tag: "v3.34.1" }
 
       # Deno
       - name: Install Deno
         uses: jaxxstorm/action-install-gh-release@71d17cb091aa850acb2a1a4cf87258d183eb941b
-        with:
-          repo: denoland/deno
-          cache: enable
-          tag: "v1.39.1"
+        with: { repo: "denoland/deno", cache: "enable", tag: "v1.39.1" }
 
       - if: ${{ runner.os != 'Windows' }}
         name: Cache Deno dependencies
@@ -66,14 +62,11 @@ jobs:
         with:
           key: denodeps-${{ runner.os }}-${{ hashFiles('**/deno.lock') }}
           restore-keys: denodeps-${{ runner.os }}
-          path: |
-            ${{env.DENO_DIR}}
+          path: ${{env.DENO_DIR}}
           # node_modules is not cached on Windows as it breaks subsequent
           # runs, probably because this folder relies on symlinks
 
-      - name: Restore Deno dependencies
-        run: task ci:deno:cache
+      - { name: "Restore Deno dependencies", run: "task ci:deno:cache" }
       # /Deno
 
-      - name: Run Deno tests
-        run: task ci:deno:tests
+      - { name: "Run Deno tests", run: "task ci:deno:tests" }
