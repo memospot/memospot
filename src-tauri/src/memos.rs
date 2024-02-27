@@ -3,7 +3,7 @@ use itertools::Itertools;
 use log::{debug, info};
 use memospot::absolute_path;
 use std::collections::HashMap;
-use std::env;
+
 use std::io::{Error, ErrorKind, Result};
 use std::path::{Path, PathBuf};
 
@@ -13,17 +13,13 @@ use crate::RuntimeConfig;
 ///
 /// Spawns a managed child process with custom environment variables.
 pub fn spawn(rtcfg: &RuntimeConfig) -> Result<()> {
-    let mut env_vars: HashMap<String, String> = prepare_env(rtcfg);
-    env_vars.extend(get_minimal_env());
-
-    debug!("Memos's environment: {:#?}", env_vars);
-
+    let env_vars: HashMap<String, String> = prepare_env(rtcfg);
     let command = rtcfg.paths.memos_bin.to_string_lossy().to_string();
     let cwd = get_cwd(rtcfg);
+    debug!("Memos's environment: {:#?}", env_vars);
     info!("Memos's working directory: {}", cwd.to_string_lossy());
     tauri::async_runtime::spawn(async move {
         tauri::api::process::Command::new(command)
-            .env_clear()
             .envs(env_vars)
             .current_dir(cwd.clone())
             .spawn()
@@ -128,36 +124,6 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
         env_vars.insert(make_env_key(key), value);
     }
     env_vars
-}
-
-/// Filter out system environment variables that Memos doesn't need.
-///
-/// Used after passing `.env_clear()` to `spawn`.
-pub fn get_minimal_env() -> HashMap<String, String> {
-    let minimal_vars = [
-        // "PATH",
-        "PWD",
-        "SHELL",
-        "SHLVL",
-        "TERM",
-        "TZ",
-        "PROGRAMDATA",
-        "SYSTEMROOT",
-        "TEMP",
-        "TMP",
-    ];
-    env::vars_os()
-        .filter(|(key, _)| {
-            let k = key.to_string_lossy().to_uppercase();
-            minimal_vars.contains(&k.as_str())
-        })
-        .map(|(key, value)| {
-            (
-                key.into_string().unwrap(),
-                value.into_string().unwrap_or_default(),
-            )
-        })
-        .collect()
 }
 
 // pub fn spawn(bin: &PathBuf, env_vars: &HashMap<String, String>) -> Result<()> {
