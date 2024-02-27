@@ -604,6 +604,6 @@ tasks:
     cmds:
       - task: internal:bumpversion
         vars:
-          NEW_VERSION: '{{trimPrefix "v" .CLI_ARGS}}'
-      - git tag -a v{{trimPrefix "v" .CLI_ARGS}} -m "Push v{{trimPrefix "v" .CLI_ARGS}}"
+          NEW_VERSION: '{{print .CLI_ARGS | trimPrefix "v" }}'
+      - git tag -a v{{print .CLI_ARGS | trimPrefix "v" }} -m "Push v{{print .CLI_ARGS | trimPrefix "v" }}"
       - git push origin --tags
