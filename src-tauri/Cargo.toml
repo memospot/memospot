@@ -54,7 +54,7 @@ version = "0.12.1"
 default-features = false
 
 [dependencies.log]
-version = "0.4.20"
+version = "0.4.21"
 
 [dependencies.log4rs]
 features = ["background_rotation", "config_parsing", "gzip", "yaml_format"]
