@@ -39,7 +39,7 @@ path = "../crates/writable"
 version = "0.0.1"
 
 [dependencies.anyhow]
-version = "1.0.80"
+version = "1.0.81"
 
 [dependencies.async_zip]
 version = "0.0.16"
