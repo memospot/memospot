@@ -81,7 +81,7 @@ version = "1.0"
 version = "1.0"
 
 [dependencies.serde_yaml]
-version = "0.9.31"
+version = "0.9.33"
 default-features = false
 
 [dependencies.sea-orm]
