@@ -19,7 +19,7 @@ jobs:
       issues: write
       checks: write
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
       - name: rust audit
         uses: rustsec/audit-check@dd51754d4e59da7395a4cd9b593f0ff2d61a9b95
         with: { token: "${{ secrets.GITHUB_TOKEN }}" }
