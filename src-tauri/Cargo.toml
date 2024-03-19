@@ -68,7 +68,7 @@ version = "1.0.1"
 
 [dependencies.reqwest]
 features = ["gzip"]
-version = "0.11.25"
+version = "0.11.26"
 
 [dependencies.semver]
 version = "1"
