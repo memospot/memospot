@@ -1,6 +1,6 @@
 [package]
 name = "migration"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 publish = false
 
@@ -25,13 +25,11 @@ version = "0.4.21"
 
 [dependencies.sea-orm]
 version = "0.12"
+default-features = false
 features = ["sqlx-sqlite", "runtime-tokio-native-tls"]
 
 [dependencies.sea-orm-migration]
 version = "0.12"
+default-features = false
 # https://www.sea-ql.org/SeaORM/docs/install-and-config/database-and-async-runtime/
 features = ["sqlx-sqlite", "runtime-tokio-native-tls"] # runtime-tokio-rustls
-
-[dependencies.tokio]
-version = "1.36"
-features = ["rt", "rt-multi-thread", "macros"]
