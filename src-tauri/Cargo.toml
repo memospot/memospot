@@ -68,7 +68,7 @@ version = "1.0.1"
 
 [dependencies.reqwest]
 features = ["gzip"]
-version = "0.11.26"
+version = "0.12.1"
 
 [dependencies.semver]
 version = "1"
@@ -94,11 +94,11 @@ default-features = true
 features = ["shell-sidecar", "shell-open", "config-toml", "window-all"]
 
 [dependencies.tauri-utils]
-version = "1.5.2"
+version = "1.5.3"
 default-features = false
 
 [dependencies.tempfile]
-version = "3.8.1"
+version = "3.10.1"
 
 [dependencies.tokio]
 version = "1.36.0"

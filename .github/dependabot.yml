@@ -8,9 +8,9 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/" # Location of package manifests
     schedule:
-      interval: "weekly"
+      interval: "monthly"
 
   - package-ecosystem: "cargo"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"

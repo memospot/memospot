@@ -10,7 +10,7 @@ repository = "https://github.com/eulegang/home-dir"
 description = "expands home directories in a path"
 
 [dependencies]
-home = "0.5.5"
+home = "0.5.9"
 thiserror = "1.0"
 
 [target.'cfg(not(target_os = "windows"))'.dependencies.nix]

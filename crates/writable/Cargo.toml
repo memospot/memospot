@@ -12,8 +12,8 @@ repository = "https://github.com/lincolnthalles/memospot/crates/writable"
 description = "Extension Trait to Path and PathBuf to check whether a file or directory is writable"
 
 [dev-dependencies]
-tempfile = "3.8.1"
+tempfile = "3.10.1"
 
 [dev-dependencies.uuid]
-version = "1.7.0"
+version = "1.8.0"
 features = ["v4"]
