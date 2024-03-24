@@ -105,7 +105,7 @@ jobs:
           sccache --stop-server > /dev/null || true
 
       - name: Setup sccache cache
-        uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
         with:
           path: ${{ env.SCCACHE_DIR }}
           key: sccache-${{ matrix.platform.rust_target }}-${{ env.DATE_STRING }}
@@ -123,7 +123,7 @@ jobs:
 
       - if: ${{ runner.os != 'Windows' }}
         name: Cache Deno dependencies
-        uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
         with:
           key: denodeps-${{ runner.os }}-${{ hashFiles('**/deno.lock') }}
           restore-keys: denodeps-${{ runner.os }}
@@ -133,7 +133,7 @@ jobs:
 
       - if: ${{ runner.os == 'Windows' }}
         name: Cache Deno dependencies
-        uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
         with:
           key: denodeps-${{ runner.os }}-${{ hashFiles('**/deno.lock') }}
           restore-keys: denodeps-${{ runner.os }}
@@ -146,7 +146,7 @@ jobs:
       # /Deno
 
       - name: Cache memos builds
-        uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
         with:
           key: memosbuilds-cross-${{ env.DATE_STRING }}
           restore-keys: memosbuilds-cross
