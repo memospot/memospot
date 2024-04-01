@@ -7,7 +7,7 @@ license = "MIT"
 description = "Memospot configuration library"
 
 [dependencies]
-serde_yaml = "0.9.33"
+serde_yaml = "0.9.34"
 
 [dependencies.figment]
 version = "0.10.15"
