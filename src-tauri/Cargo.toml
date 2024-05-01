@@ -46,7 +46,7 @@ version = "0.0.16"
 features = ["zstd", "tokio-fs"]
 
 [dependencies.chrono]
-version = "0.4.35"
+version = "0.4.38"
 default-features = false
 
 [dependencies.itertools]
