@@ -135,7 +135,7 @@ jobs:
       #   uses: mozilla-actions/sccache-action@8417cffc2ec64127ad83077aceaa8631f7cdc83e
       - name: Install sccache
         uses: taiki-e/install-action@33429073072b7cebf2bbb9807209561b3d1decf7
-        with: { tool: sccache@0.7.7 }
+        with: { tool: sccache@0.8.0 }
 
       - name: Initialize sccache environment
         shell: bash

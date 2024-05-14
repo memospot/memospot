@@ -558,7 +558,7 @@ tasks:
           cargo binstall cargo-edit --locked -y
           cargo binstall cargo-cache --locked -y
           cargo binstall dprint --locked -y
-          cargo binstall sccache --locked -y
+          cargo binstall sccache@0.8.0 --locked -y
   ##### /Developer Environment Setup #####
   ### Git Actions ###
   checkrepo:
