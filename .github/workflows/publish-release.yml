@@ -96,7 +96,7 @@ jobs:
 
       - name: Install Task
         uses: jaxxstorm/action-install-gh-release@71d17cb091aa850acb2a1a4cf87258d183eb941b
-        with: { repo: go-task/task, cache: enable, tag: "v3.34.1" }
+        with: { repo: go-task/task, cache: enable, tag: "v3.37.2" }
 
       # Rust
       - name: Setup Rust toolchain
