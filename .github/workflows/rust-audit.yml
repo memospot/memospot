@@ -1,11 +1,11 @@
-name: Audit
+name: Rust audit
 
 on:
   workflow_dispatch:
   schedule: [{ cron: "0 0 * * *" }]
   push:
     paths:
-      - ".github/workflows/audit.yml"
+      - ".github/workflows/rust-audit.yml"
       - "**/Cargo.{lock,toml}"
 
 concurrency:
@@ -13,13 +13,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  rust:
+  rust-audit:
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      checks: write
+    permissions: { issues: write, checks: write }
     steps:
-      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
-      - name: rust audit
+      - name: Checkout repository
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+
+      - name: Rust audit
         uses: rustsec/audit-check@dd51754d4e59da7395a4cd9b593f0ff2d61a9b95
         with: { token: "${{ secrets.GITHUB_TOKEN }}" }
