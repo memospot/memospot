@@ -1,5 +1,5 @@
 ﻿
-# Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lincolnthalles/memospot/main/memos-server-updater.ps1'))
+# Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/memospot/memospot/main/memos-server-updater.ps1'))
 
 
 Write-Host @"
@@ -16,7 +16,7 @@ Write-Host @"
                                       |_|
 "@ -f DarkCyan
 
-$GitHubRepo = "lincolnthalles/memos-builds"
+$GitHubRepo = "memospot/memos-builds"
 
 $DataPath = [IO.Path]::Combine($Env:LocalAppData, "memospot")
 

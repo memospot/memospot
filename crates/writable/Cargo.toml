@@ -8,7 +8,7 @@ edition = "2021"
 keywords = ["writable", "file", "directory", "check", "permission", "access"]
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/lincolnthalles/memospot/crates/writable"
+repository = "https://github.com/memospot/memospot/crates/writable"
 description = "Extension Trait to Path and PathBuf to check whether a file or directory is writable"
 
 [dev-dependencies]

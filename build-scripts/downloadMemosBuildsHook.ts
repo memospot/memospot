@@ -141,7 +141,7 @@ export async function downloadFile(srcURL: string, dstFile: string) {
 }
 
 async function downloadServerBinaries() {
-    const repo = "lincolnthalles/memos-builds";
+    const repo = "memospot/memos-builds";
     const repoUrl = `https://api.github.com/repos/${repo}/releases/latest`;
 
     // Match only platforms that Memospot also supports

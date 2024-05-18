@@ -2,7 +2,7 @@
 
 # Memospot
 
-[Memospot](https://github.com/lincolnthalles/memospot) is a self-contained desktop version of [Memos](https://github.com/usememos/memos), a beautiful, privacy-first, lightweight note-taking service.
+[Memospot](https://github.com/memospot/memospot) is a self-contained desktop version of [Memos](https://github.com/usememos/memos), a beautiful, privacy-first, lightweight note-taking service.
 
 This project is designed for people who:
 
@@ -11,7 +11,7 @@ This project is designed for people who:
 - Wish to run Memos on their local machine with no Docker overhead
 - Are interested in testing Memos before spinning up a Docker instance.
 
-[![Downloads](https://img.shields.io/github/downloads/lincolnthalles/memospot/total?logo=github)](https://github.com/lincolnthalles/memospot/releases) [![GitHub Stars](https://img.shields.io/github/stars/lincolnthalles/memospot?logo=github)](https://github.com/lincolnthalles/memospot)
+[![Downloads](https://img.shields.io/github/downloads/memospot/memospot/total?logo=github)](https://github.com/memospot/memospot/releases) [![GitHub Stars](https://img.shields.io/github/stars/memospot/memospot?logo=github)](https://github.com/memospot/memospot)
 
 ## Screenshots
 
@@ -39,7 +39,7 @@ This project is designed for people who:
 
 ## Installation
 
-Download the latest release for your platform from the [releases page](https://github.com/lincolnthalles/memospot/releases).
+Download the latest release for your platform from the [releases page](https://github.com/memospot/memospot/releases).
 
 > - On Windows, you may get a warning from Windows Defender SmartScreen. This is because the app is not signed.
 >   Just click `More info` and `Run anyway`.
@@ -58,7 +58,7 @@ echo 'WEBKIT_DISABLE_COMPOSITING_MODE=1' | sudo tee -a /etc/environment
 
 ## Manual server update
 
-Download the latest server release from [memos-builds](https://github.com/lincolnthalles/memos-builds) and replace the `memos` binary in the installation folder.
+Download the latest server release from [memos-builds](https://github.com/memospot/memos-builds) and replace the `memos` binary in the installation folder.
 
 > Note that while this works on most cases, it's discouraged for anything other than patch version upgrades (version scheme is `Major.Minor.Patch`).
 >
@@ -69,10 +69,10 @@ Download the latest server release from [memos-builds](https://github.com/lincol
 Open Powershell and run the following command:
 
 ```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lincolnthalles/memospot/main/memos-server-updater.ps1'))
+Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/memospot/memospot/main/memos-server-updater.ps1'))
 ```
 
-> You can check the script source [here](https://raw.githubusercontent.com/lincolnthalles/memospot/main/memos-server-updater.ps1).
+> You can check the script source [here](https://raw.githubusercontent.com/memospot/memospot/main/memos-server-updater.ps1).
 
 ## Data Portability
 
@@ -140,7 +140,7 @@ This project is made possible by the following open-source projects:
 ## Star History
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=lincolnthalles/memospot,lincolnthalles/memos-builds&usememos/memos&type=Date&theme=dark" />
-  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=lincolnthalles/memospot,lincolnthalles/memos-builds&usememos/memos&type=Date" />
-  <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=lincolnthalles/memospot,lincolnthalles/memos-builds&usememos/memos&type=Date" />
+  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=memospot/memospot,memospot/memos-builds&usememos/memos&type=Date&theme=dark" />
+  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=memospot/memospot,memospot/memos-builds&usememos/memos&type=Date" />
+  <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=memospot/memospot,memospot/memos-builds&usememos/memos&type=Date" />
 </picture>

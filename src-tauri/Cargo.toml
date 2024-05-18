@@ -7,7 +7,7 @@ version = "0.1.4"
 authors = ["Lincoln Nogueira"]
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/lincolnthalles/memospot"
+repository = "https://github.com/memospot/memospot"
 description = "Memospot is a desktop version of Memos, a beautiful, privacy-first, lightweight note-taking service."
 
 [build-dependencies.tauri-build]
