@@ -13,9 +13,6 @@ env:
       cd "$(git rev-parse --show-toplevel)";
       echo "$(pwd)"
 
-  DENO_DIR: >-
-    {{ osClean (print .REPO_ROOT "/.deno" ) }}
-
   DPRINT_CACHE_DIR:
     sh: |
       DPRINT_CACHE_DIR="{{ osClean (print .REPO_ROOT "/.dprint" ) }}";
@@ -39,47 +36,21 @@ env:
       echo "$SCCACHE_DIR"
 
   CARGO_INCREMENTAL:
-    sh: |
-      if [ -z $(command -v sccache) ]; then
-        echo "1";
-      else
-        echo "0";
-      fi
+    sh: if [ -z $(command -v sccache) ]; then echo "1"; else echo "0"; fi
 
 tasks:
-  #### CI ####
-  # Called by GitHub actions
-  ci:deno:cache:
-    cmds:
-      - deno cache --lock=deno.lock ./deps.ts
-  ci:deno:tests:
-    cmds:
-      - task: test:build-scripts
-  ci:lint:config:
-    cmds:
-      - task: lint:toml
-  ci:lint:deno:
-    cmds:
-      - task: lint:deno
-  ci:lint:dprint:
-    cmds:
-      - task: lint:dprint
-  #### /CI ####
-
   download-memos-binaries:
     desc: Download Memos server binaries
     summary: |
       - Download latest versions of Memos server binaries to `server-dist/`
       - This will be used by the Tauri build process.
       - Only runs if any of the binaries are missing.
-    cmds:
-      - deno run -A ./build-scripts/downloadMemosBuildsHook.ts
+    cmd: bun run ./build-scripts/downloadMemosBuildsHook.ts
     status:
       - test -f ./server-dist/memos-x86_64-unknown-linux-gnu
       - test -f ./server-dist/memos-x86_64-pc-windows-msvc.exe
       - test -f ./server-dist/memos-x86_64-apple-darwin
       - test -f ./server-dist/memos-aarch64-apple-darwin
-      - test -d ./server-dist/dist
 
   upx:
     desc: Compress built binaries with upx
@@ -88,87 +59,81 @@ tasks:
       - macOS is not supported by UPX.
     platforms: [linux]
     ignore_error: true
-    cmds:
-      - deno run -A ./build-scripts/upxPackHook.ts
+    cmd: bun run ./build-scripts/upxPackHook.ts
 
   ##### Tauri Build Hooks #####
   tauri:hook:before-dev:
     desc: Before dev scripts
     cmds:
+      - bun install || bun install # bun install is currently flaky (Bun 1.1.8)
       - task: download-memos-binaries
       - task: dev:ui
 
   tauri:hook:before-build:
     desc: Before build scripts
     summary: |
-      - Build Frontend with Deno/Vite
+      - Build Frontend with Vite
       - Download latest versions of Memos server binaries to `server-dist/`
     cmds:
+      - bun install || bun install
       - task: gen:icons
       - task: build:ui
       - task: download-memos-binaries
 
   tauri:hook:before-bundle:
     desc: Before bundle scripts
-    summary: |
-      - upx
-    cmds:
-      - task: upx
+    summary: upx
+    cmds: [task: upx]
   ##### /Build Hooks #####
 
   #### Code runner ####
   # Used to overcome limitations of code-runner vscode extension
   coderunner:cargo:clippy:
     desc: Run cargo clippy
-    cmds:
-      - cargo clippy --all-features --all-targets --locked
-  coderunner:deno:
-    desc: Run a script with Deno
-    cmds:
-      - deno run -A {{ .CLI_ARGS }}
-  coderunner:deno:test:
-    desc: Test a script with Deno
-    cmds:
-      - deno test -A {{ .CLI_ARGS }}
+    cmd: cargo clippy --all-features --all-targets --locked
+  coderunner:bun:
+    desc: Run a script with Bun
+    cmd: bun run {{ .CLI_ARGS }}
+  coderunner:bun:test:
+    desc: Test a script with Bun
+    cmd: bun test {{ .CLI_ARGS }}
   coderunner:dprint:check:
     desc: Run dprint check
-    cmds:
-      - cd "{{ trimAll "'" (osDir .CLI_ARGS) }}"; dprint check {{ trimAll "'" (osBase .CLI_ARGS) }}
+    cmd: cd "{{ trimAll "'" (osDir .CLI_ARGS) }}"; dprint check {{ trimAll "'" (osBase .CLI_ARGS) }}
   #### /Code runner ####
 
   ##### Tests #####
   test:
-    desc: Run all tests
+    desc: Run all tests in parallel
     deps:
-      - test:tauri
       - test:crates
-      - test:build-scripts
-  test:rust:
-    desc: Run all Rust tests
-    cmds:
-      - time cargo test --workspace --lib -- --nocapture
-  test:tauri:
-    desc: Run all Tauri tests
-    cmds:
-      - time cargo test --package memospot --lib -- --nocapture
+      - test:rs
+      - test:tauri
+      - test:ts
   test:crates:
     desc: Run side crates tests
+    cmd: time cargo test --workspace --exclude memospot --lib -- --nocapture
+  test:rs:
+    desc: Run all Rust tests
+    cmd: time cargo test --workspace --lib -- --nocapture
+  test:tauri:
+    desc: Run all Tauri tests
+    cmd: time cargo test --package memospot --lib -- --nocapture
+  test:ts:
+    desc: Run all TypeScript tests
     cmds:
-      - time cargo test --workspace --exclude memospot --lib -- --nocapture
-  test:build-scripts:
-    desc: Run build scripts tests
-    cmds:
-      - deno task test-build-scripts
+      - bun install || bun install
+      - bun test
   ##### /Tests #####
 
   ##### Development #####
   dev:ui:
-    desc: Run Vite front-end dev server with Deno
+    desc: Run Vite front-end dev server
     summary: |
       - This will start the front-end in development mode.
       - Default address: http://localhost:5173
-    cmds:
-      - deno task dev
+    dir: src-ui
+    cmd: bun x vite
   dev:
     desc: Run the app in development mode
     summary: |
@@ -201,15 +166,16 @@ tasks:
       - taskkill /f /t /im memospot.exe >nul 2>&1
       - taskkill /f /t /im memos.exe >nul 2>&1
 
-  update-deno-lock:
-    desc: Update Deno lock file
+  update-ts-deps:
+    desc: Update TypeScript dependencies
     cmds:
-      - deno cache --reload --lock=deno.lock --lock-write ./deps.ts
+      - bun update
+      - cd ./src-ui; bun update
+      - cd ./build-scripts; bun update
 
-  update-deps:
-    desc: Update project dependencies
-    cmds:
-      - cargo update
+  update-rust-deps:
+    desc: Update Rust dependencies
+    cmd: cargo update
 
   update-toolchain:
     desc: Update project toolchain
@@ -238,13 +204,13 @@ tasks:
 
   ##### Build #####
   build:ui:
-    desc: Run build front-end with Deno and Vite
-    cmds:
-      - deno task build
+    desc: Build front-end with Vite
+    dir: ./src-ui
+    cmd: bun run build
     sources:
-      - "./src-ui/src/**/*"
+      - ./src-ui/src/**/*
     generates:
-      - "./dist-ui/**/*"
+      - ./dist-ui/**/*
 
   build:
     desc: Build the app for production
@@ -276,24 +242,25 @@ tasks:
 
   ##### Clean #####
   clean:
-    desc: Cleanup ALL build artifacts, deno/node modules and downloaded memos binaries.
+    desc: Cleanup ALL build artifacts, node modules and downloaded memos binaries.
     summary: |
       This will free up nearly 20GB of disk space, but will require a full rebuild.
       Don't use unless you know what you're doing.
-    deps:
-      - dev:killprocesses
+    deps: [dev:killprocesses]
     ignore_error: true
     cmds:
-      - rm -rf ./.deno
       - rm -rf ./.dprint
       - rm -rf ./.sccache
       - rm -rf ./.task
       - rm -rf ./build
+      - rm -rf ./build-scripts/node_modules
       - rm -rf ./dist-ui
-      - rm -rf ./.node_modules
+      - rm -rf ./node_modules
       - rm -rf ./server-dist
-      - rm -rf ./target
       - rm -rf ./src-ui/.vite
+      - rm -rf ./src-ui/node_modules
+      - rm -rf ./target
+      - bun pm cache rm
       - cargo cache -a
   ##### /Clean #####
 
@@ -307,8 +274,7 @@ tasks:
   sccache:stats:
     desc: Show sccache stats
     silent: true
-    cmds:
-      - sccache --show-stats
+    cmd: if [ $CARGO_INCREMENTAL = 0 ]; then sccache --show-stats; fi
 
   ##### Code Lint #####
   lint:
@@ -316,11 +282,10 @@ tasks:
       - check
     desc: Run all checkers/linters in parallel
     deps:
-      - lint:cargo
-      - lint:deno
-      - lint:toml
+      - lint:rust
+      - lint:ts
       - lint:dprint
-  lint:cargo:
+  lint:rust:
     desc: lint rust with cargo clippy
     ignore_error: true
     cmds:
@@ -328,53 +293,38 @@ tasks:
       - cargo fmt --all --check
       - cargo clippy --all-features --all-targets --workspace --locked
       - task: sccache:stats
-  lint:deno:
-    desc: lint typescript with deno
+  lint:ts:
+    desc: Lint TypeScript
     cmds:
-      - cd ./src-ui; deno lint
-      - cd ./build-scripts; deno lint
-  lint:toml:
-    aliases:
-      - lint:config
-    desc: lint config (also check schemas)
-    cmds:
-      - dprint check .rustfmt.toml
-      - dprint check Cargo.toml
-      - dprint check ./src-tauri/Tauri.toml
-      - dprint check ./src-tauri/Cargo.toml
-      - taplo lint .rustfmt.toml
-      - taplo lint Cargo.toml
-      - taplo lint ./src-tauri/Tauri.toml
-      - taplo lint ./src-tauri/Cargo.toml
+      - cd ./src-ui; bun lint
+      - cd ./build-scripts; bun lint
   lint:dprint:
-    desc: lint with dprint
-    cmds:
-      - cd ./src-ui; dprint check
-      - cd ./build-scripts; dprint check
+    desc: Check formatting with dprint
+    cmd: dprint check
+
   ##### /Code Lint #####
 
   ##### Code Fix #####
   fix:
     desc: Run all fixers in parallel
     deps:
-      - fix:cargo
-  fix:cargo:
-    desc: Run cargo fix
-    cmds:
-      - cargo fix
-
+      - fix:rs
+      - fix:ts
+  fix:rs:
+    desc: Run cargo fix (requires clean repo)
+    cmd: cargo fix
+  fix:ts:
+    desc: Run BiomeJS safe fixes
+    cmd: bun x @biomejs/biome lint --apply .
   ##### /Code Fix #####
 
   ##### Code Format #####
-  format:
+  fmt:
     desc: Format repo code with dprint
     summary: |
       - dprint is configured to format json, rust, toml, yaml, html, css, typescript and markdown files.
-    aliases:
-      - fmt
-    cmds:
-      - dprint fmt --diff
-
+    aliases: [format]
+    cmd: dprint fmt --diff
   ##### /Code Format #####
 
   ##### Developer Environment Setup #####
@@ -398,8 +348,8 @@ tasks:
       - ignore_error: true
         silent: true
         cmd: |
-          apt update -y && \
-          apt install -y \
+          sudo apt update -y && \
+          sudo apt install -y \
             build-essential \
             curl \
             file \
@@ -409,61 +359,61 @@ tasks:
             libwebkit2gtk-4.0-dev \
             patchelf \
             wget
-          apt install -y libappindicator3-dev || true
+          sudo apt install -y libappindicator3-dev || true
           echo -e '\e[33mNOTE: "libayatana-appindicator3-1" may conflict with libappindicator3-dev, it is ok to ignore.\e[0m'
 
-  setup:deno:
-    desc: "Setup Deno"
+  setup:bun:
+    desc: "Setup Bun"
     cmds:
-      - task: setup:deno:posix
-      - task: setup:deno:windows
+      - task: setup:bun:posix
+      - task: setup:bun:windows
     status:
-      - if [ -z $(command -v deno) ]; then exit 1; fi
-  setup:deno:posix:
+      - if [ -z $(command -v bun) ]; then exit 1; fi
+  setup:bun:posix:
     platforms: [darwin, linux]
     internal: true
     silent: true
     cmds:
       - |
         if ! [ -z $(command -v brew) ]; then
-          brew install deno
+          brew install bun
           exit 0
         fi
-        echo -e '\e[33mERROR: Homebrew not found. Please install Deno manually.
+        echo -e '\e[33mERROR: Homebrew not found. Please install Bun manually.
 
         Alternatively, install Homebrew and run this task again.\e[0m'
 
         echo -e '\e[34m
-        https://deno.com
+        https://bun.sh
         https://brew.sh
         \e[0m'
-  setup:deno:windows:
+  setup:bun:windows:
     platforms: [windows]
     internal: true
     silent: true
     cmds:
       - |
         if ! [ -z $(command -v choco) ]; then
-          echo "Installing Deno via Chocolatey..."
-          powershell -Command 'Start-Process -Wait -Verb RunAs -FilePath "choco" -ArgumentList "install deno -y"'
+          echo "Installing Bun via Chocolatey..."
+          powershell -Command 'Start-Process -Wait -Verb RunAs -FilePath "choco" -ArgumentList "install bun -y"'
           exit 0
         fi
         if ! [ -z $(command -v winget) ]; then
-          echo "Installing Deno via Winget..."
-          winget install --id Denola nd.deno
+          echo "Installing Bun via Winget..."
+          winget install --id Oven-sh.Bun
           exit 0
         fi
         if ! [ -z $(command -v scoop) ]; then
-          echo "Installing Deno via Scoop..."
-          scoop install deno
+          echo "Installing Bun via Scoop..."
+          scoop install bun
           exit 0
         fi
-        echo -e '\e[33mERROR: No package manager found. Please install Deno manually.
+        echo -e '\e[33mERROR: No package manager found. Please install Bun manually.
 
         Alternatively, install Chocolatey, Winget or Scoop and run this task again.\e[0m'
 
         echo -e '\e[34m
-        https://deno.com
+        https://bun.sh
         https://chocolatey.org/install
         https://apps.microsoft.com/detail/9NBLGGH4NNS1
         https://scoop.sh/
@@ -536,7 +486,7 @@ tasks:
       RUSTFLAGS: -Ctarget-cpu=native -Copt-level=3 -Cstrip=symbols -Ccodegen-units=8
     deps:
       - task: setup:platformdeps
-      - task: setup:deno
+      - task: setup:bun
       - task: setup:rust
     cmds:
       - silent: true
@@ -553,11 +503,10 @@ tasks:
           rustup target add x86_64-unknown-linux-gnu
           export RUSTC_WRAPPER=""
           cargo install cargo-binstall --locked
-          cargo binstall tauri-cli --locked -y
-          cargo binstall taplo-cli --locked -y
-          cargo binstall cargo-edit --locked -y
-          cargo binstall cargo-cache --locked -y
-          cargo binstall dprint --locked -y
+          cargo binstall tauri-cli@1.5.11 --locked -y
+          cargo binstall cargo-edit@0.12.2 --locked -y
+          cargo binstall cargo-cache@0.8.3 --locked -y
+          cargo binstall dprint@0.45.1 --locked -y
           cargo binstall sccache@0.8.0 --locked -y
   ##### /Developer Environment Setup #####
   ### Git Actions ###

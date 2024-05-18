@@ -1,0 +1,59 @@
+name: Check formatting with dprint
+
+on:
+  pull_request:
+    branches: "*"
+    paths-ignore:
+      - "**/.idea/*"
+      - "**/*.{icns,ico,png,svg,webp}"
+      - "**/*.{nsi,wxs]"
+      - "**/*.dll"
+      - "**/*.xml"
+      - "**/bun.lockb"
+
+  push:
+    branches: "*"
+    paths-ignore:
+      - "**/.idea/*"
+      - "**/*.{icns,ico,png,svg,webp}"
+      - "**/*.{nsi,wxs]"
+      - "**/*.dll"
+      - "**/*.xml"
+      - "**/bun.lockb"
+
+  workflow_dispatch:
+
+env:
+  DPRINT_CACHE_DIR: ${{github.workspace}}/.dprint
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dprint:
+    name: Check formatting with dprint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
+
+      - name: Setup rustfmt
+        uses: dtolnay/rust-toolchain@d8352f6b1d2e870bc5716e7a6d9b65c4cc244a1a
+        with: { toolchain: stable, components: rustfmt }
+
+      - name: Install dprint
+        uses: jaxxstorm/action-install-gh-release@71d17cb091aa850acb2a1a4cf87258d183eb941b
+        with:
+          repo: dprint/dprint
+          tag: 0.45.1
+          cache: enable
+
+      - name: Cache dprint plugins
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+        with:
+          path: ${{ env.DPRINT_CACHE_DIR }}
+          key: cache-dprint-${{ hashFiles('**/.dprint.jsonc','.dprint/plugin-cache-manifest.json') }}
+          restore-keys: cache-dprint
+
+      - run: dprint check

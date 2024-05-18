@@ -1,0 +1,29 @@
+{
+  "name": "build-scripts",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "fmt": "dprint fmt",
+    "lint": "bunx @biomejs/biome ci ."
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.2",
+    "@types/decompress": "^4.2.7",
+    "child_process": "^1.0.2",
+    "jsdoc": "^4.0.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "assert": "^2.1.0",
+    "async": "^3.2.5",
+    "crypto": "^1.0.1",
+    "decompress": "^4.2.1",
+    "fs": "^0.0.1-security",
+    "minimatch": "^9.0.4",
+    "os": "^0.1.2",
+    "path": "^0.12.7",
+    "stream": "^0.0.2"
+  }
+}

@@ -72,16 +72,20 @@ Open Powershell and run the following command:
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lincolnthalles/memospot/main/memos-server-updater.ps1'))
 ```
 
+> You can check the script source [here](https://raw.githubusercontent.com/lincolnthalles/memospot/main/memos-server-updater.ps1).
+
 ## Data Portability
 
-If you plan to move your Memos instance to Docker in the future, keep the object storage setting at the default option `Database` for a drop-in migration. Just move `memos_prod.db` to the Docker volume and that's it.
+For storing huge media files, it's advised to set the "Current object storage" to `Local file system` on Memos' Storage options.
 
-Although, if you are storing huge files, it's a good idea to use `Local Storage` instead, even with this trade-off.
+From Memos v0.18.2+, sidecar assets are fully portable. If your data is coming from a previous version, see [Memospot data migration](https://memospot.github.io/migration).
 
 Data storage:
 
 - Windows: data is stored under `%AppData%\memospot`
 - POSIX systems: data is stored under `~/.memospot`
+- Inside memos container: `/var/opt/memos`
+- Memos container host: `~/.memos` (typically)
 
 ## Special Thanks
 

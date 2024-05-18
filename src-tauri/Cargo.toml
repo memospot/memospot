@@ -91,7 +91,7 @@ features = ["sqlx-sqlite", "runtime-tokio-native-tls", "macros"]
 [dependencies.tauri]
 version = "1.6.1"
 default-features = true
-features = ["shell-sidecar", "shell-open", "config-toml", "window-all"]
+features = ["window-all", "shell-sidecar", "shell-open", "http-request", "config-toml"]
 
 [dependencies.tauri-utils]
 version = "1.5.3"

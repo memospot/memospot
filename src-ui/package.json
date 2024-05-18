@@ -1,0 +1,29 @@
+{
+  "name": "src-ui",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Memos loader",
+  "type": "module",
+  "scripts": {
+    "dev": "bunx vite",
+    "build": "bunx vite build",
+    "preview": "bunx vite preview",
+    "fmt": "dprint fmt --diff",
+    "lint": "bunx @biomejs/biome ci ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@tauri-apps/api": "^1.5.5"
+  },
+  "devDependencies": {
+    "jsdoc": "^4.0.3",
+    "terser": "^5.31.0",
+    "vite": "^5.2.0",
+    "vite-plugin-html-minifier": "^1.0.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

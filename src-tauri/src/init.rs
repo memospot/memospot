@@ -203,7 +203,7 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
             panic_dialog!("Failed to connect to the database:\n{}", e.to_string());
         });
     if let Err(e) = Migrator::up(&db, None).await {
-        panic_dialog!("Failed to run database migrations:\n{}", e.to_string());
+        warn_dialog!("Failed to run database migrations:\n{}", e.to_string());
     }
     db.close().await.unwrap_or_else(|e| {
         panic_dialog!("Failed to close database connection:\n{}", e.to_string());
@@ -313,7 +313,8 @@ pub fn config(config_path: &PathBuf) -> Config {
     if cfg!(dev) {
         // Use Memos in demo mode during development,
         // as it's already seeded with some data.
-        // config.memos.mode = Some("demo".to_string());
+        config.memos.mode = Some("demo".to_string());
+
         let current_port = config.memos.port.unwrap_or_default();
         // Use an upper port to use a dedicated WebView cache for development.
         if current_port != 0 {

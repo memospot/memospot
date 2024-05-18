@@ -1,29 +1,44 @@
-import { assert, assertThrows, isAbsolute, osPaths } from "../deps.ts";
-import { findRepositoryRoot } from "./common.ts";
+import { describe, test } from "bun:test";
+import * as assert from "node:assert";
+import * as os from "node:os";
+import * as path from "node:path";
+import { findRepositoryRoot, runSync } from "./common";
 
-Deno.test("find repository root", async (t) => {
-    await t.step("validate git repository root", () => {
-        const repoRoot = findRepositoryRoot();
-        assert(repoRoot.endsWith("memospot"));
-    });
-
-    await t.step("validate absolute path", () => {
-        const repoRoot = findRepositoryRoot();
-        assert(isAbsolute(repoRoot));
-    });
-
-    await t.step("validate error on non-repo cwd", () => {
-        const cwd = Deno.cwd();
-
-        Deno.chdir(osPaths.temp()!);
-        assertThrows(
+describe("runSync()", () => {
+    test("validate error on invalid command", () => {
+        assert.throws(
             (): void => {
-                findRepositoryRoot();
+                runSync("./invalid-command", []);
             },
-            Error,
-            "fatal: not a git repository"
+            {
+                name: "Error",
+                message: /failed to execute/i
+            }
         );
+    });
+});
 
-        Deno.chdir(cwd);
+describe("findRepositoryRoot()", async () => {
+    test("validate git repository root", () => {
+        const repoRoot = findRepositoryRoot();
+        assert.ok(repoRoot.endsWith("memospot"));
+    });
+
+    test("validate absolute path", async () => {
+        const repoRoot = findRepositoryRoot();
+        assert.ok(path.isAbsolute(repoRoot));
+    });
+
+    test("validate error on non-repo cwd", async () => {
+        assert.throws(
+            (): void => {
+                const cwd = os.tmpdir();
+                findRepositoryRoot(cwd);
+            },
+            {
+                name: "Error",
+                message: /fatal: not a git repository/i
+            }
+        );
     });
 });

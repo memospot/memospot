@@ -10,8 +10,8 @@ jobs:
     steps:
       - uses: usthe/issues-translate-action@b41f55ddc81d7d54bd542a4f289fe28ec081898e
         with:
+          # Decide whether to modify the issue title
+          # The robot account @Issues-translate-bot must have modification permissions.
+          # Invite @Issues-translate-bot to your project or use your custom bot.
           IS_MODIFY_TITLE: false
-          # not require, default false, . Decide whether to modify the issue title
-          # if true, the robot account @Issues-translate-bot must have modification permissions, invite @Issues-translate-bot to your project or use your custom bot.
-          CUSTOM_BOT_NOTE: Issue is not in English. It has been translated automatically.
-          # not require. Customize the translation robot prefix message.
+          CUSTOM_BOT_NOTE: The issue is not in English. It has been translated automatically.

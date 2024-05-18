@@ -21,7 +21,8 @@ scope = ["$RESOURCE/*"]
 
 [tauri.allowlist.http]
 all = false
-request = false
+request = true
+scope = ["http://localhost*"]
 
 [tauri.allowlist.shell]
 all = false
@@ -129,3 +130,4 @@ resizable = true
 title = "Memospot"
 userAgent = "Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Memospot/0.1.4"
 width = 1280
+# additionalBrowserArgs = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --allow-running-insecure-content --disable-web-security"

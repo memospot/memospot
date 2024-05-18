@@ -1,57 +1,35 @@
-const globalThis = window;
-const invoke = ((func: string, ...args: any[]) => {
-    if (globalThis.__TAURI__) {
-        return globalThis.__TAURI__.tauri.invoke(func, ...args);
-    }
-    // Used to test the UI in a browser.
-    return new Error("Not running in Tauri");
-}) as any;
+import { ResponseType, fetch } from "@tauri-apps/api/http";
+import { invoke as TauriInvoke } from "@tauri-apps/api/tauri";
+import { LogoBlinker } from "./blinker";
+
+const browserError = new Error("Not running in Tauri!");
+const invoke = window.__TAURI__ ? TauriInvoke : async () => browserError.message;
 
 document.addEventListener("DOMContentLoaded", async () => {
     const reload = () => {
-        globalThis.location.replace("/");
+        window.location.replace("/");
     };
-    const button = document.getElementById("manual-redirect-btn")!;
-    button.addEventListener("click", reload);
 
-    const memosPort = (await invoke("get_memos_port")) as number;
-    const element = document.querySelector<HTMLParagraphElement>("#port")!;
-    element.textContent = "Port: " + memosPort;
+    const button = document.getElementById("manual-redirect-btn");
+    if (button instanceof HTMLElement) {
+        button.addEventListener("click", reload);
+    }
+
+    const element = document.querySelector<HTMLParagraphElement>("#port");
+    if (element instanceof HTMLParagraphElement) {
+        const memosPort = (await invoke("get_memos_port")) as number;
+        element.textContent = `Port: ${memosPort}`;
+    }
 });
-
-const logoBlinker = {
-    running: false,
-    interval: 0,
-    element: document.querySelector<HTMLImageElement>(".logo.memos")!,
-    start() {
-        if (this.running) {
-            return;
-        }
-        this.running = true;
-
-        const filter = this.element.style.filter;
-        let tick = 0;
-        this.interval = setInterval(() => {
-            this.element.style.filter = tick % 2 == 0 ? "none" : filter;
-            tick = tick > 2 ? 0 : tick + 1;
-        }, 1000);
-    },
-    stop() {
-        this.running = false;
-        clearInterval(this.interval);
-    },
-    stopWithError() {
-        this.running = false;
-        clearInterval(this.interval);
-        this.element.removeAttribute("style");
-        this.element.setAttribute("id", "error");
-    },
-};
 
 async function pingMemosServer(endpoint: string): Promise<boolean> {
     try {
-        const response = await fetch(endpoint);
-        return response.status === 200;
+        const response = await fetch(endpoint, {
+            method: "GET",
+            timeout: 1,
+            responseType: ResponseType.Text
+        });
+        return response.ok;
     } catch (_) {
         return false;
     }
@@ -59,37 +37,46 @@ async function pingMemosServer(endpoint: string): Promise<boolean> {
 
 async function redirectOnResponse() {
     const memosPort = await invoke("get_memos_port");
-    const pingAPI = `healthz`;
-    const memosUrl = `http://localhost:${memosPort}`;
-    const MemosPingEndpoint = [memosUrl, pingAPI].join("/");
+    const pingAPI = "healthz";
+    const MemosUrl = `http://localhost:${memosPort}`;
+    const PingEndpoint = [MemosUrl, pingAPI].join("/");
 
+    const noRedirectEnv = (await invoke("get_env", { name: "NO_REDIRECT" })) as string;
+    const DebugNoRedirect = noRedirectEnv.toLowerCase() === "true" || noRedirectEnv === "1";
+
+    const logoBlinker = new LogoBlinker(".logo.memos");
     logoBlinker.start();
 
     let tries = 0;
     while (true) {
-        if (await pingMemosServer(MemosPingEndpoint)) {
+        if ((await pingMemosServer(PingEndpoint)) && !DebugNoRedirect) {
             logoBlinker.stop();
-            globalThis.location.replace(memosUrl);
+            globalThis.location.replace(MemosUrl);
             break;
         }
 
         if (tries > 30) {
             logoBlinker.stopWithError();
 
-            const noResponseError =
-                "The server did not respond within a reasonable time.<br />Try restarting Memospot.";
+            const msg = document.querySelector<Element>("#msg");
+            if (msg instanceof Element) {
+                msg.innerHTML =
+                    "The server did not respond within a reasonable time.<br />Try restarting Memospot.";
+            }
 
-            const msg = document.querySelector<Element>("#msg")!;
-            msg.innerHTML = noResponseError;
+            const waiting = document.querySelector<Element>(".waiting-for-server");
+            if (waiting instanceof Element) {
+                waiting.innerHTML = "Something went wrong 😢";
+            }
 
-            const waiting = document.querySelector<Element>(".waiting-for-server")!;
-            waiting.innerHTML = "Something went wrong 😢";
-
-            const button = document.getElementById("manual-redirect-btn")!;
-            button.setAttribute("style", "visibility: visible;");
+            const button = document.getElementById("manual-redirect-btn");
+            if (button instanceof Element) {
+                button.setAttribute("style", "visibility: visible;");
+            }
 
             break;
         }
+
         tries++;
         await new Promise((resolve) => setTimeout(resolve, 1000));
     }

@@ -1,18 +1,15 @@
-/*
+/**
  * This script runs before `Tauri build` step.
- * deno run -A ./build-scripts/downloadMemosBuildsHook.ts
  */
 
-import type { GitHubAsset, GitHubRelease } from "./downloadMemosBuildsHook.d.ts";
-import { findRepositoryRoot } from "./common.ts";
-import { crypto, encodeHex, existsSync, globToRegExp } from "../deps.ts";
-
-import { Readable } from "../deps.ts";
-import { finished } from "../deps.ts";
-import * as fs from "node:fs";
-
-// @deno-types="../deps.ts"
-import { decompress } from "../deps.ts";
+import * as crypto from "node:crypto";
+import fs from "node:fs";
+import * as async from "async";
+import * as Bun from "bun";
+import decompress from "decompress";
+import { minimatch } from "minimatch";
+import { findRepositoryRoot } from "./common";
+import type { GitHubAsset, GitHubRelease } from "./types/downloadMemosBuildsHook";
 
 /**
  * Convert a GOOS-GOARCH build file name to a Rust target triple.
@@ -27,75 +24,120 @@ import { decompress } from "../deps.ts";
  * @param file The file name.
  * @returns The target triple.
  */
-export function makeTripletFromFileName(file: string): string {
-    const os = (() => {
-        const oses = ["darwin", "linux", "windows"];
+export function makeTripletFromFileName(filename: string): string {
+    const osList = ["darwin", "linux", "windows"];
+    const platformMap: Record<string, string> = {
+        windows: "pc",
+        linux: "unknown",
+        darwin: "apple"
+    };
+    const archMap: Record<string, string> = {
+        x86_64: "x86_64",
+        x64: "x86_64",
+        x86: "i686",
+        "386": "i686",
+        arm64: "aarch64",
+        aarch64: "aarch64",
+        riscv64: "riscv64gc"
+    };
+    const variantMap: Record<string, string> = {
+        windows: "msvc",
+        linux: "gnu"
+    };
 
-        for (const os of oses) {
-            if (file.includes(os)) {
-                return os;
-            }
-        }
-
-        return "unknown";
-    })();
-
-    const platform = (() => {
-        const platformMap: Record<string, string> = {
-            windows: "pc",
-            linux: "unknown",
-            darwin: "apple",
-        };
-
-        for (const [key, value] of Object.entries(platformMap)) {
-            if (file.includes(key)) {
-                return value;
-            }
-        }
-
-        return "unknown";
-    })();
-
-    const arch = (() => {
-        const archMap: Record<string, string> = {
-            x86_64: "x86_64",
-            x64: "x86_64",
-            x86: "i686",
-            "386": "i686",
-            arm64: "aarch64",
-            aarch64: "aarch64",
-            riscv64: "riscv64gc",
-        };
-
-        for (const [key, value] of Object.entries(archMap)) {
-            if (file.includes(key)) {
-                return value;
-            }
-        }
-
-        return "unknown";
-    })();
-
-    const variant = (() => {
-        const variantMap: Record<string, string> = {
-            windows: "msvc",
-            linux: "gnu",
-        };
-
-        for (const [key, value] of Object.entries(variantMap)) {
-            if (file.includes(key)) {
-                return value;
-            }
-        }
-
-        return "";
-    })();
+    const os = osList.find((os) => filename.includes(os)) || "unknown";
+    const platform =
+        Object.entries(platformMap)
+            .find(([key]) => filename.includes(key))
+            ?.pop() || "unknown";
+    const arch =
+        Object.entries(archMap)
+            .find(([key]) => filename.includes(key))
+            ?.pop() || "unknown";
+    const variant =
+        Object.entries(variantMap)
+            .find(([key]) => filename.includes(key))
+            ?.pop() || "";
 
     const triplet = [arch, platform, os, variant].join("-");
-    if (triplet.endsWith("-")) {
-        return triplet.slice(0, -1);
+    return triplet.endsWith("-") ? triplet.slice(0, -1) : triplet;
+}
+
+/**
+ * Calculate the sha256 hex digest of a given file.
+ */
+export async function sha256File(filePath: string): Promise<string> {
+    if (process.versions.bun) {
+        const file = Bun.file(filePath);
+        const hasher = new Bun.CryptoHasher("sha256");
+        const buffer = await file.arrayBuffer();
+        hasher.update(buffer);
+        return hasher.digest("hex");
     }
-    return triplet;
+
+    return new Promise((resolve) => {
+        const hash = crypto.createHash("sha256");
+        fs.createReadStream(filePath)
+            .on("data", (data) => hash.update(data))
+            .on("error", (err) => {
+                throw err;
+            })
+            .on("end", () => resolve(hash.digest("hex")));
+    });
+}
+
+/**
+ * Parse a sum file.
+ *
+ * @param source - The path to the sum file. Might be a URL or local file.
+ * @returns Map of files and their sums if valid JSON; otherwise empty object (`{}`).
+ */
+export async function parseSha256Sums(source: string): Promise<Record<string, string>> {
+    let sha256Sums: string;
+    // check if source is a URL or file path and handle accordingly (e.g., download the content)
+    if (!source.startsWith("http") && fs.existsSync(source)) {
+        if (process.versions.bun) {
+            const file = Bun.file(source);
+            sha256Sums = await file.text();
+        } else {
+            sha256Sums = fs.readFileSync(source, "utf8");
+        }
+    } else {
+        const response = await fetch(source, { redirect: "follow", method: "GET" });
+        sha256Sums = await response.text();
+    }
+
+    const lines = sha256Sums.split("\n");
+    const fileHashes: Record<string, string> = {};
+    for (const line of lines) {
+        if (line.length === 0) {
+            continue;
+        }
+        const elements = line.split("  ");
+        const hash = elements[0].trim();
+        const fileName = elements[1].trim();
+        fileHashes[fileName] = hash;
+    }
+    return fileHashes;
+}
+
+export async function downloadFile(srcURL: string, dstFile: string) {
+    if (process.versions.bun) {
+        const response = await fetch(srcURL, { redirect: "follow" });
+        await Bun.write(dstFile, response);
+        return;
+    }
+
+    const Readable = (await import("node:stream")).Readable;
+    const finished = (await import("node:stream/promises")).finished;
+
+    const response = await fetch(srcURL, { redirect: "follow" });
+    const stream = fs.createWriteStream(dstFile, { flags: "wx" });
+    if (!response.body) {
+        throw new Error("No response body");
+    }
+    /// biome-ignore lint/suspicious/noExplicitAny: experimental function
+    await finished(Readable.fromWeb(response.body as any).pipe(stream));
 }
 
 async function downloadServerBinaries() {
@@ -107,154 +149,152 @@ async function downloadServerBinaries() {
         "memos-*-darwin-arm64.tar.gz",
         "memos-*-darwin-x86_64.tar.gz",
         "memos-*-linux-x86_64.tar.gz",
-        "memos-*-windows-x86_64.zip",
+        "memos-*-windows-x86_64.zip"
     ];
 
     // fetch data from github api
     const response = await fetch(repoUrl);
-    const json = (await response.json()) as GitHubRelease;
-    const assets = json.assets as GitHubAsset[];
+    const ghRelease = (await response.json()) as GitHubRelease;
+    const releaseAssets = ghRelease.assets as GitHubAsset[];
 
-    if (!assets || assets.length == 0) {
+    if (!releaseAssets || releaseAssets.length === 0) {
         throw new Error("Failed to fetch assets");
     }
-    const tag = json.tag_name;
 
-    const sha256sums = assets.find((asset) => {
+    console.log(`Latest ${repo} tag: ${ghRelease.tag_name}`);
+
+    const sha256sums = releaseAssets.find((asset) => {
         return asset.name.endsWith("SHA256SUMS.txt");
     })?.browser_download_url;
-
     if (!sha256sums) {
         throw new Error("Failed to find SHA256SUMS.txt");
     }
 
-    console.log(`Latest ${repo} tag: ${tag}`);
+    const selectedFiles = releaseAssets.filter((asset) => {
+        return downloadFilesGlob.some((mask) => minimatch(asset.name, mask));
+    });
 
-    const selectedFiles: GitHubAsset[] = [];
-    for (const asset of assets) {
-        // glob-like matching
-        for (const mask of downloadFilesGlob) {
-            const regex = new RegExp(globToRegExp(mask));
-            if (asset.name.match(regex)) {
-                selectedFiles.push(asset);
-            }
-        }
-    }
-
-    if (selectedFiles.length == 0) {
+    if (selectedFiles.length === 0) {
         throw new Error("Failed to match files");
-    } else {
-        console.log(`Matched ${selectedFiles.length} files`);
     }
+    console.log(`Matched ${selectedFiles.length} files`);
 
-    // download files
-    for (const file of selectedFiles) {
-        const downloadUrl = file.browser_download_url as string;
-        const fileName = file.name;
-        const filePath = `./server-dist/${fileName}`;
-        const fileExists = existsSync(filePath, { isFile: true });
-        if (!fileExists) {
-            console.log(`Downloading ${fileName}...`);
-            const res = await fetch(downloadUrl);
-            const fileStream = fs.createWriteStream(filePath, { flags: "wx" });
-            if (!res.body) {
-                throw new Error("No response body");
+    // download files in parallel
+    await async
+        .eachLimit(selectedFiles, 5, async (ghAsset: GitHubAsset) => {
+            const fileName = ghAsset.name;
+            const dstPath = `./server-dist/${fileName}`;
+
+            if (fs.existsSync(dstPath)) {
+                fs.rmSync(dstPath, { force: true, recursive: true });
             }
-            await finished(Readable.fromWeb(res.body as any).pipe(fileStream));
-        } else {
-            console.log(`File ${fileName} already exists and will be reused.`);
-        }
-    }
 
-    // check hashes via memos_SHA256SUMS.txt
-    const sha256response = await fetch(sha256sums);
-    const data = await sha256response.text();
-    const lines = data.split("\n");
-    const fileHashes: Record<string, string> = {};
-    for (const line of lines) {
-        if (line.length == 0) {
-            continue;
-        }
-        const elements = line.split("  ");
-        const hash = elements[0].trim();
-        const fileName = elements[1].trim();
-        fileHashes[fileName] = hash;
-    }
-
-    for (const file of selectedFiles) {
-        const fileName = file.name;
-        console.log(`Checking hash for ${fileName}...`);
-
-        const filePath = `./server-dist/${fileName}`;
-        // resolve path
-        const fileBuffer = Deno.readFileSync(filePath);
-
-        const fileHash = await crypto.subtle.digest("SHA-256", fileBuffer).then((hash) => {
-            return encodeHex(new Uint8Array(hash));
+            console.log(`Downloading ${fileName} from ${ghAsset.browser_download_url}...`);
+            await downloadFile(ghAsset.browser_download_url, dstPath);
+        })
+        .catch((error) => {
+            throw error;
         });
 
-        console.log(`Hash: ${fileHash}`);
-        if (fileHash !== fileHashes[fileName]) {
-            throw new Error(`Hash mismatch for ${fileName}`);
+    // check hashes via memos_SHA256SUMS.txt
+    const fileHashes = await parseSha256Sums(sha256sums);
+
+    await async
+        .eachLimit(selectedFiles, 2, async (file: GitHubAsset) => {
+            const fileName = file.name;
+            console.log(`Checking hash for ${fileName}...`);
+
+            const filePath = `./server-dist/${fileName}`;
+            const fileHash = await sha256File(filePath);
+
+            console.log(`Hash: ${fileHash}`);
+            if (fileHash !== fileHashes[fileName]) {
+                throw new Error(`Hash mismatch for ${fileName}`);
+            }
+        })
+        .catch((error) => {
+            throw error;
+        });
+
+    // extract files in parallel
+    await async.eachLimit(selectedFiles, 2, async (file: GitHubAsset) => {
+        const uuid = crypto.randomUUID();
+        const extractDir = `./server-dist/${uuid}`;
+        if (!fs.existsSync(extractDir)) {
+            fs.mkdirSync(extractDir);
         }
-    }
 
-    // extract files
-    const extractDir = "./server-dist/extracted";
-    const extractDirExists = existsSync(extractDir, { isDirectory: true });
-    if (!extractDirExists) {
-        Deno.mkdirSync(extractDir);
-    }
-
-    for (const file of selectedFiles) {
         const fileName = file.name;
         const filePath = `./server-dist/${fileName}`;
         if (fileName.endsWith(".zip") || fileName.endsWith(".tar.gz")) {
             console.log(`Extracting ${fileName}...`);
-            await decompress(filePath, extractDir).then((files) => {
-                console.log(`Extracted ${files.length} files`);
-            });
+            await decompress(filePath, extractDir)
+                .then((files) => {
+                    console.log(`Extracted ${files.length} files`);
+                })
+                .catch((error) => {
+                    fs.rmSync(extractDir, { recursive: true });
+                    throw error;
+                });
         }
 
         const exe = fileName.includes("windows") ? ".exe" : "";
 
         const triplet = makeTripletFromFileName(fileName);
-        Deno.renameSync(`${extractDir}/memos${exe}`, `./server-dist/memos-${triplet}${exe}`);
+        fs.renameSync(`${extractDir}/memos${exe}`, `./server-dist/memos-${triplet}${exe}`);
         // chmod +x downloaded file
-        if (Deno.build.os !== "windows") {
-            Deno.chmodSync(`./server-dist/memos-${triplet}${exe}`, 0o755);
+        if (process.platform !== "win32") {
+            fs.chmodSync(`./server-dist/memos-${triplet}${exe}`, 0o755);
         }
 
-        // move front-end dist folder, only once, as it's the same for all platforms
-        if (!existsSync("./server-dist/dist", { isDirectory: true })) {
-            Deno.renameSync(`${extractDir}/dist`, `./server-dist/dist`);
+        // check if there's a sidecar front-end folder (Memos v0.18.2 - v0.21.0)
+        const sidecarDist = `${extractDir}/dist`;
+        if (fs.existsSync(sidecarDist) && fs.statSync(sidecarDist).isDirectory()) {
+            const frontendDist = "./server-dist/dist";
+            // move front-end dist folder, only once, as it's the same for all platforms
+            if (!fs.existsSync(frontendDist)) {
+                fs.renameSync(sidecarDist, frontendDist);
+            }
+        } else {
+            // create an empty directory so the Tauri build doesn't fail after Memos v0.22+ is out
+            fs.mkdirSync(sidecarDist);
         }
 
-        Deno.removeSync(extractDir, { recursive: true });
-        Deno.removeSync(filePath);
-    }
+        fs.rmSync(extractDir, { recursive: true });
+        fs.rmSync(filePath);
+    });
 }
 
 async function main() {
+    const startTime = performance.now();
+
     const repoRoot = findRepositoryRoot();
     console.log(`Repository root is \`${repoRoot}\``);
-    Deno.chdir(repoRoot);
+    process.chdir(repoRoot);
     console.log("Running pre-build hook `Download Memos Builds` ...");
 
     const serverDistDir = "./server-dist";
-    const serverDistDirExists = existsSync(serverDistDir, { isDirectory: true });
+    const serverDistDirExists =
+        fs.existsSync(serverDistDir) && fs.statSync(serverDistDir).isDirectory();
     if (!serverDistDirExists) {
-        Deno.mkdirSync(serverDistDir, { recursive: true, mode: 0o755 });
+        fs.mkdirSync(serverDistDir, { recursive: true, mode: 0o755 });
     }
 
     // remove a previous dist folder, if it exists
-    if (serverDistDirExists && existsSync("./server-dist/dist", { isDirectory: true })) {
-        Deno.removeSync("./server-dist/dist", { recursive: true });
+    const distDir = "./server-dist/dist";
+    if (serverDistDirExists && fs.existsSync(distDir) && fs.statSync(distDir).isDirectory()) {
+        fs.rmSync(distDir, { force: true, recursive: true });
     }
 
     await downloadServerBinaries();
+
+    const endTime = performance.now();
+    const timeElapsed = endTime - startTime;
+    console.log("Time elapsed: ", timeElapsed, "ms");
 }
 
-main().catch((e) => {
-    throw e;
-});
+if (import.meta.main) {
+    await main().catch((e) => {
+        throw e;
+    });
+}

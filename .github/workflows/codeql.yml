@@ -4,15 +4,19 @@ on:
   push:
     branches: "*"
     paths:
-      - "**/*.{ts,tsx,cts,mts}"
-      - "**/deno.{jsonc,lock}"
+      - ".github/workflows/codeql.yml"
+      - "**/*.{ts,tsx}"
+      - "**/bun.lockb"
+      - "**/package.json"
 
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [main]
     paths:
-      - "**/*.{ts,tsx,cts,mts}"
-      - "**/deno.{jsonc,lock}"
+      - ".github/workflows/codeql.yml"
+      - "**/*.{ts,tsx}"
+      - "**/bun.lockb"
+      - "**/package.json"
 
   schedule: [{ cron: "0 12 * * 6" }]
   workflow_dispatch:
@@ -29,40 +33,18 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix:
-        language: ["javascript"]
-        # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
-        # Learn more about CodeQL language support at https://git.io/codeql-language-support
+      matrix: { language: ["javascript"] }
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
 
-      # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
         uses: github/codeql-action/init@65c74964a9ed8c44ed9f19d4bbc5757a6a8e9ab9
-        with:
-          languages: "${{matrix.language}}"
-          # If you wish to specify custom queries, you can do so here or in a config file.
-          # By default, queries listed here will override any specified in a config file.
-          # Prefix the list here with "+" to use these queries and those in the config file.
-          # queries: ./path/to/local/query, your-org/your-repo/queries@main
+        with: { languages: "${{matrix.language}}" }
 
-      # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
-      # If this step fails, then you should remove it and run the build manually (see below)
       - name: Autobuild
         uses: github/codeql-action/autobuild@65c74964a9ed8c44ed9f19d4bbc5757a6a8e9ab9
-
-      # ℹ️ Command-line programs to run using the OS shell.
-      # 📚 https://git.io/JvXDl
-
-      # ✏️ If the Autobuild fails above, remove it and uncomment the following three lines
-      #    and modify them (or add more) to build your code if your project
-      #    uses a compiled language
-
-      #- run: |
-      #   make bootstrap
-      #   make release
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@65c74964a9ed8c44ed9f19d4bbc5757a6a8e9ab9

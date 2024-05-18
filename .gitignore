@@ -1,11 +1,10 @@
 ### Project-specific ###
-/server-dist/
-logging_config.yaml
-clippy-results.sarif
-build/
-/dist-ui/
-.sccache
 .dprint
+.sccache
+build/
+dist-ui/
+server-dist/
+
 *.db
 *.gz
 
@@ -17,14 +16,11 @@ logs/
 *.log
 
 ### Node / npm / react ###
-.vite
-.deno
-.DS_*
-.eslintcache
 .npm
 .pnp.*
 .pnpm-debug.log*
 .stylelintcache
+.vite
 .webpack/
 *.local
 *.tsbuildinfo
@@ -56,13 +52,11 @@ thumbs.db
 ehthumbs.db
 desktop.ini
 
-### CLion / RustRover ###
+### JetBrains ###
+.fleet
 .idea/*
 !.idea/codeStyles
 !.idea/runConfigurations
-
-# Fleet
-.fleet
 
 ### SublimeText ###
 *.sublime-workspace

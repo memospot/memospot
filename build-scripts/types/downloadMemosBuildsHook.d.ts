@@ -1,4 +1,4 @@
-export interface GitHubAsset {
+export type GitHubAsset = {
     url: string;
     id: number;
     node_id: string;
@@ -31,9 +31,9 @@ export interface GitHubAsset {
     created_at: string;
     updated_at: string;
     browser_download_url: string;
-}
+};
 
-export interface GitHubRelease {
+export type GitHubRelease = {
     url: string;
     assets_url: string;
     upload_url: string;
@@ -72,4 +72,4 @@ export interface GitHubRelease {
     zipball_url: string;
     body: string;
     discussion_url: string;
-}
+};

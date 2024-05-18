@@ -1,4 +1,5 @@
-import { defineConfig } from "../deps.ts";
+import { defineConfig } from "vite";
+import htmlMinifier from "vite-plugin-html-minifier";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -6,8 +7,8 @@ export default defineConfig({
         emptyOutDir: true,
         outDir: "../dist-ui",
         target: ["es2021", "chrome97", "safari13"],
-        minify: !Deno.env.get("TAURI_DEBUG") ? "esbuild" : false,
-        sourcemap: !!Deno.env.get("TAURI_DEBUG"),
+        minify: !process.env.TAURI_DEBUG ? "terser" : false,
+        sourcemap: !!process.env.TAURI_DEBUG
     },
     // prevent vite from obscuring rust errors
     clearScreen: false,
@@ -16,8 +17,12 @@ export default defineConfig({
         port: 5173,
         strictPort: true,
         fs: {
-            allow: ["."],
-        },
+            allow: ["."]
+        }
     },
-    plugins: [],
+    plugins: [
+        htmlMinifier({
+            minify: true
+        })
+    ]
 });

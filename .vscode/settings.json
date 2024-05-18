@@ -2,6 +2,15 @@
   "[css]": {
     "editor.defaultFormatter": "dprint.dprint"
   },
+  "[github-actions-workflow]": {
+    "editor.defaultFormatter": "dprint.dprint"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "dprint.dprint"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "dprint.dprint"
+  },
   "[json]": {
     "editor.defaultFormatter": "dprint.dprint"
   },
@@ -11,33 +20,32 @@
   "[markdown]": {
     "editor.defaultFormatter": "dprint.dprint"
   },
-  "[toml]": {
+  "[rust]": {
     "editor.defaultFormatter": "dprint.dprint"
   },
-  "[yaml]": {
+  "[toml]": {
     "editor.defaultFormatter": "dprint.dprint"
   },
   "[typescript]": {
     "editor.defaultFormatter": "dprint.dprint"
   },
-  "[rust]": {
+  "[yaml]": {
     "editor.defaultFormatter": "dprint.dprint"
   },
   "code-runner.cwd": "${workspaceFolder}",
   "code-runner.executorMapByGlob": {
     "**/*.rs": "task coderunner:cargo:clippy --",
-    "**/*.test.ts": "task coderunner:deno:test -- $fullFileName",
-    "**/*.ts": "task coderunner:deno -- $fullFileName",
+    "**/*.test.ts": "task coderunner:bun:test -- $fullFileName",
+    "**/*.ts": "task coderunner:bun -- $fullFileName",
     "**/*.{toml,json,jsonc,yml,yaml,md}|.dprint.jsonc": "task coderunner:dprint:check -- $fullFileName && echo \"$fileName is properly formatted.\""
   },
   "code-runner.ignoreSelection": true,
-  "deno.enable": true,
-  "deno.cache": "./.deno",
-  "deno.lint": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports.biome": "explicit"
+  },
   "editor.formatOnSave": true,
   "editor.wordBasedSuggestions": "off",
   "editor.quickSuggestionsDelay": 200,
-  "evenBetterToml.completion.maxKeys": 8,
   "evenBetterToml.formatter.allowedBlankLines": 2,
   "evenBetterToml.formatter.columnWidth": 96,
   "evenBetterToml.formatter.crlf": false,
@@ -55,6 +63,7 @@
   "files.associations": {
     "CODEOWNERS": "gitignore"
   },
+  "prettier.enable": false,
   "rust-analyzer.cargo.extraEnv": {
     "RUST_BACKTRACE": "full"
   },

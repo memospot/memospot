@@ -1,0 +1,15 @@
+{
+  "name": "memospot",
+  "private": true,
+  "type": "module",
+  "workspaces": ["build-scripts", "src-ui"],
+  "scripts": {
+    "fmt": "dprint fmt --diff",
+    "lint": "bunx @biomejs/biome ci ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.7.3",
+    "@types/bun": "^1.1.2",
+    "@types/node": "^20.12.11"
+  }
+}
