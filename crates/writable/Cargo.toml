@@ -17,3 +17,7 @@ tempfile = "3.10.1"
 [dev-dependencies.uuid]
 version = "1.8.0"
 features = ["v4"]
+
+[target.'cfg(not(target_os = "windows"))'.dev-dependencies.nix]
+version = "0.28"
+features = ["user"]
