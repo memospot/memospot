@@ -1,17 +1,27 @@
 name: "Test Build"
 on:
   push:
-    tags: "v*"
+    tags: v*
     branches: "*"
+    paths:
+      - "**/bun.lockb"
+      - "**/package.json"
+      - "**/Cargo.{lock,toml}"
+      - "**/Tauri.toml"
+      - build-scripts/*.ts
+      - crates/*.rs
+      - installer/*.{nsi,wxs}"
+      - src-tauri/*.rs
+      - src-ui/*.ts
 
   workflow_dispatch:
 
 env:
-  CARGO_TERM_COLOR: always
   RUST_BACKTRACE: short
   RUSTFLAGS: -Copt-level=1 -Cstrip=symbols
   RUSTC_WRAPPER: sccache
   CARGO_INCREMENTAL: 0
+  CARGO_TERM_COLOR: always
   SCCACHE_DIR: ${{github.workspace}}/.sccache
   SCCACHE_GHA_ENABLED: false # required to cache everything at once and avoid rate limiting
   TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
@@ -66,9 +76,9 @@ jobs:
         name: "[Linux] Disable initramfs and man-db update"
         continue-on-error: true
         run: |
-          mkdir -p /etc/initramfs-tools/
-          echo -e 'update_initramfs=no\nbackup_initramfs=no' | tee /etc/initramfs-tools/update-initramfs.conf
-          rm -f /var/lib/man-db/auto-update
+          sudo mkdir -p /etc/initramfs-tools/
+          echo -e 'update_initramfs=no\nbackup_initramfs=no' | sudo tee /etc/initramfs-tools/update-initramfs.conf
+          sudo rm -f /var/lib/man-db/auto-update
 
       # Platform deps
       - if: ${{ env.ACT && runner.os == 'Linux' }}
