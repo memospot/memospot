@@ -2,7 +2,6 @@
  * This script runs before `Tauri build` step.
  */
 
-import * as crypto from "node:crypto";
 import fs from "node:fs";
 import * as async from "async";
 import * as Bun from "bun";
@@ -67,23 +66,11 @@ export function makeTripletFromFileName(filename: string): string {
  * Calculate the sha256 hex digest of a given file.
  */
 export async function sha256File(filePath: string): Promise<string> {
-    if (process.versions.bun) {
-        const file = Bun.file(filePath);
-        const hasher = new Bun.CryptoHasher("sha256");
-        const buffer = await file.arrayBuffer();
-        hasher.update(buffer);
-        return hasher.digest("hex");
-    }
-
-    return new Promise((resolve) => {
-        const hash = crypto.createHash("sha256");
-        fs.createReadStream(filePath)
-            .on("data", (data) => hash.update(data))
-            .on("error", (err) => {
-                throw err;
-            })
-            .on("end", () => resolve(hash.digest("hex")));
-    });
+    const file = Bun.file(filePath);
+    const hasher = new Bun.CryptoHasher("sha256");
+    const buffer = await file.arrayBuffer();
+    hasher.update(buffer);
+    return hasher.digest("hex");
 }
 
 /**
@@ -122,22 +109,8 @@ export async function parseSha256Sums(source: string): Promise<Record<string, st
 }
 
 export async function downloadFile(srcURL: string, dstFile: string) {
-    if (process.versions.bun) {
-        const response = await fetch(srcURL, { redirect: "follow" });
-        await Bun.write(dstFile, response);
-        return;
-    }
-
-    const Readable = (await import("node:stream")).Readable;
-    const finished = (await import("node:stream/promises")).finished;
-
     const response = await fetch(srcURL, { redirect: "follow" });
-    const stream = fs.createWriteStream(dstFile, { flags: "wx" });
-    if (!response.body) {
-        throw new Error("No response body");
-    }
-    /// biome-ignore lint/suspicious/noExplicitAny: experimental function
-    await finished(Readable.fromWeb(response.body as any).pipe(stream));
+    return await Bun.write(dstFile, response);
 }
 
 async function downloadServerBinaries() {
@@ -153,7 +126,7 @@ async function downloadServerBinaries() {
     ];
 
     // fetch data from github api
-    const response = await fetch(repoUrl);
+    const response = await fetch(repoUrl, { method: "GET", redirect: "follow" });
     const ghRelease = (await response.json()) as GitHubRelease;
     const releaseAssets = ghRelease.assets as GitHubAsset[];
 
@@ -249,15 +222,12 @@ async function downloadServerBinaries() {
 
         // check if there's a sidecar front-end folder (Memos v0.18.2 - v0.21.0)
         const sidecarDist = `${extractDir}/dist`;
-        if (fs.existsSync(sidecarDist) && fs.statSync(sidecarDist).isDirectory()) {
-            const frontendDist = "./server-dist/dist";
-            // move front-end dist folder, only once, as it's the same for all platforms
+        const frontendDist = "./server-dist/dist";
+        if (fs.existsSync(sidecarDist)) {
+            // move front-end dist folder only once, as it's the same for all platforms.
             if (!fs.existsSync(frontendDist)) {
                 fs.renameSync(sidecarDist, frontendDist);
             }
-        } else {
-            // create an empty directory so the Tauri build doesn't fail after Memos v0.22+ is out
-            fs.mkdirSync(sidecarDist);
         }
 
         fs.rmSync(extractDir, { recursive: true });

@@ -521,13 +521,11 @@ tasks:
 
   bumpversion:
     desc: Bump version
-    summary: |
-      - This will bump the version in `src-tauri/Cargo.toml` and `src-tauri/Tauri.toml`.
-      - It will also run `task lint:toml` and `task format:dprint` to ensure the files are valid.
+    summary: This will bump the version in `src-tauri/Cargo.toml` and `src-tauri/Tauri.toml`.
     cmds:
       - task: internal:bumpversion
         vars:
-          NEW_VERSION: "{{ .CLI_ARGS }}"
+          NEW_VERSION: '{{print .CLI_ARGS | trimPrefix "v" }}'
   internal:bumpversion:
     internal: true
     silent: true
@@ -535,24 +533,18 @@ tasks:
       - cd ./src-tauri; cargo set-version --package memospot --locked {{.NEW_VERSION}}
       - sh -c "sed -i 's#Memospot/[0-9]\+\.[0-9]\+\.[0-9]\+"#Memospot/{{.NEW_VERSION}}"#' ./src-tauri/Tauri.toml"
       - cargo generate-lockfile
-      - task: format
-      - task: lint:toml
+      - task: fmt
       - git add ./src-tauri/Tauri.toml
       - git add ./src-tauri/Cargo.toml
       - git add ./Cargo.lock
       - git commit -m "Bump version to v{{.NEW_VERSION}}"
-    requires:
-      vars: [NEW_VERSION]
+    requires: { vars: [NEW_VERSION] }
 
   pushtag:
     desc: |
-      Upgrade app version and push a new tag to origin.
+      Push a new tag to origin.
       Usage: `task pushtag -- 0.0.0`.
-    summary: |
-      - This will trigger a test build on GitHub Actions.
+    summary: This will trigger a test build on GitHub Actions.
     cmds:
-      - task: internal:bumpversion
-        vars:
-          NEW_VERSION: '{{print .CLI_ARGS | trimPrefix "v" }}'
       - git tag -a v{{print .CLI_ARGS | trimPrefix "v" }} -m "Push v{{print .CLI_ARGS | trimPrefix "v" }}"
       - git push origin --tags
