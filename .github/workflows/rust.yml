@@ -186,7 +186,7 @@ jobs:
         run: cargo clippy --all-features --all-targets --workspace --locked
 
       - name: Run all Rust tests
-        run: time cargo test --workspace --lib -- --nocapture
+        run: cargo test --workspace --lib -- --nocapture
 
       - name: Cleanup sccache
         run: sccache --stop-server
