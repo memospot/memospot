@@ -6,7 +6,7 @@ on:
     paths-ignore:
       - "**/.idea/*"
       - "**/*.{icns,ico,png,svg,webp}"
-      - "**/*.{nsi,wxs]"
+      - "**/*.{nsi,wxs}"
       - "**/*.dll"
       - "**/*.xml"
       - "**/bun.lockb"
@@ -16,7 +16,7 @@ on:
     paths-ignore:
       - "**/.idea/*"
       - "**/*.{icns,ico,png,svg,webp}"
-      - "**/*.{nsi,wxs]"
+      - "**/*.{nsi,wxs}"
       - "**/*.dll"
       - "**/*.xml"
       - "**/bun.lockb"
