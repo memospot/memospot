@@ -9,7 +9,6 @@
   "devDependencies": {
     "@types/bun": "^1.1.2",
     "@types/decompress": "^4.2.7",
-    "child_process": "^1.0.2",
     "jsdoc": "^4.0.3"
   },
   "peerDependencies": {
