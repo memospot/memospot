@@ -48,7 +48,7 @@ jobs:
       matrix:
         platform:
           - runner: ubuntu-22.04
-          - runner: macos-11
+          - runner: macos-12
           - runner: windows-2019
 
     runs-on: ${{ matrix.platform.runner }}
