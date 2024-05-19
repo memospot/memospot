@@ -4,6 +4,7 @@
 build/
 dist-ui/
 server-dist/
+icon.icns
 
 *.db
 *.gz
