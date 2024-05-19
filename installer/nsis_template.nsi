@@ -6,14 +6,6 @@ Unicode true
   SetCompressor /SOLID "{{compression}}"
 !endif
 
-; This is resolved from within ./target/release/bundle/nsis at build time and should point to ./installer,
-; where nsis_tauri_utils.dll is
-!addplugindir "../../../../installer"
-
-!if "$%GITHUB_WORKSPACE%" != ""
-  !addplugindir "$%GITHUB_WORKSPACE%\installer"
-!endif
-
 !include MUI2.nsh
 !include FileFunc.nsh
 !include x64.nsh
