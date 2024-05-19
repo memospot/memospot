@@ -7,9 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  BUN_INSTALL_CACHE_DIR: ${{github.workspace}}/.bun/install/cache
   CARGO_TERM_COLOR: always
-  LOCAL_RUNNER: ${{ env.ACT }}
   RUST_BACKTRACE: short
   RUSTFLAGS: -Copt-level=1 -Cstrip=symbols
   RUSTC_WRAPPER: sccache
@@ -73,7 +71,7 @@ jobs:
           rm -f /var/lib/man-db/auto-update
 
       # Platform deps
-      - if: ${{ env.LOCAL_RUNNER && runner.os == 'Linux' }}
+      - if: ${{ env.ACT && runner.os == 'Linux' }}
         name: "[ACT] Install platform dependencies"
         run: |
           rm -f /etc/apt/sources.list.d/git-core-ubuntu-ppa-jammy.list \
@@ -84,7 +82,7 @@ jobs:
           apt-get update > /dev/null && apt-get install apt-fast -y > /dev/null
           apt-fast install -y ${{env.APT_DEPS}} > /dev/null
           echo -e "\032[0;34m Dependencies installed!\033[0m"
-      - if: ${{ !env.LOCAL_RUNNER && runner.os == 'Linux'  }}
+      - if: ${{ !env.ACT && runner.os == 'Linux'  }}
         name: "[Linux] Install platform dependencies"
         uses: awalsh128/cache-apt-pkgs-action@a6c3917cc929dd0345bfb2d3feaf9101823370ad
         with: { packages: "${{env.APT_DEPS}}" }
@@ -157,7 +155,7 @@ jobs:
           path: ~/.bun
 
       - name: Install Bun dependencies
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile || bun install --frozen-lockfile
       # /Bun
 
       - name: Cache memos builds
@@ -175,8 +173,7 @@ jobs:
         with:
           tagName: v__VERSION__-pre
           releaseName: "Memospot v__VERSION__-pre"
-          releaseBody: |
-            See the assets section below to download the app.
+          releaseBody: See the assets section below to download the app.
           releaseDraft: true
           prerelease: true
           args: --verbose --target ${{ matrix.platform.rust_target }}
