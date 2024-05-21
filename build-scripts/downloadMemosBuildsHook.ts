@@ -134,7 +134,7 @@ async function downloadServerBinaries() {
         throw new Error("Failed to fetch assets");
     }
 
-    console.log(`Latest ${repo} tag: ${ghRelease.tag_name}`);
+    console.log(`\x1b[34mMatching GitHub assets from ${repo}:${ghRelease.tag_name}...\x1b[0m`);
 
     const sha256sums = releaseAssets.find((asset) => {
         return asset.name.endsWith("SHA256SUMS.txt");
@@ -150,9 +150,11 @@ async function downloadServerBinaries() {
     if (selectedFiles.length === 0) {
         throw new Error("Failed to match files");
     }
-    console.log(`Matched ${selectedFiles.length} files`);
+
+    console.log(`\x1b[32mMatched ${selectedFiles.length} files\x1b[0m`);
 
     // download files in parallel
+    console.log("\x1b[35mDownloading GitHub assets...\x1b[0m");
     await async
         .eachLimit(selectedFiles, 5, async (ghAsset: GitHubAsset) => {
             const fileName = ghAsset.name;
@@ -161,9 +163,16 @@ async function downloadServerBinaries() {
             if (fs.existsSync(dstPath)) {
                 fs.rmSync(dstPath, { force: true, recursive: true });
             }
-
-            console.log(`Downloading ${fileName} from ${ghAsset.browser_download_url}...`);
-            await downloadFile(ghAsset.browser_download_url, dstPath);
+            process.stdout.write(`\x1b[33m${ghAsset.browser_download_url}\x1b[0m ...\n`);
+            // console.log(`Downloading ${fileName} from ${ghAsset.browser_download_url}...`);
+            await downloadFile(ghAsset.browser_download_url, dstPath)
+                .then(() => {
+                    console.log(`\x1b[32m[OK]\x1b[0m \x1b[36m${fileName}\x1b[0m`);
+                })
+                .catch((error) => {
+                    console.log(`\x1b[31m[ERROR] ${fileName}\x1b[0m: ${error}`);
+                    throw error;
+                });
         })
         .catch((error) => {
             throw error;
@@ -171,25 +180,28 @@ async function downloadServerBinaries() {
 
     // check hashes via memos_SHA256SUMS.txt
     const fileHashes = await parseSha256Sums(sha256sums);
-
+    console.log("\x1b[35mChecking downloaded file hashes...\x1b[0m");
     await async
         .eachLimit(selectedFiles, 2, async (file: GitHubAsset) => {
             const fileName = file.name;
-            console.log(`Checking hash for ${fileName}...`);
 
             const filePath = `./server-dist/${fileName}`;
             const fileHash = await sha256File(filePath);
 
-            console.log(`Hash: ${fileHash}`);
             if (fileHash !== fileHashes[fileName]) {
-                throw new Error(`Hash mismatch for ${fileName}`);
+                console.log(`\x1b[31m[ERROR]\x1b[0m ${fileName} \x1b[36m${fileHash}\x1b[0m`);
+                throw new Error(
+                    `Hash mismatch for ${fileName}. Expected: ${fileHashes[fileName]}, got: ${fileHash}`
+                );
             }
+            console.log(`\x1b[32m[OK]\x1b[0m ${fileName} \x1b[36m${fileHash}\x1b[0m`);
         })
         .catch((error) => {
             throw error;
         });
 
     // extract files in parallel
+    console.log("\x1b[35mExtracting downloaded files...\x1b[0m");
     await async.eachLimit(selectedFiles, 2, async (file: GitHubAsset) => {
         const uuid = crypto.randomUUID();
         const extractDir = `./server-dist/${uuid}`;
@@ -200,12 +212,14 @@ async function downloadServerBinaries() {
         const fileName = file.name;
         const filePath = `./server-dist/${fileName}`;
         if (fileName.endsWith(".zip") || fileName.endsWith(".tar.gz")) {
-            console.log(`Extracting ${fileName}...`);
             await decompress(filePath, extractDir)
                 .then((files) => {
-                    console.log(`Extracted ${files.length} files`);
+                    console.log(
+                        `\x1b[32m[OK]\x1b[0m \x1b[36m${fileName}\x1b[0m Extracted ${files.length} files.`
+                    );
                 })
                 .catch((error) => {
+                    console.log(`\x1b[31m[ERROR]\x1b[0m \x1b[36m${fileName}\x1b[0m ${error}`);
                     fs.rmSync(extractDir, { recursive: true });
                     throw error;
                 });
@@ -241,7 +255,7 @@ async function main() {
     const repoRoot = findRepositoryRoot();
     console.log(`Repository root is \`${repoRoot}\``);
     process.chdir(repoRoot);
-    console.log("Running pre-build hook `Download Memos Builds` ...");
+    console.log("\x1b[47m\x1b[32m|> Running script `Download Memos Builds` <|\x1b[0m");
 
     const serverDistDir = "./server-dist";
     const serverDistDirExists =

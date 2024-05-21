@@ -9,32 +9,20 @@
 version: "3"
 env:
   REPO_ROOT:
-    sh: |
-      cd "$(git rev-parse --show-toplevel)";
-      echo "$(pwd)"
-
+    sh: cd "$(git rev-parse --show-toplevel)"; echo "$(pwd)"
   DPRINT_CACHE_DIR:
     sh: |
       DPRINT_CACHE_DIR="{{ osClean (print .REPO_ROOT "/.dprint" ) }}";
-      mkdir -p "$DPRINT_CACHE_DIR";
-      echo "$DPRINT_CACHE_DIR"
-
+      mkdir -p "$DPRINT_CACHE_DIR"; echo "$DPRINT_CACHE_DIR"
   RUST_BACKTRACE: full
   RUSTC_WRAPPER:
     sh: |
       sccache="{{ osClean "$HOME/.cargo/bin/sccache" }}{{if eq OS "windows"}}.exe{{end}}"
-      if [ -z $(command -v $sccache) ]; then
-        echo "";
-      else
-        echo "$sccache";
-      fi
-
+      if [ -z $(command -v $sccache) ]; then echo ""; else echo "$sccache"; fi
   SCCACHE_DIR:
     sh: |
       SCCACHE_DIR="{{ osClean (print .REPO_ROOT "/.sccache" ) }}";
-      mkdir -p "$SCCACHE_DIR";
-      echo "$SCCACHE_DIR"
-
+      mkdir -p "$SCCACHE_DIR"; echo "$SCCACHE_DIR"
   CARGO_INCREMENTAL:
     sh: if [ -z $(command -v sccache) ]; then echo "1"; else echo "0"; fi
 
@@ -47,10 +35,10 @@ tasks:
       - Only runs if any of the binaries are missing.
     cmd: bun run ./build-scripts/downloadMemosBuildsHook.ts
     status:
-      - test -f ./server-dist/memos-x86_64-unknown-linux-gnu
-      - test -f ./server-dist/memos-x86_64-pc-windows-msvc.exe
-      - test -f ./server-dist/memos-x86_64-apple-darwin
       - test -f ./server-dist/memos-aarch64-apple-darwin
+      - test -f ./server-dist/memos-x86_64-apple-darwin
+      - test -f ./server-dist/memos-x86_64-pc-windows-msvc.exe
+      - test -f ./server-dist/memos-x86_64-unknown-linux-gnu
 
   upx:
     desc: Compress built binaries with upx
@@ -123,7 +111,8 @@ tasks:
     desc: Run all TypeScript tests
     cmds:
       - bun install || bun install
-      - bun test
+      - cd build-scripts; bun test
+      - cd src-ui; bun test
   ##### /Tests #####
 
   ##### Development #####
@@ -140,31 +129,24 @@ tasks:
       - This will start the app in development mode.
       - It will automatically reload the app when you make changes.
       - A fast Rust build is prioritized.
-    deps:
-      - task: dev:killprocesses
+    deps: [task: dev:killprocesses]
     cmds:
       - cargo tauri dev
       - task: dev:killprocesses
       - task: sccache:stats
   dev:killprocesses:
     desc: Kill all running Memospot/Memos processes
-    cmds:
-      - task: dev:killprocesses:posix
-      - task: dev:killprocesses:windows
+    cmds: [task: dev:killprocesses:posix, task: dev:killprocesses:windows]
   dev:killprocesses:posix:
     platforms: [linux, darwin]
     internal: true
     ignore_error: true
-    cmds:
-      - killall memospot > /dev/null 2>&1
-      - killall memos > /dev/null 2>&1
+    cmds: [killall memospot > /dev/null 2>&1, killall memos > /dev/null 2>&1]
   dev:killprocesses:windows:
     platforms: [windows]
     internal: true
     ignore_error: true
-    cmds:
-      - taskkill /f /t /im memospot.exe >nul 2>&1
-      - taskkill /f /t /im memos.exe >nul 2>&1
+    cmds: [taskkill /f /t /im memospot.exe >nul 2>&1, taskkill /f /t /im memos.exe >nul 2>&1]
 
   update-ts-deps:
     desc: Update TypeScript dependencies
@@ -179,26 +161,16 @@ tasks:
 
   update-toolchain:
     desc: Update project toolchain
-    cmds:
-      - rustup update
-      - rustup self update
-      - rustup component add clippy
+    cmd: rustup update; rustup self update; rustup component add clippy
 
   gen:icons:
     desc: Generate app icons from `assets/app-icon-lossless.webp`
-    cmds:
-      - |
-        {{ if eq (env "CI") "true" }}
-          exit 0
-        {{ end }}
-
-        cargo tauri icon ./assets/app-icon-lossless.webp
-        cp -f ./src-tauri/icons/icon.ico ./src-ui/public/favicon.ico
-    sources:
-      - ./assets/app-icon-lossless.webp
-    generates:
-      - ./src-tauri/icons/*
-      - ./src-ui/public/favicon.ico
+    cmd: |
+      {{ if eq (env "CI") "true" }}exit 0{{ end }}
+      cargo tauri icon ./assets/app-icon-lossless.webp
+      cp -f ./src-tauri/icons/icon.ico ./src-ui/public/favicon.ico
+    sources: [./assets/app-icon-lossless.webp]
+    generates: [./src-tauri/icons/*.png, ./src-ui/public/favicon.ico]
 
   ##### /Development #####
 
@@ -207,15 +179,12 @@ tasks:
     desc: Build front-end with Vite
     dir: ./src-ui
     cmd: bun run build
-    sources:
-      - ./src-ui/src/**/*
-    generates:
-      - ./dist-ui/**/*
+    sources: [./src-ui/src/**/*]
+    generates: [./dist-ui/**/*]
 
   build:
     desc: Build the app for production
-    summary: |
-      - This will create an universal x86-64 optimized build of the app.
+    summary: This will create an universal x86-64 optimized build of the app.
     env:
       # optimized universal x86-64 build
       RUSTFLAGS: -Ctarget-cpu=x86-64 -Copt-level=3 -Cstrip=symbols -Ccodegen-units=8
@@ -226,40 +195,45 @@ tasks:
   postbuild:
     desc: Move relevant files to `build/`
     ignore_error: true
+    silent: true
     cmds:
+      - printf '\e[36mMoving relevant build files to `./build` directory. \e[0m'
       - mkdir -p ./build
-      - mv -f ./target/release/memos ./build/ || true
-      - mv -f ./target/release/memospot ./build/ || true
-      - mv -f ./target/release/memos.exe ./build/ || true
-      - mv -f ./target/release/dist/ ./build/ || true
-      - mv -f ./target/release/memospot.exe ./build/ || true
-      - mv -f ./target/release/bundle/nsis/* ./build/ || true
-      - mv -f ./target/release/bundle/msi/* ./build/ || true
-      - mv -f ./target/release/bundle/deb/*.deb ./build/ || true
-      - mv -f ./target/release/bundle/appimage/*.AppImage ./build/ || true
-
+      - for:
+          - bundle/appimage/*.AppImage
+          - bundle/deb/*.deb
+          - bundle/msi/*.msi
+          - bundle/nsis/*.exe
+          - dist/
+          - memos
+          - memos.exe
+          - memospot
+          - memospot.exe
+        cmd: mv -f ./target/release/{{ .ITEM }} ./build/ 2>/dev/null
+      - |
+        if ls ./build/memos* 1> /dev/null 2>&1; then printf '\e[32mDone.\e[0m';
+        else printf '\e[33mFailed to move files.\e[0m'; fi;
   ##### /Build #####
-
   ##### Clean #####
   clean:
     desc: Cleanup ALL build artifacts, node modules and downloaded memos binaries.
-    summary: |
-      This will free up nearly 20GB of disk space, but will require a full rebuild.
-      Don't use unless you know what you're doing.
+    summary: This can free up to 20GB of disk space but will require a full rebuild upon the next run.
     deps: [dev:killprocesses]
     ignore_error: true
     cmds:
-      - rm -rf ./.dprint
-      - rm -rf ./.sccache
-      - rm -rf ./.task
-      - rm -rf ./build
-      - rm -rf ./build-scripts/node_modules
-      - rm -rf ./dist-ui
-      - rm -rf ./node_modules
-      - rm -rf ./server-dist
-      - rm -rf ./src-ui/.vite
-      - rm -rf ./src-ui/node_modules
-      - rm -rf ./target
+      - for:
+          - ./.dprint
+          - ./.sccache
+          - ./.task
+          - ./build
+          - ./build-scripts/node_modules
+          - ./dist-ui
+          - ./node_modules
+          - ./server-dist
+          - ./src-ui/.vite
+          - ./src-ui/node_modules
+          - ./target
+        cmd: rm -rf {{ .ITEM }}
       - bun pm cache rm
       - cargo cache -a
   ##### /Clean #####
@@ -278,8 +252,7 @@ tasks:
 
   ##### Code Lint #####
   lint:
-    aliases:
-      - check
+    aliases: [check]
     desc: Run all checkers/linters in parallel
     deps:
       - lint:rust
@@ -307,9 +280,7 @@ tasks:
   ##### Code Fix #####
   fix:
     desc: Run all fixers in parallel
-    deps:
-      - fix:rs
-      - fix:ts
+    deps: [fix:rs, fix:ts]
   fix:rs:
     desc: Run cargo fix (requires clean repo)
     cmd: cargo fix
@@ -321,8 +292,7 @@ tasks:
   ##### Code Format #####
   fmt:
     desc: Format repo code with dprint
-    summary: |
-      - dprint is configured to format json, rust, toml, yaml, html, css, typescript and markdown files.
+    summary: dprint is configured to format json, rust, toml, yaml, html, css, typescript and markdown files.
     aliases: [format]
     cmd: dprint fmt --diff
   ##### /Code Format #####
@@ -331,36 +301,31 @@ tasks:
   setup:platformdeps:
     desc: Install platform-specific dependencies
     interactive: true
-    deps:
-      - task: setup:platformdeps:darwin
-      - task: setup:platformdeps:linux
+    deps: [task: setup:platformdeps:darwin, task: setup:platformdeps:linux]
   setup:platformdeps:darwin:
     platforms: [darwin]
     internal: true
     interactive: true
-    cmds:
-      - xcode-select --install
+    cmd: xcode-select --install
   setup:platformdeps:linux:
     platforms: [linux]
     internal: true
     interactive: true
-    cmds:
-      - ignore_error: true
-        silent: true
-        cmd: |
-          sudo apt update -y && \
-          sudo apt install -y \
-            build-essential \
-            curl \
-            file \
-            libgtk-3-dev \
-            librsvg2-dev \
-            libssl-dev \
-            libwebkit2gtk-4.0-dev \
-            patchelf \
-            wget
-          sudo apt install -y libappindicator3-dev || true
-          echo -e '\e[33mNOTE: "libayatana-appindicator3-1" may conflict with libappindicator3-dev, it is ok to ignore.\e[0m'
+    ignore_error: true
+    silent: true
+    cmd: |
+      sudo apt update -y
+      sudo apt install -y \
+        build-essential \
+        curl \
+        file \
+        libgtk-3-dev \
+        librsvg2-dev \
+        libssl-dev \
+        libwebkit2gtk-4.0-dev \
+        patchelf \
+        wget
+      sudo apt install -y libappindicator3-dev 2>/dev/null
 
   setup:bun:
     desc: "Setup Bun"
@@ -373,60 +338,56 @@ tasks:
     platforms: [darwin, linux]
     internal: true
     silent: true
-    cmds:
-      - |
-        if ! [ -z $(command -v brew) ]; then
-          brew install bun
-          exit 0
-        fi
-        echo -e '\e[33mERROR: Homebrew not found. Please install Bun manually.
+    cmd: |
+      if ! [ -z $(command -v brew) ]; then
+        brew install bun
+        exit 0
+      fi
+      echo -e '\e[33mERROR: Homebrew not found. Please install Bun manually.
 
-        Alternatively, install Homebrew and run this task again.\e[0m'
+      Alternatively, install Homebrew and run this task again.\e[0m'
 
-        echo -e '\e[34m
-        https://bun.sh
-        https://brew.sh
-        \e[0m'
+      echo -e '\e[34m
+      https://bun.sh
+      https://brew.sh
+      \e[0m'
   setup:bun:windows:
     platforms: [windows]
     internal: true
     silent: true
-    cmds:
-      - |
-        if ! [ -z $(command -v choco) ]; then
-          echo "Installing Bun via Chocolatey..."
-          powershell -Command 'Start-Process -Wait -Verb RunAs -FilePath "choco" -ArgumentList "install bun -y"'
-          exit 0
-        fi
-        if ! [ -z $(command -v winget) ]; then
-          echo "Installing Bun via Winget..."
-          winget install --id Oven-sh.Bun
-          exit 0
-        fi
-        if ! [ -z $(command -v scoop) ]; then
-          echo "Installing Bun via Scoop..."
-          scoop install bun
-          exit 0
-        fi
-        echo -e '\e[33mERROR: No package manager found. Please install Bun manually.
+    cmd: |
+      if ! [ -z $(command -v choco) ]; then
+        echo "Installing Bun via Chocolatey..."
+        powershell -Command 'Start-Process -Wait -Verb RunAs -FilePath "choco" -ArgumentList "install bun -y"'
+        exit 0
+      fi
+      if ! [ -z $(command -v winget) ]; then
+        echo "Installing Bun via Winget..."
+        winget install --id Oven-sh.Bun
+        exit 0
+      fi
+      if ! [ -z $(command -v scoop) ]; then
+        echo "Installing Bun via Scoop..."
+        scoop install bun
+        exit 0
+      fi
+      echo -e '\e[33mERROR: No package manager found. Please install Bun manually.
 
-        Alternatively, install Chocolatey, Winget or Scoop and run this task again.\e[0m'
+      Alternatively, install Chocolatey, Winget or Scoop and run this task again.\e[0m'
 
-        echo -e '\e[34m
-        https://bun.sh
-        https://chocolatey.org/install
-        https://apps.microsoft.com/detail/9NBLGGH4NNS1
-        https://scoop.sh/
-        \e[0m'
+      echo -e '\e[34m
+      https://bun.sh
+      https://chocolatey.org/install
+      https://apps.microsoft.com/detail/9NBLGGH4NNS1
+      https://scoop.sh/
+      \e[0m'
 
   setup:rust:
     desc: "Setup rust"
     cmds:
       - task: setup:rust:posix
       - task: setup:rust:windows
-      - |
-        source "$HOME/.cargo/env"
-        rustup default stable
+      - source "$HOME/.cargo/env"; rustup default stable
     status:
       - if [ -z $(command -v rustup) ]; then exit 1; fi
       - if [ -z $(command -v rustc) ]; then exit 1; fi
@@ -434,49 +395,47 @@ tasks:
     platforms: [darwin, linux]
     internal: true
     silent: true
-    cmds:
-      - |
-        if ! [ -z $(command -v brew) ]; then
-          brew install rustup-init
-          rustup-init -y
-          source "$HOME/.cargo/env"; rustup default stable
-          exit 0
-        fi
-        echo -e '\e[34mHomebrew not found. Falling back to official install script.\e[0m'
-        nohup curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    cmd: |
+      if ! [ -z $(command -v brew) ]; then
+        brew install rustup-init
+        rustup-init -y
         source "$HOME/.cargo/env"; rustup default stable
+        exit 0
+      fi
+      echo -e '\e[34mHomebrew not found. Falling back to official install script.\e[0m'
+      nohup curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      source "$HOME/.cargo/env"; rustup default stable
   setup:rust:windows:
     platforms: [windows]
     internal: true
     silent: true
-    cmds:
-      - |
-        if ! [ -z $(command -v choco) ]; then
-          echo "Installing Rustup via Chocolatey..."
-          powershell -Command 'Start-Process -Wait -Verb RunAs -FilePath "choco" -ArgumentList "install rustup.install -y"'
-          exit 0
-        fi
-        if ! [ -z $(command -v winget) ]; then
-          echo "Installing Rustup via Winget..."
-          winget install --id Rustlang.Rustup
-          exit 0
-        fi
-        if ! [ -z $(command -v scoop) ]; then
-          echo "Installing Rustup via Scoop..."
-          scoop install rustup
-          exit 0
-        fi
-        echo -e '\e[33mERROR: No package manager found. Please install Rustup manually.
+    cmd: |
+      if ! [ -z $(command -v choco) ]; then
+        echo "Installing Rustup via Chocolatey..."
+        powershell -Command 'Start-Process -Wait -Verb RunAs -FilePath "choco" -ArgumentList "install rustup.install -y"'
+        exit 0
+      fi
+      if ! [ -z $(command -v winget) ]; then
+        echo "Installing Rustup via Winget..."
+        winget install --id Rustlang.Rustup
+        exit 0
+      fi
+      if ! [ -z $(command -v scoop) ]; then
+        echo "Installing Rustup via Scoop..."
+        scoop install rustup
+        exit 0
+      fi
+      echo -e '\e[33mERROR: No package manager found. Please install Rustup manually.
 
-        Alternatively, install Chocolatey, Winget or Scoop and run this task again.\e[0m'
+      Alternatively, install Chocolatey, Winget or Scoop and run this task again.\e[0m'
 
-        echo -e '\e[34m
-        https://rustup.rs
+      echo -e '\e[34m
+      https://rustup.rs
 
-        https://chocolatey.org/install
-        https://apps.microsoft.com/detail/9NBLGGH4NNS1
-        https://scoop.sh/
-        \e[0m'
+      https://chocolatey.org/install
+      https://apps.microsoft.com/detail/9NBLGGH4NNS1
+      https://scoop.sh/
+      \e[0m'
 
   setup:
     desc: Setup the project tooling.
@@ -488,26 +447,19 @@ tasks:
       - task: setup:platformdeps
       - task: setup:bun
       - task: setup:rust
-    cmds:
-      - silent: true
-        cmd: |
-          {{if eq OS "windows"}}
-            export PATH="$PATH;$HOME\.cargo\bin"
-          {{else}}
-            . "$HOME/.cargo/env"
-          {{end}}
-          rustup component add clippy
-          rustup target add aarch64-apple-darwin
-          rustup target add x86_64-apple-darwin
-          rustup target add x86_64-pc-windows-msvc
-          rustup target add x86_64-unknown-linux-gnu
-          export RUSTC_WRAPPER=""
-          cargo install cargo-binstall --locked
-          cargo binstall tauri-cli@1.5.11 --locked -y
-          cargo binstall cargo-edit@0.12.2 --locked -y
-          cargo binstall cargo-cache@0.8.3 --locked -y
-          cargo binstall dprint@0.45.1 --locked -y
-          cargo binstall sccache@0.8.0 --locked -y
+    silent: true
+    cmd: |
+      {{if eq OS "windows"}}
+        export PATH="$PATH;$HOME\.cargo\bin"
+      {{else}}
+        . "$HOME/.cargo/env"
+      {{end}}
+      rustup component add clippy
+      rustup target add aarch64-apple-darwin x86_64-apple-darwin x86_64-pc-windows-msvc x86_64-unknown-linux-gnu
+      export RUSTC_WRAPPER=""
+      cargo install cargo-binstall --locked -y
+      cargo binstall cargo-cache@0.8.3 cargo-edit@0.12.2 dprint@0.45.1 sccache@0.8.0 tauri-cli@1.5.11 --locked -y
+
   ##### /Developer Environment Setup #####
   ### Git Actions ###
   checkrepo:
@@ -524,8 +476,7 @@ tasks:
     summary: This will bump the version in `src-tauri/Cargo.toml` and `src-tauri/Tauri.toml`.
     cmds:
       - task: internal:bumpversion
-        vars:
-          NEW_VERSION: '{{print .CLI_ARGS | trimPrefix "v" }}'
+        vars: { NEW_VERSION: '{{print .CLI_ARGS | trimPrefix "v" }}' }
   internal:bumpversion:
     internal: true
     silent: true
@@ -534,9 +485,7 @@ tasks:
       - sh -c "sed -i 's#Memospot/[0-9]\+\.[0-9]\+\.[0-9]\+"#Memospot/{{.NEW_VERSION}}"#' ./src-tauri/Tauri.toml"
       - cargo generate-lockfile
       - task: fmt
-      - git add ./src-tauri/Tauri.toml
-      - git add ./src-tauri/Cargo.toml
-      - git add ./Cargo.lock
+      - git add ./src-tauri/Tauri.toml ./src-tauri/Cargo.toml ./Cargo.lock
       - git commit -m "Bump version to v{{.NEW_VERSION}}"
     requires: { vars: [NEW_VERSION] }
 

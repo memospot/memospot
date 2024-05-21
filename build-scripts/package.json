@@ -1,12 +1,13 @@
 {
   "name": "build-scripts",
-  "module": "index.ts",
+  "private": true,
   "type": "module",
   "scripts": {
     "fmt": "dprint fmt",
     "lint": "bunx @biomejs/biome ci ."
   },
   "devDependencies": {
+    "@types/async": "^3.2.24",
     "@types/bun": "^1.1.2",
     "@types/decompress": "^4.2.7",
     "jsdoc": "^4.0.3"
@@ -15,7 +16,6 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "assert": "^2.1.0",
     "async": "^3.2.5",
     "crypto": "^1.0.1",
     "decompress": "^4.2.1",

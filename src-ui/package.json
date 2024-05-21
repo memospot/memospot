@@ -1,8 +1,7 @@
 {
   "name": "src-ui",
-  "private": true,
-  "version": "1.0.0",
   "description": "Memos loader",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "bunx vite",
@@ -11,9 +10,6 @@
     "fmt": "dprint fmt --diff",
     "lint": "bunx @biomejs/biome ci ."
   },
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
   "dependencies": {
     "@tauri-apps/api": "^1.5.5"
   },

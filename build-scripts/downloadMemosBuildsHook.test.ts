@@ -1,5 +1,4 @@
-import { test } from "bun:test";
-import * as assert from "node:assert";
+import { expect, mock, test } from "bun:test";
 import * as crypto from "node:crypto";
 import { makeTripletFromFileName } from "./downloadMemosBuildsHook";
 
@@ -23,10 +22,11 @@ test("makeTripletFromFileName()", () => {
         "dummyos-x86_64": "x86_64-unknown-unknown"
     };
 
-    const prefix = crypto.randomUUID();
+    const random = mock(() => crypto.randomUUID());
     for (const [key, value] of Object.entries(goToRustMap)) {
+        const prefix = random();
         const goOsGoArch = [prefix, value].join("-");
         const rustTriplet = [prefix, makeTripletFromFileName(key)].join("-");
-        assert.equal(goOsGoArch, rustTriplet);
+        expect(goOsGoArch).toBe(rustTriplet);
     }
 });
