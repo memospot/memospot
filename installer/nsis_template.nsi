@@ -1,5 +1,3 @@
-; Source: https://github.com/tauri-apps/tauri/blob/dev/tooling/bundler/src/bundle/windows/templates/installer.nsi
-
 Unicode true
 ManifestDPIAware true
 ; Set the compression algorithm. Default is LZMA.
