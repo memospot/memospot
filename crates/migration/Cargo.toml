@@ -8,10 +8,6 @@ publish = false
 name = "migration"
 path = "src/lib.rs"
 
-[dependencies.entity]
-path = "../entity"
-version = "0.18.2"
-
 [dependencies.homedir]
 path = "../homedir"
 version = "0.1.1"

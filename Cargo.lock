@@ -987,14 +987,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "entity"
-version = "0.18.2"
-dependencies = [
- "sea-orm",
- "serde",
-]
-
-[[package]]
 name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2376,7 +2368,6 @@ dependencies = [
  "async_zip",
  "chrono",
  "config",
- "entity",
  "homedir",
  "itertools 0.12.1",
  "log",
@@ -2406,7 +2397,6 @@ dependencies = [
 name = "migration"
 version = "0.1.1"
 dependencies = [
- "entity",
  "homedir",
  "itertools 0.12.1",
  "log",

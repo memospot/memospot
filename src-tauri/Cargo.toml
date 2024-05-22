@@ -18,10 +18,6 @@ version = "1.5"
 path = "../crates/config"
 version = "0.0.1"
 
-[dependencies.entity]
-path = "../crates/entity"
-version = "0.18.2"
-
 [dependencies.homedir]
 path = "../crates/homedir"
 version = "0.1.1"
