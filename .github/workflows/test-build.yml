@@ -4,15 +4,13 @@ on:
     tags: v*
     branches: "*"
     paths:
+      - .github/workflows/test-build.yml
       - "**/bun.lockb"
       - "**/package.json"
       - "**/Cargo.{lock,toml}"
       - "**/Tauri.toml"
-      - build-scripts/*.ts
-      - crates/*.rs
-      - installer/*.{nsi,wxs}"
-      - src-tauri/*.rs
-      - src-ui/*.ts
+      - "**/*.{rs,ts}"
+      - "**/*.{nsi,wxs}"
 
   workflow_dispatch:
 
