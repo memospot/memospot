@@ -81,12 +81,12 @@ export function upxPackHook(options: UpxOptions) {
 }
 
 if (import.meta.main) {
-    const filesToPack = [
-        `./target/release/memospot${process.platform === "win32" ? ".exe" : ""}`
-    ];
+    const repoRoot = findRepositoryRoot();
+    const exe = process.platform === "win32" ? ".exe" : "";
+    const filesToPack = [`${repoRoot}/target/release/memospot${exe}`];
     const upxOptions = {
         bin: `upx${process.platform === "win32" ? ".exe" : ""}`,
-        flags: ["--best"],
+        flags: ["-9"],
         fileList: filesToPack,
         ignoreErrors: true
     };

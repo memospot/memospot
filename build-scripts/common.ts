@@ -30,7 +30,7 @@ export function runSync(command: string, args: string[], cwd?: string) {
             stderr: error
         };
     } catch (error) {
-        throw new Error(`ERROR: Failed to execute \`${fullCommand}]\`: ${error}`);
+        throw new Error(`ERROR: Failed to execute \`${fullCommand}\`: ${error}`);
     }
 }
 
