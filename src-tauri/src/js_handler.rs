@@ -17,3 +17,8 @@ impl MemosPort {
 pub async fn get_memos_port(memos_port: State<'_, MemosPort>) -> Result<u16, String> {
     Ok(*memos_port.0.lock().await)
 }
+
+#[command]
+pub async fn get_env(name: &str) -> Result<String, String> {
+    Ok(std::env::var(String::from(name)).unwrap_or(String::from("")))
+}

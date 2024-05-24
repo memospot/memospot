@@ -21,7 +21,8 @@ scope = ["$RESOURCE/*"]
 
 [tauri.allowlist.http]
 all = false
-request = false
+request = true
+scope = ["http://localhost*"]
 
 [tauri.allowlist.shell]
 all = false
@@ -61,9 +62,9 @@ targets = "all"
 # Tauri inherits permissions from the file, so it must have execute permissions before bundling
 externalBin = ["../server-dist/memos"]
 
-[tauri.bundle.resources]
-# Memos front-end
-"../server-dist/dist/" = "./dist/"
+# [tauri.bundle.resources]
+# Memos' sidecar web front end
+# "../server-dist/dist/" = "./dist/"
 
 [tauri.bundle.appimage]
 bundleMediaFramework = true
@@ -97,7 +98,6 @@ languages = [
     "PortugueseBR",
     "SimpChinese",
     "Spanish",
-    "Swedish",
     "TradChinese",
     "Turkish",
 ]
@@ -127,5 +127,6 @@ height = 720
 maximized = false
 resizable = true
 title = "Memospot"
-userAgent = "Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Memospot/0.1.4"
+userAgent = "Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Memospot/0.1.5"
 width = 1280
+# additionalBrowserArgs = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --allow-running-insecure-content --disable-web-security"

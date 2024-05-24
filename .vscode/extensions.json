@@ -1,9 +1,9 @@
 {
   "recommendations": [
-    "denoland.vscode-deno",
     "dprint.dprint",
     "EditorConfig.EditorConfig",
     "oderwat.indent-rainbow",
+    "oven.bun-vscode",
     "redhat.vscode-yaml",
     "rust-lang.rust-analyzer",
     "tamasfe.even-better-toml",

@@ -138,11 +138,11 @@ mod tests {
         env::remove_var("APPDATA");
     }
 
+    #[cfg(target_os = "windows")]
     #[test]
-    fn test_get_data_path() {
+    fn test_get_data_path_windows() {
         remove_envvars();
         env::set_var("LOCALAPPDATA", r"C:\Users\foo\AppData\Local");
-
         let data_path = get_app_data_path("memospot");
         assert_eq!(
             data_path,
@@ -156,7 +156,19 @@ mod tests {
             data_path,
             PathBuf::from(r"C:\Users\foo\AppData\Local\memospot")
         );
+    }
 
+    #[cfg(not(target_os = "windows"))]
+    #[test]
+    fn test_get_data_path_posix() {
+        remove_envvars();
+        env::set_var("HOME", r"/home/foo");
+        let data_path = get_app_data_path("memospot");
+        assert_eq!(data_path, PathBuf::from(r"/home/foo/.memospot"));
+    }
+
+    #[test]
+    fn test_get_data_path() {
         remove_envvars();
         let data_path = get_app_data_path("memospot");
         assert!(data_path.has_root());

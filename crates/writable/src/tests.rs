@@ -1,5 +1,7 @@
 use crate::PathExt;
 
+#[cfg(not(target_os = "windows"))]
+use nix::unistd::Uid;
 use std::fs;
 use std::fs::File;
 use std::io::{ErrorKind, Result, Write};
@@ -7,14 +9,25 @@ use std::path::PathBuf;
 use uuid::Uuid;
 
 #[test]
-fn test_directory() -> Result<()> {
-    let unwritable = PathBuf::from("/");
-    assert!(!&unwritable.is_writable()); // PathBuf
-    assert!(!unwritable.as_path().is_writable()); // Path
-
+fn test_writable_directory() -> Result<()> {
     let tmp_dir = tempfile::tempdir()?;
     assert!(&tmp_dir.path().to_path_buf().is_writable()); // PathBuf
     assert!(tmp_dir.path().is_writable()); // Path
+    Ok(())
+}
+
+#[test]
+fn test_unwritable_directory() -> Result<()> {
+    #[cfg(not(target_os = "windows"))]
+    {
+        if Uid::effective().is_root() {
+            return Ok(());
+        }
+    }
+
+    let unwritable = PathBuf::from("/");
+    assert!(!&unwritable.is_writable()); // PathBuf
+    assert!(!unwritable.as_path().is_writable()); // Path
     Ok(())
 }
 

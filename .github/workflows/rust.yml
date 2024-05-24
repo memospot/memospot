@@ -1,28 +1,30 @@
-name: "Test Build"
+name: Rust lint and test
+
 on:
-  push:
-    tags: v*
+  pull_request:
     branches: "*"
     paths:
-      - .github/workflows/test-build.yml
-      - "**/bun.lockb"
-      - "**/package.json"
+      - "**/*.rs"
       - "**/Cargo.{lock,toml}"
       - "**/Tauri.toml"
-      - "**/*.{rs,ts}"
-      - "**/*.{nsi,wxs}"
+
+  push:
+    branches-ignore: "release/*.*.*"
+    paths:
+      - "**/*.rs"
+      - "**/Cargo.{lock,toml}"
+      - "**/Tauri.toml"
 
   workflow_dispatch:
 
 env:
-  RUST_BACKTRACE: short
-  RUSTFLAGS: -Copt-level=1 -Cstrip=symbols
-  RUSTC_WRAPPER: sccache
-  CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: short
+  RUSTC_WRAPPER: sccache
+  RUSTFLAGS: -Copt-level=1 -Cstrip=symbols
+  CARGO_INCREMENTAL: 0
   SCCACHE_DIR: ${{github.workspace}}/.sccache
   SCCACHE_GHA_ENABLED: false # required to cache everything at once and avoid rate limiting
-  TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
   APT_DEPS: >-
     libappindicator3-dev
     libgtk-3-dev
@@ -35,9 +37,24 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
-  test-tauri-build:
-    name: Test Build
-    permissions: { contents: write }
+  fmt:
+    name: Check Rust code formatting
+    runs-on: ubuntu-latest
+    strategy: { fail-fast: false }
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@d8352f6b1d2e870bc5716e7a6d9b65c4cc244a1a
+        with: { toolchain: stable, components: rustfmt }
+
+      - name: Run rustfmt
+        run: cargo fmt --all -- --check
+
+  lint-and-test:
+    name: Rust lint and test
+    permissions: { actions: read, contents: read, security-events: write }
     strategy:
       fail-fast: false
       matrix:
@@ -49,7 +66,7 @@ jobs:
 
     runs-on: ${{ matrix.platform.runner }}
     steps:
-      - name: Checkout repository
+      - name: Checkout repository,
         uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
 
       # Set env vars
@@ -74,9 +91,9 @@ jobs:
         name: "[Linux] Disable initramfs and man-db update"
         continue-on-error: true
         run: |
-          sudo mkdir -p /etc/initramfs-tools/
-          echo -e 'update_initramfs=no\nbackup_initramfs=no' | sudo tee /etc/initramfs-tools/update-initramfs.conf
-          sudo rm -f /var/lib/man-db/auto-update
+          mkdir -p /etc/initramfs-tools/
+          echo -e 'update_initramfs=no\nbackup_initramfs=no' | tee /etc/initramfs-tools/update-initramfs.conf
+          rm -f /var/lib/man-db/auto-update
 
       # Platform deps
       - if: ${{ env.ACT && runner.os == 'Linux' }}
@@ -100,14 +117,15 @@ jobs:
         with: { xcode-version: latest-stable }
       # /Platform deps
 
-      - name: Install Task
-        uses: jaxxstorm/action-install-gh-release@71d17cb091aa850acb2a1a4cf87258d183eb941b
-        with: { repo: go-task/task, cache: enable, tag: v3.37.2 }
-
-      - if: ${{ runner.os == 'Linux' }}
-        name: "[Linux] Install UPX"
-        uses: crazy-max/ghaction-upx@0fc45e912669ba9e8fa2b430e97c8da2a632e29b
-        with: { install-only: true }
+      - name: Create dummy build dependencies
+        shell: bash
+        run: |
+          mkdir -p ./dist-ui ./server-dist/dist
+          touch ./server-dist/dist/index.html \
+                ./server-dist/memos-x86_64-unknown-linux-gnu \
+                ./server-dist/memos-x86_64-apple-darwin \
+                ./server-dist/memos-aarc64-apple-darwin \
+                ./server-dist/memos-x86_64-pc-windows-msvc.exe
 
       # Rust
       - name: Setup Rust toolchain
@@ -115,9 +133,10 @@ jobs:
         with:
           targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
           toolchain: stable
+          components: clippy
 
       - name: Setup Cargo cache
-        uses: swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84
+        uses: swatinem/rust-cache@9bdad043e88c75890e36ad3bbc8d27f0090dd609
         with: { prefix-key: "cargo-${{ matrix.platform.rust_target }}" }
       # /Rust
 
@@ -142,52 +161,35 @@ jobs:
         run: sccache --start-server || (sccache --stop-server && sleep 1 && sccache --start-server)
       # /sccache
 
-      # Bun
-      - uses: oven-sh/setup-bun@8f24390df009a496891208e5e36b8a1de1f45135
-        with: { bun-version: latest }
+      # Clippy with SARIF output
+      - if: ${{ github.event_name == 'pull_request' }}
+        name: "Install sarif-fmt and clippy-sarif"
+        uses: taiki-e/install-action@33429073072b7cebf2bbb9807209561b3d1decf7
+        with: { tool: "sarif-fmt@0.4.2,clippy-sarif@0.4.2" }
 
-      - # node_modules is not cached on Windows as it breaks subsequent runs
-        if: ${{ runner.os != 'Windows' }}
-        name: Cache node_modules
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
-        with:
-          key: node_modules-${{ runner.os }}-${{ hashFiles('**/bun.lockb', '**/package.json') }}
-          restore-keys: node_modules-${{ runner.os }}
-          path: ${{github.workspace}}/node_modules
+      - if: ${{ github.event_name == 'pull_request' }}
+        name: "[PR] Run clippy with SARIF output"
+        shell: bash
+        run: |
+          cargo clippy --all-features --all-targets --workspace --locked --message-format=json | clippy-sarif | tee clippy-results.sarif
+          cat clippy-results.sarif | sarif-fmt --color always
 
-      - name: Cache Bun dependencies
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
-        with:
-          key: bundeps-${{ runner.os }}-${{ hashFiles('**/bun.lockb', '**/package.json') }}
-          restore-keys: bundeps-${{ runner.os }}
-          path: ~/.bun
-
-      - name: Install Bun dependencies
-        run: bun install --frozen-lockfile || bun install --frozen-lockfile
-      # /Bun
-
-      - name: Cache memos builds
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
-        with:
-          key: memosbuilds-cross-${{ env.DATE_STRING }}
-          restore-keys: memosbuilds-cross
-          enableCrossOsArchive: true
-          path: ./server-dist
-
-      - name: Build Tauri App
-        uses: tauri-apps/tauri-action@d3b2759c553ebe71be2c4072209be6da0aa6808b
+      - if: ${{ github.event_name == 'pull_request' }}
+        name: "[PR] Upload SARIF analysis results to GitHub"
+        uses: github/codeql-action/upload-sarif@65c74964a9ed8c44ed9f19d4bbc5757a6a8e9ab9
         continue-on-error: true
-        env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
-        with:
-          tagName: v__VERSION__-pre
-          releaseName: "Memospot v__VERSION__-pre"
-          releaseBody: See the assets section below to download the app.
-          releaseDraft: true
-          prerelease: true
-          args: --verbose --target ${{ matrix.platform.rust_target }}
+        with: { sarif_file: ./clippy-results.sarif, wait-for-processing: true }
+      # /Clippy with SARIF output
 
-      - name: "Cleanup sccache"
-        run: "sccache --stop-server"
+      - if: ${{ github.event_name != 'pull_request' }}
+        name: Run clippy with standard output
+        run: cargo clippy --all-features --all-targets --workspace --locked
+
+      - name: Run all Rust tests
+        run: cargo test --workspace --lib -- --nocapture
+
+      - name: Cleanup sccache
+        run: sccache --stop-server
 
       - name: Show execution time
         shell: bash

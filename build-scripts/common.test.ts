@@ -1,29 +1,31 @@
-import { assert, assertThrows, isAbsolute, osPaths } from "../deps.ts";
-import { findRepositoryRoot } from "./common.ts";
+import { describe, expect, test } from "bun:test";
+import * as os from "node:os";
+import * as path from "node:path";
+import { findRepositoryRoot, runSync } from "./common";
 
-Deno.test("find repository root", async (t) => {
-    await t.step("validate git repository root", () => {
+describe("runSync()", () => {
+    test("validate error on invalid command", () => {
+        expect(() => {
+            runSync("/bin/invalid-command", []);
+        }).toThrowError(/failed to execute/i);
+    });
+});
+
+describe("findRepositoryRoot()", async () => {
+    test("validate git repository root", () => {
         const repoRoot = findRepositoryRoot();
-        assert(repoRoot.endsWith("memospot"));
+        expect(repoRoot.endsWith("memospot")).toBeTrue();
     });
 
-    await t.step("validate absolute path", () => {
+    test("validate absolute path", async () => {
         const repoRoot = findRepositoryRoot();
-        assert(isAbsolute(repoRoot));
+        expect(path.isAbsolute(repoRoot)).toBeTrue();
     });
 
-    await t.step("validate error on non-repo cwd", () => {
-        const cwd = Deno.cwd();
-
-        Deno.chdir(osPaths.temp()!);
-        assertThrows(
-            (): void => {
-                findRepositoryRoot();
-            },
-            Error,
-            "fatal: not a git repository"
-        );
-
-        Deno.chdir(cwd);
+    test("validate error on non-repo cwd", async () => {
+        expect(() => {
+            const cwd = os.tmpdir();
+            findRepositoryRoot(cwd);
+        }).toThrowError(/fatal: not a git repository/i);
     });
 });

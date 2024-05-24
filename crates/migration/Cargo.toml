@@ -1,16 +1,12 @@
 [package]
 name = "migration"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 publish = false
 
 [lib]
 name = "migration"
 path = "src/lib.rs"
-
-[dependencies.entity]
-path = "../entity"
-version = "0.18.2"
 
 [dependencies.homedir]
 path = "../homedir"

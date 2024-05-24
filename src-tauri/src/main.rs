@@ -77,7 +77,10 @@ fn main() {
         .manage(js_handler::MemosPort::manage(
             rtcfg.yaml.memos.port.unwrap_or_default(),
         ))
-        .invoke_handler(tauri::generate_handler![js_handler::get_memos_port])
+        .invoke_handler(tauri::generate_handler![
+            js_handler::get_memos_port,
+            js_handler::get_env
+        ])
         .setup(move |app| {
             // Add Tauri's resource directory as `_memospot_resources`.
             rtcfg_setup.paths._memospot_resources = app.path_resolver().resource_dir().unwrap();
@@ -102,7 +105,15 @@ fn main() {
             // Handle Memos shutdown.
             tauri::api::process::kill_children();
             tauri::async_runtime::block_on(async {
-                sqlite::checkpoint(&rtcfg).await;
+                let wal = rtcfg.paths.memos_db_file.with_extension("db-wal");
+                let mut retry = 10;
+                while wal.exists() && retry > 0 {
+                    if retry < 10 {
+                        std::thread::sleep(std::time::Duration::from_millis(500));
+                    }
+                    sqlite::checkpoint(&rtcfg).await;
+                    retry -= 1;
+                }
             });
 
             info!("Memospot closed.");

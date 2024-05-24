@@ -1,89 +1,64 @@
-import { assertEquals, assertIsError, assertStringIncludes } from "../deps.ts";
-import { upxPackHook } from "./upxPackHook.ts";
-import type { UpxOptions } from "./upxPackHook.d.ts";
+import { describe, expect, test } from "bun:test";
+import type { UpxOptions } from "./upxPackHook";
+import { upxPackHook } from "./upxPackHook";
 
-Deno.test("upxPackHook", async (t) => {
-    await t.step("validate error on unsupported platform", () => {
-        const expected = "`UPX pack` is not supported on";
-        const upxOptions: UpxOptions = {
-            bin: "upx",
-            flags: [],
-            fileList: [],
-            supportedPlatforms: [],
-            ignoreErrors: false,
-        };
-        {
+describe("upxPackHook", async () => {
+    test.each([
+        [
+            // unsupported platform
+            {
+                bin: "upx",
+                flags: [],
+                fileList: [],
+                supportedPlatforms: [],
+                ignoreErrors: false
+            } as UpxOptions,
+            /`UPX pack` is not supported on/i
+        ],
+        [
+            // non-existing file
+            {
+                bin: "upx",
+                flags: [],
+                fileList: ["non-existing-file"],
+                supportedPlatforms: ["win32", "linux", "darwin"],
+                ignoreErrors: false
+            } as UpxOptions,
+            /`UPX pack` failed for file `non-existing-file`/i
+        ],
+        [
+            // non-existing upx
+            {
+                bin: "non-existing-upx",
+                flags: [],
+                fileList: ["dummy-file"],
+                supportedPlatforms: ["win32", "linux", "darwin"],
+                ignoreErrors: false
+            } as UpxOptions,
+            /`UPX pack` failed/i
+        ],
+        [
+            // empty file list
+            {
+                bin: "upx",
+                flags: [],
+                fileList: [],
+                supportedPlatforms: ["win32", "linux", "darwin"],
+                ignoreErrors: false
+            } as UpxOptions,
+            /No files to pack/i
+        ]
+    ])("validate output with invalid UpxOptions", (upxOptions, expectedErrMsg) => {
+        expect((): void => {
             const { error } = upxPackHook(upxOptions);
-            assertIsError(error, Error, expected);
-        }
+            throw error;
+        }).toThrow(expectedErrMsg);
+
         {
             upxOptions.ignoreErrors = true;
             const { output, error } = upxPackHook(upxOptions);
-            assertEquals(error, null);
-            assertStringIncludes(output, expected);
-        }
-    });
-
-    await t.step("validate error on non-existing file", () => {
-        const expected = "`UPX pack` failed for file `non-existing-file`.";
-        const upxOptions: UpxOptions = {
-            bin: "upx",
-            flags: [],
-            fileList: ["non-existing-file"],
-            supportedPlatforms: ["windows", "linux", "darwin"],
-            ignoreErrors: false,
-        };
-        {
-            const { error } = upxPackHook(upxOptions);
-            assertIsError(error, Error, expected);
-        }
-        {
-            upxOptions.ignoreErrors = true;
-            const { output, error } = upxPackHook(upxOptions);
-            assertEquals(error, null);
-            assertStringIncludes(output, expected);
-        }
-    });
-
-    await t.step("validate error on non-existing upx", () => {
-        const expected = "`UPX pack` failed";
-        const upxOptions: UpxOptions = {
-            bin: "non-existing-upx",
-            flags: [],
-            fileList: ["dummy-file"],
-            supportedPlatforms: ["windows", "linux", "darwin"],
-            ignoreErrors: false,
-        };
-        {
-            const { error } = upxPackHook(upxOptions);
-            assertIsError(error as Error, Error, expected);
-        }
-        {
-            upxOptions.ignoreErrors = true;
-            const { output, error } = upxPackHook(upxOptions);
-            assertEquals(error, null);
-            assertStringIncludes(output, expected);
-        }
-    });
-
-    await t.step("validate error on empty file list", () => {
-        const expected = "No files to pack.";
-        const upxOptions: UpxOptions = {
-            bin: "upx",
-            flags: [],
-            fileList: [],
-            supportedPlatforms: ["windows", "linux", "darwin"],
-            ignoreErrors: false,
-        };
-        {
-            const { error } = upxPackHook(upxOptions);
-            assertIsError(error, Error, expected);
-        }
-        {
-            upxOptions.ignoreErrors = true;
-            const { output, error } = upxPackHook(upxOptions);
-            assertEquals(error, null);
-            assertStringIncludes(output, expected);
+            expect(error).toBeNull();
+            expect(output).toMatch(expectedErrMsg);
         }
     });
 });

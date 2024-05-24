@@ -3,11 +3,11 @@
 
 [package]
 name = "memospot"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["Lincoln Nogueira"]
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/lincolnthalles/memospot"
+repository = "https://github.com/memospot/memospot"
 description = "Memospot is a desktop version of Memos, a beautiful, privacy-first, lightweight note-taking service."
 
 [build-dependencies.tauri-build]
@@ -17,10 +17,6 @@ version = "1.5"
 [dependencies.config]
 path = "../crates/config"
 version = "0.0.1"
-
-[dependencies.entity]
-path = "../crates/entity"
-version = "0.18.2"
 
 [dependencies.homedir]
 path = "../crates/homedir"
@@ -91,7 +87,7 @@ features = ["sqlx-sqlite", "runtime-tokio-native-tls", "macros"]
 [dependencies.tauri]
 version = "1.6.1"
 default-features = true
-features = ["shell-sidecar", "shell-open", "config-toml", "window-all"]
+features = ["window-all", "shell-sidecar", "shell-open", "http-request", "config-toml"]
 
 [dependencies.tauri-utils]
 version = "1.5.3"

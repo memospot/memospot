@@ -1,7 +1,7 @@
 {
+  "$schema": "https://plugins.dprint.dev/dprint/dprint-plugin-json/latest/schema.json",
   "excludes": [
     "**/node_modules/*",
-    "**/.deno/*",
     "**/.dprint/*",
     "**/.git/*",
     "**/.sccache/*",
@@ -9,19 +9,21 @@
     "**/dist*/*"
   ],
   "includes": [
-    "**/*.{css,html,less,sass,scss}",
-    "**/*.{json,jsonc,toml}",
+    "**/*.{css,html}",
+    "**/*.{json,jsonc}",
     "**/*.{md}",
     "**/*.{rs}",
-    "**/*.{mts,ts,tsx}",
+    "**/*.{toml}",
+    "**/*.{ts,tsx}",
     "**/*.{yml,yaml}"
   ],
   "lineWidth": 96,
   "indentWidth": 4,
   "plugins": [
+    "https://plugins.dprint.dev/biome-0.5.3.wasm@d396bc0004696a810a4e9f2543ad11665c97acab5720160d7701a9c235c1acfd",
     "https://plugins.dprint.dev/exec-0.4.4.json@c207bf9b9a4ee1f0ecb75c594f774924baf62e8e53a2ce9d873816a408cecbf7",
-    "https://plugins.dprint.dev/prettier-0.36.0.json@5cc11bcb86b783ba9e33d171ee5caefe413a6ee31a4f1521592ccb28363412af",
-    "https://plugins.dprint.dev/toml-0.6.0.wasm@803a095830d6ae768ef096739ad1cdb5819dc39d2bfdfa9cc80781c893a24422"
+    "https://plugins.dprint.dev/prettier-0.40.0.json@68c668863ec834d4be0f6f5ccaab415df75336a992aceb7eeeb14fdf096a9e9c",
+    "https://plugins.dprint.dev/toml-0.6.1.wasm@b559604b8326a27142e07a7aa1673eec4c24b2722a67fa45d34e7129373e1903"
   ],
   "exec": {
     "commands": [
@@ -31,34 +33,40 @@
       }
     ]
   },
+  "biome": {
+    "associations": ["**/*.{json,jsonc}", "**/*.{ts,tsx}"],
+    "indentStyle": "space",
+    "indentSize": 4,
+    "lineEnding": "lf",
+    "lineWidth": 96,
+    "trailingComma": "none",
+    "json.indentSize": 2,
+    "json.indentStyle": "space",
+    "json.lineWidth": 96
+  },
+  "prettier": {
+    "associations": ["**/*.{css,html}", "**/*.md", "**/*.{yaml,yml}"],
+    "eol": "lf",
+    "printWidth": 96,
+    "useTabs": false,
+    "tabWidth": 4,
+    "proseWrap": "preserve",
+    "singleQuote": false,
+    "trailingComma": "none",
+    "plugin.jsDoc": true,
+    "css.tabWidth": 4,
+    "html.tabWidth": 4,
+    "md.tabWidth": 2,
+    "yaml.tabWidth": 2,
+    "yml.tabWidth": 2
+  },
   "toml": {
+    "associations": ["**/*.toml"],
     "lineWidth": 96,
     "useTabs": false,
     "indentWidth": 4,
     "newLineKind": "lf",
     "comment.forceLeadingSpace": false,
     "cargo.applyConventions": true
-  },
-  "prettier": {
-    "eol": "lf",
-    "printWidth": 96,
-    "proseWrap": "preserve",
-    "singleQuote": false,
-    "tabWidth": 40,
-    "trailingComma": "es5",
-    "useTabs": false,
-    "plugin.jsDoc": true,
-    "css.tabWidth": 4,
-    "html.tabWidth": 4,
-    "json.tabWidth": 2,
-    "jsonc.tabWidth": 2,
-    "jsonc.trailingComma": "none",
-    "md.tabWidth": 2,
-    "toml.tabWidth": 4,
-    "mts.tabWidth": 4,
-    "ts.tabWidth": 4,
-    "tsx.tabWidth": 4,
-    "yaml.tabWidth": 2,
-    "yml.tabWidth": 2
   }
 }

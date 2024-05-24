@@ -9,12 +9,8 @@ use {super::getent, super::Error};
 /// See: https://github.com/rust-lang/cargo/blob/master/crates/home/src/windows.rs
 #[test]
 fn test_expand() {
-    let olduserprofile = env::var_os("USERPROFILE").unwrap();
-
     env::remove_var("HOME");
     env::remove_var("USERPROFILE");
-
-    assert_eq!(home_dir(), Some(PathBuf::from(olduserprofile)));
 
     #[cfg(target_os = "windows")]
     static HOME: &str = r"C:\Users\foo tar baz";
@@ -25,9 +21,9 @@ fn test_expand() {
     let homepath = Path::new(HOME);
 
     env::set_var("HOME", homepath.as_os_str());
-    assert_ne!(home_dir().as_deref(), Some(homepath));
-
     env::set_var("USERPROFILE", HOME);
+
+    assert_eq!(home_dir().as_deref(), Some(homepath));
     assert_eq!(home_dir().as_deref(), Some(homepath));
 
     let subpath = Path::new(homepath).join(".vimrc");

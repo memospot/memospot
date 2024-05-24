@@ -7,16 +7,14 @@
 //! Notes:
 //! - This migration does data manipulation.
 //! - Migrating 300k resources takes about 20 seconds on a modern NVMe SSD and a decent CPU.
-//! - Valid up to Memos v0.21.1.
-//!
-//! - As of sea-orm 0.12.15 it's not possible to rename a previous migration without breaking all migrator functionality.
+//! - Valid from Memos v0.22.0 onwards.
 
 use log::{debug, info, LevelFilter};
 use sea_orm::entity::prelude::*;
 use sea_orm::*;
 use sea_orm_migration::prelude::*;
 
-use crate::resource_path;
+use crate::resource_path::{self};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "resource")]
@@ -29,11 +27,13 @@ pub struct Model {
     pub filename: String,
     #[sea_orm(column_type = "Binary(BlobSize::Blob(None))", nullable)]
     pub blob: Option<Vec<u8>>,
-    pub external_link: String,
     pub r#type: String,
     pub size: i32,
-    pub internal_path: String,
     pub memo_id: Option<i32>,
+    pub uid: String,
+    pub storage_type: String,
+    pub reference: String,
+    pub payload: String,
 }
 use Entity as Resource;
 
@@ -48,8 +48,8 @@ pub struct Migration;
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        info!("::Database Migrator:: Migrating resource internal paths from absolute to relative.  [<= v0.21.1]");
-        for column in [Column::Id, Column::Blob, Column::InternalPath] {
+        info!("::Database Migrator:: Migrating resource internal paths from absolute to relative.  [>= v0.22.0]");
+        for column in [Column::Id, Column::Blob, Column::Reference] {
             if !manager
                 .has_column(Resource.table_name(), column.as_str())
                 .await?
@@ -63,14 +63,16 @@ impl MigrationTrait for Migration {
 
         // Find elegible resources.
         let resources = Resource::find()
-            .columns([Column::Id, Column::InternalPath])
+            .columns([Column::Id, Column::Reference])
             .filter(
                 Condition::all()
                     .add(Column::Blob.is_null())
-                    .add(Column::InternalPath.is_not_null())
-                    .add(Column::InternalPath.ne(""))
+                    .add(Column::Reference.is_not_null())
+                    .add(Column::Reference.ne(""))
                     .not()
-                    .add(Column::InternalPath.starts_with("assets/")),
+                    .add(Column::Reference.starts_with("assets/"))
+                    .not()
+                    .add(Column::Reference.starts_with("http")),
             )
             .all(db)
             .await?;
@@ -91,7 +93,7 @@ impl MigrationTrait for Migration {
         let mut migrated_count = 0;
         let transaction = db.begin().await?;
         for resource in resources {
-            let mut new_path = resource.internal_path.clone();
+            let mut new_path = resource.reference.clone();
 
             // Strip known path prefixes.
             for p in &paths {
@@ -111,9 +113,9 @@ impl MigrationTrait for Migration {
             new_path = new_path.trim_start_matches('/').to_string();
 
             // Update only if the path has changed.
-            if new_path != resource.internal_path {
+            if new_path != resource.reference {
                 Resource::update_many()
-                    .col_expr(Column::InternalPath, Expr::value(&new_path))
+                    .col_expr(Column::Reference, Expr::value(&new_path))
                     .filter(Column::Id.eq(resource.id))
                     .exec(&transaction)
                     .await?;
@@ -131,7 +133,7 @@ impl MigrationTrait for Migration {
                     LevelFilter::Debug => {
                         debug!(
                             "[Running] Migrated {}/{} paths.\nLast: {} => {}",
-                            migrated_count, total_resources, &resource.internal_path, new_path
+                            migrated_count, total_resources, &resource.reference, new_path
                         );
                     }
                     _ => {}

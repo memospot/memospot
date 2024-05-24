@@ -1,7 +1,8 @@
 pub use sea_orm_migration::prelude::*;
 
 mod m20220220_000001_migrate_resource_paths;
-mod path;
+mod m20240522_000002_migrate_resource_paths;
+mod resource_path;
 
 pub struct Migrator;
 
@@ -9,7 +10,10 @@ pub struct Migrator;
 impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
         // Migration list.
-        vec![Box::new(m20220220_000001_migrate_resource_paths::Migration)]
+        vec![
+            Box::new(m20220220_000001_migrate_resource_paths::Migration),
+            Box::new(m20240522_000002_migrate_resource_paths::Migration),
+        ]
     }
     // Override the name of migration table.
     fn migration_table_name() -> sea_orm::DynIden {
