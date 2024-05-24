@@ -16,18 +16,17 @@ fn test_writable_directory() -> Result<()> {
     Ok(())
 }
 
+#[cfg(not(target_os = "windows"))]
 #[test]
 fn test_unwritable_directory() -> Result<()> {
-    #[cfg(not(target_os = "windows"))]
-    {
-        if Uid::effective().is_root() {
-            return Ok(());
-        }
+    if Uid::effective().is_root() {
+        return Ok(());
     }
 
     let unwritable = PathBuf::from("/");
     assert!(!&unwritable.is_writable()); // PathBuf
     assert!(!unwritable.as_path().is_writable()); // Path
+
     Ok(())
 }
 
