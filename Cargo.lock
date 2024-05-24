@@ -2395,7 +2395,7 @@ dependencies = [
 
 [[package]]
 name = "migration"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "homedir",
  "itertools 0.12.1",

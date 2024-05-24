@@ -8,13 +8,15 @@
 //! - This migration does data manipulation.
 //! - Migrating 300k resources takes about 20 seconds on a modern NVMe SSD and a decent CPU.
 //! - Valid up to Memos v0.21.1.
+//!
+//! - As of sea-orm 0.12.15 it's not possible to rename a previous migration without breaking all migrator functionality.
 
 use log::{debug, info, LevelFilter};
 use sea_orm::entity::prelude::*;
 use sea_orm::*;
 use sea_orm_migration::prelude::*;
 
-use crate::path_migration;
+use crate::resource_path;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "resource")]
@@ -52,21 +54,23 @@ impl MigrationTrait for Migration {
                 .has_column(Resource.table_name(), column.as_str())
                 .await?
             {
-                // Unsupported database schema.
+                // Database schema not supported. Mark the migration as completed.
                 return Ok(());
             }
         }
 
         let db = manager.get_connection();
 
-        // Find all resources with internal paths that are not null and have no blob.
+        // Find elegible resources.
         let resources = Resource::find()
             .columns([Column::Id, Column::InternalPath])
             .filter(
                 Condition::all()
                     .add(Column::Blob.is_null())
                     .add(Column::InternalPath.is_not_null())
-                    .add(Column::InternalPath.ne("")),
+                    .add(Column::InternalPath.ne(""))
+                    .not()
+                    .add(Column::InternalPath.starts_with("assets/")),
             )
             .all(db)
             .await?;
@@ -82,7 +86,7 @@ impl MigrationTrait for Migration {
         };
         let log_interval = total_resources / log_step;
 
-        let paths: Vec<String> = path_migration::build_path_list();
+        let paths: Vec<String> = resource_path::build_path_list();
 
         let mut migrated_count = 0;
         let transaction = db.begin().await?;
@@ -94,7 +98,7 @@ impl MigrationTrait for Migration {
                 new_path = new_path.trim_start_matches(p).to_string();
             }
 
-            new_path = path_migration::to_slash(&new_path);
+            new_path = resource_path::to_slash(&new_path);
 
             // Fall back: strip everything before "/assets/".
             if new_path.contains("/assets/") {
