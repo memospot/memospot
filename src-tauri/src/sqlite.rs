@@ -42,15 +42,6 @@ pub async fn get_database_connection(rtcfg: &RuntimeConfig) -> Result<DatabaseCo
 /// data is commited to the main database and that it's properly closed.
 pub async fn checkpoint(rtcfg: &RuntimeConfig) {
     debug!("Checkpointing database WAL...");
-    let wal_file = rtcfg.paths.memos_db_file.with_extension("db-wal");
-    if !wal_file.exists() {
-        debug!(
-            "WAL file {} does not exist, skipping checkpoint.",
-            wal_file.to_string_lossy()
-        );
-        return;
-    }
-
     let db = match get_database_connection(rtcfg).await {
         Ok(conn) => conn,
         Err(err) => {

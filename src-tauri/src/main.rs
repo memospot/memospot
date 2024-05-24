@@ -105,7 +105,15 @@ fn main() {
             // Handle Memos shutdown.
             tauri::api::process::kill_children();
             tauri::async_runtime::block_on(async {
-                sqlite::checkpoint(&rtcfg).await;
+                let wal = rtcfg.paths.memos_db_file.with_extension("db-wal");
+                let mut retry = 10;
+                while wal.exists() && retry > 0 {
+                    if retry < 10 {
+                        std::thread::sleep(std::time::Duration::from_millis(500));
+                    }
+                    sqlite::checkpoint(&rtcfg).await;
+                    retry -= 1;
+                }
             });
 
             info!("Memospot closed.");
