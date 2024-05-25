@@ -91,9 +91,9 @@ jobs:
         name: "[Linux] Disable initramfs and man-db update"
         continue-on-error: true
         run: |
-          mkdir -p /etc/initramfs-tools/
-          echo -e 'update_initramfs=no\nbackup_initramfs=no' | tee /etc/initramfs-tools/update-initramfs.conf
-          rm -f /var/lib/man-db/auto-update
+          sudo mkdir -p /etc/initramfs-tools/
+          echo -e 'update_initramfs=no\nbackup_initramfs=no' | sudo tee /etc/initramfs-tools/update-initramfs.conf
+          sudo rm -f /var/lib/man-db/auto-update
 
       # Platform deps
       - if: ${{ env.ACT && runner.os == 'Linux' }}
