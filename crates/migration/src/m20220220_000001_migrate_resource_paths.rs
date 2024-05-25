@@ -12,35 +12,37 @@
 //! - As of sea-orm 0.12.15 it's not possible to rename a previous migration without breaking all migrator functionality.
 
 use log::{debug, info, LevelFilter};
-use sea_orm::entity::prelude::*;
 use sea_orm::*;
 use sea_orm_migration::prelude::*;
 
 use crate::resource_path;
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(table_name = "resource")]
-pub struct Model {
-    #[sea_orm(primary_key)]
-    pub id: i32,
-    pub creator_id: i32,
-    pub created_ts: i64,
-    pub updated_ts: i64,
-    pub filename: String,
-    #[sea_orm(column_type = "Binary(BlobSize::Blob(None))", nullable)]
-    pub blob: Option<Vec<u8>>,
-    pub external_link: String,
-    pub r#type: String,
-    pub size: i32,
-    pub internal_path: String,
-    pub memo_id: Option<i32>,
+mod resource {
+    use sea_orm::entity::prelude::*;
+    #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
+    #[sea_orm(table_name = "resource")]
+    pub struct Model {
+        #[sea_orm(primary_key)]
+        pub id: i32,
+        pub creator_id: i32,
+        pub created_ts: i64,
+        pub updated_ts: i64,
+        pub filename: String,
+        #[sea_orm(column_type = "Binary(BlobSize::Blob(None))", nullable)]
+        pub blob: Option<Vec<u8>>,
+        pub external_link: String,
+        pub r#type: String,
+        pub size: i32,
+        pub internal_path: String,
+        pub memo_id: Option<i32>,
+    }
+
+    #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+    pub enum Relation {}
+
+    impl ActiveModelBehavior for ActiveModel {}
 }
-use Entity as Resource;
-
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
-
-impl ActiveModelBehavior for ActiveModel {}
+use resource::Entity as Resource;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -49,13 +51,24 @@ pub struct Migration;
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         info!("::Database Migrator:: Migrating resource internal paths from absolute to relative.  [<= v0.21.1]");
-        for column in [Column::Id, Column::Blob, Column::InternalPath] {
-            if !manager
-                .has_column(Resource.table_name(), column.as_str())
-                .await?
-            {
-                // Database schema not supported. Mark the migration as completed.
-                return Ok(());
+
+        // Check the `resource` table schema.
+        {
+            if !manager.has_table(Resource.table_name()).await? {
+                return Ok(()); // Schema not supported.
+            }
+
+            for column in [
+                resource::Column::Id,
+                resource::Column::Blob,
+                resource::Column::InternalPath,
+            ] {
+                if !manager
+                    .has_column(Resource.table_name(), column.as_str())
+                    .await?
+                {
+                    return Ok(()); // Schema not supported.
+                }
             }
         }
 
@@ -63,14 +76,14 @@ impl MigrationTrait for Migration {
 
         // Find elegible resources.
         let resources = Resource::find()
-            .columns([Column::Id, Column::InternalPath])
+            .columns([resource::Column::Id, resource::Column::InternalPath])
             .filter(
                 Condition::all()
-                    .add(Column::Blob.is_null())
-                    .add(Column::InternalPath.is_not_null())
-                    .add(Column::InternalPath.ne(""))
+                    .add(resource::Column::Blob.is_null())
+                    .add(resource::Column::InternalPath.is_not_null())
+                    .add(resource::Column::InternalPath.ne(""))
                     .not()
-                    .add(Column::InternalPath.starts_with("assets/")),
+                    .add(resource::Column::InternalPath.starts_with("assets/")),
             )
             .all(db)
             .await?;
@@ -113,8 +126,8 @@ impl MigrationTrait for Migration {
             // Update only if the path has changed.
             if new_path != resource.internal_path {
                 Resource::update_many()
-                    .col_expr(Column::InternalPath, Expr::value(&new_path))
-                    .filter(Column::Id.eq(resource.id))
+                    .col_expr(resource::Column::InternalPath, Expr::value(&new_path))
+                    .filter(resource::Column::Id.eq(resource.id))
                     .exec(&transaction)
                     .await?;
             }

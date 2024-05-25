@@ -1,5 +1,5 @@
 use homedir::HomeDirExt;
-use log::error;
+use log::{error, info, warn};
 use native_dialog::{MessageDialog, MessageType};
 use path_clean::PathClean;
 use std::env;
@@ -48,6 +48,7 @@ pub fn panic_dialog(msg: &str) {
 }
 
 pub fn info_dialog(msg: &str) {
+    info!("{}", msg);
     MessageDialog::new()
         .set_type(MessageType::Info)
         .set_title("Info")
@@ -57,6 +58,7 @@ pub fn info_dialog(msg: &str) {
 }
 
 pub fn warn_dialog(msg: &str) {
+    warn!("{}", msg);
     MessageDialog::new()
         .set_type(MessageType::Warning)
         .set_title("Warning")
@@ -66,6 +68,7 @@ pub fn warn_dialog(msg: &str) {
 }
 
 pub fn error_dialog(msg: &str) {
+    error!("{}", msg);
     MessageDialog::new()
         .set_type(MessageType::Error)
         .set_title("Error")

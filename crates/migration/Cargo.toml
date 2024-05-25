@@ -29,3 +29,10 @@ version = "0.12"
 default-features = false
 # https://www.sea-ql.org/SeaORM/docs/install-and-config/database-and-async-runtime/
 features = ["sqlx-sqlite", "runtime-tokio-native-tls"] # runtime-tokio-rustls
+
+[dependencies.serde]
+features = ["derive"]
+version = "1.0"
+
+[dependencies.serde_json]
+version = "1.0"

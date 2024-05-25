@@ -209,7 +209,11 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
         panic_dialog!("Failed to close database connection:\n{}", e.to_string());
     });
 
-    info!("Database migrations completed successfully! Applied {} migrations. Operation took {:?}.", migration_amount, start_time.elapsed());
+    info!(
+        "Database migrations took {:?}. Ran {} migrations.",
+        start_time.elapsed(),
+        migration_amount,
+    );
 }
 
 /// Ensure that WebView is available.

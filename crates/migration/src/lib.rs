@@ -2,6 +2,7 @@ pub use sea_orm_migration::prelude::*;
 
 mod m20220220_000001_migrate_resource_paths;
 mod m20240522_000002_migrate_resource_paths;
+mod m20240525_000001_storage_settings;
 mod resource_path;
 
 pub struct Migrator;
@@ -13,6 +14,7 @@ impl MigratorTrait for Migrator {
         vec![
             Box::new(m20220220_000001_migrate_resource_paths::Migration),
             Box::new(m20240522_000002_migrate_resource_paths::Migration),
+            Box::new(m20240525_000001_storage_settings::Migration),
         ]
     }
     // Override the name of migration table.

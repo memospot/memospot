@@ -2402,6 +2402,8 @@ dependencies = [
  "log",
  "sea-orm",
  "sea-orm-migration",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

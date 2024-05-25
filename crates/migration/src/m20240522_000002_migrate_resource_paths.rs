@@ -10,37 +10,38 @@
 //! - Valid from Memos v0.22.0 onwards.
 
 use log::{debug, info, LevelFilter};
-use sea_orm::entity::prelude::*;
 use sea_orm::*;
 use sea_orm_migration::prelude::*;
 
 use crate::resource_path::{self};
+mod resource {
+    use sea_orm::entity::prelude::*;
+    #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
+    #[sea_orm(table_name = "resource")]
+    pub struct Model {
+        #[sea_orm(primary_key)]
+        pub id: i32,
+        pub creator_id: i32,
+        pub created_ts: i64,
+        pub updated_ts: i64,
+        pub filename: String,
+        #[sea_orm(column_type = "Binary(BlobSize::Blob(None))", nullable)]
+        pub blob: Option<Vec<u8>>,
+        pub r#type: String,
+        pub size: i32,
+        pub memo_id: Option<i32>,
+        pub uid: String,
+        pub storage_type: String,
+        pub reference: String,
+        pub payload: String,
+    }
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(table_name = "resource")]
-pub struct Model {
-    #[sea_orm(primary_key)]
-    pub id: i32,
-    pub creator_id: i32,
-    pub created_ts: i64,
-    pub updated_ts: i64,
-    pub filename: String,
-    #[sea_orm(column_type = "Binary(BlobSize::Blob(None))", nullable)]
-    pub blob: Option<Vec<u8>>,
-    pub r#type: String,
-    pub size: i32,
-    pub memo_id: Option<i32>,
-    pub uid: String,
-    pub storage_type: String,
-    pub reference: String,
-    pub payload: String,
+    #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+    pub enum Relation {}
+
+    impl ActiveModelBehavior for ActiveModel {}
 }
-use Entity as Resource;
-
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
-
-impl ActiveModelBehavior for ActiveModel {}
+use resource::Entity as Resource;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -49,13 +50,24 @@ pub struct Migration;
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         info!("::Database Migrator:: Migrating resource internal paths from absolute to relative.  [>= v0.22.0]");
-        for column in [Column::Id, Column::Blob, Column::Reference] {
-            if !manager
-                .has_column(Resource.table_name(), column.as_str())
-                .await?
-            {
-                // Database schema not supported. Mark the migration as completed.
-                return Ok(());
+
+        // Check the `resource` table schema.
+        {
+            if !manager.has_table(Resource.table_name()).await? {
+                return Ok(()); // Schema not supported.
+            }
+
+            for column in [
+                resource::Column::Id,
+                resource::Column::Blob,
+                resource::Column::Reference,
+            ] {
+                if !manager
+                    .has_column(Resource.table_name(), column.as_str())
+                    .await?
+                {
+                    return Ok(()); // Schema not supported.
+                }
             }
         }
 
@@ -63,16 +75,16 @@ impl MigrationTrait for Migration {
 
         // Find elegible resources.
         let resources = Resource::find()
-            .columns([Column::Id, Column::Reference])
+            .columns([resource::Column::Id, resource::Column::Reference])
             .filter(
                 Condition::all()
-                    .add(Column::Blob.is_null())
-                    .add(Column::Reference.is_not_null())
-                    .add(Column::Reference.ne(""))
+                    .add(resource::Column::Blob.is_null())
+                    .add(resource::Column::Reference.is_not_null())
+                    .add(resource::Column::Reference.ne(""))
                     .not()
-                    .add(Column::Reference.starts_with("assets/"))
+                    .add(resource::Column::Reference.starts_with("assets/"))
                     .not()
-                    .add(Column::Reference.starts_with("http")),
+                    .add(resource::Column::Reference.starts_with("http")),
             )
             .all(db)
             .await?;
@@ -115,8 +127,8 @@ impl MigrationTrait for Migration {
             // Update only if the path has changed.
             if new_path != resource.reference {
                 Resource::update_many()
-                    .col_expr(Column::Reference, Expr::value(&new_path))
-                    .filter(Column::Id.eq(resource.id))
+                    .col_expr(resource::Column::Reference, Expr::value(&new_path))
+                    .filter(resource::Column::Id.eq(resource.id))
                     .exec(&transaction)
                     .await?;
             }
@@ -144,13 +156,7 @@ impl MigrationTrait for Migration {
         Ok(())
     }
 
-    /// This migration is not reversible.
-    ///
-    /// Also, even older Memos's versions are able to load assets with relative paths,
-    /// they just don't store them that way.
-    ///
-    /// Returns `Ok` without doing anything.
     async fn down(&self, _manager: &SchemaManager) -> Result<(), DbErr> {
-        Ok(())
+        Ok(()) // Not reversible.
     }
 }
