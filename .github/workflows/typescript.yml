@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
 
       - name: Setup Biome
-        uses: biomejs/setup-biome@b9af8bac86b0da736cfbfadbfeb3f7463da083f2
+        uses: biomejs/setup-biome@1cbe33ead22c7a2fded3b52fa2893611c815c9b5
         with:
           version: latest
 
