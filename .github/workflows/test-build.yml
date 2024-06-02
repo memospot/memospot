@@ -123,7 +123,7 @@ jobs:
 
       # sccache
       - name: Install sccache
-        uses: taiki-e/install-action@33429073072b7cebf2bbb9807209561b3d1decf7
+        uses: taiki-e/install-action@51b8ba088c63d8750c618764ff2030742da0ec19
         with: { tool: sccache@0.8.0 }
 
       - name: Initialize sccache environment
