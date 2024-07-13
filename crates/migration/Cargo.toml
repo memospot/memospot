@@ -14,7 +14,6 @@ version = "0.1.1"
 
 [dependencies.itertools]
 version = "0.12.1"
-default-features = false
 
 [dependencies.log]
 version = "0.4.21"
