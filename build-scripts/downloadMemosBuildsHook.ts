@@ -19,7 +19,6 @@ import type { GitHubAsset, GitHubRelease } from "./types/downloadMemosBuildsHook
  * - `x86_64-unknown-linux-gnu`
  * - `x86_64-apple-darwin`
  * - `aarch64-apple-darwin`
- *
  * @param file The file name.
  * @returns The target triple.
  */
@@ -64,6 +63,10 @@ export function makeTripletFromFileName(filename: string): string {
 
 /**
  * Calculate the sha256 hex digest of a given file.
+ *
+ * Note: Uses Bun-specific APIs.
+ * @param filePath The path to the file.
+ * @returns The sha256 hex digest of the file.
  */
 export async function sha256File(filePath: string): Promise<string> {
     const file = Bun.file(filePath);
@@ -76,6 +79,7 @@ export async function sha256File(filePath: string): Promise<string> {
 /**
  * Parse a sum file.
  *
+ * Note: Uses Bun-specific APIs.
  * @param source - The path to the sum file. Might be a URL or local file.
  * @returns Map of files and their sums if valid JSON; otherwise empty object (`{}`).
  */
@@ -108,9 +112,29 @@ export async function parseSha256Sums(source: string): Promise<Record<string, st
     return fileHashes;
 }
 
+/**
+ * Download a file from a URL and save it to a local file.
+ * @param srcURL The URL of the file to download.
+ * @param dstFile The local file path to save the downloaded file.
+ */
 export async function downloadFile(srcURL: string, dstFile: string) {
-    const response = await fetch(srcURL, { redirect: "follow" });
-    return await Bun.write(dstFile, response);
+    const file = Bun.file(dstFile);
+    const writer = file.writer();
+
+    await fetch(srcURL, { redirect: "follow" }).then(async (response) => {
+        if (!response.ok) {
+            throw new Error(`Failed to download file: ${response.statusText}`);
+        }
+        const reader = response.body?.getReader();
+        while (reader) {
+            const { done, value } = await reader.read();
+            if (done) {
+                break;
+            }
+            writer.write(value);
+        }
+    });
+    writer.end();
 }
 
 async function downloadServerBinaries() {
@@ -125,8 +149,11 @@ async function downloadServerBinaries() {
         "memos-*-windows-x86_64.zip"
     ];
 
-    // fetch data from github api
+    // Fetch data from GitHub API.
     const response = await fetch(repoUrl, { method: "GET", redirect: "follow" });
+    if (!response.ok) {
+        throw new Error(`Failed to fetch GitHub release: ${response.statusText}`);
+    }
     const ghRelease = (await response.json()) as GitHubRelease;
     const releaseAssets = ghRelease.assets as GitHubAsset[];
 
@@ -153,8 +180,8 @@ async function downloadServerBinaries() {
 
     console.log(`\x1b[32mMatched ${selectedFiles.length} files\x1b[0m`);
 
-    // download files in parallel
-    console.log("\x1b[35mDownloading GitHub assets...\x1b[0m");
+    // Download files in parallel.
+    console.log("\x1b[34mDownloading GitHub assets...\x1b[0m");
     await async
         .eachLimit(selectedFiles, 5, async (ghAsset: GitHubAsset) => {
             const fileName = ghAsset.name;
@@ -163,24 +190,23 @@ async function downloadServerBinaries() {
             if (fs.existsSync(dstPath)) {
                 fs.rmSync(dstPath, { force: true, recursive: true });
             }
-            process.stdout.write(`\x1b[33m${ghAsset.browser_download_url}\x1b[0m ...\n`);
-            // console.log(`Downloading ${fileName} from ${ghAsset.browser_download_url}...`);
+            process.stdout.write(`${ghAsset.browser_download_url}\n`);
             await downloadFile(ghAsset.browser_download_url, dstPath)
                 .then(() => {
-                    console.log(`\x1b[32m[OK]\x1b[0m \x1b[36m${fileName}\x1b[0m`);
+                    console.log(`\x1b[32m[OK]\x1b[0m Downloaded \x1b[36m${fileName}\x1b[0m`);
                 })
                 .catch((error) => {
                     console.log(`\x1b[31m[ERROR] ${fileName}\x1b[0m: ${error}`);
                     throw error;
                 });
         })
-        .catch((error) => {
+        .catch((error: any) => {
             throw error;
         });
 
-    // check hashes via memos_SHA256SUMS.txt
+    // Check hashes via memos_SHA256SUMS.txt.
     const fileHashes = await parseSha256Sums(sha256sums);
-    console.log("\x1b[35mChecking downloaded file hashes...\x1b[0m");
+    console.log("\x1b[34mChecking downloaded file hashes...\x1b[0m");
     await async
         .eachLimit(selectedFiles, 2, async (file: GitHubAsset) => {
             const fileName = file.name;
@@ -200,8 +226,8 @@ async function downloadServerBinaries() {
             throw error;
         });
 
-    // extract files in parallel
-    console.log("\x1b[35mExtracting downloaded files...\x1b[0m");
+    // Extract files in parallel.
+    console.log("\x1b[34mExtracting downloaded files...\x1b[0m");
     await async.eachLimit(selectedFiles, 2, async (file: GitHubAsset) => {
         const uuid = crypto.randomUUID();
         const extractDir = `./server-dist/${uuid}`;
@@ -229,16 +255,16 @@ async function downloadServerBinaries() {
 
         const triplet = makeTripletFromFileName(fileName);
         fs.renameSync(`${extractDir}/memos${exe}`, `./server-dist/memos-${triplet}${exe}`);
-        // chmod +x downloaded file
+        // chmod +x downloaded file.
         if (process.platform !== "win32") {
             fs.chmodSync(`./server-dist/memos-${triplet}${exe}`, 0o755);
         }
 
-        // check if there's a sidecar front-end folder (Memos v0.18.2 - v0.21.0)
+        // Check if there's a sidecar front-end folder (Memos v0.18.2 - v0.21.0).
         const sidecarDist = `${extractDir}/dist`;
         const frontendDist = "./server-dist/dist";
         if (fs.existsSync(sidecarDist)) {
-            // move front-end dist folder only once, as it's the same for all platforms.
+            // Move front-end dist folder only once, as it's the same for all platforms.
             if (!fs.existsSync(frontendDist)) {
                 fs.renameSync(sidecarDist, frontendDist);
             }
@@ -264,7 +290,7 @@ async function main() {
         fs.mkdirSync(serverDistDir, { recursive: true, mode: 0o755 });
     }
 
-    // remove a previous dist folder, if it exists
+    // Remove a previous dist folder (Memos v0.18.2 - v0.21.0), if it exists.
     const distDir = "./server-dist/dist";
     if (serverDistDirExists && fs.existsSync(distDir) && fs.statSync(distDir).isDirectory()) {
         fs.rmSync(distDir, { force: true, recursive: true });
@@ -278,7 +304,14 @@ async function main() {
 }
 
 if (import.meta.main) {
-    await main().catch((e) => {
-        throw e;
+    // This script will download about 52 MB of data for the main supported platforms
+    // (aarch64-apple-darwin, x86_64-apple-darwin, x86_64-pc-windows-msvc and x86_64-unknown-linux-gnu).
+    // It will take around 7 minutes on a slow 1 Mbps connection.
+    const timeoutMinutes = 10;
+    const wrapped = async.timeout(main, timeoutMinutes * 60 * 1000, "Script timed out.");
+    wrapped((err?: Error | null, _data?: any) => {
+        if (err) {
+            throw err;
+        }
     });
 }
