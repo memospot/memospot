@@ -148,16 +148,25 @@ tasks:
     ignore_error: true
     cmds: [taskkill /f /t /im memospot.exe >nul 2>&1, taskkill /f /t /im memos.exe >nul 2>&1]
 
-  update-ts-deps:
+  update-deps:
+    desc: Update all dependencies
+    deps: [task: update-deps:dprint, task: update-deps:rust, task: update-deps:ts]
+
+  update-deps:dprint:
+    desc: Update dprint dependencies
+    cmd: dprint config update
+
+  update-deps:rust:
+    desc: Update Rust dependencies
+    cmd: cargo update
+
+  update-deps:ts:
     desc: Update TypeScript dependencies
     cmds:
       - bun update
       - cd ./src-ui; bun update
       - cd ./build-scripts; bun update
-
-  update-rust-deps:
-    desc: Update Rust dependencies
-    cmd: cargo update
+      - task: fmt
 
   update-toolchain:
     desc: Update project toolchain
