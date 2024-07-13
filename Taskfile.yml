@@ -53,7 +53,7 @@ tasks:
   tauri:hook:before-dev:
     desc: Before dev scripts
     cmds:
-      - bun install || bun install # bun install is currently flaky (Bun 1.1.8)
+      - bun install || bun install
       - task: download-memos-binaries
       - task: dev:ui
 
@@ -332,6 +332,8 @@ tasks:
     cmds:
       - task: setup:bun:posix
       - task: setup:bun:windows
+      - git config diff.lockb.textconv bun
+      - git config diff.lockb.binary true
     status:
       - if [ -z $(command -v bun) ]; then exit 1; fi
   setup:bun:posix:
