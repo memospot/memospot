@@ -8,19 +8,19 @@
   },
   "devDependencies": {
     "@types/async": "^3.2.24",
-    "@types/bun": "^1.1.2",
+    "@types/bun": "^1.1.6",
     "@types/decompress": "^4.2.7",
     "jsdoc": "^4.0.3"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.4.5"
   },
   "dependencies": {
     "async": "^3.2.5",
     "crypto": "^1.0.1",
     "decompress": "^4.2.1",
     "fs": "^0.0.1-security",
-    "minimatch": "^9.0.4",
+    "minimatch": "^9.0.5",
     "os": "^0.1.2",
     "path": "^0.12.7"
   }
