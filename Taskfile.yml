@@ -210,6 +210,7 @@ tasks:
           - memospot
           - memospot.exe
         cmd: mv -f ./target/release/{{ .ITEM }} ./build/ 2>/dev/null
+      - mkdir -p "$(find ./build/*.AppImage | head -n 1).home"
       - |
         if ls ./build/memos* 1> /dev/null 2>&1; then printf '\e[32mDone.\e[0m';
         else printf '\e[33mFailed to move files.\e[0m'; fi;
