@@ -34,11 +34,6 @@ tasks:
       - This will be used by the Tauri build process.
       - Only runs if any of the binaries are missing.
     cmd: bun run ./build-scripts/downloadMemosBuildsHook.ts
-    status:
-      - test -f ./server-dist/memos-aarch64-apple-darwin
-      - test -f ./server-dist/memos-x86_64-apple-darwin
-      - test -f ./server-dist/memos-x86_64-pc-windows-msvc.exe
-      - test -f ./server-dist/memos-x86_64-unknown-linux-gnu
 
   upx:
     desc: Compress built binaries with upx

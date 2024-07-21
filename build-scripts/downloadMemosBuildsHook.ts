@@ -290,6 +290,27 @@ async function main() {
         fs.mkdirSync(serverDistDir, { recursive: true, mode: 0o755 });
     }
 
+    const binaries = [
+        "memos-aarch64-apple-darwin",
+        "memos-x86_64-apple-darwin",
+        "memos-x86_64-pc-windows-msvc.exe",
+        "memos-x86_64-unknown-linux-gnu"
+    ];
+    const foundRecent = binaries.every((bin) => {
+        if (!fs.existsSync(`${serverDistDir}/${bin}`)) {
+            return false;
+        }
+        return (
+            fs.statSync(`${serverDistDir}/${bin}`).ctimeMs >=
+            Date.now() - 1000 * 60 * 60 * 24 * 7 // 7 days
+        );
+    });
+    if (foundRecent) {
+        console.log(`Found all required binaries: ${binaries}.`);
+        console.log("Skipping download.");
+        return;
+    }
+
     // Remove a previous dist folder (Memos v0.18.2 - v0.21.0), if it exists.
     const distDir = "./server-dist/dist";
     if (serverDistDirExists && fs.existsSync(distDir) && fs.statSync(distDir).isDirectory()) {
