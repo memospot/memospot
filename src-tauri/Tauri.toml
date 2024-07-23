@@ -2,9 +2,9 @@
 # See https://tauri.app/v1/references/configuration-files/
 
 [build]
-beforeBuildCommand = "task tauri:hook:before-build"
-beforeBundleCommand = "task tauri:hook:before-bundle"
-beforeDevCommand = "task tauri:hook:before-dev"
+beforeBuildCommand = "just tauri-before-build"
+beforeBundleCommand = "just tauri-before-bundle"
+beforeDevCommand = "just tauri-before-dev"
 devPath = "http://localhost:5173"
 distDir = "../dist-ui"
 runner = "cargo"
