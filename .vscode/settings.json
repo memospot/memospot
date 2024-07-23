@@ -32,14 +32,15 @@
   "[yaml]": {
     "editor.defaultFormatter": "dprint.dprint"
   },
-  "code-runner.cwd": "${workspaceFolder}",
+  "code-runner.fileDirectoryAsCwd": false,
   "code-runner.executorMapByGlob": {
-    "**/*.rs": "task coderunner:cargo:clippy --",
-    "**/*.test.ts": "task coderunner:bun:test -- $fullFileName",
-    "**/*.ts": "task coderunner:bun -- $fullFileName",
-    "**/*.{toml,json,jsonc,yml,yaml,md}|.dprint.jsonc": "task coderunner:dprint:check -- $fullFileName && echo \"$fileName is properly formatted.\""
+    "**/*.rs": " cargo clippy --all-features --all-targets --locked `$fullFileName > /dev/null`",
+    "**/*.test.ts": " bun test $fullFileName",
+    "**/*.ts": " bun run $fullFileName",
+    "**/*.{toml,json,jsonc,yml,yaml,md}|.dprint.jsonc": " dprint check"
   },
   "code-runner.ignoreSelection": true,
+
   "editor.codeActionsOnSave": {
     "source.organizeImports.biome": "explicit"
   },

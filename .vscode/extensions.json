@@ -2,12 +2,12 @@
   "recommendations": [
     "dprint.dprint",
     "EditorConfig.EditorConfig",
+    "nefrob.vscode-just-syntax",
     "oderwat.indent-rainbow",
     "oven.bun-vscode",
     "redhat.vscode-yaml",
     "rust-lang.rust-analyzer",
     "tamasfe.even-better-toml",
-    "task.vscode-task",
     "tauri-apps.tauri-vscode"
   ],
   "unwantedRecommendations": []
