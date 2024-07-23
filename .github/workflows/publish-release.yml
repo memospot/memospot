@@ -90,7 +90,7 @@ jobs:
 
       # Rust
       - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@7b1c307e0dcbda6122208f10795a713336a9b35a
+        uses: dtolnay/rust-toolchain@21dc36fb71dd22e3317045c0c31a3f4249868b17
         with:
           targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
           toolchain: stable
@@ -102,8 +102,8 @@ jobs:
 
       # sccache
       - name: Install sccache
-        uses: taiki-e/install-action@f2b65a3e67b2ba5ed3b4a631b5e460896e975708
-        with: { tool: sccache@0.8.0 }
+        uses: taiki-e/install-action@331a600f1b10a3fed8dc56f925012bede91ae51f
+        with: { tool: sccache@0.8.1 }
 
       - name: Initialize sccache environment
         shell: bash
@@ -122,7 +122,7 @@ jobs:
       # /sccache
 
       # Bun
-      - uses: oven-sh/setup-bun@4bc047ad259df6fc24a6c9b0f9a0cb08cf17fbe5
+      - uses: oven-sh/setup-bun@f4d14e03ff726c06358e5557344e1da148b56cf7
         with: { bun-version: latest }
 
       - # node_modules is not cached on Windows as it breaks subsequent runs
@@ -154,7 +154,7 @@ jobs:
           path: ./server-dist
 
       - name: Build Tauri App
-        uses: tauri-apps/tauri-action@9ec12e079625d30c39e5d2a6ee24618aed9ac207
+        uses: tauri-apps/tauri-action@50c30bd749d297a6e21ada0d90955275f74b4a83
         continue-on-error: true
         env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
         with:

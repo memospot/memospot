@@ -489,7 +489,7 @@ setup-toolchain:
         cargo-cache@0.8.3 \
         cargo-edit@0.12.3 \
         dprint@0.47.2 \
-        sccache@0.8.0 \
+        sccache@0.8.1 \
         tauri-cli@1.6.0 \
         --locked --targets x86_64-unknown-linux-musl -y || exit 1
 
