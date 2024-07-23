@@ -46,7 +46,7 @@ jobs:
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
 
       - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@7b1c307e0dcbda6122208f10795a713336a9b35a
+        uses: dtolnay/rust-toolchain@21dc36fb71dd22e3317045c0c31a3f4249868b17
         with: { toolchain: stable, components: rustfmt }
 
       - name: Run rustfmt
@@ -129,7 +129,7 @@ jobs:
 
       # Rust
       - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@7b1c307e0dcbda6122208f10795a713336a9b35a
+        uses: dtolnay/rust-toolchain@21dc36fb71dd22e3317045c0c31a3f4249868b17
         with:
           targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
           toolchain: stable
@@ -142,8 +142,8 @@ jobs:
 
       # sccache
       - name: Install sccache
-        uses: taiki-e/install-action@f2b65a3e67b2ba5ed3b4a631b5e460896e975708
-        with: { tool: sccache@0.8.0 }
+        uses: taiki-e/install-action@331a600f1b10a3fed8dc56f925012bede91ae51f
+        with: { tool: sccache@0.8.1 }
 
       - name: Initialize sccache environment
         shell: bash
@@ -164,7 +164,7 @@ jobs:
       # Clippy with SARIF output
       - if: ${{ github.event_name == 'pull_request' }}
         name: "Install sarif-fmt and clippy-sarif"
-        uses: taiki-e/install-action@f2b65a3e67b2ba5ed3b4a631b5e460896e975708
+        uses: taiki-e/install-action@331a600f1b10a3fed8dc56f925012bede91ae51f
         with: { tool: "sarif-fmt@0.4.2,clippy-sarif@0.4.2" }
 
       - if: ${{ github.event_name == 'pull_request' }}
