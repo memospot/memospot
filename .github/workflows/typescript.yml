@@ -58,7 +58,7 @@ jobs:
 
       # Bun
       - name: Setup Bun
-        uses: oven-sh/setup-bun@f4d14e03ff726c06358e5557344e1da148b56cf7
+        uses: oven-sh/setup-bun@4bc047ad259df6fc24a6c9b0f9a0cb08cf17fbe5
         with: { bun-version: latest }
 
       - # node_modules is not cached on Windows as it breaks subsequent runs
