@@ -22,7 +22,7 @@
   "plugins": [
     "https://plugins.dprint.dev/biome-0.6.0.wasm",
     "https://plugins.dprint.dev/exec-0.5.0.json@8d9972eee71fa1590e04873540421f3eda7674d0f1aae3d7c788615e7b7413d0",
-    "https://plugins.dprint.dev/prettier-0.40.0.json@68c668863ec834d4be0f6f5ccaab415df75336a992aceb7eeeb14fdf096a9e9c",
+    "https://plugins.dprint.dev/prettier-0.46.1.json@e5bd083088a8dfc6e5ce2d3c9bee81489b065bd5345ef55b59f5d96627928b7a",
     "https://plugins.dprint.dev/toml-0.6.2.wasm"
   ],
   "exec": {
