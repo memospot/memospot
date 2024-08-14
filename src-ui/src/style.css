@@ -147,7 +147,7 @@ h1 {
     display: none;
 }
 
-.button:-webkit-details-marker {
+.button::-webkit-details-marker {
     display: none;
 }
 

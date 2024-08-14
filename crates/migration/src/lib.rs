@@ -18,7 +18,7 @@ impl MigratorTrait for Migrator {
         ]
     }
     // Override the name of migration table.
-    fn migration_table_name() -> sea_orm::DynIden {
+    fn migration_table_name() -> DynIden {
         Alias::new("memospot_migrations").into_iden()
     }
 }

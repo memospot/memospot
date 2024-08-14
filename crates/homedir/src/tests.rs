@@ -65,7 +65,7 @@ fn test_root() {
     assert_eq!("~root".expand_home().unwrap(), PathBuf::from(ROOT_DIR));
 }
 
-/// Test that a invalid `~user` returns an error.
+/// Test that an invalid `~user` returns an error.
 #[cfg(not(target_os = "windows"))]
 #[test]
 fn test_missing() {

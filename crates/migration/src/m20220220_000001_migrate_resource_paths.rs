@@ -74,7 +74,7 @@ impl MigrationTrait for Migration {
 
         let db = manager.get_connection();
 
-        // Find elegible resources.
+        // Find eligible resources.
         let resources = Resource::find()
             .columns([resource::Column::Id, resource::Column::InternalPath])
             .filter(
@@ -157,7 +157,7 @@ impl MigrationTrait for Migration {
 
     /// This migration is not reversible.
     ///
-    /// Also, even older Memos's versions are able to load assets with relative paths,
+    /// Also, even older Memos versions are able to load assets with relative paths,
     /// they just don't store them that way.
     ///
     /// Returns `Ok` without doing anything.

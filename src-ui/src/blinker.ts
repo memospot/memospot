@@ -17,7 +17,7 @@ export class LogoBlinker {
     private element: HTMLImageElement;
     private errorAttribute: { qualifiedName: string; value: string };
     private tick: number;
-    private filter: string;
+    private readonly filter: string;
 
     constructor(selector: string, errorAttribute?: { qualifiedName: string; value: string }) {
         const querySelector = document.querySelector<HTMLImageElement>(selector);

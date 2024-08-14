@@ -36,9 +36,9 @@ pub fn to_slash(path: &str) -> String {
 ///   - `%APPDATA%/../Local/{app_name}`
 ///   - `~/.{app_name}`
 ///
-/// Home directory is underlyingly determined by [`home`](https://docs.rs/home) crate.
+/// Home directory is underlying determined by [`home`](https://docs.rs/home) crate.
 pub fn get_app_data_path(app_name: &str) -> PathBuf {
-    if std::env::consts::OS == "windows" {
+    if OS == "windows" {
         if let Ok(local_appdata) = std::env::var("LOCALAPPDATA") {
             return PathBuf::from(local_appdata).join(app_name);
         }

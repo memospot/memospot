@@ -3,6 +3,7 @@
 //! Example:
 //!
 //! ```
+//! use std::path::PathBuf;
 //! use writable::PathExt;
 //!
 //! let is_writable = PathBuf::from("./public_html").is_writable();
@@ -44,7 +45,7 @@ impl PathExt for PathBuf {
 
             let mut count = 0;
             while testfile.exists() {
-                testfile.set_extension(&count.to_string());
+                testfile.set_extension(count.to_string());
                 count += 1;
 
                 if count > 100 {
