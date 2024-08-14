@@ -109,7 +109,7 @@ fn main() {
                 let mut retry = 10;
                 while wal.exists() && retry > 0 {
                     if retry < 10 {
-                        std::thread::sleep(std::time::Duration::from_millis(500));
+                        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
                     }
                     sqlite::checkpoint(&rtcfg).await;
                     retry -= 1;
