@@ -16,8 +16,8 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<()> {
     let env_vars: HashMap<String, String> = prepare_env(rtcfg);
     let command = rtcfg.paths.memos_bin.to_string_lossy().to_string();
     let cwd = get_cwd(rtcfg);
-    debug!("Memos's environment: {:#?}", env_vars);
-    info!("Memos's working directory: {}", cwd.to_string_lossy());
+    debug!("Memos environment: {:#?}", env_vars);
+    info!("Memos working directory: {}", cwd.to_string_lossy());
     tauri::async_runtime::spawn(async move {
         tauri::api::process::Command::new(command)
             .envs(env_vars)
@@ -28,7 +28,7 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<()> {
     Ok(())
 }
 
-/// Decide which working directory use for Memos's server.
+/// Decide which working directory use for Memos server.
 ///
 /// Front-end is not embedded in v0.18.2+ and Memos expects to
 /// find the `dist` folder in its working directory.
@@ -37,11 +37,11 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<()> {
 /// (where Tauri places the binary), so we look for the `dist` folder
 /// following this order of precedence:
 /// 1. User-provided working directory from the yaml file.
-/// 2. Tauri's resource directory.
-/// 3. Memospot's data directory.
-/// 4. Memospot's current working directory.
+/// 2. Tauri resource directory.
+/// 3. Memospot data directory.
+/// 4. Memospot current working directory.
 ///
-/// Finally, if no `dist` folder is found, fall back to Memospot's data directory.
+/// Finally, if no `dist` folder is found, fall back to Memospot data directory.
 pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
     let mut search_paths: Vec<PathBuf> = Vec::new();
 
@@ -71,7 +71,7 @@ pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
     ]));
 
     let deduped: Vec<PathBuf> = search_paths.into_iter().unique().collect();
-    debug!("Looking for Memos's `dist` folder at {:#?}", deduped);
+    debug!("Looking for Memos `dist` folder at {:#?}", deduped);
 
     for path in deduped {
         if path.as_os_str().is_empty() {
@@ -86,7 +86,7 @@ pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
     rtcfg.paths.memospot_data.clone()
 }
 
-/// Make environment variable key suitable for Memos's server.
+/// Make environment variable key suitable for Memos server.
 fn make_env_key(key: &str) -> String {
     let uppercased_key = key.to_uppercase();
     if uppercased_key.starts_with("MEMOS_") {

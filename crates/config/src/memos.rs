@@ -3,12 +3,12 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// Memos's configuration.
+/// Memos configuration.
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Memos {
-    /// Memos's binary path.
+    /// Memos binary path.
     pub binary_path: Option<String>,
-    /// Memos's current working directory.
+    /// Memos current working directory.
     pub working_dir: Option<String>,
     /// Directory where Memos will store its database and assets.
     pub data: Option<String>,
@@ -23,7 +23,7 @@ pub struct Memos {
     ///
     /// This should be "127.0.0.1" whenever running under Memospot.
     ///
-    /// Binding to all addressess "0.0.0.0" will trigger a firewall warning on Windows.
+    /// Binding to all addresses "0.0.0.0" will trigger a firewall warning on Windows.
     pub addr: Option<String>,
     /// Last port used by Memos.
     ///

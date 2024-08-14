@@ -5,6 +5,7 @@ import * as Bun from "bun";
  *
  * @param command The command to run.
  * @param args The arguments to pass to the command.
+ * @param cwd The working directory to run the command in.
  * @returns The output of the command.
  * @throws {Error} An error if the command fails.
  */

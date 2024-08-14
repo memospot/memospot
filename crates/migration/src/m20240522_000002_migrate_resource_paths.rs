@@ -73,7 +73,7 @@ impl MigrationTrait for Migration {
 
         let db = manager.get_connection();
 
-        // Find elegible resources.
+        // Find eligible resources.
         let resources = Resource::find()
             .columns([resource::Column::Id, resource::Column::Reference])
             .filter(

@@ -10,7 +10,7 @@
 //! Example:
 //!
 //! ```
-//! use home_dir::HomeDirExt;
+//! use homedir::HomeDirExt;
 //!
 //! let public_html = "~/public_html".expand_home().unwrap();
 //! ```
@@ -45,7 +45,7 @@ pub trait HomeDirExt {
     ///
     /// Examples:
     /// ```
-    /// # use home_dir::HomeDirExt;
+    /// # use homedir::HomeDirExt;
     /// # use std::env::var;
     /// # use std::path::PathBuf;
     /// let mut path = PathBuf::from(var("HOME").unwrap());

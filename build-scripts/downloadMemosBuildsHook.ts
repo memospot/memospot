@@ -19,7 +19,7 @@ import type { GitHubAsset, GitHubRelease } from "./types/downloadMemosBuildsHook
  * - `x86_64-unknown-linux-gnu`
  * - `x86_64-apple-darwin`
  * - `aarch64-apple-darwin`
- * @param file The file name.
+ * @param filename The file name.
  * @returns The target triple.
  */
 export function makeTripletFromFileName(filename: string): string {
@@ -239,12 +239,12 @@ async function downloadServerBinaries() {
         const filePath = `./server-dist/${fileName}`;
         if (fileName.endsWith(".zip") || fileName.endsWith(".tar.gz")) {
             await decompress(filePath, extractDir)
-                .then((files) => {
+                .then((files: any[]) => {
                     console.log(
                         `\x1b[32m[OK]\x1b[0m \x1b[36m${fileName}\x1b[0m Extracted ${files.length} files.`
                     );
                 })
-                .catch((error) => {
+                .catch((error: any) => {
                     console.log(`\x1b[31m[ERROR]\x1b[0m \x1b[36m${fileName}\x1b[0m ${error}`);
                     fs.rmSync(extractDir, { recursive: true });
                     throw error;

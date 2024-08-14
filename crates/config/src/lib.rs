@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use std::io::{Error, ErrorKind, Result};
 use std::path::Path;
 use std::time::Duration;
-use std::{fs, io, thread};
+use std::{fs, thread};
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Config {
@@ -43,7 +43,7 @@ impl Config {
         serde_yaml::to_string(&self).map_err(|e| Error::new(ErrorKind::InvalidData, e))
     }
 
-    pub fn init(cfg_path: &Path) -> io::Result<Config> {
+    pub fn init(cfg_path: &Path) -> Result<Config> {
         #[cfg(debug_assertions)]
         const DEFAULT_PROFILE: &str = "debug";
         #[cfg(not(debug_assertions))]

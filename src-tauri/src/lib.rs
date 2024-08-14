@@ -96,13 +96,13 @@ pub fn confirm_dialog(title: &str, msg: &str, icon: MessageType) -> bool {
 ///   - `%APPDATA%/../Local/{app_name}`
 ///   - `~/.{app_name}`
 ///
-/// Home directory is underlyingly determined by [`home`](https://docs.rs/home) crate.
+/// Home directory is underlying determined by [`home`](https://docs.rs/home) crate.
 pub fn get_app_data_path(app_name: &str) -> PathBuf {
-    if std::env::consts::OS == "windows" {
-        if let Ok(local_appdata) = std::env::var("LOCALAPPDATA") {
+    if env::consts::OS == "windows" {
+        if let Ok(local_appdata) = env::var("LOCALAPPDATA") {
             return PathBuf::from(local_appdata).join(app_name);
         }
-        if let Ok(appdata) = std::env::var("APPDATA") {
+        if let Ok(appdata) = env::var("APPDATA") {
             return PathBuf::from(appdata)
                 .parent()
                 .unwrap_or(Path::new("."))

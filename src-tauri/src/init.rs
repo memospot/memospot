@@ -43,9 +43,9 @@ pub fn data_path(app_name: &str) -> PathBuf {
     data_path
 }
 
-/// Ensure that Memos's data directory exists and is writable.
+/// Ensure that Memos data directory exists and is writable.
 ///
-/// Use Memospot's data directory if user-provided path is empty or ".".
+/// Use Memospot data directory if user-provided path is empty or ".".
 /// Optionally, resolve a user-provided data directory.
 pub fn memos_data(rtcfg: &RuntimeConfig) -> PathBuf {
     let data_str = rtcfg
@@ -78,7 +78,7 @@ pub fn memos_data(rtcfg: &RuntimeConfig) -> PathBuf {
 
 /// Ensure that backup directory exists and is writable.
 ///
-/// Use Memospot's data directory if user-provided path is empty or ".".
+/// Use Memospot data directory if user-provided path is empty or ".".
 /// Optionally, resolve a user-provided directory.
 pub fn backup_directory(rtcfg: &RuntimeConfig) -> PathBuf {
     let folder_name = "backups";
@@ -191,7 +191,7 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
                 );
             }
             Err(e) => {
-                warn_dialog!("Failed to backup Memos's database:\n{}", e);
+                warn_dialog!("Failed to backup Memos database:\n{}", e);
             }
         }
     }
@@ -314,7 +314,7 @@ pub fn config(config_path: &PathBuf) -> Config {
         panic_dialog!("Failed to parse configuration file:\n{}", e.to_string());
     });
 
-    if cfg!(dev) {
+    if cfg!(debug_assertions) {
         // Use Memos in demo mode during development,
         // as it's already seeded with some data.
         config.memos.mode = Some("demo".to_string());
@@ -342,12 +342,12 @@ pub fn memos_port(rtcfg: &RuntimeConfig) -> u16 {
     panic_dialog!("Failed to find an open port!");
 }
 
-/// Locate Memos's server binary.
+/// Locate Memos server binary.
 ///
-/// Look for Memos's server binary in the following order:
-/// 1. Provided Memos's binary path from the configuration file.
-/// 2. Memospot's current working directory.
-/// 3. Memospot's data directory.
+/// Look for Memos server binary in the following order:
+/// 1. Provided Memos binary path from the configuration file.
+/// 2. Memospot current working directory.
+/// 3. Memospot data directory.
 /// 4. ProgramData/memos (Windows only).
 /// 5. /usr/local/bin, /var/opt/memos, /usr/local/memos (POSIX only).
 pub fn find_memos(rtcfg: &RuntimeConfig) -> PathBuf {
@@ -389,7 +389,7 @@ pub fn find_memos(rtcfg: &RuntimeConfig) -> PathBuf {
     for path in search_paths {
         let memos_path = path.join(binary_name);
         if memos_path.exists() && memos_path.is_file() {
-            info!("Memos's server found at: {}", memos_path.to_string_lossy());
+            info!("Memos server found at: {}", memos_path.to_string_lossy());
             return memos_path;
         }
     }
