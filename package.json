@@ -10,7 +10,7 @@
   "devDependencies": {
     "@biomejs/biome": "1.7.3",
     "@types/bun": "^1.1.6",
-    "@types/node": "^20.14.15"
+    "@types/node": "^20.16.1"
   },
   "trustedDependencies": ["@biomejs/biome", "esbuild"]
 }
