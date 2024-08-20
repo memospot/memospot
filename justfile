@@ -1,6 +1,20 @@
-# To use this justfile on Windows, make sure git bash is available.
+# https://just.systems
+#
+# Run `just` in the root of the project to see a list of recipes relevant to manual builds.
 
+set shell := ["bash", "-c"]
 CI := env_var_or_default("CI", "false")
+NPROC := env_var_or_default("NPROC", num_cpus())
+GITHUB_ENV := env_var_or_default("GITHUB_ENV", ".GITHUB_ENV")
+
+PATH := if os() == "windows" {
+		env_var_or_default('PROGRAMFILES', 'C:\Program Files') + '\Git\usr\bin;' + env_var_or_default('PATH','')
+	} else {
+		env_var_or_default('PATH','')
+	}
+bash := if os() == "windows" { "env -S bash -euo pipefail" } else { "/usr/bin/env -S bash -euo pipefail" }
+powershell := if os() == 'windows' {'powershell.exe'} else {'/usr/bin/env pwsh'}
+
 REPO_ROOT := justfile_directory()
 DPRINT_CACHE_DIR := absolute_path(join(REPO_ROOT,".dprint"))
 RUST_BACKTRACE := "full"
@@ -24,30 +38,35 @@ MAGENTA := '\033[35m'
 CYAN := '\033[36m'
 WHITE := '\033[37m'
 
-powershell := if os() == 'windows' {'powershell.exe'} else {'/usr/bin/env pwsh'}
-
 set export
-set shell := ["bash", "-euo", "pipefail", "-c"]
-set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
 
 [private]
 default:
     #!/usr/bin/env bash
+    echo -e "${BOLD}This justfile contains recipes for building ${UNDERLINE}https://github.com/memospot/memospot${RESET}.\n"
+    if [[ "{{os()}}" == "windows" ]]; then
+        program_files="{{replace(env_var_or_default('PROGRAMFILES', 'C:\Program Files'), '\\', '\\\\')}}"
+        echo -e "To use this justfile on Windows, make sure Git is installed under ${BOLD}${UNDERLINE}$program_files\\Git${RESET}."
+        echo -e "${BOLD}${UNDERLINE}https://git-scm.com/download/win${RESET}"
+        echo ""
+    fi
     deps=(
-        "git"
-        "cargo"
+        "bash"
         "bun"
+        "cargo"
         "dprint"
+        "git"
         "rustc"
     )
     for dep in "${deps[@]}"; do
         if ! command -v "$dep" &> /dev/null; then
-            echo -e "${RED}ERROR:${RESET} Please install ${BOLD}${UNDERLINE}$dep${RESET}."
+            echo -e "${RED}ERROR:${RESET} Please install ${MAGENTA}${BOLD}${UNDERLINE}$dep${RESET}."
             echo -e "Try running ${BOLD}${UNDERLINE}just setup${RESET}."
             exit 1
         fi
     done
-    echo -e "${GREEN}Basic project dependencies are installed.${RESET}"
+    echo -e "${GREEN}Found project dependencies: ${deps[@]}${RESET}"
+    echo -e "${YELLOW}This quick test does not verify tool versions. If you experience any errors, consider updating the related tool.${RESET}\n"
     just --list
 
 [private]
