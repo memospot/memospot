@@ -14,6 +14,7 @@ PATH := if os() == "windows" {
 	}
 bash := if os() == "windows" { "env -S bash -euo pipefail" } else { "/usr/bin/env -S bash -euo pipefail" }
 powershell := if os() == 'windows' {'powershell.exe'} else {'/usr/bin/env pwsh'}
+bun := if os() == 'windows' { "bun.exe" } else { "/usr/bin/env bun" }
 
 REPO_ROOT := justfile_directory()
 DPRINT_CACHE_DIR := absolute_path(join(REPO_ROOT,".dprint"))
@@ -42,7 +43,7 @@ set export
 
 [private]
 default:
-    #!/usr/bin/env bash
+    #!{{bash}}
     echo -e "${BOLD}This justfile contains recipes for building ${UNDERLINE}https://github.com/memospot/memospot${RESET}.\n"
     if [[ "{{os()}}" == "windows" ]]; then
         program_files="{{replace(env_var_or_default('PROGRAMFILES', 'C:\Program Files'), '\\', '\\\\')}}"
@@ -91,7 +92,7 @@ tauri-before-build: download-memos-binaries gen-icons build-ui
 
 [private]
 tauri-before-bundle: deps-ts
-    bun run ./build-scripts/upxPackHook.ts; exit 0
+    bun run ./build-scripts/upxPackHook.ts || true
 
 [private]
 tauri-before-dev: download-memos-binaries dev-ui
@@ -119,7 +120,7 @@ test-tauri: deps-rs
 [group('test')]
 [doc('Run all TypeScript tests')]
 test-ts: deps-ts
-    #!/usr/bin/env bun
+    #!{{bun}}
     import fs from "node:fs";
     const dirs = ["./build-scripts", "./src-ui"];
     let results = [];
@@ -150,7 +151,7 @@ dev: dev-killprocesses
 [linux]
 [macos]
 dev-killprocesses:
-    #!/usr/bin/env bash
+    #!{{bash}}
     processes=("memospot" "memos")
     for process in "${processes[@]}"; do
         killall $process > /dev/null 2>&1 || true
@@ -183,15 +184,24 @@ update-ts:
     pushd "./build-scripts"; bun update; popd
     just fmt
 
-[group('update')]
-[doc('Update Rust toolchain via rustup')]
-update-rust-toolchain:
+[group('upgrade')]
+[doc('Upgrade project toolchain')]
+upgrade: upgrade-rust upgrade-bun
+
+[group('upgrade')]
+[doc('Upgrade Rust toolchain')]
+upgrade-rust:
     rustup update
     rustup self update
     rustup component add clippy
 
+[group('upgrade')]
+[doc('Upgrade bun runtime')]
+upgrade-bun:
+    bun upgrade
+
 gen-icons-force:
-    #!/usr/bin/env bash
+    #!{{bash}}
     cargo tauri icon "assets/app-icon-lossless.webp"
     cp -f "./src-tauri/icons/icon.ico" "./src-ui/public/favicon.ico"
     git add "assets/app-icon-lossless.webp" "src-tauri/icons/*"
@@ -199,7 +209,7 @@ gen-icons-force:
 
 [doc('Generate app icons, if needed')]
 gen-icons:
-    #!/usr/bin/env bash
+    #!{{bash}}
     if [ "$CI" = "true" ]; then exit 0; fi
     check_files=(
         "assets/app-icon-lossless.webp"
@@ -221,8 +231,8 @@ build-ui-force:
 
 [doc('Build UI, if needed')]
 build-ui:
-    #!/usr/bin/env bash
-    if ! git diff --quiet --exit-code HEAD -- "src-ui/src/**/*"; then
+    #!{{bash}}
+    if ! git diff --quiet --exit-code HEAD -- "src-ui/src/**"; then
         just build-ui-force && exit 0
     fi
     if ! [ -d "./dist-ui/" ]; then
@@ -232,16 +242,15 @@ build-ui:
 
 [doc('Build app')]
 build:
-    #!/usr/bin/env bash
-    export RUSTFLAGS="-Ctarget-cpu=native -Copt-level=3 -Cstrip=symbols -Ccodegen-units=8"
-    cargo tauri build
+    RUSTFLAGS="-Ctarget-cpu=native -Copt-level=3 -Cstrip=symbols -Ccodegen-units=8" cargo tauri build
     just sccache-stats postbuild
 
 [private]
 postbuild:
-    #!/usr/bin/env bash
-    echo -e "${CYAN}Moving relevant build files to `./build` directory...${RESET}"
-    mkdir -p ./build
+    #!{{bash}}
+    set +e
+    echo -e "${CYAN}Moving relevant build files to ./build directory...${RESET}"
+    mkdir -p ./build || true
     artifacts=(
         "bundle/appimage/*.AppImage"
         "bundle/deb/*.deb"
@@ -271,7 +280,7 @@ postbuild:
 
 [doc('Clean project artifacts')]
 clean: sccache-clean
-    #!/usr/bin/env bash
+    #!{{bash}}
     bun pm cache rm || true
     cargo cache -a || true
     dirs=(
@@ -295,13 +304,13 @@ clean: sccache-clean
 
 [group('sccache')]
 sccache-clean:
-    #!/usr/bin/env bash
+    #!{{bash}}
     if [ -z $RUSTC_WRAPPER ]; then exit 0; fi
     sccache --stop-server || true && rm -rf ./.sccache
 
 [group('sccache')]
 sccache-stats:
-    #!/usr/bin/env bash
+    #!{{bash}}
     if [ $SCCACHE_ENABLED = "false" ]; then
         echo -e "$YELLOW -- sccache is disabled -- $RESET"
         exit 0
@@ -327,7 +336,7 @@ lint-rs: deps-rs
 [group('lint')]
 [doc('Lint TypeScript code with BiomeJS')]
 lint-ts:
-    #!/usr/bin/env bash
+    #!{{bash}}
     dirs=(
         "./build-scripts"
         "./src-ui"
@@ -356,7 +365,7 @@ fix-rs-dirty:
 [group('fix')]
 [doc('Run BiomeJS safe fixes')]
 fix-ts:
-    #!/usr/bin/env bash
+    #!{{bash}}
     dirs=(
         "./build-scripts"
         "./src-ui"
@@ -385,7 +394,7 @@ setup-platformdeps:
 [group('setup')]
 [linux]
 setup-platformdeps:
-    #!/usr/bin/env bash
+    #!{{bash}}
     sudo apt update -y
     sudo apt install -y \
         build-essential \
@@ -438,7 +447,7 @@ setup-bun:
 [linux]
 [macos]
 setup-bun:
-    #!/usr/bin/env bash
+    #!{{bash}}
     if ! [ -z $(command -v bun) ]; then
         echo "Bun is already installed." && exit 0
     fi
@@ -457,7 +466,7 @@ setup-bun:
 [linux]
 [macos]
 setup-rust:
-    #!/usr/bin/env bash
+    #!{{bash}}
     if ! [ -z $(command -v rustup) ] && ! [ -z $(command -v rustc) ]; then
         echo "Rust is already installed." && exit 0
     fi
@@ -500,7 +509,7 @@ setup-rust:
 
 [group('setup')]
 setup-toolchain:
-    #!/usr/bin/env bash
+    #!{{bash}}
     rustup component add clippy
     rustup target add aarch64-apple-darwin x86_64-apple-darwin x86_64-pc-windows-msvc x86_64-unknown-linux-gnu
     cargo install cargo-binstall --locked -y
@@ -519,7 +528,7 @@ gh-clean-cache:
 
 [group('maintainer')]
 repo-status:
-    #!/usr/bin/env bash
+    #!{{bash}}
     if ! git diff-index --quiet HEAD --; then
         echo -e "${MAGENTA}There are unstaged changes.${RESET}"
     elif ! git diff-files --quiet; then
@@ -539,7 +548,7 @@ repo-status:
 [group('maintainer')]
 [doc('Bump version in Cargo.toml and src-tauri/Cargo.toml')]
 bumpversion VERSION:
-    #!/usr/bin/env bash
+    #!{{bash}}
     clean="{{trim_start_match(VERSION, "v")}}"
     pushd ./src-tauri; cargo set-version --package memospot --locked "$clean"; popd
     sed -i "s#Memospot/[0-9]\+\.[0-9]\+\.[0-9]\+\"#Memospot/$clean\"#" ./src-tauri/Tauri.toml || exit 1
@@ -551,7 +560,7 @@ bumpversion VERSION:
 [group('maintainer')]
 [doc('Push a new tag to the repository')]
 pushtag TAG:
-    #!/usr/bin/env bash
+    #!{{bash}}
     clean="{{trim_start_match(TAG, "v")}}"
     git tag -a "v$clean" -m "chore: push v$clean"
     git push origin --tags

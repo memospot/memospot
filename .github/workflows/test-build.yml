@@ -163,7 +163,7 @@ jobs:
           path: ~/.bun
 
       - name: Install Bun dependencies
-        run: bun install --frozen-lockfile || bun install --frozen-lockfile
+        run: just deps-ts
       # /Bun
 
       - name: Cache memos builds
