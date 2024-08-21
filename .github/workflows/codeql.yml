@@ -18,7 +18,7 @@ on:
       - "**/bun.lockb"
       - "**/package.json"
 
-  schedule: [{ cron: "0 12 * * 6" }]
+  schedule: [{ cron: "0 9 */15 * *" }] # 9 AM, every 15 days
   workflow_dispatch:
 
 concurrency:
