@@ -2,20 +2,22 @@
 //!
 //! Handlers and state management must be registered
 //! in `tauri::Builder`, at `main.rs`.
+//!
+//! The TypeScript/JavaScript API is defined in `src-ui/src/tauri.ts`.
 
 use tauri::{command, State};
 use tokio::sync::Mutex;
 
-pub struct MemosPort(pub Mutex<u16>);
-impl MemosPort {
-    pub fn manage(port: u16) -> Self {
-        Self(Mutex::new(port))
+pub struct MemosURL(pub Mutex<String>);
+impl MemosURL {
+    pub fn manage(url: String) -> Self {
+        Self(Mutex::new(url))
     }
 }
 
 #[command]
-pub async fn get_memos_port(memos_port: State<'_, MemosPort>) -> Result<u16, String> {
-    Ok(*memos_port.0.lock().await)
+pub async fn get_memos_url(memos_url: State<'_, MemosURL>) -> Result<String, String> {
+    Ok(memos_url.0.lock().await.clone())
 }
 
 #[command]

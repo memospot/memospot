@@ -36,6 +36,7 @@ fn main() {
             memospot_data: memospot_data.clone(),
             _memospot_resources: PathBuf::new(),
         },
+        memos_url: String::new(),
         yaml: yaml_config.clone(),
         __yaml__: yaml_config.clone(),
     };
@@ -43,8 +44,9 @@ fn main() {
     rtcfg.yaml.memos.port = Some(init::memos_port(&rtcfg));
     rtcfg.paths.memos_data = init::memos_data(&rtcfg);
     rtcfg.paths.memos_db_file = init::database(&rtcfg);
+    rtcfg.memos_url = init::memos_url(&rtcfg);
     info!(
-        "Memos's data directory: {}",
+        "Memos data directory: {}",
         rtcfg.paths.memos_data.to_string_lossy()
     );
 
@@ -52,7 +54,7 @@ fn main() {
 
     info!("Starting Memospot.");
     info!(
-        "Memospot's data path: {}",
+        "Memospot data path: {}",
         rtcfg.paths.memospot_data.to_string_lossy()
     );
 
@@ -74,15 +76,25 @@ fn main() {
 
     let mut rtcfg_setup = rtcfg.clone();
     let Ok(tauri_app) = tauri::Builder::default()
-        .manage(js_handler::MemosPort::manage(
-            rtcfg.yaml.memos.port.unwrap_or_default(),
-        ))
+        .manage(js_handler::MemosURL::manage(rtcfg.memos_url.clone()))
         .invoke_handler(tauri::generate_handler![
-            js_handler::get_memos_port,
+            js_handler::get_memos_url,
             js_handler::get_env
         ])
         .setup(move |app| {
-            // Add Tauri's resource directory as `_memospot_resources`.
+            let local_addr = format!(
+                "http://localhost:{}/",
+                rtcfg_setup.yaml.memos.port.unwrap_or_default()
+            );
+            if local_addr != rtcfg_setup.memos_url {
+                info!(
+                    "Using custom Memos address: {}. Memos server will not be started.",
+                    rtcfg_setup.memos_url
+                );
+                return Ok(());
+            }
+
+            // Add Tauri resource directory as `_memospot_resources`.
             rtcfg_setup.paths._memospot_resources = app.path_resolver().resource_dir().unwrap();
             tauri::async_runtime::spawn(async move {
                 init::migrate_database(&rtcfg_setup).await;

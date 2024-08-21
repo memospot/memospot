@@ -1,9 +1,6 @@
 import { ResponseType, fetch } from "@tauri-apps/api/http";
-import { invoke as TauriInvoke } from "@tauri-apps/api/tauri";
 import { LogoBlinker } from "./blinker";
-
-const browserError = new Error("Not running in Tauri!");
-const invoke = window.__TAURI__ ? TauriInvoke : async () => browserError.message;
+import { Tauri } from "./tauri";
 
 document.addEventListener("DOMContentLoaded", async () => {
     const reload = () => {
@@ -17,8 +14,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const element = document.querySelector<HTMLParagraphElement>("#port");
     if (element instanceof HTMLParagraphElement) {
-        const memosPort = (await invoke("get_memos_port")) as number;
-        element.textContent = `Port: ${memosPort}`;
+        const memosAddress = await Tauri.getMemosURL();
+        element.textContent = `Address: ${memosAddress}`;
     }
 });
 
@@ -36,12 +33,11 @@ async function pingMemosServer(endpoint: string): Promise<boolean> {
 }
 
 async function redirectOnResponse() {
-    const memosPort = await invoke("get_memos_port");
     const pingAPI = "healthz";
-    const MemosUrl = `http://localhost:${memosPort}`;
-    const PingEndpoint = [MemosUrl, pingAPI].join("/");
+    const MemosUrl = await Tauri.getMemosURL();
+    const PingEndpoint = MemosUrl + pingAPI;
 
-    const noRedirectEnv = (await invoke("get_env", { name: "NO_REDIRECT" })) as string;
+    const noRedirectEnv = await Tauri.getEnv("NO_REDIRECT");
     const DebugNoRedirect = noRedirectEnv.toLowerCase() === "true" || noRedirectEnv === "1";
 
     const logoBlinker = new LogoBlinker(".logo.memos");
@@ -81,4 +77,5 @@ async function redirectOnResponse() {
         await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 }
+
 document.addEventListener("DOMContentLoaded", redirectOnResponse);

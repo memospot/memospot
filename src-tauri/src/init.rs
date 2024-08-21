@@ -342,6 +342,33 @@ pub fn memos_port(rtcfg: &RuntimeConfig) -> u16 {
     panic_dialog!("Failed to find an open port!");
 }
 
+/// Memos URL.
+///
+/// If remote server is enabled, return the configured URL.
+/// Otherwise, return the default Memos address for the spawned server.
+pub fn memos_url(rtcfg: &RuntimeConfig) -> String {
+    if rtcfg.yaml.memospot.remote.enabled.unwrap_or_default()
+        && rtcfg.yaml.memospot.remote.url.is_some()
+    {
+        let url = rtcfg.yaml.memospot.remote.url.clone().unwrap();
+        if url.is_empty() {
+            panic_dialog!(
+                "Remote server is enabled, but URL is empty!\n\nCheck memospot.yaml."
+            );
+        }
+        if !url.starts_with("http") {
+            panic_dialog!("Remote server is enabled, but URL is not starting with http:// or https://!\n\nCheck memospot.yaml.");
+        }
+
+        return url.trim_end_matches('/').to_string() + "/";
+    }
+
+    format!(
+        "http://localhost:{}/",
+        rtcfg.yaml.memos.port.unwrap_or_default()
+    )
+}
+
 /// Locate Memos server binary.
 ///
 /// Look for Memos server binary in the following order:

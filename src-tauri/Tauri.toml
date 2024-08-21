@@ -22,7 +22,7 @@ scope = ["$RESOURCE/*"]
 [tauri.allowlist.http]
 all = false
 request = true
-scope = ["http://localhost*"]
+scope = ["https://*", "http://*"]
 
 [tauri.allowlist.shell]
 all = false
