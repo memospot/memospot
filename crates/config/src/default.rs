@@ -5,7 +5,7 @@
 
 use crate::log::Log;
 use crate::memos::Memos;
-use crate::memospot::{Backups, Memospot, Migrations};
+use crate::memospot::{Backups, Memospot, Migrations, RemoteServer};
 use crate::Config;
 
 impl Default for Config {
@@ -30,6 +30,10 @@ impl Default for Config {
                 },
                 migrations: Migrations {
                     enabled: Some(true),
+                },
+                remote: RemoteServer {
+                    enabled: Some(false),
+                    url: None,
                 },
             },
         }

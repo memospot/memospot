@@ -36,10 +36,15 @@ pub struct RuntimeConfigPaths {
 pub struct RuntimeConfig {
     /// Store paths used throughout the app.
     pub paths: RuntimeConfigPaths,
+
+    // Memos URL
+    pub memos_url: String,
+
     /// Store current YAML config. May be modified during app runtime.
     ///
     /// This is the main configuration object used throughout the app.
     pub yaml: Config,
+
     /// Store initial YAML to compare with current YAML and save the file
     /// if configuration changed.
     ///
