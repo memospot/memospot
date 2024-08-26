@@ -62,7 +62,7 @@ pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
 
     // Tauri uses `canonicalize()` to resolve the resource directory,
     // which adds a `\\?\` prefix on Windows.
-    let resources = binding.trim_start_matches("\\\\?\\");
+    let resources = binding.trim_start_matches(r#"\\?\"#);
 
     search_paths.extend(Vec::from([
         PathBuf::from(resources),
@@ -70,10 +70,10 @@ pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
         rtcfg.paths.memospot_cwd.clone(),
     ]));
 
-    let deduped: Vec<PathBuf> = search_paths.into_iter().unique().collect();
-    debug!("Looking for Memos `dist` folder at {:#?}", deduped);
+    let deduplicated: Vec<PathBuf> = search_paths.into_iter().unique().collect();
+    debug!("Looking for Memos `dist` folder at {:#?}", deduplicated);
 
-    for path in deduped {
+    for path in deduplicated {
         if path.as_os_str().is_empty() {
             continue;
         }
@@ -107,6 +107,11 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
         ("data", memos_data.to_string()),
         // Metrics were removed from Memos v0.20+, that's why false is hardcoded.
         ("metric", "false".to_string()),
+        ("public", yaml.public.unwrap_or_default().to_string()),
+        (
+            "password_auth",
+            yaml.password_auth.unwrap_or_default().to_string(),
+        ),
     ]);
 
     let mut env_vars: HashMap<String, String> = HashMap::new();
