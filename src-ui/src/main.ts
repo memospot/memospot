@@ -1,23 +1,23 @@
 import { ResponseType, fetch } from "@tauri-apps/api/http";
 import { LogoBlinker } from "./blinker";
-import { Tauri } from "./tauri";
+import { getEnv, getMemosURL } from "./tauri";
 
-document.addEventListener("DOMContentLoaded", async () => {
-    const reload = () => {
+async function addManualRedirectButton() {
+    document.getElementById("manual-redirect-btn")?.addEventListener("click", () => {
         window.location.replace("/");
-    };
+    });
 
-    const button = document.getElementById("manual-redirect-btn");
-    if (button instanceof HTMLElement) {
-        button.addEventListener("click", reload);
+    const urlElement = document.querySelector<HTMLParagraphElement>("#url");
+    if (urlElement) {
+        const memosUrl = await getMemosURL();
+        let displayUrl = memosUrl.replace("http://", "").replace("https://", "");
+        if (displayUrl.endsWith("/")) {
+            displayUrl = displayUrl.slice(0, -1);
+        }
+        urlElement.innerHTML = `<a href="${memosUrl}" target="_blank">${displayUrl}</a>`;
     }
-
-    const element = document.querySelector<HTMLParagraphElement>("#port");
-    if (element instanceof HTMLParagraphElement) {
-        const memosAddress = await Tauri.getMemosURL();
-        element.textContent = `Address: ${memosAddress}`;
-    }
-});
+}
+document.addEventListener("DOMContentLoaded", addManualRedirectButton);
 
 async function pingMemosServer(endpoint: string): Promise<boolean> {
     try {
@@ -27,42 +27,46 @@ async function pingMemosServer(endpoint: string): Promise<boolean> {
             responseType: ResponseType.Text
         });
         return response.ok;
-    } catch (_) {
+    } catch (error) {
+        console.error("Error pinging Memos server:", error);
         return false;
     }
 }
 
 async function redirectOnResponse() {
-    const pingAPI = "healthz";
-    const MemosUrl = await Tauri.getMemosURL();
-    const PingEndpoint = MemosUrl + pingAPI;
+    let memosUrl = await getMemosURL();
+    memosUrl = memosUrl.endsWith("/") ? memosUrl.slice(0, -1) : memosUrl;
 
-    const noRedirectEnv = await Tauri.getEnv("NO_REDIRECT");
-    const DebugNoRedirect = noRedirectEnv.toLowerCase() === "true" || noRedirectEnv === "1";
-
+    const pingEndpoint = `${memosUrl}/healthz`;
+    const noRedirectEnv = await getEnv("MEMOSPOT_NO_REDIRECT");
+    const debugNoRedirect = ["true", "on", "1"].includes(noRedirectEnv.toLowerCase());
     const logoBlinker = new LogoBlinker(".logo.memos");
     logoBlinker.start();
+    const isLocalhost = memosUrl.startsWith("http://localhost");
 
     let tries = 0;
     while (true) {
-        if ((await pingMemosServer(PingEndpoint)) && !DebugNoRedirect) {
+        if ((await pingMemosServer(pingEndpoint)) && !debugNoRedirect) {
             logoBlinker.stop();
-            globalThis.location.replace(MemosUrl);
-            break;
+            globalThis.location.replace(memosUrl);
+            return;
         }
 
-        if (tries > 30) {
+        if (tries === 30) {
             logoBlinker.stopWithError();
 
-            const msg = document.querySelector<Element>("#msg");
-            if (msg instanceof Element) {
-                msg.innerHTML =
-                    "The server did not respond within a reasonable time.<br />Try restarting Memospot.";
+            const msgElement = document.querySelector<Element>("#msg");
+            if (msgElement) {
+                msgElement.innerHTML =
+                    "The server did not respond within a reasonable time.<br />";
+                msgElement.innerHTML += isLocalhost
+                    ? "Try restarting Memospot."
+                    : "Check your settings and ensure that Memos is reachable.";
             }
 
-            const waiting = document.querySelector<Element>(".waiting-for-server");
-            if (waiting instanceof Element) {
-                waiting.innerHTML = "Something went wrong 😢";
+            const waitingElement = document.querySelector<Element>(".waiting-for-server");
+            if (waitingElement instanceof Element) {
+                waitingElement.innerHTML = "Something went wrong 😢";
             }
 
             const button = document.getElementById("manual-redirect-btn");
@@ -70,12 +74,11 @@ async function redirectOnResponse() {
                 button.setAttribute("style", "visibility: visible;");
             }
 
-            break;
+            return;
         }
 
         tries++;
         await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 }
-
 document.addEventListener("DOMContentLoaded", redirectOnResponse);
