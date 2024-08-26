@@ -135,16 +135,21 @@ pub fn absolute_path(path: impl AsRef<Path>) -> Result<PathBuf> {
 mod tests {
     use super::*;
 
-    fn remove_envvars() {
-        env::remove_var("HOME");
-        env::remove_var("LOCALAPPDATA");
-        env::remove_var("APPDATA");
+    fn remove_env_vars() {
+        // SAFETY: This is a test function, and we're removing an environment variable
+        // which is generally safe. The unsafe block is required due to the potential
+        // for race conditions in a multithreaded context, but this is a single-threaded test.
+        unsafe {
+            env::remove_var("HOME");
+            env::remove_var("LOCALAPPDATA");
+            env::remove_var("APPDATA");
+        }
     }
 
     #[cfg(target_os = "windows")]
     #[test]
     fn test_get_data_path_windows() {
-        remove_envvars();
+        remove_env_vars();
         env::set_var("LOCALAPPDATA", r"C:\Users\foo\AppData\Local");
         let data_path = get_app_data_path("memospot");
         assert_eq!(
@@ -152,7 +157,7 @@ mod tests {
             PathBuf::from(r"C:\Users\foo\AppData\Local\memospot")
         );
 
-        remove_envvars();
+        remove_env_vars();
         env::set_var("APPDATA", r"C:\Users\foo\AppData\Roaming");
         let data_path = get_app_data_path("memospot");
         assert_eq!(
@@ -164,15 +169,20 @@ mod tests {
     #[cfg(not(target_os = "windows"))]
     #[test]
     fn test_get_data_path_posix() {
-        remove_envvars();
-        env::set_var("HOME", r"/home/foo");
+        remove_env_vars();
+        // SAFETY: This is a test function, and we're setting an environment variable
+        // which is generally safe. The unsafe block is required due to the potential
+        // for race conditions in a multithreaded context, but this is a single-threaded test.
+        unsafe {
+            env::set_var("HOME", r"/home/foo");
+        }
         let data_path = get_app_data_path("memospot");
         assert_eq!(data_path, PathBuf::from(r"/home/foo/.memospot"));
     }
 
     #[test]
     fn test_get_data_path() {
-        remove_envvars();
+        remove_env_vars();
         let data_path = get_app_data_path("memospot");
         assert!(data_path.has_root());
         assert!(data_path.is_absolute());

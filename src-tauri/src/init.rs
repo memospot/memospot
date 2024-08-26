@@ -463,11 +463,16 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
     }
     let log_config: PathBuf = rtcfg.paths.memospot_data.join("logging_config.yaml");
 
-    // Allows using $ENV{MEMOSPOT_DATA} in log4rs config.
-    std::env::set_var(
-        "MEMOSPOT_DATA",
-        rtcfg.paths.memospot_data.to_string_lossy().to_string(),
-    );
+    // SAFETY: We're setting an environment variable, which is generally safe.
+    // The unsafe block is required due to the potential for race conditions in
+    // a multithreaded context.
+    unsafe {
+        // Allows using $ENV{MEMOSPOT_DATA} in log4rs config.
+        std::env::set_var(
+            "MEMOSPOT_DATA",
+            rtcfg.paths.memospot_data.to_string_lossy().to_string(),
+        );
+    }
     if log4rs::init_file(&log_config, Default::default()).is_ok() {
         // logging is enabled and config is ok
         return true;
