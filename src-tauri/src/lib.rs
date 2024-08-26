@@ -1,4 +1,4 @@
-use homedir::HomeDirExt;
+use home::home_dir;
 use log::{error, info, warn};
 use native_dialog::{MessageDialog, MessageType};
 use path_clean::PathClean;
@@ -88,33 +88,44 @@ pub fn confirm_dialog(title: &str, msg: &str, icon: MessageType) -> bool {
 
 /// Get the data path to supplied application name.
 ///
-/// On Windows, it's `%LOCALAPPDATA%\{app_name}`.
+/// Probe paths:
+///   - ~/.config/{app_name}
+///   - ~/.{app_name}
 ///
-/// On POSIX-compliant systems, path is always `~/.{app_name}`.
+/// Default path:
+///   - Windows: `%LOCALAPPDATA%\{app_name}`
+///   - POSIX-compliant systems: `~/.{app_name}`.
 ///
-/// Fall backs:
-///   - `%APPDATA%/../Local/{app_name}`
+/// Fallback:
+///   - `%APPDATA%\..\Local\{app_name}` (Windows)
 ///   - `~/.{app_name}`
 ///
-/// Home directory is underlying determined by [`home`](https://docs.rs/home) crate.
+/// Home directory is determined by the [`home`](https://docs.rs/home) crate.
 pub fn get_app_data_path(app_name: &str) -> PathBuf {
-    if env::consts::OS == "windows" {
-        if let Ok(local_appdata) = env::var("LOCALAPPDATA") {
-            return PathBuf::from(local_appdata).join(app_name);
-        }
-        if let Ok(appdata) = env::var("APPDATA") {
-            return PathBuf::from(appdata)
-                .parent()
-                .unwrap_or(Path::new("."))
-                .join("Local")
-                .join(app_name);
+    let home = home_dir().unwrap_or_default();
+
+    let probe_paths = [
+        home.join(".config").join(app_name),
+        home.join(format!(".{}", app_name)),
+    ];
+    for path in probe_paths {
+        if path.exists() {
+            return path;
         }
     }
 
-    ["~/", ".", app_name]
-        .concat()
-        .expand_home()
-        .unwrap_or_default()
+    if cfg!(windows) {
+        if let Ok(path) = env::var("LOCALAPPDATA").or_else(|_| env::var("APPDATA")) {
+            let path = PathBuf::from(path);
+            return if path.ends_with("Local") {
+                path.join(app_name)
+            } else {
+                path.parent().unwrap_or(&path).join("Local").join(app_name)
+            };
+        }
+    }
+
+    home.join(format!(".{}", app_name))
 }
 
 /// Get the absolute path to supplied path.
