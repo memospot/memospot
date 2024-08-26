@@ -81,6 +81,18 @@ h1 {
     line-height: 4vh;
 }
 
+.tauri-url a {
+    color: inherit;
+
+    /* lighten the default color */
+    opacity: 0.5;
+}
+
+.tauri-url a:hover {
+    color: #24c8db;
+    text-decoration: underline;
+}
+
 #manual-redirect-btn {
     visibility: hidden;
 }

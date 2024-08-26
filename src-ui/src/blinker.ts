@@ -53,8 +53,7 @@ export class LogoBlinker {
     }
 
     stopWithError(): void {
-        this.running = false;
-        clearInterval(this.interval);
+        this.stop();
         this.element.removeAttribute("style");
         this.element.setAttribute(this.errorAttribute.qualifiedName, this.errorAttribute.value);
     }
