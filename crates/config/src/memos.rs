@@ -30,6 +30,12 @@ pub struct Memos {
     /// Memospot will try to reuse this port on subsequent runs, and will find a new
     /// free port if the previous one is already in use or if this value is set to 0.
     pub port: Option<u16>,
+    /// Whether to enable password authentication.
+    /// If set to false, the server will only allow authentication via SSO.
+    pub password_auth: Option<bool>,
+    /// Whether to make Memos publicly accessible.
+    /// If set to true, the server will be open registration and allow anyone to create an account.
+    pub public: Option<bool>,
     /// Custom environment variables to pass to Memos.
     pub env: Option<HashMap<String, String>>,
     // Memos server log settings.
