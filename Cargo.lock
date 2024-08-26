@@ -2386,6 +2386,7 @@ dependencies = [
  "async_zip",
  "chrono",
  "config",
+ "home",
  "homedir",
  "itertools 0.12.1",
  "log",
