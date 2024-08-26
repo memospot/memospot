@@ -18,7 +18,9 @@
     "editor.defaultFormatter": "dprint.dprint"
   },
   "[markdown]": {
-    "editor.defaultFormatter": "dprint.dprint"
+    "editor.defaultFormatter": "dprint.dprint",
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true
   },
   "[rust]": {
     "editor.defaultFormatter": "dprint.dprint"
@@ -64,6 +66,10 @@
   "files.associations": {
     "CODEOWNERS": "gitignore"
   },
+  "markdownlint.config": {
+    "MD028": false,
+    "MD033": false
+  },
   "prettier.enable": false,
   "rust-analyzer.cargo.extraEnv": {
     "RUST_BACKTRACE": "full"
@@ -74,5 +80,12 @@
     "RUSTUP_TOOLCHAIN": "stable"
   },
   "rust-analyzer.cargo.buildScripts.useRustcWrapper": true,
-  "rust-analyzer.check.allTargets": false
+  "rust-analyzer.check.allTargets": false,
+  "search.exclude": {
+    "**/.dprint/**": true,
+    "**/.sccache/**": true,
+    "**/dist-ui/**": true,
+    "**/node_modules/**": true,
+    "**/target/**": true
+  }
 }

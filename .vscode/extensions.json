@@ -1,5 +1,7 @@
 {
   "recommendations": [
+    "biomejs.biome",
+    "DavidAnson.vscode-markdownlint",
     "dprint.dprint",
     "EditorConfig.EditorConfig",
     "nefrob.vscode-just-syntax",
