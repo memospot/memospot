@@ -5,7 +5,7 @@ name = "writable"
 version = "0.0.1"
 authors = ["Lincoln Nogueira"]
 edition = "2021"
-keywords = ["writable", "file", "directory", "check", "permission", "access"]
+keywords = ["writable", "file", "directory", "permission", "access"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/memospot/memospot/crates/writable"
@@ -19,5 +19,5 @@ version = "1.8.0"
 features = ["v4"]
 
 [target.'cfg(not(target_os = "windows"))'.dev-dependencies.nix]
-version = "0.28"
+version = "0.29.0"
 features = ["user"]

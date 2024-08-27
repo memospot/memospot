@@ -40,12 +40,12 @@ impl PathExt for PathBuf {
         }
 
         if self.is_dir() {
-            let mut testfile = self.to_owned();
-            testfile = testfile.join("write_test");
+            let mut test_file = self.to_owned();
+            test_file = test_file.join("write_test");
 
             let mut count = 0;
-            while testfile.exists() {
-                testfile.set_extension(count.to_string());
+            while test_file.exists() {
+                test_file.set_extension(count.to_string());
                 count += 1;
 
                 if count > 100 {
@@ -61,10 +61,10 @@ impl PathExt for PathBuf {
                 if let Ok(file) = std::fs::OpenOptions::new()
                     .write(true)
                     .create_new(true)
-                    .open(&testfile)
+                    .open(&test_file)
                 {
                     drop(file);
-                    if std::fs::remove_file(&testfile).is_err() {
+                    if std::fs::remove_file(&test_file).is_err() {
                         continue;
                     }
                     return true;
