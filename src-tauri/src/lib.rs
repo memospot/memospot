@@ -197,6 +197,10 @@ mod tests {
         let data_path = get_app_data_path("memospot");
         assert!(data_path.has_root());
         assert!(data_path.is_absolute());
-        assert!(data_path.ends_with(".memospot"));
+        if cfg!(windows) {
+            assert!(data_path.ends_with("memospot"));
+        } else {
+            assert!(data_path.ends_with(".memospot"));
+        }
     }
 }

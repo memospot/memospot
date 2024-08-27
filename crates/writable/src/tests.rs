@@ -2,9 +2,9 @@ use crate::PathExt;
 
 #[cfg(not(target_os = "windows"))]
 use nix::unistd::Uid;
-use std::fs;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{ErrorKind, Result, Write};
+#[cfg(not(target_os = "windows"))]
 use std::path::PathBuf;
 use uuid::Uuid;
 

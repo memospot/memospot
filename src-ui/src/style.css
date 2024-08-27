@@ -83,8 +83,6 @@ h1 {
 
 .tauri-url a {
     color: inherit;
-
-    /* lighten the default color */
     opacity: 0.5;
 }
 
@@ -101,7 +99,6 @@ h1 {
     margin: auto;
 }
 
-/* CSS */
 .button {
     appearance: none;
     background-color: #fafbfc;
