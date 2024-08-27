@@ -28,7 +28,7 @@ mod resource {
         pub created_ts: i64,
         pub updated_ts: i64,
         pub filename: String,
-        #[sea_orm(column_type = "Binary(BlobSize::Blob(None))", nullable)]
+        #[sea_orm(column_type = "VarBinary(StringLen::None)", nullable)]
         pub blob: Option<Vec<u8>>,
         pub external_link: String,
         pub r#type: String,

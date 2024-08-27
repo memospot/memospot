@@ -36,6 +36,7 @@ fn main() {
             memospot_data: memospot_data.clone(),
             _memospot_resources: PathBuf::new(),
         },
+        managed_server: true,
         memos_url: String::new(),
         yaml: yaml_config.clone(),
         __yaml__: yaml_config.clone(),
@@ -49,6 +50,11 @@ fn main() {
         "Memos data directory: {}",
         rtcfg.paths.memos_data.to_string_lossy()
     );
+
+    rtcfg.managed_server = rtcfg.memos_url.starts_with(&format!(
+        "http://localhost:{}",
+        rtcfg.yaml.memos.port.unwrap_or_default()
+    ));
 
     init::setup_logger(&rtcfg);
 
@@ -82,11 +88,7 @@ fn main() {
             js_handler::get_env
         ])
         .setup(move |app| {
-            let local_addr = format!(
-                "http://localhost:{}/",
-                rtcfg_setup.yaml.memos.port.unwrap_or_default()
-            );
-            if local_addr != rtcfg_setup.memos_url {
+            if !rtcfg_setup.managed_server {
                 info!(
                     "Using custom Memos address: {}. Memos server will not be started.",
                     rtcfg_setup.memos_url

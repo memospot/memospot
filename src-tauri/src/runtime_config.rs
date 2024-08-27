@@ -40,6 +40,9 @@ pub struct RuntimeConfig {
     // Memos URL
     pub memos_url: String,
 
+    /// Whether Memospot is managing a local Memos server.
+    pub managed_server: bool,
+
     /// Store current YAML config. May be modified during app runtime.
     ///
     /// This is the main configuration object used throughout the app.
