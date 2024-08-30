@@ -17,8 +17,6 @@ impl Default for Config {
                 data: None,
                 mode: Some("prod".to_string()),
                 addr: Some("127.0.0.1".to_string()),
-                password_auth: Some(true),
-                public: Some(false), // Disallow registrations by default.
                 port: Some(0),
                 env: None,
             },

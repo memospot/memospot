@@ -30,8 +30,8 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<()> {
 
 /// Decide which working directory use for Memos server.
 ///
-/// Front-end is not embedded in v0.18.2+ and Memos expects to
-/// find the `dist` folder in its working directory.
+/// The front end is not embedded from Memos v0.18.2 to v0.21.0,
+/// and it expects to find the `dist` folder in its working directory.
 ///
 /// On Linux, Memos will fail to access a `dist` folder under /usr/bin
 /// (where Tauri places the binary), so we look for the `dist` folder
@@ -105,13 +105,11 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
         ("addr", yaml.addr.unwrap_or_default()),
         ("port", yaml.port.unwrap_or_default().to_string()),
         ("data", memos_data.to_string()),
-        // Metrics were removed from Memos v0.20+, that's why false is hardcoded.
+        // Metrics were removed from Memos v0.20+.
         ("metric", "false".to_string()),
-        ("public", yaml.public.unwrap_or_default().to_string()),
-        (
-            "password_auth",
-            yaml.password_auth.unwrap_or_default().to_string(),
-        ),
+        // These were added in v0.22.4 and then removed. Sane defaults are hardcoded to prevent user lock-out.
+        ("public", "false".to_string()),
+        ("password_auth", "true".to_string()),
     ]);
 
     let mut env_vars: HashMap<String, String> = HashMap::new();
@@ -130,73 +128,3 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
     }
     env_vars
 }
-
-// pub fn spawn(bin: &PathBuf, env_vars: &HashMap<String, String>) -> Result<()> {
-//     let command = bin.clone().to_string_lossy().to_string();
-//     tauri::async_runtime::spawn(async move {
-//         let Ok(cmd) = tauri::api::process::Command::new(command)
-//             .envs(memos_env_vars)
-//             .current_dir(memos_cwd)
-//             .spawn()
-//         else {
-//             panic_dialog!("Failed to spawn Memos server!");
-//         };
-
-//         if current_config.memos.log.enabled {
-//             // log levels are: trace, debug, info, warn, error, off
-//             let memos_log = memospot_data.clone().join("memos.log");
-//             let log_level = &current_config.memos.log.level.clone().to_lowercase();
-
-//             let Ok(mut file) = tokio::fs::OpenOptions::new()
-//                 .create(true)
-//                 .append(true)
-//                 .open(&memos_log)
-//                 .await
-//             else {
-//                 panic_dialog!(
-//                     "Failed to open log file for writing:\n{}",
-//                     &memos_log.to_string_lossy().to_string()
-//                 );
-//             };
-
-//             let (mut rx, _) = cmd;
-//             while let Some(event) = rx.recv().await {
-//                 match event {
-//                     CommandEvent::Stdout(line) => {
-//                         if !["trace", "debug"].contains(&log_level.as_str()) {
-//                             continue;
-//                         }
-//                         if line.is_empty() {
-//                             continue;
-//                         }
-//                         if let Err(e) = file.write_all(line.as_bytes()).await {
-//                             error!(
-//                                 "Failed to write log to file:\n{}\n\n{}",
-//                                 &memos_log.to_string_lossy().to_string(),
-//                                 e
-//                             );
-//                         }
-//                     }
-//                     CommandEvent::Stderr(line) => {
-//                         if line.is_empty() {
-//                             continue;
-//                         }
-//                         if let Err(e) = file.write_all(line.as_bytes()).await {
-//                             error!(
-//                                 "Failed to write log to file:\n{}\n\n{}",
-//                                 &memos_log.to_string_lossy().to_string(),
-//                                 e
-//                             );
-//                         }
-//                     }
-//                     _ => {}
-//                 }
-//             }
-//         }
-//     });
-
-//     let mut cmd = Command::new(bin);
-//     cmd.envs(env_vars);
-//     cmd.spawn()
-//         .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))
-// }
