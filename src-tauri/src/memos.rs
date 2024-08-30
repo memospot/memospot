@@ -88,7 +88,7 @@ pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
 
 /// Make environment variable key suitable for Memos server.
 fn make_env_key(key: &str) -> String {
-    let uppercased_key = key.to_uppercase();
+    let uppercased_key = key.to_uppercase().replace("-", "_");
     if uppercased_key.starts_with("MEMOS_") {
         return uppercased_key;
     }
@@ -107,6 +107,7 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
         ("data", memos_data.to_string()),
         // Metrics were removed from Memos v0.20+.
         ("metric", "false".to_string()),
+        ("instance_url", rtcfg.memos_url.to_string()),
         // These were added in v0.22.4 and then removed. Sane defaults are hardcoded to prevent user lock-out.
         ("public", "false".to_string()),
         ("password_auth", "true".to_string()),
