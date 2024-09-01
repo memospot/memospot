@@ -154,7 +154,7 @@ jobs:
           path: ./server-dist
 
       - name: Build Tauri App
-        uses: tauri-apps/tauri-action@50c30bd749d297a6e21ada0d90955275f74b4a83
+        uses: tauri-apps/tauri-action@9ec12e079625d30c39e5d2a6ee24618aed9ac207
         continue-on-error: true
         env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
         with:
