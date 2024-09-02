@@ -3,7 +3,7 @@
 
 [package]
 name = "memospot"
-version = "0.1.5"
+version = "0.1.6"
 authors = ["Lincoln Nogueira"]
 edition = "2021"
 license = "MIT"
