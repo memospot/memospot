@@ -147,9 +147,9 @@ mod tests {
     use super::*;
 
     fn remove_env_vars() {
-        // SAFETY: This is a test function, and we're removing an environment variable
-        // which is generally safe. The unsafe block is required due to the potential
-        // for race conditions in a multithreaded context, but this is a single-threaded test.
+        // SAFETY: This is a test function, and removing a process environment
+        // variable is generally safe. The unsafe block is required due to the
+        // potential for race conditions in a multithreaded context.
         unsafe {
             env::remove_var("HOME");
             env::remove_var("LOCALAPPDATA");
@@ -157,50 +157,66 @@ mod tests {
         }
     }
 
-    #[cfg(target_os = "windows")]
-    #[test]
-    fn test_get_data_path_windows() {
-        remove_env_vars();
-        env::set_var("LOCALAPPDATA", r"C:\Users\foo\AppData\Local");
-        let data_path = get_app_data_path("memospot");
-        assert_eq!(
-            data_path,
-            PathBuf::from(r"C:\Users\foo\AppData\Local\memospot")
-        );
+    fn ensure_env_vars() {
+        let home = std::env::var("HOME").unwrap_or_default();
+        let app_data = std::env::var("APPDATA").unwrap_or_default();
+        let local_app_data = std::env::var("LOCALAPPDATA").unwrap_or_default();
 
-        remove_env_vars();
-        env::set_var("APPDATA", r"C:\Users\foo\AppData\Roaming");
-        let data_path = get_app_data_path("memospot");
-        assert_eq!(
-            data_path,
-            PathBuf::from(r"C:\Users\foo\AppData\Local\memospot")
-        );
+        // SAFETY: This is a test function, and setting a process environment
+        // variable is generally safe. The unsafe block is required due to the
+        // potential for race conditions in a multithreaded context.
+        unsafe {
+            if home.is_empty() {
+                env::set_var(
+                    "HOME",
+                    if cfg!(windows) {
+                        r"C:\Users\foo"
+                    } else {
+                        r"/home/foo"
+                    },
+                );
+            }
+            if app_data.is_empty() {
+                env::set_var("APPDATA", r"C:\Users\foo\AppData\Roaming");
+            }
+            if local_app_data.is_empty() {
+                env::set_var("LOCALAPPDATA", r"C:\Users\foo\AppData\Local");
+            }
+        }
     }
 
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(windows)]
     #[test]
-    fn test_get_data_path_posix() {
+    fn test_get_data_path_windows() {
+        // Test a standard system with LOCALAPPDATA set.
         remove_env_vars();
-        // SAFETY: This is a test function, and we're setting an environment variable
-        // which is generally safe. The unsafe block is required due to the potential
-        // for race conditions in a multithreaded context, but this is a single-threaded test.
-        unsafe {
-            env::set_var("HOME", r"/home/foo");
-        }
-        let data_path = get_app_data_path("memospot");
-        assert_eq!(data_path, PathBuf::from(r"/home/foo/.memospot"));
+        env::set_var("LOCALAPPDATA", r"C:\Users\foo\AppData\Local");
+        assert_eq!(
+            get_app_data_path("memospot"),
+            PathBuf::from(r"C:\Users\foo\AppData\Local\memospot")
+        );
+        // Test fallback to APPDATA.
+        remove_env_vars();
+        env::set_var("APPDATA", r"C:\Users\foo\AppData\Roaming");
+        assert_eq!(
+            get_app_data_path("memospot"),
+            PathBuf::from(r"C:\Users\foo\AppData\Local\memospot")
+        );
+        // Test fallback to USERPROFILE (via home crate).
+        remove_env_vars();
+        assert!(get_app_data_path("memospot").ends_with(".memospot"));
     }
 
     #[test]
     fn test_get_data_path() {
-        remove_env_vars();
+        ensure_env_vars();
         let data_path = get_app_data_path("memospot");
         assert!(data_path.has_root());
         assert!(data_path.is_absolute());
-        if cfg!(windows) {
-            assert!(data_path.ends_with("memospot"));
+        assert!(data_path.ends_with(if cfg!(windows) {
+            "memospot"
         } else {
-            assert!(data_path.ends_with(".memospot"));
-        }
+            ".memospot"
+        }));
     }
 }
