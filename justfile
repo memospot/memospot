@@ -2,7 +2,10 @@
 #
 # Run `just` in the root of the project to see a list of recipes relevant to manual builds.
 
+# Backtick commands and recipes without a shebang are executed with the shell set here.
 set shell := ["bash", "-c"]
+set windows-shell := ["powershell", "-Command"]
+
 CI := env_var_or_default("CI", "false")
 NPROC := env_var_or_default("NPROC", num_cpus())
 GITHUB_ENV := env_var_or_default("GITHUB_ENV", ".GITHUB_ENV")
@@ -20,7 +23,7 @@ REPO_ROOT := justfile_directory()
 DPRINT_CACHE_DIR := absolute_path(join(REPO_ROOT,".dprint"))
 RUST_BACKTRACE := "full"
 
-SCCACHE_BIN := `which sccache || echo ""`
+SCCACHE_BIN := if os() == 'windows' { `(Get-Command -ErrorAction SilentlyContinue -Name saccache).Source` } else { `which sccache || echo ""` }
 SCCACHE_ENABLED := if SCCACHE_BIN == "" { "false" } else { path_exists(SCCACHE_BIN) }
 RUSTC_WRAPPER := if SCCACHE_ENABLED == "true" { SCCACHE_BIN } else { env_var_or_default("RUSTC_WRAPPER", "") }
 SCCACHE_DIR := absolute_path(join(REPO_ROOT,".sccache"))
@@ -72,10 +75,12 @@ default:
 
 [private]
 deps-ts:
+    #!{{bash}}
     bun install || bun install
 
 [private]
 deps-rs:
+    #!{{bash}}
     mkdir -p ./dist-ui
 
 [private]
@@ -86,13 +91,17 @@ dev-ui: deps-ts
 download-memos-binaries: deps-ts
     bun run ./build-scripts/downloadMemosBuildsHook.ts
 
+[private]
+upx:
+    #!{{bash}}
+    bun run ./build-scripts/upxPackHook.ts || true
+
 # Tauri hooks
 [private]
 tauri-before-build: download-memos-binaries gen-icons build-ui
 
 [private]
-tauri-before-bundle: deps-ts
-    bun run ./build-scripts/upxPackHook.ts || true
+tauri-before-bundle: deps-ts upx
 
 [private]
 tauri-before-dev: download-memos-binaries dev-ui
@@ -110,6 +119,8 @@ test-crates: deps-rs
 [group('test')]
 [doc('Run all Rust tests')]
 test-rs: deps-rs
+    #!{{bash}}
+    export CARGO_PROFILE_TEST_BUILD_OVERRIDE_DEBUG=true
     cargo test --workspace --lib -- --nocapture
 
 [group('test')]
@@ -179,6 +190,7 @@ update-rs:
 [group('update')]
 [doc('Update npm packages')]
 update-ts:
+    #!{{bash}}
     bun update
     pushd "./src-ui"; bun update; popd
     pushd "./build-scripts"; bun update; popd
@@ -232,17 +244,17 @@ build-ui-force:
 [doc('Build UI, if needed')]
 build-ui:
     #!{{bash}}
-    if ! git diff --quiet --exit-code HEAD -- "src-ui/src/**"; then
-        just build-ui-force && exit 0
+    if ! git diff --quiet --exit-code HEAD -- "src-ui/src/**" || [ ! -d "./dist-ui/" ] || [ ! -f "./dist-ui/index.html" ]; then
+        just build-ui-force
+    else
+        echo -e "${GREEN}UI is up to date.${RESET}"
     fi
-    if ! [ -d "./dist-ui/" ]; then
-        just build-ui-force && exit 0
-    fi
-    echo -e "${GREEN}UI is up to date.${RESET}"
 
 [doc('Build app')]
 build:
-    RUSTFLAGS="-Ctarget-cpu=native -Copt-level=3 -Cstrip=symbols -Ccodegen-units=8" cargo tauri build
+    #!{{bash}}
+    export RUSTFLAGS="-Ctarget-cpu=native -Copt-level=3 -Cstrip=symbols -Ccodegen-units=8"
+    cargo tauri build
     just sccache-stats postbuild
 
 [private]
@@ -355,6 +367,7 @@ fix: fix-ts fix-rs
 [group('fix')]
 [doc('Run cargo fix (requires clean repo)')]
 fix-rs:
+    #!{{bash}}
     cargo fix || just fix-rs-dirty
 
 [group('fix')]
