@@ -19,7 +19,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  RUST_BACKTRACE: short
+  RUST_BACKTRACE: full
   RUSTC_WRAPPER: sccache
   RUSTFLAGS: -Copt-level=1 -Cstrip=symbols
   CARGO_INCREMENTAL: 0
