@@ -15,6 +15,7 @@ use memospot::*;
 
 use log::info;
 use std::path::PathBuf;
+use tauri::Manager;
 
 #[warn(unused_extern_crates)]
 fn main() {
@@ -88,13 +89,25 @@ fn main() {
             js_handler::get_env
         ])
         .setup(move |app| {
+            let main_window = app.get_window("main").unwrap();
+            let app_version = app.package_info().version.to_string();
+
             if !rtcfg_setup.managed_server {
                 info!(
                     "Using custom Memos address: {}. Memos server will not be started.",
                     rtcfg_setup.memos_url
                 );
+                let display_url = rtcfg_setup
+                    .memos_url
+                    .trim_start_matches("http://")
+                    .trim_start_matches("https://")
+                    .trim_end_matches("/");
+                let _ = main_window
+                    .set_title(&format!("Memospot {} - {}", app_version, display_url));
                 return Ok(());
             }
+
+            let _ = main_window.set_title(&format!("Memospot {}", app_version));
 
             // Add Tauri resource directory as `_memospot_resources`.
             rtcfg_setup.paths._memospot_resources = app.path_resolver().resource_dir().unwrap();
