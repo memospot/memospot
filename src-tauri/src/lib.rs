@@ -146,6 +146,7 @@ pub fn absolute_path(path: impl AsRef<Path>) -> Result<PathBuf> {
 mod tests {
     use super::*;
 
+    #[cfg(windows)]
     fn remove_env_vars() {
         // SAFETY: This is a test function, and removing a process environment
         // variable is generally safe. The unsafe block is required due to the
