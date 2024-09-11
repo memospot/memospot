@@ -3,7 +3,7 @@
 
 [package]
 name = "memospot"
-version = "0.1.6"
+version = "0.1.7"
 authors = ["Lincoln Nogueira"]
 edition = "2021"
 license = "MIT"
@@ -16,7 +16,7 @@ version = "1.5"
 
 [dependencies.config]
 path = "../crates/config"
-version = "0.0.1"
+version = "0.0.2"
 
 [dependencies]
 home = "0.5.9"
@@ -90,7 +90,15 @@ features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"]
 [dependencies.tauri]
 version = "1.6.1"
 default-features = true
-features = ["http-request", "window-all", "shell-sidecar", "shell-open", "config-toml"]
+features = [
+    "process-relaunch",
+    "updater",
+    "config-toml",
+    "http-request",
+    "shell-open",
+    "shell-sidecar",
+    "window-all",
+]
 
 [dependencies.tauri-utils]
 version = "1.5.3"

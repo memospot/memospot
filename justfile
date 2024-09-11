@@ -564,7 +564,6 @@ bumpversion VERSION:
     #!{{bash}}
     clean="{{trim_start_match(VERSION, "v")}}"
     pushd ./src-tauri; cargo set-version --package memospot --locked "$clean"; popd
-    sed -i "s#Memospot/[0-9]\+\.[0-9]\+\.[0-9]\+\"#Memospot/$clean\"#" ./src-tauri/Tauri.toml || exit 1
     cargo generate-lockfile
     just fmt
     git add ./src-tauri/Cargo.toml ./src-tauri/Tauri.toml ./Cargo.lock

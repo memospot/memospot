@@ -511,7 +511,7 @@ dependencies = [
 
 [[package]]
 name = "config"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "figment",
  "serde",
@@ -2256,7 +2256,7 @@ dependencies = [
 
 [[package]]
 name = "memospot"
-version = "0.1.6"
+version = "0.1.7"
 dependencies = [
  "anyhow",
  "async_zip",

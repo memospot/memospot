@@ -27,16 +27,12 @@ pub struct Config {
 
 impl Config {
     const CONFIG_HEADER: &'static str = r#"#
-#! User comments on this file will be lost whenever the configuration is updated by Memospot.
+#! User comments on this file will be lost whenever
+#    the configuration is updated by Memospot !
 #
-# To specify custom environment variables for Memos, use the `env` key, like so:
-# memos:
-#     env:
-#         NEW_ENV_VAR: "my value" # always quote custom env values.
+#   For a explained configuration file, see:
+# https://memospot.github.io/configuration.html
 #
-# You may specify a custom data directory for Memos, like a synced folder or a network share:
-# memos:
-#     data: "/path/to/data"
 "#;
 
     pub fn to_string(&self) -> Result<String> {

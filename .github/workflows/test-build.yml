@@ -15,6 +15,7 @@ on:
   workflow_dispatch:
 
 env:
+  CACHE_KEY: ${{ github.run_id }}-${{ github.run_number }}
   RUST_BACKTRACE: short
   RUSTFLAGS: -Copt-level=1 -Cstrip=symbols
   RUSTC_WRAPPER: sccache
@@ -57,7 +58,7 @@ jobs:
         shell: bash
         run: |
           echo START=$(date +'%s') >> $GITHUB_ENV
-          echo DATE_STRING=$(date +'%Y%m%d') >> $GITHUB_ENV
+          echo CACHE_KEY=$(date +'%Y%m%d') >> $GITHUB_ENV
       - if: ${{ runner.os == 'Windows' }}
         name: "[Windows] Fix environment variables"
         run: |
@@ -134,7 +135,7 @@ jobs:
         uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
         with:
           path: ${{ env.SCCACHE_DIR }}
-          key: sccache-${{ matrix.platform.rust_target }}-${{ env.DATE_STRING }}
+          key: sccache-${{ matrix.platform.rust_target }}-${{ env.CACHE_KEY }}
           restore-keys: sccache-${{ matrix.platform.rust_target }}
 
       - name: Start sccache
@@ -169,7 +170,7 @@ jobs:
       - name: Cache memos builds
         uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
         with:
-          key: memosbuilds-cross-${{ env.DATE_STRING }}
+          key: memosbuilds-cross-${{ env.CACHE_KEY }}
           restore-keys: memosbuilds-cross
           enableCrossOsArchive: true
           path: ./server-dist
@@ -185,6 +186,8 @@ jobs:
           releaseDraft: true
           prerelease: true
           args: --verbose --target ${{ matrix.platform.rust_target }}
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true
 
       - name: "Cleanup sccache"
         run: "sccache --stop-server"
