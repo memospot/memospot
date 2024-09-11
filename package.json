@@ -9,8 +9,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.7.3",
-    "@types/bun": "^1.1.8",
-    "@types/node": "^20.16.1"
+    "@types/bun": "^1.1.9",
+    "@types/node": "^20.16.5"
   },
   "trustedDependencies": ["@biomejs/biome", "esbuild"]
 }
