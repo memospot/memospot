@@ -140,6 +140,16 @@ pub fn database(rtcfg: &RuntimeConfig) -> PathBuf {
         db_path.with_extension("db-shm"),
     ];
     for file in files {
+        // Remove demo database in dev/debug mode. Demo database is not handled by
+        // migrations and can prevent Memos from starting if the model is outdated.
+        if cfg!(debug_assertions) && rtcfg.yaml.memos.mode.as_deref() == Some("demo") {
+            if file.exists() {
+                if let Err(e) = std::fs::remove_file(&file) {
+                    warn_dialog!("Failed to remove demo database:\n{}", e);
+                }
+            }
+            continue;
+        }
         if file.exists() && !&file.is_writable() {
             panic_dialog!("Database file is not writable:\n{}", file.to_string_lossy());
         }
