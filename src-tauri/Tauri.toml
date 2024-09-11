@@ -33,7 +33,7 @@ sidecar = true # Required to spawn the server
 [tauri.allowlist.process]
 all = false
 exit = false
-relaunch = false
+relaunch = true
 relaunchDangerousAllowSymlinkMacos = false
 
 [tauri.allowlist.protocol]
@@ -114,19 +114,11 @@ plugins = ["shell"]
 windows = ["main"]
 
 [tauri.updater]
-active = false
+active = true
 dialog = true
-endpoints = []
-pubkey = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVBRUZBRDAzMjAxQ0U3NUIKUldSYjV4d2dBNjN2V2thd3RQeHg1ckorZUVoSGxjeFVtYWc2NjRFazQ5ZUFyWnZTRUVjaHFSTDEK"
-windows = { installerArgs = [], installMode = "basicUi" }
+endpoints = ["https://github.com/memospot/memospot/releases/latest/download/latest.json"]
+pubkey = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhENDYwRjkzNTkwQzY0NEEKUldSS1pBeFprdzlHalI3YVdINTZURFNUbHZIc3N0Rk40c2tvWDN3MWF2OWdnSHlRMnhjMFVlRGsK"
+windows = { installerArgs = [], installMode = "passive" }
 
 [[tauri.windows]]
-center = true
-fullscreen = false
-height = 720
-maximized = false
-resizable = true
-title = "Memospot"
-userAgent = "Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Memospot/0.1.6"
-width = 1280
-# additionalBrowserArgs = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --allow-running-insecure-content --disable-web-security"
+fileDropEnabled = false # Must be disabled to use browser-native drag and drop.
