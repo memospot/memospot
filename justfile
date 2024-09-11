@@ -5,10 +5,13 @@
 # Backtick commands and recipes without a shebang are executed with the shell set here.
 set shell := ["bash", "-c"]
 set windows-shell := ["powershell", "-Command"]
+set dotenv-load := true
 
 CI := env_var_or_default("CI", "false")
 NPROC := env_var_or_default("NPROC", num_cpus())
 GITHUB_ENV := env_var_or_default("GITHUB_ENV", ".GITHUB_ENV")
+TAURI_PRIVATE_KEY := env_var_or_default("TAURI_PRIVATE_KEY", "")
+TAURI_KEY_PASSWORD := env_var_or_default("TAURI_KEY_PASSWORD", "")
 
 PATH := if os() == "windows" {
 		env_var_or_default('PROGRAMFILES', 'C:\Program Files') + '\Git\usr\bin;' + env_var_or_default('PATH','')
@@ -254,7 +257,16 @@ build-ui:
 build:
     #!{{bash}}
     export RUSTFLAGS="-Ctarget-cpu=native -Copt-level=3 -Cstrip=symbols -Ccodegen-units=8"
-    cargo tauri build
+    if [ -z $TAURI_PRIVATE_KEY ] && [ -f $HOME/.tauri/memospot_updater.key ]; then
+        export TAURI_PRIVATE_KEY=$(cat $HOME/.tauri/memospot_updater.key 2>/dev/null | tr -d '\n' || echo "")
+        echo -e "${CYAN}Setting TAURI_PRIVATE_KEY from $HOME/.tauri/memospot_updater.key${RESET}"
+    fi
+    if [ -z $TAURI_PRIVATE_KEY ] || [ -z $TAURI_KEY_PASSWORD ]; then
+        echo -e "${MAGENTA}Environment not fully configured. Building without updater.${RESET}"
+        cargo tauri build -c '{"tauri": {"updater": {"active": false}}}'
+    else
+        cargo tauri build
+    fi
     just sccache-stats postbuild
 
 [private]

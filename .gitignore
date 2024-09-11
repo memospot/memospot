@@ -5,6 +5,7 @@ build/
 dist-ui/
 server-dist/
 icon.icns
+.env
 
 *.db
 *.gz
