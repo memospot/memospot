@@ -16,8 +16,7 @@ env:
   RUSTFLAGS: -Copt-level=3 -Cstrip=symbols -Ccodegen-units=1
   SCCACHE_DIR: ${{github.workspace}}/.sccache
   SCCACHE_GHA_ENABLED: false # required to cache everything at once and avoid rate limiting
-  TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-  TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+  LATEST_MEMOS_VERSION: NOT_SET
 
 concurrency:
   cancel-in-progress: true
@@ -44,7 +43,10 @@ jobs:
       # Set env vars
       - name: "Set env vars"
         shell: bash
-        run: echo CACHE_KEY=$(date +'%Y%m%d') >> $GITHUB_ENV
+        run: |
+          echo CACHE_KEY=$(date +'%Y%m%d') >> $GITHUB_ENV
+          latest_memos_version=$(curl -s "https://api.github.com/repos/memospot/memos-builds/releases/latest" | jq -r '.tag_name' || echo "NOT_SET")
+          echo "LATEST_MEMOS_VERSION=$latest_memos_version" >> $GITHUB_ENV
       - if: ${{ runner.os == 'Windows' }}
         name: "[Windows] Fix environment variables"
         run: |
@@ -88,7 +90,7 @@ jobs:
 
       - name: Install Just
         uses: taiki-e/install-action@331a600f1b10a3fed8dc56f925012bede91ae51f
-        with: { tool: just@1.32.0 }
+        with: { tool: just@1.35.0 }
 
       # Rust
       - name: Setup Rust toolchain
@@ -158,11 +160,16 @@ jobs:
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@f290eb8e3c2a5097b2c6facfa1b6674dab9eaefb
         continue-on-error: true
-        env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
           releaseName: "v__VERSION__"
           releaseBody: |
+            Bundled Memos version: **${{ env.LATEST_MEMOS_VERSION }}**
+
             See the assets section below to download the app.
 
             - Windows `exe`: per-user install (recommended).
