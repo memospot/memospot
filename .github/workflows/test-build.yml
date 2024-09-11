@@ -21,6 +21,7 @@ env:
   RUSTC_WRAPPER: sccache
   CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
+  GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
   SCCACHE_DIR: ${{github.workspace}}/.sccache
   SCCACHE_GHA_ENABLED: false # required to cache everything at once and avoid rate limiting
   LATEST_MEMOS_VERSION: NOT_SET

@@ -10,6 +10,7 @@ env:
   CACHE_KEY: ${{ github.run_id }}-${{ github.run_number }}
   CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
+  GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
   NODE_MODULES: ${{github.workspace}}/node_modules
   RUST_BACKTRACE: short
   RUSTC_WRAPPER: sccache
