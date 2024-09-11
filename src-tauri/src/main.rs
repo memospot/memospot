@@ -13,7 +13,7 @@ use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
 use config::Config;
 use memospot::*;
 
-use log::info;
+use log::{debug, info};
 use std::path::PathBuf;
 use tauri::Manager;
 
@@ -51,6 +51,7 @@ fn main() {
         "Memos data directory: {}",
         rtcfg.paths.memos_data.to_string_lossy()
     );
+    info!("Memos URL: {}", rtcfg.memos_url);
 
     rtcfg.managed_server = rtcfg.memos_url.starts_with(&format!(
         "http://localhost:{}",
@@ -69,17 +70,6 @@ fn main() {
     rtcfg.paths.memospot_bin = std::env::current_exe().unwrap();
     rtcfg.paths.memospot_cwd = rtcfg.paths.memospot_bin.parent().unwrap().to_path_buf();
     rtcfg.paths.memos_bin = init::find_memos(&rtcfg);
-
-    // Save the config file if it has changed.
-    if rtcfg.yaml != rtcfg.__yaml__ {
-        if let Err(e) = Config::save_file(&config_path, &rtcfg.yaml) {
-            panic_dialog!(
-                "Failed to save config file:\n`{}`\n\n{}",
-                config_path.to_string_lossy(),
-                e.to_string()
-            );
-        }
-    }
 
     let mut rtcfg_setup = rtcfg.clone();
     let Ok(tauri_app) = tauri::Builder::default()
@@ -111,6 +101,7 @@ fn main() {
 
             // Add Tauri resource directory as `_memospot_resources`.
             rtcfg_setup.paths._memospot_resources = app.path_resolver().resource_dir().unwrap();
+
             tauri::async_runtime::spawn(async move {
                 init::migrate_database(&rtcfg_setup).await;
 
@@ -129,6 +120,17 @@ fn main() {
         if let tauri::RunEvent::ExitRequested { api, .. } = event {
             api.prevent_exit();
 
+            // Save the config file if it has changed.
+            if rtcfg.yaml != rtcfg.__yaml__ {
+                if let Err(e) = Config::save_file(&config_path, &rtcfg.yaml) {
+                    error_dialog!(
+                        "Failed to save config file:\n`{}`\n\n{}",
+                        config_path.to_string_lossy(),
+                        e.to_string()
+                    );
+                }
+            }
+
             // Handle Memos shutdown.
             tauri::api::process::kill_children();
             tauri::async_runtime::block_on(async {
@@ -138,6 +140,7 @@ fn main() {
                     if retry < 10 {
                         tokio::time::sleep(std::time::Duration::from_millis(500)).await;
                     }
+                    debug!("Checkpointing database WAL…");
                     sqlite::checkpoint(&rtcfg).await;
                     retry -= 1;
                 }

@@ -1,5 +1,5 @@
 use crate::runtime_config::RuntimeConfig;
-use log::{debug, error};
+use log::error;
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseConnection};
 use std::io::{Error, ErrorKind, Result};
 
@@ -41,7 +41,6 @@ pub async fn get_database_connection(rtcfg: &RuntimeConfig) -> Result<DatabaseCo
 /// database WAL manually right before closing the app to ensure that all new
 /// data is commited to the main database and that it's properly closed.
 pub async fn checkpoint(rtcfg: &RuntimeConfig) {
-    debug!("Checkpointing database WAL...");
     let db = match get_database_connection(rtcfg).await {
         Ok(conn) => conn,
         Err(err) => {
@@ -50,12 +49,11 @@ pub async fn checkpoint(rtcfg: &RuntimeConfig) {
         }
     };
 
-    match db
+    if let Err(e) = db
         .execute_unprepared("PRAGMA wal_checkpoint(TRUNCATE);")
         .await
     {
-        Ok(_) => debug!("Database WAL checkpointed."),
-        Err(e) => error!("Failed to checkpoint database WAL: {}", e),
+        error!("Failed to checkpoint database WAL: {}", e)
     }
 
     let _ = db.close().await;
