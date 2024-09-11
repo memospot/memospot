@@ -131,7 +131,7 @@ pub fn backup_directory(rtcfg: &RuntimeConfig) -> PathBuf {
 pub fn database(rtcfg: &RuntimeConfig) -> PathBuf {
     let db_file = &format!(
         "memos_{}.db",
-        rtcfg.yaml.memos.mode.clone().unwrap_or_default()
+        rtcfg.yaml.memos.mode.as_deref().unwrap_or_default()
     );
     let db_path = rtcfg.paths.memos_data.join(db_file);
     let files = vec![
@@ -347,26 +347,24 @@ pub fn memos_port(rtcfg: &RuntimeConfig) -> u16 {
 /// If remote server is enabled, return the configured URL.
 /// Otherwise, return the default Memos address for the spawned server.
 pub fn memos_url(rtcfg: &RuntimeConfig) -> String {
-    if rtcfg.yaml.memospot.remote.enabled.unwrap_or_default()
-        && rtcfg.yaml.memospot.remote.url.is_some()
+    if !rtcfg.yaml.memospot.remote.enabled.unwrap_or_default()
+        || rtcfg.yaml.memospot.remote.url.is_none()
     {
-        let url = rtcfg.yaml.memospot.remote.url.clone().unwrap();
-        if url.is_empty() {
-            panic_dialog!(
-                "Remote server is enabled, but URL is empty!\n\nCheck memospot.yaml."
-            );
-        }
-        if !url.starts_with("http") {
-            panic_dialog!("Remote server is enabled, but URL is not starting with http:// or https://!\n\nCheck memospot.yaml.");
-        }
-
-        return url.trim_end_matches('/').to_string() + "/";
+        return format!(
+            "http://localhost:{}/",
+            rtcfg.yaml.memos.port.unwrap_or_default()
+        );
     }
 
-    format!(
-        "http://localhost:{}/",
-        rtcfg.yaml.memos.port.unwrap_or_default()
-    )
+    let url = rtcfg.yaml.memospot.remote.url.as_deref().unwrap();
+    if url.is_empty() || !url.starts_with("http") {
+        panic_dialog!(
+            "Invalid remote server URL: `{}`\n\nURL must start with http:// or https://.\nCheck memospot.yaml.",
+            url
+        );
+    }
+
+    url.trim_end_matches('/').to_string() + "/"
 }
 
 /// Locate Memos server binary.
