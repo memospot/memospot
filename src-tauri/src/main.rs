@@ -11,7 +11,7 @@ mod zip;
 
 use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
 use config::Config;
-use memospot::*;
+use dialog::*;
 
 use log::{debug, info};
 use std::{ops::IndexMut, path::PathBuf};
