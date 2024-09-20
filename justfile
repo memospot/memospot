@@ -166,7 +166,7 @@ dev: dev-killprocesses
 [macos]
 dev-killprocesses:
     #!{{bash}}
-    processes=("memospot" "memos")
+    processes=("Memospot" "memos")
     for process in "${processes[@]}"; do
         killall $process > /dev/null 2>&1 || true
     done

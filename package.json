@@ -12,5 +12,8 @@
     "@types/bun": "^1.1.9",
     "@types/node": "^20.16.5"
   },
-  "trustedDependencies": ["@biomejs/biome", "esbuild"]
+  "trustedDependencies": ["@biomejs/biome", "esbuild"],
+  "dependencies": {
+    "@tauri-apps/api": "^2.0.0-rc.0"
+  }
 }

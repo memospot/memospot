@@ -1,49 +1,16 @@
-#:schema https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v1.5.8/core/tauri-config-schema/schema.json
-# See https://tauri.app/v1/references/configuration-files/
+productName = "Memospot"
+mainBinaryName = "Memospot"
+identifier = "com.memospot.app"
 
 [build]
 beforeBuildCommand = "just tauri-before-build"
 beforeBundleCommand = "just tauri-before-bundle"
 beforeDevCommand = "just tauri-before-dev"
-devPath = "http://localhost:5173"
-distDir = "../dist-ui"
+frontendDist = "../dist-ui"
+devUrl = "http://localhost:1420"
 runner = "cargo"
-withGlobalTauri = true
 
-[package]
-productName = "Memospot"
-
-[tauri.allowlist]
-all = false
-
-[tauri.allowlist.fs]
-scope = ["$RESOURCE/*"]
-
-[tauri.allowlist.http]
-all = false
-request = true
-scope = ["https://*", "http://*"]
-
-[tauri.allowlist.shell]
-all = false
-execute = false
-open = true
-sidecar = true # Required to spawn the server
-
-[tauri.allowlist.process]
-all = false
-exit = false
-relaunch = true
-relaunchDangerousAllowSymlinkMacos = false
-
-[tauri.allowlist.protocol]
-asset = false
-assetScope = ["**"]
-
-[tauri.allowlist.window]
-all = true
-
-[tauri.bundle]
+[bundle]
 active = true
 category = "Productivity"
 icon = [
@@ -53,36 +20,26 @@ icon = [
     "icons/icon.icns",
     "icons/icon.ico",
 ]
-identifier = "com.memospot.app"
 longDescription = "Memospot is a desktop version of Memos, a beautiful markdown-based note-taking service."
 shortDescription = "Memospot - a note-taking application"
 targets = "all"
-
-# Memos back-end
-# Tauri inherits permissions from the file, so it must have execute permissions before bundling
 externalBin = ["../server-dist/memos"]
+createUpdaterArtifacts = "v1Compatible"
 
-# [tauri.bundle.resources]
-# Memos' sidecar web front end
-# "../server-dist/dist/" = "./dist/"
-
-[tauri.bundle.appimage]
-bundleMediaFramework = true
-
-[tauri.bundle.macOS]
-exceptionDomain = "localhost"
-
-[tauri.bundle.windows]
+[bundle.windows]
 allowDowngrades = true
 digestAlgorithm = "sha256"
 tsp = false
-webviewInstallMode = { silent = false, type = "embedBootstrapper" }
-[tauri.bundle.windows.wix]
-# wix generates a different installer for each language
+
+[bundle.windows.webviewInstallMode]
+silent = false
+type = "embedBootstrapper"
+
+[bundle.windows.wix]
 language = ["en-US"]
 template = "../installer/wix_template.wxs"
 
-[tauri.bundle.windows.nsis]
+[bundle.windows.nsis]
 compression = "lzma"
 displayLanguageSelector = true
 installerIcon = "icons/icon.ico"
@@ -103,22 +60,27 @@ languages = [
 ]
 template = "../installer/nsis_template.nsi"
 
-[tauri.security]
-dangerousUseHttpScheme = true # external images won't load without this
+[bundle.macOS]
+exceptionDomain = "localhost"
 
-# allows target _blank links to open in the default browser
-[[tauri.security.dangerousRemoteDomainIpcAccess]]
-domain = "localhost"
-enableTauriAPI = true
-plugins = ["shell"]
-windows = ["main"]
+[bundle.linux.appimage]
+bundleMediaFramework = true
 
-[tauri.updater]
-active = true
-dialog = true
-endpoints = ["https://github.com/memospot/memospot/releases/latest/download/latest.json"]
+[plugins.updater]
 pubkey = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhENDYwRjkzNTkwQzY0NEEKUldSS1pBeFprdzlHalI3YVdINTZURFNUbHZIc3N0Rk40c2tvWDN3MWF2OWdnSHlRMnhjMFVlRGsK"
-windows = { installerArgs = [], installMode = "passive" }
+endpoints = [
+    "https://github.com/memospot/memospot/releases/latest/download/latest.json",
+]
 
-[[tauri.windows]]
-fileDropEnabled = false # Must be disabled to use browser-native drag and drop.
+[plugins.updater.windows]
+installerArgs = []
+installMode = "passive"
+
+[app]
+withGlobalTauri = true
+
+[[app.windows]]
+dragDropEnabled = false
+
+[app.security.assetProtocol]
+scope = ["**"]

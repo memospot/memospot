@@ -1,6 +1,5 @@
-import { ResponseType, fetch } from "@tauri-apps/api/http";
 import { LogoBlinker } from "./blinker";
-import { getEnv, getMemosURL } from "./tauri";
+import { getEnv, getMemosURL, pingMemos } from "./tauri";
 
 async function addManualRedirectButton() {
     document.getElementById("manual-redirect-btn")?.addEventListener("click", () => {
@@ -19,25 +18,10 @@ async function addManualRedirectButton() {
 }
 document.addEventListener("DOMContentLoaded", addManualRedirectButton);
 
-async function pingMemosServer(endpoint: string): Promise<boolean> {
-    try {
-        const response = await fetch(endpoint, {
-            method: "GET",
-            timeout: 1,
-            responseType: ResponseType.Text
-        });
-        return response.ok;
-    } catch (error) {
-        console.error("Error pinging Memos server:", error);
-        return false;
-    }
-}
-
 async function redirectOnResponse() {
     let memosUrl = await getMemosURL();
     memosUrl = memosUrl.endsWith("/") ? memosUrl.slice(0, -1) : memosUrl;
 
-    const pingEndpoint = `${memosUrl}/healthz`;
     const noRedirectEnv = await getEnv("MEMOSPOT_NO_REDIRECT");
     const debugNoRedirect = ["true", "on", "1"].includes(noRedirectEnv.toLowerCase());
     const logoBlinker = new LogoBlinker(".logo.memos");
@@ -46,7 +30,7 @@ async function redirectOnResponse() {
 
     let tries = 0;
     while (true) {
-        if ((await pingMemosServer(pingEndpoint)) && !debugNoRedirect) {
+        if ((await pingMemos()) && !debugNoRedirect) {
             logoBlinker.stop();
             globalThis.location.replace(memosUrl);
             return;

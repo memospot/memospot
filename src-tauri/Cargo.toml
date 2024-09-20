@@ -10,9 +10,13 @@ license = "MIT"
 repository = "https://github.com/memospot/memospot"
 description = "Memospot is a desktop version of Memos, a beautiful, privacy-first, lightweight note-taking service."
 
+# [lib]
+# name = "memospot_lib"
+# crate-type = ["staticlib", "cdylib", "rlib", "lib"]
+
 [build-dependencies.tauri-build]
 features = ["config-toml"]
-version = "1.5"
+version = "2.0.0-rc"
 
 [dependencies.config]
 path = "../crates/config"
@@ -24,6 +28,13 @@ version = "0.0.1"
 
 [dependencies]
 home = "0.5.9"
+tauri-plugin-fs = "2.0.0-rc"
+tauri-plugin-process = "2.0.0-rc"
+tauri-plugin-shell = "2.0.0-rc"
+
+[dependencies.tauri-plugin-http]
+default-features = false
+version = "2.0.0-rc"
 
 [dependencies.homedir]
 path = "../crates/homedir"
@@ -89,20 +100,14 @@ default-features = false
 features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"]
 
 [dependencies.tauri]
-version = "1.6.1"
+version = "2.0.0-rc"
 default-features = true
 features = [
-    "process-relaunch",
-    "updater",
     "config-toml",
-    "http-request",
-    "shell-open",
-    "shell-sidecar",
-    "window-all",
 ]
 
 [dependencies.tauri-utils]
-version = "1.5.3"
+version = "2.0.0-rc"
 default-features = false
 
 [dependencies.tempfile]
@@ -116,6 +121,9 @@ version = "0.3.9"
 
 [target.'cfg(windows)'.dependencies.winreg]
 version = "0.52.0"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = "2.0.0-rc"
 
 [dependencies.url]
 features = ["serde"]

@@ -1,5 +1,6 @@
 use crate::runtime_config::RuntimeConfig;
 use crate::sqlite;
+use crate::utils::*;
 /// Runtime checks and initialization code.
 ///
 /// Functions in this module panics with native dialogs instead of returning errors.
@@ -10,7 +11,6 @@ use config::Config;
 use dialog::*;
 use homedir::HomeDirExt;
 use log::{debug, info, warn};
-use memospot::*;
 use migration::{Migrator, MigratorTrait};
 use std::env;
 use std::env::consts::OS;
@@ -476,7 +476,7 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
     // a multithreaded context.
     unsafe {
         // Allows using $ENV{MEMOSPOT_DATA} in log4rs config.
-        std::env::set_var(
+        env::set_var(
             "MEMOSPOT_DATA",
             rtcfg.paths.memospot_data.to_string_lossy().to_string(),
         );

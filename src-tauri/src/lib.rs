@@ -1,171 +1,210 @@
-use home::home_dir;
-use path_clean::PathClean;
-use std::env;
-use std::io::Result;
-use std::path::{Path, PathBuf};
+mod init;
+mod js_handler;
+mod memos;
+mod runtime_config;
+mod sqlite;
+mod utils;
+mod webview;
+mod zip;
 
-/// Get the data path to supplied application name.
-///
-/// Probe paths:
-///   - ~/.config/{app_name}
-///   - ~/.{app_name}
-///
-/// Default path:
-///   - Windows: `%LOCALAPPDATA%\{app_name}`
-///   - POSIX-compliant systems: `~/.{app_name}`.
-///
-/// Fallback:
-///   - `%APPDATA%\..\Local\{app_name}` (Windows)
-///   - `~/.{app_name}`
-///
-/// Home directory is determined by the [`home`](https://docs.rs/home) crate.
-pub fn get_app_data_path(app_name: &str) -> PathBuf {
-    let home = home_dir().unwrap_or_default();
-    let fallback = home.join(format!(".{}", app_name));
-    let xdg_config_path = env::var("XDG_CONFIG_HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| home.join(".config"))
-        .join(app_name);
+use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
+use config::Config;
+use dialog::*;
+use log::info;
+use std::{ops::IndexMut, path::PathBuf};
+use tauri::path::BaseDirectory;
+use tauri::Manager;
 
-    if xdg_config_path.exists() {
-        return xdg_config_path;
+#[warn(unused_extern_crates)]
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    init::ensure_webview();
+
+    let memospot_data = init::data_path("memospot");
+    let config_path = memospot_data.join("memospot.yaml");
+    let yaml_config = init::config(&config_path);
+
+    let mut rtcfg = RuntimeConfig {
+        paths: RuntimeConfigPaths {
+            memos_bin: PathBuf::new(),
+            memos_data: PathBuf::new(),
+            memos_db_file: PathBuf::new(),
+            _memospot_backups: PathBuf::new(),
+            memospot_bin: PathBuf::new(),
+            memospot_config_file: config_path.clone(),
+            memospot_cwd: PathBuf::new(),
+            memospot_data: memospot_data.clone(),
+            _memospot_resources: PathBuf::new(),
+        },
+        managed_server: true,
+        memos_url: String::new(),
+        yaml: yaml_config.clone(),
+        __yaml__: yaml_config,
+    };
+
+    rtcfg.yaml.memos.port = Some(init::memos_port(&rtcfg));
+    rtcfg.paths.memos_data = init::memos_data(&rtcfg);
+    rtcfg.paths.memos_db_file = init::database(&rtcfg);
+    rtcfg.memos_url = init::memos_url(&rtcfg);
+    info!(
+        "Memos data directory: {}",
+        rtcfg.paths.memos_data.to_string_lossy()
+    );
+    info!("Memos URL: {}", rtcfg.memos_url);
+
+    rtcfg.managed_server = rtcfg.memos_url.starts_with(&format!(
+        "http://localhost:{}",
+        rtcfg.yaml.memos.port.unwrap_or_default()
+    ));
+
+    init::setup_logger(&rtcfg);
+
+    info!("Starting Memospot.");
+    info!(
+        "Memospot data path: {}",
+        rtcfg.paths.memospot_data.to_string_lossy()
+    );
+
+    rtcfg.paths._memospot_backups = init::backup_directory(&rtcfg);
+    rtcfg.paths.memospot_bin = std::env::current_exe().unwrap();
+    rtcfg.paths.memospot_cwd = rtcfg.paths.memospot_bin.parent().unwrap().to_path_buf();
+    rtcfg.paths.memos_bin = init::find_memos(&rtcfg);
+
+    let mut tauri_ctx = tauri::generate_context!();
+    let app_version = tauri_ctx.package_info().version.to_string();
+
+    if !tauri_ctx.config_mut().app.windows.is_empty() {
+        let base_user_agent = "Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+        let window_config = tauri_ctx.config_mut().app.windows.index_mut(0);
+        window_config.center = rtcfg.yaml.memospot.window.center.unwrap_or_default();
+        window_config.fullscreen = rtcfg.yaml.memospot.window.fullscreen.unwrap_or_default();
+        window_config.maximized = rtcfg.yaml.memospot.window.maximized.unwrap_or_default();
+        window_config.resizable = rtcfg.yaml.memospot.window.resizable.unwrap_or_default();
+        window_config.width = rtcfg.yaml.memospot.window.width.unwrap_or_default() as f64;
+        window_config.height = rtcfg.yaml.memospot.window.height.unwrap_or_default() as f64;
+        window_config.x = Some(rtcfg.yaml.memospot.window.x.unwrap_or_default() as f64);
+        window_config.y = Some(rtcfg.yaml.memospot.window.y.unwrap_or_default() as f64);
+        window_config.user_agent =
+            Some(format!("{} Memospot/{}", base_user_agent, &app_version));
+        window_config.title = format!("Memospot {}", &app_version);
     }
-    if fallback.exists() {
-        return fallback;
-    }
-    if cfg!(windows) {
-        if let Ok(path) = env::var("LOCALAPPDATA").or_else(|_| env::var("APPDATA")) {
-            let path = PathBuf::from(path);
-            return if path.ends_with("Local") {
-                path.join(app_name)
-            } else {
-                path.parent().unwrap_or(&path).join("Local").join(app_name)
-            };
-        }
-    }
 
-    fallback
-}
+    let mut rtcfg_setup = rtcfg.clone();
+    let Ok(tauri_app) = tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_http::init())
+        .manage(js_handler::MemosURL::manage(rtcfg.memos_url.clone()))
+        .invoke_handler(tauri::generate_handler![
+            js_handler::get_memos_url,
+            js_handler::ping_memos,
+            js_handler::get_env
+        ])
+        .setup(move |app| {
+            if !rtcfg.yaml.memospot.updater.enabled.unwrap_or_default() {
+                app.handle().remove_plugin("tauri-plugin-updater");
+            }
 
-/// Get the absolute path to supplied path.
-pub fn absolute_path(path: impl AsRef<Path>) -> Result<PathBuf> {
-    let path = path.as_ref();
-
-    let absolute_path = if path.is_absolute() {
-        path.to_path_buf()
-    } else {
-        env::current_dir()?.join(path)
-    }
-    .clean();
-
-    Ok(absolute_path)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn remove_env_vars() {
-        // SAFETY: This is a test function, and removing a process environment
-        // variable is generally safe. The unsafe block is required due to the
-        // potential for race conditions in a multithreaded context.
-        unsafe {
-            env::remove_var("APPDATA");
-            env::remove_var("HOME");
-            env::remove_var("LOCALAPPDATA");
-            env::remove_var("XDG_CONFIG_HOME");
-        }
-    }
-
-    fn ensure_env_vars() {
-        let home = std::env::var("HOME").unwrap_or_default();
-        let app_data = std::env::var("APPDATA").unwrap_or_default();
-        let local_app_data = std::env::var("LOCALAPPDATA").unwrap_or_default();
-
-        // SAFETY: This is a test function, and setting a process environment
-        // variable is generally safe. The unsafe block is required due to the
-        // potential for race conditions in a multithreaded context.
-        unsafe {
-            if home.is_empty() {
-                env::set_var(
-                    "HOME",
-                    if cfg!(windows) {
-                        r"C:\Users\foo"
-                    } else {
-                        r"/home/foo"
-                    },
+            if !rtcfg_setup.managed_server {
+                info!(
+                    "Using custom Memos address: {}. Memos server will not be started.",
+                    rtcfg_setup.memos_url
                 );
+                let title_url = rtcfg_setup
+                    .memos_url
+                    .trim_start_matches("http://")
+                    .trim_start_matches("https://")
+                    .trim_end_matches("/");
+                if let Some(main_window) = app.get_webview_window("main") {
+                    main_window
+                        .set_title(&format!("Memospot {} - {}", app_version, title_url))
+                        .unwrap_or_default();
+                }
+                return Ok(());
             }
-            if app_data.is_empty() {
-                env::set_var("APPDATA", r"C:\Users\foo\AppData\Roaming");
+
+            // Add Tauri resource directory as `_memospot_resources`.
+            rtcfg_setup.paths._memospot_resources =
+                app.path().resolve(".", BaseDirectory::Resource).unwrap();
+            info!(
+                "Tauri resource directory: {}",
+                rtcfg_setup.paths._memospot_resources.to_string_lossy()
+            );
+
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                init::migrate_database(&rtcfg_setup).await;
+
+                if let Err(err) = memos::spawn(handle, &rtcfg_setup) {
+                    panic_dialog!("Failed to spawn Memos server:\n{}", err);
+                };
+            });
+            Ok(())
+        })
+        .build(tauri_ctx)
+    else {
+        panic_dialog!("Failed to build Tauri application!");
+    };
+
+    tauri_app.run(move |app_handle, event| {
+        match event {
+            tauri::RunEvent::WindowEvent { label, event, .. } => {
+                if label != "main" {
+                    return;
+                }
+                if let tauri::WindowEvent::Resized { .. } = event {
+                    let main_window = app_handle.get_webview_window("main").unwrap();
+                    rtcfg.yaml.memospot.window.maximized =
+                        Some(main_window.is_maximized().unwrap_or_default());
+                    rtcfg.yaml.memospot.window.width =
+                        Some(main_window.inner_size().unwrap_or_default().width);
+                    rtcfg.yaml.memospot.window.height =
+                        Some(main_window.outer_size().unwrap_or_default().height);
+                    rtcfg.yaml.memospot.window.x =
+                        Some(main_window.outer_position().unwrap_or_default().x);
+                    rtcfg.yaml.memospot.window.y =
+                        Some(main_window.outer_position().unwrap_or_default().y);
+                }
             }
-            if local_app_data.is_empty() {
-                env::set_var("LOCALAPPDATA", r"C:\Users\foo\AppData\Local");
+            tauri::RunEvent::ExitRequested { api, .. } => {
+                // api.prevent_exit();
+
+                // app_handle.exit(0);
+
+                // Save the config file, if it has changed.
+                if rtcfg.yaml != rtcfg.__yaml__ {
+                    info!("Configuration has changed. Saving…");
+                    if let Err(e) = Config::save_file(&config_path, &rtcfg.yaml) {
+                        error_dialog!(
+                            "Failed to save config file:\n`{}`\n\n{}",
+                            config_path.to_string_lossy(),
+                            e.to_string()
+                        );
+                    }
+                }
+                // Handle Memos shutdown.
+                // tauri_plugin_shell::process::CommandChild::kill();
+                // app_handle.app_handle().state().inner().lock().unwrap()
+
+                // tauri::async_runtime::block_on(async {
+                //     let wal = rtcfg.paths.memos_db_file.with_extension("db-wal");
+                //     let mut retries = 10;
+                //     while wal.exists() && retries > 0 {
+                //         if retries < 10 {
+                //             tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                //         }
+                //         debug!("Checkpointing database WAL…");
+                //         sqlite::checkpoint(&rtcfg).await;
+                //         retries -= 1;
+                //     }
+                // });
+
+                info!("Memospot closed.");
+                app_handle.exit(0);
             }
+            _ => {}
         }
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn test_get_data_path_windows() {
-        remove_env_vars();
-
-        // Test fallback to USERPROFILE (via home crate).
-        assert!(get_app_data_path("memospot")
-            .to_string_lossy()
-            .ends_with("memospot"));
-
-        // Test fallback via APPDATA (ancient Windows versions).
-        env::set_var("APPDATA", r"C:\Users\foo\AppData\Roaming");
-        assert_eq!(
-            get_app_data_path("memospot"),
-            PathBuf::from(r"C:\Users\foo\AppData\Local\memospot")
-        );
-
-        // Test a standard system with LOCALAPPDATA set.
-        env::set_var("LOCALAPPDATA", r"C:\Users\foo\AppData\Local");
-        assert_eq!(
-            get_app_data_path("memospot"),
-            PathBuf::from(r"C:\Users\foo\AppData\Local\memospot")
-        );
-    }
-
-    #[test]
-    fn test_get_data_path() {
-        ensure_env_vars();
-        let data_path = get_app_data_path("memospot");
-        assert!(data_path.has_root());
-        assert!(data_path.is_absolute());
-        assert!(data_path.to_string_lossy().ends_with("memospot"));
-    }
-
-    #[test]
-    fn test_xdg_config_home() -> Result<()> {
-        remove_env_vars();
-        let tmp_dir = tempfile::tempdir()?;
-        let xdg_config_home = tmp_dir.path().join(".config");
-        unsafe {
-            env::set_var("XDG_CONFIG_HOME", &xdg_config_home);
-        }
-        assert_eq!(
-            env::var("XDG_CONFIG_HOME").unwrap(),
-            xdg_config_home.clone().to_string_lossy()
-        );
-
-        // Test fallback to HOME/.memospot.
-        assert!(get_app_data_path("memospot")
-            .to_string_lossy()
-            .ends_with("memospot"));
-
-        // Create XDG_CONFIG_HOME/memospot.
-        std::fs::create_dir_all(xdg_config_home.join("memospot"))?;
-        assert!(get_app_data_path("memospot")
-            .to_string_lossy()
-            .ends_with(if cfg!(windows) {
-                r".config\memospot"
-            } else {
-                ".config/memospot"
-            }));
-        Ok(())
-    }
+    });
 }

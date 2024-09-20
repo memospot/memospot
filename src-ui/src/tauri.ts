@@ -5,16 +5,24 @@
  *
  */
 
-import { invoke as TauriInvoke } from "@tauri-apps/api/tauri";
+import { invoke as TauriInvoke } from "@tauri-apps/api/core";
 
 const browserError = new Error("Not running in Tauri!");
-const invoke = window.__TAURI__ ? TauriInvoke : async () => browserError.message;
+const invoke = globalThis.__TAURI__ ? TauriInvoke : async () => browserError.message;
 
 /**
  * Get Memos URL.
  */
 export function getMemosURL(): Promise<string> {
     return invoke("get_memos_url");
+}
+
+/**
+ * Ping Memos server.
+ */
+export async function pingMemos(): Promise<boolean> {
+    const result = (await invoke("ping_memos")) as string;
+    return result === "true";
 }
 
 /**

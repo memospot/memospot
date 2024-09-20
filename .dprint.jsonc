@@ -6,7 +6,8 @@
     "**/.git/*",
     "**/.sccache/*",
     "**/target/*",
-    "**/dist*/*"
+    "**/dist*/*",
+    "**/gen/schemas/*.json"
   ],
   "includes": [
     "**/*.{css,html}",
