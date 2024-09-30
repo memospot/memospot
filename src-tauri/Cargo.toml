@@ -27,7 +27,11 @@ path = "../crates/dialog"
 version = "0.0.1"
 
 [dependencies]
+encoding_rs = "0.8.34"
 home = "0.5.9"
+once_cell = "1"
+os_pipe = "1"
+shared_child = { version = "1.0" }
 tauri-plugin-fs = "2.0.0-rc"
 tauri-plugin-process = "2.0.0-rc"
 tauri-plugin-shell = "2.0.0-rc"

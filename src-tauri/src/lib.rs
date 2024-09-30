@@ -1,6 +1,7 @@
 mod init;
 mod js_handler;
 mod memos;
+pub mod process;
 mod runtime_config;
 mod sqlite;
 mod utils;
@@ -10,7 +11,7 @@ mod zip;
 use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
 use config::Config;
 use dialog::*;
-use log::info;
+use log::{debug, info};
 use std::{ops::IndexMut, path::PathBuf};
 use tauri::path::BaseDirectory;
 use tauri::Manager;
@@ -133,13 +134,12 @@ pub fn run() {
                 rtcfg_setup.paths._memospot_resources.to_string_lossy()
             );
 
-            let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 init::migrate_database(&rtcfg_setup).await;
 
-                if let Err(err) = memos::spawn(handle, &rtcfg_setup) {
-                    panic_dialog!("Failed to spawn Memos server:\n{}", err);
-                };
+                memos::spawn(&rtcfg_setup).unwrap_or_else(|e| {
+                    panic_dialog!("Failed to spawn Memos server:\n{}", e);
+                });
             });
             Ok(())
         })
@@ -169,9 +169,7 @@ pub fn run() {
                 }
             }
             tauri::RunEvent::ExitRequested { api, .. } => {
-                // api.prevent_exit();
-
-                // app_handle.exit(0);
+                api.prevent_exit();
 
                 // Save the config file, if it has changed.
                 if rtcfg.yaml != rtcfg.__yaml__ {
@@ -185,24 +183,24 @@ pub fn run() {
                     }
                 }
                 // Handle Memos shutdown.
-                // tauri_plugin_shell::process::CommandChild::kill();
-                // app_handle.app_handle().state().inner().lock().unwrap()
+                process::kill_children();
 
-                // tauri::async_runtime::block_on(async {
-                //     let wal = rtcfg.paths.memos_db_file.with_extension("db-wal");
-                //     let mut retries = 10;
-                //     while wal.exists() && retries > 0 {
-                //         if retries < 10 {
-                //             tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                //         }
-                //         debug!("Checkpointing database WAL…");
-                //         sqlite::checkpoint(&rtcfg).await;
-                //         retries -= 1;
-                //     }
-                // });
+                tauri::async_runtime::block_on(async {
+                    let wal = rtcfg.paths.memos_db_file.with_extension("db-wal");
+                    let mut retries = 10;
+                    while wal.exists() && retries > 0 {
+                        if retries < 10 {
+                            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                        }
+                        debug!("Checkpointing database WAL…");
+                        sqlite::checkpoint(&rtcfg).await;
+                        retries -= 1;
+                    }
+                });
 
                 info!("Memospot closed.");
-                app_handle.exit(0);
+                app_handle.cleanup_before_exit();
+                std::process::exit(0);
             }
             _ => {}
         }

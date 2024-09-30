@@ -1,26 +1,23 @@
 use crate::utils::absolute_path;
-use crate::RuntimeConfig;
+use crate::{process, RuntimeConfig};
 use homedir::HomeDirExt;
 use itertools::Itertools;
 use log::{debug, info};
 use std::collections::HashMap;
 use std::io::{Error, ErrorKind, Result};
 use std::path::{Path, PathBuf};
-use tauri_plugin_shell::ShellExt;
 
 /// Spawn Memos server.
 ///
 /// Spawns a managed child process with custom environment variables.
-pub fn spawn(app_handle: tauri::AppHandle, rtcfg: &RuntimeConfig) -> Result<()> {
+pub fn spawn(rtcfg: &RuntimeConfig) -> Result<()> {
     let env_vars: HashMap<String, String> = prepare_env(rtcfg);
     let command = rtcfg.paths.memos_bin.to_string_lossy().to_string();
     let cwd = get_cwd(rtcfg);
     debug!("Memos environment: {:#?}", env_vars);
     info!("Memos working directory: {}", cwd.to_string_lossy());
     tauri::async_runtime::spawn(async move {
-        app_handle
-            .shell()
-            .command(command)
+        process::Command::new(command)
             .envs(env_vars)
             .current_dir(cwd.clone())
             .spawn()
