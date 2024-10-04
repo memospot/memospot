@@ -21,5 +21,5 @@ jobs:
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
 
       - name: Rust audit
-        uses: rustsec/audit-check@dd51754d4e59da7395a4cd9b593f0ff2d61a9b95
+        uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998
         with: { token: "${{ secrets.GITHUB_TOKEN }}" }
