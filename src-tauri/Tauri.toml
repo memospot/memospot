@@ -37,7 +37,7 @@ type = "embedBootstrapper"
 
 [bundle.windows.wix]
 language = ["en-US"]
-template = "../installer/wix_template.wxs"
+template = "../installer/wix.wxs"
 
 [bundle.windows.nsis]
 compression = "lzma"
@@ -58,7 +58,7 @@ languages = [
     "TradChinese",
     "Turkish",
 ]
-template = "../installer/nsis_template.nsi"
+template = "../installer/nsis.nsi"
 
 [bundle.macOS]
 exceptionDomain = "localhost"

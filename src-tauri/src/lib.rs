@@ -171,6 +171,11 @@ pub fn run() {
             tauri::RunEvent::ExitRequested { api, .. } => {
                 api.prevent_exit();
 
+                if cfg!(debug_assertions) {
+                    // Restore previous mode.
+                    rtcfg.yaml.memos.mode = rtcfg.__yaml__.memos.mode.clone();
+                }
+
                 // Save the config file, if it has changed.
                 if rtcfg.yaml != rtcfg.__yaml__ {
                     info!("Configuration has changed. Saving…");
