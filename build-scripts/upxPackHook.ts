@@ -84,10 +84,7 @@ export function upxPackHook(options: UpxOptions) {
 if (import.meta.main) {
     const repoRoot = findRepositoryRoot();
     const exe = process.platform === "win32" ? ".exe" : "";
-    const filesToPack = [
-        `${repoRoot}/target/release/memospot${exe}`,
-        `${repoRoot}/src-tauri/target/release/memospot${exe}`
-    ];
+    const filesToPack = [`${repoRoot}/target/release/memospot${exe}`];
     const upxOptions = {
         bin: `upx${process.platform === "win32" ? ".exe" : ""}`,
         flags: ["-9"],

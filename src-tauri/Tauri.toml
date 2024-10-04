@@ -1,5 +1,5 @@
 productName = "Memospot"
-mainBinaryName = "Memospot"
+mainBinaryName = "memospot"
 identifier = "com.memospot.app"
 
 [build]

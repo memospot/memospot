@@ -10,8 +10,8 @@ set dotenv-load := true
 CI := env_var_or_default("CI", "false")
 NPROC := env_var_or_default("NPROC", num_cpus())
 GITHUB_ENV := env_var_or_default("GITHUB_ENV", ".GITHUB_ENV")
-TAURI_PRIVATE_KEY := env_var_or_default("TAURI_PRIVATE_KEY", "")
-TAURI_KEY_PASSWORD := env_var_or_default("TAURI_KEY_PASSWORD", "")
+TAURI_SIGNING_PRIVATE_KEY := env_var_or_default("TAURI_SIGNING_PRIVATE_KEY", "")
+TAURI_SIGNING_PRIVATE_KEY_PASSWORD := env_var_or_default("TAURI_SIGNING_PRIVATE_KEY_PASSWORD", "")
 
 PATH := if os() == "windows" {
 		env_var_or_default('PROGRAMFILES', 'C:\Program Files') + '\Git\usr\bin;' + env_var_or_default('PATH','')
@@ -166,7 +166,7 @@ dev: dev-killprocesses
 [macos]
 dev-killprocesses:
     #!{{bash}}
-    processes=("Memospot" "memos")
+    processes=("memospot" "memos")
     for process in "${processes[@]}"; do
         killall $process > /dev/null 2>&1 || true
     done
@@ -257,13 +257,13 @@ build-ui:
 build:
     #!{{bash}}
     export RUSTFLAGS="-Ctarget-cpu=native -Copt-level=3 -Cstrip=symbols -Ccodegen-units=8"
-    if [ -z $TAURI_PRIVATE_KEY ] && [ -f $HOME/.tauri/memospot_updater.key ]; then
-        export TAURI_PRIVATE_KEY=$(cat $HOME/.tauri/memospot_updater.key 2>/dev/null | tr -d '\n' || echo "")
-        echo -e "${CYAN}Setting TAURI_PRIVATE_KEY from $HOME/.tauri/memospot_updater.key${RESET}"
+    if [ -z $TAURI_SIGNING_PRIVATE_KEY ] && [ -f $HOME/.tauri/memospot_updater.key ]; then
+        export TAURI_SIGNING_PRIVATE_KEY=$(cat $HOME/.tauri/memospot_updater.key 2>/dev/null | tr -d '\n' || echo "")
+        echo -e "${CYAN}Setting TAURI_SIGNING_PRIVATE_KEY from $HOME/.tauri/memospot_updater.key${RESET}"
     fi
-    if [ -z $TAURI_PRIVATE_KEY ] || [ -z $TAURI_KEY_PASSWORD ]; then
+    if [ -z $TAURI_SIGNING_PRIVATE_KEY ] || [ -z $TAURI_SIGNING_PRIVATE_KEY_PASSWORD ]; then
         echo -e "${MAGENTA}Environment not fully configured. Building without updater.${RESET}"
-        cargo tauri build -c '{"tauri": {"updater": {"active": false}}}'
+        cargo tauri build -c '{"plugins": {"updater": {}}}'
     else
         cargo tauri build
     fi
@@ -280,14 +280,15 @@ postbuild:
         "bundle/deb/*.deb"
         "bundle/msi/*.msi"
         "bundle/nsis/*.exe"
+        "bundle/rpm/*.rpm"
         "dist/"
         "memos"
         "memos.exe"
         "memospot"
         "memospot.exe"
     )
-    for file in "${artifacts[@]}"; do
-        resolved_path="$(find ./target/release/$file 2>&1 | head -n 1)"
+    for artifact in "${artifacts[@]}"; do
+        resolved_path="$(find ./target/release/$artifact 2>&1 | head -n 1)"
         if [ -f "$resolved_path" ]; then
             mv -f "$resolved_path" ./build/. 2>/dev/null
         fi
