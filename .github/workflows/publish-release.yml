@@ -90,7 +90,7 @@ jobs:
         with: { install-only: true }
 
       - name: Install Just
-        uses: taiki-e/install-action@331a600f1b10a3fed8dc56f925012bede91ae51f
+        uses: taiki-e/install-action@638d0bf357cd5e20410163cdf70545caa82bfa5f
         with: { tool: just@1.35.0 }
 
       # Rust
@@ -107,7 +107,7 @@ jobs:
 
       # sccache
       - name: Install sccache
-        uses: taiki-e/install-action@331a600f1b10a3fed8dc56f925012bede91ae51f
+        uses: taiki-e/install-action@638d0bf357cd5e20410163cdf70545caa82bfa5f
         with: { tool: sccache@0.8.1 }
 
       - name: Initialize sccache environment
