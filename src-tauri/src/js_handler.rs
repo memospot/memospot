@@ -6,6 +6,7 @@
 //! The TypeScript/JavaScript API is defined in `src-ui/src/tauri.ts`.
 
 use tauri::{command, State};
+use tauri_plugin_http::reqwest;
 use tokio::sync::Mutex;
 
 pub struct MemosURL(pub Mutex<String>);
