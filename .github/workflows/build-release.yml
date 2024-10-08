@@ -1,45 +1,55 @@
-name: "Publish Release"
+name: "Build (Release)"
 on:
   push:
-    branches: "release/v*.*.*"
     tags-ignore: "v*.*.*-*"
-
   workflow_dispatch:
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
 
 env:
   CACHE_KEY: ${{ github.run_id }}-${{ github.run_number }}
   CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
-  GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  LATEST_MEMOS_VERSION: NOT_SET
   NODE_MODULES: ${{github.workspace}}/node_modules
   RUST_BACKTRACE: short
   RUSTC_WRAPPER: sccache
   RUSTFLAGS: -Copt-level=3 -Cstrip=symbols -Ccodegen-units=1
   SCCACHE_DIR: ${{github.workspace}}/.sccache
   SCCACHE_GHA_ENABLED: false # required to cache everything at once and avoid rate limiting
-  LATEST_MEMOS_VERSION: NOT_SET
-
-concurrency:
-  cancel-in-progress: true
-  group: ${{ github.workflow }}-${{ github.ref }}
+  APT_DEPS: >-
+    build-essential
+    curl
+    file
+    patchelf
+    wget
+    libayatana-appindicator3-dev
+    libgtk-3-dev
+    librsvg2-dev
+    libssl-dev
+    libwebkit2gtk-4.1-dev
+    libxdo-dev
 
 jobs:
-  publish-tauri:
+  publish-release:
     name: Publish
     permissions: { contents: write }
     strategy:
       fail-fast: false
       matrix:
         platform:
-          - { runner: ubuntu-22.04, rust_target: x86_64-unknown-linux-gnu }
           - { runner: macos-13, rust_target: aarch64-apple-darwin }
           - { runner: macos-13, rust_target: x86_64-apple-darwin }
+          - { runner: ubuntu-22.04, rust_target: x86_64-unknown-linux-gnu }
           - { runner: windows-2019, rust_target: x86_64-pc-windows-msvc }
 
     runs-on: ${{ matrix.platform.runner }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938
+        uses: actions/checkout@v4
 
       # Set env vars
       - name: "Set env vars"
@@ -53,10 +63,6 @@ jobs:
         run: |
           $SCCACHE_DIR = "${{env.SCCACHE_DIR}}".replace("/", "\")
           echo "SCCACHE_DIR=$SCCACHE_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
-          $TEMP = "${env:USERPROFILE}\AppData\Local\Temp"
-          echo "TEMP=$TEMP" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "TMP=$TEMP" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         shell: pwsh
       # /Set env vars
 
@@ -71,13 +77,7 @@ jobs:
       - if: ${{ runner.os == 'Linux'  }}
         name: "[Linux] Install platform dependencies"
         uses: awalsh128/cache-apt-pkgs-action@a6c3917cc929dd0345bfb2d3feaf9101823370ad
-        with:
-          packages: >-
-            libappindicator3-dev
-            libgtk-3-dev
-            librsvg2-dev
-            libwebkit2gtk-4.0-dev
-            patchelf
+        with: { packages: "${{env.APT_DEPS}}" }
 
       - if: ${{ runner.os == 'macOS' }}
         name: "[macOS] Install platform dependencies"
@@ -91,7 +91,7 @@ jobs:
 
       - name: Install Just
         uses: taiki-e/install-action@638d0bf357cd5e20410163cdf70545caa82bfa5f
-        with: { tool: just@1.35.0 }
+        with: { tool: just@1.36.0 }
 
       # Rust
       - name: Setup Rust toolchain
@@ -108,14 +108,14 @@ jobs:
       # sccache
       - name: Install sccache
         uses: taiki-e/install-action@638d0bf357cd5e20410163cdf70545caa82bfa5f
-        with: { tool: sccache@0.8.1 }
+        with: { tool: sccache@0.8.2 }
 
       - name: Initialize sccache environment
         shell: bash
         run: sccache --stop-server > /dev/null || true
 
       - name: Setup sccache cache
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+        uses: actions/cache@v4
         with:
           path: ${{ env.SCCACHE_DIR }}
           key: sccache-${{ matrix.platform.rust_target }}-${{ env.CACHE_KEY }}
@@ -127,20 +127,20 @@ jobs:
       # /sccache
 
       # Bun
-      - uses: oven-sh/setup-bun@f4d14e03ff726c06358e5557344e1da148b56cf7
+      - uses: oven-sh/setup-bun@v2
         with: { bun-version: latest }
 
       - # node_modules is not cached on Windows as it breaks subsequent runs
         if: ${{ runner.os != 'Windows' }}
         name: Cache node_modules
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+        uses: actions/cache@v4
         with:
           key: node_modules-${{ runner.os }}-${{ hashFiles('**/bun.lockb', '**/package.json') }}
           restore-keys: node_modules-${{ runner.os }}
-          path: ${{github.workspace}}/node_modules
+          path: ${{env.NODE_MODULES}}
 
       - name: Cache Bun dependencies
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+        uses: actions/cache@v4
         with:
           key: bundeps-${{ runner.os }}-${{ hashFiles('**/bun.lockb', '**/package.json') }}
           restore-keys: bundeps-${{ runner.os }}
@@ -150,10 +150,10 @@ jobs:
         run: just deps-ts
       # /Bun
 
-      - name: Cache memos builds
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+      - name: Cache Memos builds
+        uses: actions/cache@v4
         with:
-          key: memosbuilds-cross-${{ env.CACHE_KEY }}
+          key: memosbuilds-cross-${{ env.LATEST_MEMOS_VERSION }}-${{ env.CACHE_KEY }}
           restore-keys: memosbuilds-cross
           enableCrossOsArchive: true
           path: ./server-dist
@@ -162,16 +162,14 @@ jobs:
         uses: tauri-apps/tauri-action@4ec5841d83495da72c665daa556e6f231b89ae06
         continue-on-error: true
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
           releaseName: "v__VERSION__"
           releaseBody: |
-            Bundled Memos version: **${{ env.LATEST_MEMOS_VERSION }}**
+            > [!TIP]
+            > Bundled Memos version: **${{ env.LATEST_MEMOS_VERSION }}**
 
             See the assets section below to download the app.
 

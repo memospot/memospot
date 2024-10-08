@@ -443,7 +443,6 @@ setup-platformdeps:
         libwebkit2gtk-4.1-dev \
         libxdo-dev
 
-
 [group('setup')]
 [windows]
 setup-platformdeps:
