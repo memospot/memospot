@@ -1,4 +1,4 @@
-name: TypeScript lint and test
+name: Check (TypeScript)
 
 on:
   merge_group:
@@ -43,7 +43,7 @@ jobs:
       matrix:
         platform:
           - runner: ubuntu-latest
-          - runner: macos-latest
+          - runner: macos-13
           - runner: windows-latest
 
     runs-on: ${{ matrix.platform.runner }}

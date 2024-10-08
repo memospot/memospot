@@ -1,4 +1,4 @@
-name: Rust audit
+name: Audit (Rust)
 
 on:
   merge_group:
@@ -18,7 +18,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
-  rust-audit:
+  audit-rust:
+    name: Audit with RustSec
     runs-on: ubuntu-latest
     permissions: { issues: write, checks: write }
     steps:

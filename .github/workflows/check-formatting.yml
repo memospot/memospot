@@ -1,4 +1,4 @@
-name: Check formatting with dprint
+name: Check (formatting)
 
 on:
   merge_group:

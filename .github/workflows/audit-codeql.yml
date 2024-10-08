@@ -1,4 +1,4 @@
-name: CodeQL
+name: Audit (CodeQL)
 
 on:
   merge_group:
@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   analyze:
-    name: Analyze
+    name: Analyze with CodeQL
     runs-on: ubuntu-latest
     permissions: { actions: read, contents: read, security-events: write }
 

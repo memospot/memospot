@@ -1,4 +1,4 @@
-name: Rust lint and test
+name: Check (Rust)
 
 on:
   merge_group:
