@@ -5,6 +5,7 @@ use std::process::Command;
 #[cfg(windows)]
 use {
     std::io::{BufWriter, Cursor, Write},
+    tauri_plugin_http::reqwest,
     tempfile::TempDir,
     winreg::enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE},
     winreg::RegKey,
