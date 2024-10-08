@@ -10,5 +10,5 @@ description = "Slim TCP port picker"
 rand = ["dep:rand"]
 
 [dependencies.rand]
-version = "0.8.5"
+version = "0.8"
 optional = true

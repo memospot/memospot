@@ -6,8 +6,6 @@ edition = "2021"
 license = "MIT"
 description = "Memospot platform-agnostic dialog utilities"
 
-[dependencies.log]
-version = "0.4.21"
-
-[dependencies.native-dialog]
-version = "0.7.0"
+[dependencies]
+log = "0.4"
+native-dialog = "0.7"
