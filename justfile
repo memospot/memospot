@@ -25,6 +25,13 @@ bun := if os() == 'windows' { "bun.exe" } else { "/usr/bin/env bun" }
 REPO_ROOT := justfile_directory()
 DPRINT_CACHE_DIR := absolute_path(join(REPO_ROOT,".dprint"))
 RUST_BACKTRACE := "full"
+RUST_TARGETS := if os() == "windows" {
+    "x86_64-pc-windows-msvc"
+} else if os() == "macos" {
+    "aarch64-apple-darwin x86_64-apple-darwin"
+} else {
+    "x86_64-unknown-linux-gnu"
+}
 
 SCCACHE_BIN := if os() == 'windows' { `(Get-Command -ErrorAction SilentlyContinue -Name saccache).Source` } else { `which sccache || echo ""` }
 SCCACHE_ENABLED := if SCCACHE_BIN == "" { "false" } else { path_exists(SCCACHE_BIN) }
@@ -78,12 +85,10 @@ default:
 
 [private]
 deps-ts:
-    #!{{bash}}
     bun install || bun install
 
 [private]
 deps-rs:
-    #!{{bash}}
     mkdir -p ./dist-ui
 
 [private]
@@ -96,7 +101,6 @@ download-memos-binaries: deps-ts
 
 [private]
 upx:
-    #!{{bash}}
     bun run ./build-scripts/upxPackHook.ts || true
 
 # Tauri hooks
@@ -166,15 +170,16 @@ dev: dev-killprocesses
 [macos]
 dev-killprocesses:
     #!{{bash}}
-    processes=("memospot" "memos")
-    for process in "${processes[@]}"; do
+    for process in "memospot" "memos"; do
         killall $process > /dev/null 2>&1 || true
     done
 [private]
 [windows]
 dev-killprocesses:
     #!{{powershell}}
-    [System.Diagnostics.Process]::GetProcesses() | Where-Object { $_.ProcessName -eq "memospot" -or $_.ProcessName -eq "memos" } | Stop-Process -Force -ErrorAction SilentlyContinue
+    [System.Diagnostics.Process]::GetProcesses() | Where-Object {
+        $_.ProcessName -in "memospot", "memos"
+    } | Stop-Process -Force -ErrorAction SilentlyContinue
 
 [group('update')]
 [doc('Update project dependencies')]
@@ -274,7 +279,7 @@ postbuild:
     #!{{bash}}
     set +e
     echo -e "${CYAN}Moving relevant build files to ./build directory...${RESET}"
-    mkdir -p ./build || true
+    ! test -d "./build" && mkdir -p "./build"
     artifacts=(
         "bundle/appimage/*.AppImage"
         "bundle/deb/*.deb"
@@ -288,15 +293,13 @@ postbuild:
         "memospot.exe"
     )
     for artifact in "${artifacts[@]}"; do
-        resolved_path="$(find ./target/release/$artifact 2>&1 | head -n 1)"
-        if [ -f "$resolved_path" ]; then
-            mv -f "$resolved_path" ./build/. 2>/dev/null
-        fi
+        resolved_path="$(find ./target/release/$artifact -type f 2>&1 | head -n 1)"
+        test -f "$resolved_path" && mv -f "$resolved_path" ./build/. 2>/dev/null
     done
-    appimage="$(find ./build/*.AppImage 2>&1 | head -n 1)"
-    if [ -f "$appimage" ]; then
-        mkdir -p "${appimage}.home"
-    fi
+    appimages=($(find ./build/*.AppImage -type f 2>&1))
+    for appimage in "${appimages[@]}"; do
+        ! test -d "${appimage}.home" && mkdir -p "${appimage}.home"
+    done
     if ls ./build/memos* 1> /dev/null 2>&1; then
         echo -e "${GREEN}Done.${RESET}"
     else
@@ -322,15 +325,13 @@ clean: sccache-clean
         "./target"
     )
     for item in "${dirs[@]}"; do
-        if [ -d "$item" ]; then
-            rm -rf "$item"
-        fi
+        test -d "$item" && rm -rf "$item"
     done
 
 [group('sccache')]
 sccache-clean:
     #!{{bash}}
-    if [ -z $RUSTC_WRAPPER ]; then exit 0; fi
+    test -z $RUSTC_WRAPPER && exit 0
     sccache --stop-server || true && rm -rf ./.sccache
 
 [group('sccache')]
@@ -341,7 +342,7 @@ sccache-stats:
         exit 0
     fi
     echo -e "$CYAN -- sccache stats -- $RESET"
-    sccache --show-stats;
+    sccache --show-stats
 
 [group('lint')]
 [doc('Run all code linters')]
@@ -380,7 +381,6 @@ fix: fix-ts fix-rs
 [group('fix')]
 [doc('Run cargo fix (requires clean repo)')]
 fix-rs:
-    #!{{bash}}
     cargo fix || just fix-rs-dirty
 
 [group('fix')]
@@ -421,19 +421,29 @@ setup-platformdeps:
 [linux]
 setup-platformdeps:
     #!{{bash}}
-    sudo apt update -y
-    sudo apt install -y \
+    for front in nala apt-fast apt; do
+        if ! [ -z $(command -v $front) ]; then
+            aptfront=$front
+            break
+        fi
+    done
+    test -z $aptfront && echo "This script is only compatible with apt-based package managers." && exit 1
+    sudo $aptfront update
+    sudo $aptfront install -y \
         build-essential \
         curl \
         file \
+        git \
+        patchelf \
+        wget \
+        libayatana-appindicator3-dev \
         libgtk-3-dev \
         librsvg2-dev \
         libssl-dev \
-        libwebkit2gtk-4.0-dev \
-        patchelf \
-        wget \
-        git
-    sudo apt install -y libappindicator3-dev 2>/dev/null || true
+        libwebkit2gtk-4.1-dev \
+        libxdo-dev
+
+
 [group('setup')]
 [windows]
 setup-platformdeps:
@@ -474,19 +484,14 @@ setup-bun:
 [macos]
 setup-bun:
     #!{{bash}}
-    if ! [ -z $(command -v bun) ]; then
-        echo "Bun is already installed." && exit 0
-    fi
-    if ! [ -z $(command -v brew) ]; then
-        brew install oven-sh/bun/bun
-    else
-        echo -e "${RED}[ERROR] Homebrew not found. Please install Bun manually.${RESET}
-        Alternatively, install Homebrew and run this task again.
-        ${CYAN}
-        https://bun.sh
-        https://brew.sh
-        ${RESET}"
-    fi
+    ! test -z $(command -v bun) && echo "Bun is already installed." && exit 0
+    ! test -z $(command -v brew) && brew install oven-sh/bun/bun && exit 0
+    echo -e "${RED}[ERROR] Homebrew not found. Please install Bun manually.${RESET}
+    Alternatively, install Homebrew and run this task again.
+    ${CYAN}
+    https://bun.sh
+    https://brew.sh
+    ${RESET}"
 
 [group('setup')]
 [linux]
@@ -535,17 +540,16 @@ setup-rust:
 
 [group('setup')]
 setup-toolchain:
-    #!{{bash}}
     rustup component add clippy
-    rustup target add aarch64-apple-darwin x86_64-apple-darwin x86_64-pc-windows-msvc x86_64-unknown-linux-gnu
-    cargo install cargo-binstall --locked -y
-    cargo binstall \
+    rustup target add {{RUST_TARGETS}}
+    cargo install cargo-binstall@1.10.7 --locked
+    cargo binstall -y \
         cargo-cache@0.8.3 \
-        cargo-edit@0.12.3 \
+        cargo-edit@0.13.0 \
         dprint@0.47.2 \
-        sccache@0.8.1 \
-        tauri-cli@1.6.0 \
-        --locked --targets x86_64-unknown-linux-musl -y || exit 1
+        sccache@0.8.2 \
+        tauri-cli@2.0.2 \
+        --locked || exit 1
 
 [group('maintainer')]
 [doc('Delete all GitHub build cache')]
