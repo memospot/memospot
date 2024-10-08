@@ -1,29 +1,25 @@
 name: CodeQL
 
 on:
+  merge_group:
   push:
-    branches: "*"
     paths:
-      - ".github/workflows/codeql.yml"
-      - "**/*.{ts,tsx}"
+      - "**/audit-codeql.yml"
+      - "**/*.{cts,mts,ts,tsx}"
       - "**/bun.lockb"
       - "**/package.json"
-
   pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [main]
     paths:
-      - ".github/workflows/codeql.yml"
-      - "**/*.{ts,tsx}"
+      - "**/audit-codeql.yml"
+      - "**/*.{cts,mts,ts,tsx}"
       - "**/bun.lockb"
       - "**/package.json"
-
   schedule: [{ cron: "0 9 */15 * *" }] # 9 AM, every 15 days
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   analyze:
@@ -33,18 +29,18 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix: { language: ["javascript"] }
+      matrix: { language: ["javascript-typescript"] }
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938
+        uses: actions/checkout@v4
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@65c74964a9ed8c44ed9f19d4bbc5757a6a8e9ab9
+        uses: github/codeql-action/init@v3
         with: { languages: "${{matrix.language}}" }
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@65c74964a9ed8c44ed9f19d4bbc5757a6a8e9ab9
+        uses: github/codeql-action/autobuild@v3
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@65c74964a9ed8c44ed9f19d4bbc5757a6a8e9ab9
+        uses: github/codeql-action/analyze@v3

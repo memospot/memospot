@@ -1,42 +1,37 @@
 name: TypeScript lint and test
 
 on:
+  merge_group:
   pull_request:
-    branches: "*"
     paths:
-      - ".github/workflows/typescript.yml"
-      - "**/*.{ts,tsx}"
+      - "**/*.{cts,mts,ts,tsx}"
       - "**/bun.lockb"
+      - "**/check-typescript.yml"
       - "**/package.json"
-
   push:
-    branches: "*"
     paths:
-      - ".github/workflows/typescript.yml"
-      - "**/*.{ts,tsx}"
+      - "**/*.{cts,mts,ts,tsx}"
       - "**/bun.lockb"
+      - "**/check-typescript.yml"
       - "**/package.json"
-
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   biome:
     name: TypeScript lint
-    strategy:
-      fail-fast: false
+    strategy: { fail-fast: false }
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938
+        uses: actions/checkout@v4
 
       - name: Setup Biome
         uses: biomejs/setup-biome@1cbe33ead22c7a2fded3b52fa2893611c815c9b5
-        with:
-          version: latest
+        with: { version: latest }
 
       - name: Lint code with Biome
         run: biome ci . || biome ci .
@@ -47,31 +42,31 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - runner: ubuntu-22.04
-          - runner: macos-12
-          - runner: windows-2019
+          - runner: ubuntu-latest
+          - runner: macos-latest
+          - runner: windows-latest
 
     runs-on: ${{ matrix.platform.runner }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938
+        uses: actions/checkout@v4
 
       # Bun
       - name: Setup Bun
-        uses: oven-sh/setup-bun@4bc047ad259df6fc24a6c9b0f9a0cb08cf17fbe5
+        uses: oven-sh/setup-bun@v2
         with: { bun-version: latest }
 
       - # node_modules is not cached on Windows as it breaks subsequent runs
         if: ${{ runner.os != 'Windows' }}
         name: Cache node_modules
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+        uses: actions/cache@v4
         with:
           key: node_modules-${{ runner.os }}-${{ hashFiles('**/bun.lockb', '**/package.json') }}
           restore-keys: node_modules-${{ runner.os }}
           path: ${{github.workspace}}/node_modules
 
       - name: Cache Bun dependencies
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+        uses: actions/cache@v4
         with:
           key: bundeps-${{ runner.os }}-${{ hashFiles('**/bun.lockb', '**/package.json') }}
           restore-keys: bundeps-${{ runner.os }}
