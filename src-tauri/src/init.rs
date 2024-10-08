@@ -80,7 +80,7 @@ pub fn memos_data(rtcfg: &RuntimeConfig) -> PathBuf {
 ///
 /// Use Memospot data directory if user-provided path is empty or ".".
 /// Optionally, resolve a user-provided directory.
-pub fn backup_directory(rtcfg: &RuntimeConfig) -> PathBuf {
+pub fn ensure_backup_directory(rtcfg: &RuntimeConfig) -> PathBuf {
     let folder_name = "backups";
     let default_path = rtcfg.paths.memospot_data.join(folder_name);
 
@@ -183,9 +183,10 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
     }
 
     if rtcfg.yaml.memospot.backups.enabled.unwrap_or_default() {
+        let backup_path = ensure_backup_directory(rtcfg);
         let datetime = chrono::Local::now().format("%Y%m%d-%H%M%S").to_string();
         let backup_name = format!("db-{}-pre-migration.zst.zip", datetime);
-        let backup_path = rtcfg.paths._memospot_backups.join(&backup_name);
+        let backup_path = backup_path.join(&backup_name);
         let start_time = Instant::now();
         let backup = zip::related_files(
             &rtcfg.paths.memos_db_file,

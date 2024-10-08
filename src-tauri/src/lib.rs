@@ -30,7 +30,6 @@ pub fn run() {
             memos_bin: PathBuf::new(),
             memos_data: PathBuf::new(),
             memos_db_file: PathBuf::new(),
-            _memospot_backups: PathBuf::new(),
             memospot_bin: PathBuf::new(),
             memospot_config_file: config_path.clone(),
             memospot_cwd: PathBuf::new(),
@@ -66,7 +65,6 @@ pub fn run() {
         rtcfg.paths.memospot_data.to_string_lossy()
     );
 
-    rtcfg.paths._memospot_backups = init::backup_directory(&rtcfg);
     rtcfg.paths.memospot_bin = std::env::current_exe().unwrap();
     rtcfg.paths.memospot_cwd = rtcfg.paths.memospot_bin.parent().unwrap().to_path_buf();
     rtcfg.paths.memos_bin = init::find_memos(&rtcfg);
