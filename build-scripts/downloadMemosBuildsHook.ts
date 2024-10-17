@@ -161,7 +161,7 @@ async function downloadServerBinaries() {
         throw new Error("Failed to fetch assets");
     }
 
-    console.log(`\x1b[34mMatching GitHub assets from ${repo}:${ghRelease.tag_name}...\x1b[0m`);
+    console.log(`\x1b[34mMatching GitHub assets from ${repo}:${ghRelease.tag_name}…\x1b[0m`);
 
     const sha256sums = releaseAssets.find((asset) => {
         return asset.name.endsWith("SHA256SUMS.txt");
@@ -181,7 +181,7 @@ async function downloadServerBinaries() {
     console.log(`\x1b[32mMatched ${selectedFiles.length} files\x1b[0m`);
 
     // Download files in parallel.
-    console.log("\x1b[34mDownloading GitHub assets...\x1b[0m");
+    console.log("\x1b[34mDownloading GitHub assets…\x1b[0m");
     await async
         .eachLimit(selectedFiles, 5, async (ghAsset: GitHubAsset) => {
             const fileName = ghAsset.name;
@@ -206,7 +206,7 @@ async function downloadServerBinaries() {
 
     // Check hashes via memos_SHA256SUMS.txt.
     const fileHashes = await parseSha256Sums(sha256sums);
-    console.log("\x1b[34mChecking downloaded file hashes...\x1b[0m");
+    console.log("\x1b[34mChecking downloaded file hashes…\x1b[0m");
     await async
         .eachLimit(selectedFiles, 2, async (file: GitHubAsset) => {
             const fileName = file.name;
@@ -227,7 +227,7 @@ async function downloadServerBinaries() {
         });
 
     // Extract files in parallel.
-    console.log("\x1b[34mExtracting downloaded files...\x1b[0m");
+    console.log("\x1b[34mExtracting downloaded files…\x1b[0m");
     await async.eachLimit(selectedFiles, 2, async (file: GitHubAsset) => {
         const uuid = crypto.randomUUID();
         const extractDir = `./server-dist/${uuid}`;
@@ -281,7 +281,7 @@ async function main() {
     const repoRoot = findRepositoryRoot();
     console.log(`Repository root is \`${repoRoot}\``);
     process.chdir(repoRoot);
-    console.log("\x1b[47m\x1b[32m|> Running script `Download Memos Builds` <|\x1b[0m");
+    console.log("\x1b[30m\x1b[47m|> Running script `Download Memos Builds…` <|\x1b[0m");
 
     const serverDistDir = "./server-dist";
     const serverDistDirExists =

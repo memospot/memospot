@@ -38,7 +38,7 @@ export function upxPackHook(options: UpxOptions) {
     const root = findRepositoryRoot();
     process.chdir(root);
     log.push(`Repository root: ${root}`);
-    log.push("Running `UPX pack` ...");
+    log.push("Running `UPX pack` …");
 
     if (options.fileList.length === 0) {
         return HandleError("No files to pack.");

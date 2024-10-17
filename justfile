@@ -239,7 +239,7 @@ gen-icons:
     )
     for file in "${check_files[@]}"; do
         if ! git diff --quiet --exit-code HEAD -- "$file"; then
-            echo "${YELLOW}$file was modified, regenerating icons...${RESET}"
+            echo "${YELLOW}$file was modified, regenerating icons…${RESET}"
             just gen-icons-force
             exit 0
         fi
@@ -278,7 +278,7 @@ build:
 postbuild:
     #!{{bash}}
     set +e
-    echo -e "${CYAN}Moving relevant build files to ./build directory...${RESET}"
+    echo -e "${CYAN}Moving relevant build files to ./build directory…${RESET}"
     ! test -d "./build" && mkdir -p "./build"
     artifacts=(
         "bundle/appimage/*.AppImage"
@@ -458,15 +458,15 @@ setup-bun:
         Write-Host "Bun is already installed."
     }
     else if (Get-Command "choco" -ErrorAction SilentlyContinue) {
-        Write-Host "Installing Bun via Chocolatey..."
+        Write-Host "Installing Bun via Chocolatey…"
         Start-Process -Wait -Verb RunAs -FilePath "choco" -ArgumentList "install bun -y"
     }
     else if (Get-Command "winget" -ErrorAction SilentlyContinue) {
-        Write-Host "Installing Bun via Winget..."
+        Write-Host "Installing Bun via Winget…"
         winget install --id Oven-sh.Bun
     }
     else if (Get-Command "scoop" -ErrorAction SilentlyContinue) {
-        Write-Host "Installing Bun via Scoop..."
+        Write-Host "Installing Bun via Scoop…"
         scoop install bun
     } else {
         Write-Host -ForegroundColor Red "[ERROR] No package manager found. Please install Bun manually."

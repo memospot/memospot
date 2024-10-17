@@ -1,4 +1,4 @@
-name: Audit (Rust)
+name: Audit (RustSec)
 
 on:
   merge_group:
