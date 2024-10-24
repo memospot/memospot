@@ -6,7 +6,7 @@ dist-ui/
 server-dist/
 icon.icns
 .env
-.flatpak-builder
+**/.flatpak-builder
 *.db
 *.gz
 

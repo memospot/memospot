@@ -1,3 +1,0 @@
-logging_config.yaml
-memos_*.db*
-**/scripts/**.ts

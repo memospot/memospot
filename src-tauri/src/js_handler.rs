@@ -24,7 +24,7 @@ pub async fn get_memos_url(memos_url: State<'_, MemosURL>) -> Result<String, Str
 #[command]
 pub async fn ping_memos(memos_url: State<'_, MemosURL>) -> Result<String, String> {
     let url = memos_url.0.lock().await.clone();
-    let endpoint = format!("{}/healthz", url);
+    let endpoint = format!("{}healthz", url);
     let url = reqwest::Url::parse(&endpoint).unwrap();
     let client = reqwest::Client::new();
     if let Ok(response) = client

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::log::Log;
 use serde::{Deserialize, Serialize};
 
@@ -51,6 +53,8 @@ pub struct Window {
 pub struct Memospot {
     /// Backups settings.
     pub backups: Backups,
+    /// Custom system environment variables to pass to Memospot.
+    pub env: Option<HashMap<String, String>>,
     /// Database migrations settings.
     pub migrations: Migrations,
     // Log settings.

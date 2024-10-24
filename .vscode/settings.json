@@ -42,7 +42,6 @@
     "**/*.{toml,json,jsonc,yml,yaml,md}|.dprint.jsonc": " dprint check"
   },
   "code-runner.ignoreSelection": true,
-
   "editor.codeActionsOnSave": {
     "source.organizeImports.biome": "explicit"
   },
@@ -72,17 +71,20 @@
   },
   "prettier.enable": false,
   "rust-analyzer.cargo.extraEnv": {
-    "RUST_BACKTRACE": "full"
+    "RUST_BACKTRACE": "full",
+    "SCCACHE_DIR": "${workspaceFolder}/.sccache"
   },
   "rust-analyzer.check.command": "clippy",
   "rust-analyzer.checkOnSave": true,
   "rust-analyzer.server.extraEnv": {
-    "RUSTUP_TOOLCHAIN": "stable"
+    "RUSTUP_TOOLCHAIN": "stable",
+    "SCCACHE_DIR": "${workspaceFolder}/.sccache"
   },
   "rust-analyzer.cargo.buildScripts.useRustcWrapper": true,
   "rust-analyzer.check.allTargets": false,
   "search.exclude": {
     "**/.dprint/**": true,
+    "**/.flatpak-builder/**": true,
     "**/.sccache/**": true,
     "**/dist-ui/**": true,
     "**/node_modules/**": true,

@@ -35,7 +35,9 @@ pub struct RuntimeConfig {
     /// Store paths used throughout the app.
     pub paths: RuntimeConfigPaths,
 
-    // Memos URL
+    /// Memos URL
+    ///
+    /// URL always ends with a slash.
     pub memos_url: String,
 
     /// Whether Memospot is managing a local Memos server.

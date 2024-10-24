@@ -355,6 +355,8 @@ pub fn memos_port(rtcfg: &RuntimeConfig) -> u16 {
 
 /// Memos URL.
 ///
+/// It's ensured to end with a slash.
+///
 /// If remote server is enabled, return the configured URL.
 /// Otherwise, return the default Memos address for the spawned server.
 pub fn memos_url(rtcfg: &RuntimeConfig) -> String {
@@ -520,4 +522,140 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
         "Failed to setup logging!\nPlease delete `{}` and restart the application.",
         log_config.to_string_lossy()
     );
+}
+
+#[cfg(target_os = "linux")]
+/// Set up WebView hardware acceleration.
+///
+/// There are known issues with WebView hardware acceleration on Nvidia GPUs and GNOME Shell
+/// versions greater than 43.0 under X11. See: https://github.com/tauri-apps/tauri/issues/9394.
+///
+/// This function mitigates those issues by preemptively setting the following environment variables heuristically:
+/// - `WEBKIT_DISABLE_COMPOSITING_MODE=1`
+/// - `WEBKIT_DISABLE_DMABUF_RENDERER=1`
+///
+/// The variables are only set for the current process, leaving the system untouched.
+pub fn hw_acceleration() {
+    use log::error;
+    use semver::Version;
+    use std::process::{Command, Stdio};
+
+    let disable_compositing = || {
+        warn!("Forcing software rendering preemptively with 'WEBKIT_DISABLE_COMPOSITING_MODE=1'. Should this cause you issues, override this heuristic by setting 'memospot.env.WEBKIT_DISABLE_COMPOSITING_MODE'='0' on `memospot.yaml`.");
+        // SAFETY: There's potential for race conditions in a multi-threaded context.
+        // Shouldn't be an issue here.
+        unsafe {
+            env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
+        }
+    };
+    let disable_dmabuf_renderer = || {
+        warn!("Disabling DMABuf rendering preemptively with 'WEBKIT_DISABLE_DMABUF_RENDERER=1'. Should this cause you issues, override this heuristic by setting 'memospot.env.WEBKIT_DISABLE_DMABUF_RENDERER'='0' on `memospot.yaml`.");
+        // SAFETY: There's potential for race conditions in a multi-threaded context.
+        // Shouldn't be an issue here.
+        unsafe {
+            env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+        }
+    };
+
+    if !Path::new("/dev/dri").exists() {
+        warn!("No GPU renderer was detected.");
+        disable_compositing();
+        return;
+    }
+
+    let is_x11 = env::var("WAYLAND_DISPLAY").is_err()
+        && env::var("XDG_SESSION_TYPE").unwrap_or_default() == "x11";
+    if !is_x11 {
+        debug!("No X11 session detected. Leaving hardware acceleration as-is.");
+        return;
+    }
+
+    let is_flatpak = env::var("FLATPAK_ID").is_ok();
+    if is_flatpak {
+        warn!("Running as a Flatpak container under X11. This may present issues with Nvidia GPUs.");
+        disable_dmabuf_renderer();
+        return;
+    }
+
+    // This will return true only if lshw runs and *don't detect* any GeForce GPUs on the system.
+    // lshw won't run inside a Flatpak sandbox.
+    let non_nvidia = if let Ok(cmd) = Command::new("lshw")
+        .args([
+            "-quiet", "-short", "-disable", "disk", "-disable", "volume", "-disable", "usb",
+            "-disable", "scsi", "-disable", "pnp", "-c", "display",
+        ])
+        .stdout(Stdio::piped())
+        .output()
+    {
+        !String::from_utf8_lossy(&cmd.stdout).contains("GeForce")
+    } else {
+        debug!("Failed to run `lshw` to list GPUs.");
+        false
+    };
+    if non_nvidia {
+        debug!("No Nvidia GPU was detected. Leaving hardware acceleration as-is.");
+        return;
+    }
+
+    let gnome_version = if let Ok(cmd) = Command::new("busctl")
+        .args([
+            "--user",
+            "get-property",
+            "org.gnome.Shell",
+            "/org/gnome/Shell",
+            "org.gnome.Shell",
+            "ShellVersion",
+        ])
+        .stdout(Stdio::piped())
+        .output()
+    {
+        let clean_version = String::from_utf8_lossy(&cmd.stdout)
+            .replace("s", "")
+            .replace("\"", "")
+            .trim_ascii()
+            .to_string();
+        clean_version
+    } else {
+        debug!("Failed to get GNOME Shell version via `busctl`.");
+        "unknown".to_string()
+    };
+
+    let known_good_gnome_version =
+        if let Ok(parsed_version) = Version::parse(format!("{}.0", gnome_version).as_str()) {
+            parsed_version <= Version::new(43, 0, 0)
+        } else {
+            error!("Failed to parse GNOME Shell version.");
+            false
+        };
+    if known_good_gnome_version {
+        debug!(
+            "Detected GNOME Shell version {}. Leaving hardware acceleration as-is.",
+            gnome_version
+        );
+        return;
+    }
+
+    warn!(
+        "Detected possibly a Nvidia GPU and GNOME Shell version '{}' under X11.",
+        gnome_version
+    );
+    disable_dmabuf_renderer();
+}
+
+/// Set Memospot environment variables.
+///
+/// This is intended to configure the WebView on edge cases, like passing
+/// WEBKIT_DISABLE_COMPOSITING_MODE=1 to disable hardware acceleration on Linux.
+///
+/// Should be called after init::hw_acceleration() to allow user-defined overrides.
+pub fn set_env_vars(rtcfg: &RuntimeConfig) {
+    if let Some(memospot_env) = &rtcfg.yaml.memospot.env {
+        for (key, value) in memospot_env {
+            // SAFETY: The unsafe block is required due to the potential for race conditions in a multithreaded context.
+            // Shouldn't be an issue here.
+            unsafe {
+                env::set_var(key, value);
+            }
+        }
+    }
 }

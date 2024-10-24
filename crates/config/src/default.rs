@@ -25,6 +25,7 @@ impl Default for Config {
                     enabled: Some(true),
                     path: None,
                 },
+                env: None,
                 log: Log {
                     enabled: Some(false),
                 },

@@ -11,7 +11,8 @@ mod zip;
 use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
 use config::Config;
 use dialog::*;
-use log::{debug, info};
+use log::{debug, info, warn};
+use std::env;
 use std::{ops::IndexMut, path::PathBuf};
 use tauri::path::BaseDirectory;
 use tauri::Manager;
@@ -69,6 +70,15 @@ pub fn run() {
     rtcfg.paths.memospot_cwd = rtcfg.paths.memospot_bin.parent().unwrap().to_path_buf();
     rtcfg.paths.memos_bin = init::find_memos(&rtcfg);
 
+    #[cfg(target_os = "linux")]
+    init::hw_acceleration();
+    init::set_env_vars(&rtcfg);
+
+    let memos_url = rtcfg.memos_url.clone();
+    tauri::async_runtime::spawn(async move {
+        memos::wait_api_ready(&memos_url, 100, 15000).await;
+    });
+
     let mut tauri_ctx = tauri::generate_context!();
     let app_version = tauri_ctx.package_info().version.to_string();
 
@@ -102,7 +112,10 @@ pub fn run() {
             js_handler::get_env
         ])
         .setup(move |app| {
-            if !rtcfg.yaml.memospot.updater.enabled.unwrap_or_default() {
+            // Disable updater if the user has disabled it via config file or if running in Flatpak.
+            if !rtcfg.yaml.memospot.updater.enabled.unwrap_or_default()
+                || env::var("FLATPAK_ID").is_ok()
+            {
                 app.handle().remove_plugin("tauri-plugin-updater");
             }
 
@@ -127,14 +140,13 @@ pub fn run() {
             // Add Tauri resource directory as `_memospot_resources`.
             rtcfg_setup.paths._memospot_resources =
                 app.path().resolve(".", BaseDirectory::Resource).unwrap();
-            info!(
+            debug!(
                 "Tauri resource directory: {}",
                 rtcfg_setup.paths._memospot_resources.to_string_lossy()
             );
 
             tauri::async_runtime::spawn(async move {
                 init::migrate_database(&rtcfg_setup).await;
-
                 memos::spawn(&rtcfg_setup).unwrap_or_else(|e| {
                     panic_dialog!("Failed to spawn Memos server:\n{}", e);
                 });
@@ -146,8 +158,8 @@ pub fn run() {
         panic_dialog!("Failed to build Tauri application!");
     };
 
-    tauri_app.run(move |app_handle, event| {
-        match event {
+    tauri_app.run(move |app_handle, run_event| {
+        match run_event {
             tauri::RunEvent::WindowEvent { label, event, .. } => {
                 if label != "main" {
                     return;
@@ -185,6 +197,7 @@ pub fn run() {
                         );
                     }
                 }
+
                 // Handle Memos shutdown.
                 process::kill_children();
 

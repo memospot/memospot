@@ -33,7 +33,7 @@ RUST_TARGETS := if os() == "windows" {
     "x86_64-unknown-linux-gnu"
 }
 
-SCCACHE_BIN := if os() == 'windows' { `(Get-Command -ErrorAction SilentlyContinue -Name saccache).Source` } else { `which sccache || echo ""` }
+SCCACHE_BIN := if os() == 'windows' { `(Get-Command -ErrorAction SilentlyContinue -Name sccache).Source` } else { `which sccache || echo ""` }
 SCCACHE_ENABLED := if SCCACHE_BIN == "" { "false" } else { path_exists(SCCACHE_BIN) }
 RUSTC_WRAPPER := if SCCACHE_ENABLED == "true" { SCCACHE_BIN } else { env_var_or_default("RUSTC_WRAPPER", "") }
 SCCACHE_DIR := absolute_path(join(REPO_ROOT,".sccache"))
@@ -259,20 +259,46 @@ build-ui:
     fi
 
 [doc('Build app')]
-build:
+build TARGET='all':
     #!{{bash}}
-    export RUSTFLAGS="-Ctarget-cpu=native -Copt-level=3 -Cstrip=symbols -Ccodegen-units=8"
     if [ -z $TAURI_SIGNING_PRIVATE_KEY ] && [ -f $HOME/.tauri/memospot_updater.key ]; then
         export TAURI_SIGNING_PRIVATE_KEY=$(cat $HOME/.tauri/memospot_updater.key 2>/dev/null | tr -d '\n' || echo "")
         echo -e "${CYAN}Setting TAURI_SIGNING_PRIVATE_KEY from $HOME/.tauri/memospot_updater.key${RESET}"
     fi
     if [ -z $TAURI_SIGNING_PRIVATE_KEY ] || [ -z $TAURI_SIGNING_PRIVATE_KEY_PASSWORD ]; then
-        echo -e "${MAGENTA}Environment not fully configured. Building without updater.${RESET}"
-        cargo tauri build -c '{"plugins": {"updater": {}}}'
+        echo -e "${YELLOW}Environment not fully configured. Building without updater.${RESET}"
+        cargo tauri build -c '{"bundle": {"targets": "{{TARGET}}" }, "plugins": {"updater": {}}}'
     else
-        cargo tauri build
+        cargo tauri build -c '{"bundle": {"targets": "{{TARGET}}" }}'
     fi
     just sccache-stats postbuild
+
+[linux]
+flatpak-lint:
+    #!{{bash}}
+    flatpak install -y flathub org.flatpak.Builder
+    shopt -s expand_aliases
+    alias flatpak-builder-lint="flatpak run --command=flatpak-builder-lint org.flatpak.Builder"
+    flatpak-builder-lint appstream ./installer/flatpak/io.github.memospot.Memospot.metainfo.xml
+    flatpak-builder-lint manifest ./installer/flatpak/io.github.memospot.Memospot.yml
+    flatpak-builder-lint repo ./target/flatpak-repo
+
+[linux]
+flatpak-build:
+    #!{{bash}}
+    just build deb
+    flatpak-builder --force-clean --user --install-deps-from=flathub --repo=./target/flatpak-repo --install ./target/flatpak ./installer/flatpak/io.github.memospot.Memospot.yml
+
+[linux]
+flatpak-run:
+    flatpak run io.github.memospot.Memospot
+
+[linux]
+debug-env:
+    #!{{bash}}
+    pid="$(pidof memospot)"
+    test -z $pid && echo -e "${RED}Memospot is not running.${RESET}" && exit 1
+    tr '\0' '\n' < /proc/$pid/environ | sort
 
 [private]
 postbuild:

@@ -2,10 +2,11 @@ use crate::utils::absolute_path;
 use crate::{process, RuntimeConfig};
 use homedir::HomeDirExt;
 use itertools::Itertools;
-use log::{debug, info};
+use log::{debug, info, warn};
 use std::collections::HashMap;
 use std::io::{Error, ErrorKind, Result};
 use std::path::{Path, PathBuf};
+use tauri_plugin_http::reqwest;
 
 /// Spawn Memos server.
 ///
@@ -15,7 +16,7 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<()> {
     let command = rtcfg.paths.memos_bin.to_string_lossy().to_string();
     let cwd = get_cwd(rtcfg);
     debug!("Memos environment: {:#?}", env_vars);
-    info!("Memos working directory: {}", cwd.to_string_lossy());
+    debug!("Memos working directory: {}", cwd.to_string_lossy());
     tauri::async_runtime::spawn(async move {
         process::Command::new(command)
             .envs(env_vars)
@@ -126,4 +127,88 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
         env_vars.insert(make_env_key(key), value);
     }
     env_vars
+}
+
+/// Query Memos version via API.
+///
+/// Working with Memos v0.23.0+.
+pub async fn query_version(memos_url: &str) -> Result<String> {
+    let endpoint = format!("{}api/v1/workspace/profile", memos_url);
+    let url = match reqwest::Url::parse(&endpoint) {
+        Ok(url) => url,
+        Err(e) => {
+            return Err(Error::new(
+                ErrorKind::Other,
+                format!("Failed to parse Memos URL: {}", e),
+            ));
+        }
+    };
+    let client = reqwest::Client::new();
+    let request = client
+        .get(url)
+        .header("User-Agent", "Memospot")
+        .timeout(std::time::Duration::from_secs(1))
+        .send()
+        .await;
+
+    match request {
+        Ok(response) => {
+            if !response.status().is_success() {
+                return Err(Error::new(
+                    ErrorKind::Other,
+                    format!("server responded with status code: {}", response.status()),
+                ));
+            }
+            let json = response
+                .json::<serde_json::Value>()
+                .await
+                .unwrap_or_default();
+            let version = json
+                .get("version")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default();
+            Ok(version.to_string())
+        }
+        Err(e) => Err(Error::new(ErrorKind::Other, e)),
+    }
+}
+
+/// Poll Memos server until the API responds.
+///
+/// Currently, it just logs the server version.
+///
+/// This is a blocking function.
+pub async fn wait_api_ready(memos_url: &str, interval_millis: u64, timeout_millis: u128) {
+    let mut version = String::new();
+    let mut last_error = String::new();
+    let mut interval =
+        tokio::time::interval(tokio::time::Duration::from_millis(interval_millis));
+    let time_start = tokio::time::Instant::now();
+
+    loop {
+        if time_start.elapsed().as_millis() > timeout_millis {
+            break;
+        }
+        interval.tick().await;
+        match query_version(memos_url).await {
+            Ok(v) => {
+                version = v;
+                break;
+            }
+            Err(e) => last_error = e.to_string(),
+        }
+    }
+
+    if version.is_empty() {
+        warn!(
+            "Failed to query Memos version via API: {}. Giving up after {} ms.",
+            last_error, timeout_millis
+        );
+        return;
+    }
+    info!(
+        "Memos version: {}. API ready in <{} ms.",
+        version,
+        time_start.elapsed().as_millis()
+    );
 }
