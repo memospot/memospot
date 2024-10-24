@@ -32,7 +32,7 @@ pub fn is_available() -> bool {
 }
 
 pub fn open_install_website() -> Result<()> {
-    const TAURI_WEBVIEW_REF: &str = "https://tauri.app/v1/references/webview-versions/";
+    const TAURI_WEBVIEW_REF: &str = "https://v2.tauri.app/reference/webview-versions/";
     const WINDOWS_WEBVIEW_URL: &str =
         "https://developer.microsoft.com/microsoft-edge/webview2/#download-section";
 
