@@ -25,7 +25,7 @@ impl WebviewWindowExt for WebviewWindow {
 }
 
 pub trait WindowConfigExt {
-    fn restore_attribs_from(&self, cfg: &RuntimeConfig) -> WindowConfig;
+    fn restore_attribs_from(self, cfg: &RuntimeConfig) -> WindowConfig;
 }
 impl WindowConfigExt for WindowConfig {
     /// Restore the following Window attributes from YAML config into a WindowConfig object:
@@ -38,18 +38,16 @@ impl WindowConfigExt for WindowConfig {
     /// - height
     /// - x
     /// - y
-    fn restore_attribs_from(&self, cfg: &RuntimeConfig) -> WindowConfig {
+    fn restore_attribs_from(mut self, cfg: &RuntimeConfig) -> WindowConfig {
         let window = &cfg.yaml.memospot.window;
-        WindowConfig {
-            center: window.center.unwrap_or_default(),
-            fullscreen: window.fullscreen.unwrap_or_default(),
-            maximized: window.maximized.unwrap_or_default(),
-            resizable: window.resizable.unwrap_or_default(),
-            width: window.width.unwrap_or_default() as f64,
-            height: window.height.unwrap_or_default() as f64,
-            x: Some(window.x.unwrap_or_default() as f64),
-            y: Some(window.y.unwrap_or_default() as f64),
-            ..Default::default()
-        }
+        self.center = window.center.unwrap_or_default();
+        self.fullscreen = window.fullscreen.unwrap_or_default();
+        self.maximized = window.maximized.unwrap_or_default();
+        self.resizable = window.resizable.unwrap_or_default();
+        self.width = window.width.unwrap_or_default() as f64;
+        self.height = window.height.unwrap_or_default() as f64;
+        self.x = Some(window.x.unwrap_or_default() as f64);
+        self.y = Some(window.y.unwrap_or_default() as f64);
+        self
     }
 }
