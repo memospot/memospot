@@ -215,20 +215,12 @@ pub fn run() {
 
                 // Handle Memos shutdown.
                 process::kill_children();
-
-                tauri::async_runtime::block_on(async {
-                    let wal = rtcfg.paths.memos_db_file.with_extension("db-wal");
-                    let mut retries = 10;
-                    while wal.exists() && retries > 0 {
-                        if retries < 10 {
-                            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                        }
-                        debug!("Checkpointing database WAL…");
-                        sqlite::checkpoint(&rtcfg).await;
-                        retries -= 1;
-                    }
-                });
-
+                {
+                    let db_file = rtcfg.paths.memos_db_file.clone();
+                    tauri::async_runtime::block_on(async move {
+                        sqlite::wait_checkpoint(&db_file, 100, 15000).await;
+                    });
+                }
                 info!("Memospot closed.");
                 app_handle.cleanup_before_exit();
                 std::process::exit(0);

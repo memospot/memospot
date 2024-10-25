@@ -1,17 +1,17 @@
 use crate::utils::absolute_path;
 use crate::{process, RuntimeConfig};
+use anyhow::{anyhow, Result};
 use homedir::HomeDirExt;
 use itertools::Itertools;
 use log::{debug, info, warn};
 use std::collections::HashMap;
-use std::io::{Error, ErrorKind, Result};
 use std::path::{Path, PathBuf};
 use tauri_plugin_http::reqwest;
 
 /// Spawn Memos server.
 ///
 /// Spawns a managed child process with custom environment variables.
-pub fn spawn(rtcfg: &RuntimeConfig) -> Result<()> {
+pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
     let env_vars: HashMap<String, String> = prepare_env(rtcfg);
     let command = rtcfg.paths.memos_bin.to_string_lossy().to_string();
     let cwd = get_cwd(rtcfg);
@@ -22,7 +22,6 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<()> {
             .envs(env_vars)
             .current_dir(cwd.clone())
             .spawn()
-            .map_err(|e| Error::new(ErrorKind::Other, e))
     });
     Ok(())
 }
@@ -132,15 +131,12 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
 /// Query Memos version via API.
 ///
 /// Working with Memos v0.23.0+.
-pub async fn query_version(memos_url: &str) -> Result<String> {
+pub async fn query_version(memos_url: &str) -> Result<String, anyhow::Error> {
     let endpoint = format!("{}api/v1/workspace/profile", memos_url);
     let url = match reqwest::Url::parse(&endpoint) {
         Ok(url) => url,
         Err(e) => {
-            return Err(Error::new(
-                ErrorKind::Other,
-                format!("Failed to parse Memos URL: {}", e),
-            ));
+            return Err(anyhow!("Failed to parse Memos URL: {}", e));
         }
     };
     let client = reqwest::Client::new();
@@ -154,9 +150,9 @@ pub async fn query_version(memos_url: &str) -> Result<String> {
     match request {
         Ok(response) => {
             if !response.status().is_success() {
-                return Err(Error::new(
-                    ErrorKind::Other,
-                    format!("server responded with status code: {}", response.status()),
+                return Err(anyhow!(
+                    "server responded with status code: {}",
+                    response.status()
                 ));
             }
             let json = response
@@ -169,7 +165,7 @@ pub async fn query_version(memos_url: &str) -> Result<String> {
                 .unwrap_or_default();
             Ok(version.to_string())
         }
-        Err(e) => Err(Error::new(ErrorKind::Other, e)),
+        Err(e) => Err(e.into()),
     }
 }
 
