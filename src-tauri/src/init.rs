@@ -140,17 +140,22 @@ pub fn database(rtcfg: &RuntimeConfig) -> PathBuf {
         db_path.with_extension("db-shm"),
     ];
     for file in files {
+        if !file.exists() {
+            continue;
+        }
         // Remove demo database in dev/debug mode. Demo database is not handled by
         // migrations and can prevent Memos from starting if the model is outdated.
         if cfg!(debug_assertions) && rtcfg.yaml.memos.mode.as_deref() == Some("demo") {
-            if file.exists() {
-                if let Err(e) = std::fs::remove_file(&file) {
-                    warn_dialog!("Failed to remove demo database:\n{}", e);
-                }
+            match std::fs::remove_file(&file) {
+                Ok(_) => warn!(
+                    "Demo database \"{}\" removed.",
+                    file.file_name().unwrap_or_default().to_string_lossy()
+                ),
+                Err(e) => warn_dialog!("Failed to remove demo database:\n{}", e),
             }
             continue;
         }
-        if file.exists() && !&file.is_writable() {
+        if !&file.is_writable() {
             panic_dialog!("Database file is not writable:\n{}", file.to_string_lossy());
         }
     }
@@ -321,22 +326,9 @@ pub fn config(config_path: &PathBuf) -> Config {
         cfg_reader = Ok(Config::default());
     }
 
-    let mut config = cfg_reader.unwrap_or_else(|e| {
+    cfg_reader.unwrap_or_else(|e| {
         panic_dialog!("Failed to parse configuration file:\n{}", e.to_string());
-    });
-
-    if cfg!(debug_assertions) {
-        // Use Memos in demo mode during development,
-        // as it's already seeded with some data.
-        config.memos.mode = Some("demo".to_string());
-
-        let current_port = config.memos.port.unwrap_or_default();
-        // Use an upper port to use a dedicated WebView cache for development.
-        if current_port != 0 {
-            config.memos.port = Some(current_port + 1);
-        }
-    }
-    config
+    })
 }
 
 /// Ensure that Memos port is available.

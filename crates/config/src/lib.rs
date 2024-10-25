@@ -2,10 +2,9 @@
 
 mod tests;
 
-pub mod default;
 mod log;
 mod memos;
-mod memospot;
+pub mod memospot;
 
 use crate::memos::Memos;
 use crate::memospot::Memospot;
@@ -19,7 +18,7 @@ use std::path::Path;
 use std::time::Duration;
 use std::{fs, thread};
 
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Default, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Config {
     pub memos: Memos,
     pub memospot: Memospot,
@@ -38,7 +37,6 @@ impl Config {
     pub fn to_string(&self) -> Result<String> {
         serde_yaml::to_string(&self).map_err(|e| Error::new(ErrorKind::InvalidData, e))
     }
-
     pub fn init(cfg_path: &Path) -> Result<Config> {
         #[cfg(debug_assertions)]
         const DEFAULT_PROFILE: &str = "debug";

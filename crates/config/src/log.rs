@@ -6,3 +6,10 @@ use serde::{Deserialize, Serialize};
 pub struct Log {
     pub enabled: Option<bool>,
 }
+impl Default for Log {
+    fn default() -> Self {
+        Self {
+            enabled: Some(false),
+        }
+    }
+}

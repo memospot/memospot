@@ -10,11 +10,26 @@ pub struct Backups {
     /// Directory where Memospot will store backups.
     pub path: Option<String>,
 }
+impl Default for Backups {
+    fn default() -> Self {
+        Self {
+            enabled: Some(true),
+            path: None,
+        }
+    }
+}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Migrations {
     /// Enable database migrations.
     /// Can be disabled to use Memospot with an uncertified Memos version.
     pub enabled: Option<bool>,
+}
+impl Default for Migrations {
+    fn default() -> Self {
+        Self {
+            enabled: Some(true),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
@@ -22,11 +37,28 @@ pub struct RemoteServer {
     /// Enable remote server. This will disable spawning a local Memos server.
     pub enabled: Option<bool>,
     pub url: Option<String>,
+    pub user_agent: Option<String>,
+}
+impl Default for RemoteServer {
+    fn default() -> Self {
+        Self {
+            enabled: Some(false),
+            url: None,
+            user_agent: None,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Updater {
     pub enabled: Option<bool>,
+}
+impl Default for Updater {
+    fn default() -> Self {
+        Self {
+            enabled: Some(true),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
@@ -48,8 +80,22 @@ pub struct Window {
     /// (Managed) The window's initial y position.
     pub y: Option<i32>,
 }
+impl Default for Window {
+    fn default() -> Self {
+        Self {
+            center: Some(true),
+            fullscreen: Some(false),
+            resizable: Some(true),
+            maximized: Some(false),
+            width: Some(1280),
+            height: Some(720),
+            x: Some(0),
+            y: Some(0),
+        }
+    }
+}
 
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Default, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Memospot {
     /// Backups settings.
     pub backups: Backups,
