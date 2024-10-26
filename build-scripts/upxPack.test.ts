@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import type { UpxOptions } from "./upxPackHook";
-import { upxPackHook } from "./upxPackHook";
+import type { UpxOptions } from "./upxPack";
+import { upxPack } from "./upxPack";
 
-describe("upxPackHook", async () => {
+describe("UPX Pack", async () => {
     test.each([
         [
             // unsupported platform
@@ -50,13 +50,13 @@ describe("upxPackHook", async () => {
         ]
     ])("validate output with invalid UpxOptions", (upxOptions, expectedErrMsg) => {
         expect((): void => {
-            const { error } = upxPackHook(upxOptions);
+            const { error } = upxPack(upxOptions);
             throw error;
         }).toThrow(expectedErrMsg);
 
         {
             upxOptions.ignoreErrors = true;
-            const { output, error } = upxPackHook(upxOptions);
+            const { output, error } = upxPack(upxOptions);
             expect(error).toBeNull();
             expect(output).toMatch(expectedErrMsg);
         }

@@ -97,11 +97,11 @@ dev-ui: deps-ts
 
 [private]
 download-memos-binaries: deps-ts
-    bun run ./build-scripts/downloadMemosBuildsHook.ts
+    bun run ./build-scripts/downloadMemos.ts
 
 [private]
 upx:
-    bun run ./build-scripts/upxPackHook.ts || true
+    bun run ./build-scripts/upxPack.ts || true
 
 # Tauri hooks
 [private]

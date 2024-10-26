@@ -8,7 +8,7 @@ import * as Bun from "bun";
 import decompress from "decompress";
 import { minimatch } from "minimatch";
 import { findRepositoryRoot } from "./common";
-import type { GitHubAsset, GitHubRelease } from "./types/downloadMemosBuildsHook";
+import type { GitHubAsset, GitHubRelease } from "./types/download_memos";
 
 /**
  * Convert a GOOS-GOARCH build file name to a Rust target triple.
@@ -137,7 +137,7 @@ export async function downloadFile(srcURL: string, dstFile: string) {
     writer.end();
 }
 
-async function downloadServerBinaries() {
+async function downloadMemos() {
     const repo = "memospot/memos-builds";
     const repoUrl = `https://api.github.com/repos/${repo}/releases/latest`;
 
@@ -317,7 +317,7 @@ async function main() {
         fs.rmSync(distDir, { force: true, recursive: true });
     }
 
-    await downloadServerBinaries();
+    await downloadMemos();
 
     const endTime = performance.now();
     const timeElapsed = endTime - startTime;

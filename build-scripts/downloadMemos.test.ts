@@ -1,6 +1,6 @@
 import { expect, mock, test } from "bun:test";
 import * as crypto from "node:crypto";
-import { makeTripletFromFileName } from "./downloadMemosBuildsHook";
+import { makeTripletFromFileName } from "./downloadMemos";
 
 test("makeTripletFromFileName()", () => {
     const goToRustMap: Record<string, string> = {

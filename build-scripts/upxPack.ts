@@ -17,7 +17,7 @@ export type UpxOptions = {
  * @param {UpxOptions} options The options for the UPX packer.
  * @throws {Error} An error if the command fails and `options.ignoreErrors` is false.
  */
-export function upxPackHook(options: UpxOptions) {
+export function upxPack(options: UpxOptions) {
     // While supported, UPX is disabled on Windows to avoid AV false-positives.
     const supportedPlatforms = options.supportedPlatforms ?? ["linux"];
     const log: string[] = [];
@@ -92,7 +92,7 @@ if (import.meta.main) {
         ignoreErrors: true
     };
 
-    const { output, error } = upxPackHook(upxOptions);
+    const { output, error } = upxPack(upxOptions);
     console.log(output);
 
     if (error) {
