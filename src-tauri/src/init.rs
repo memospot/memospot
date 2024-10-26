@@ -521,8 +521,8 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
 #[cfg(target_os = "linux")]
 /// Set up WebView hardware acceleration.
 ///
-/// There are known issues with WebView hardware acceleration on Nvidia GPUs and GNOME Shell
-/// versions greater than 43.0 under X11. See: https://github.com/tauri-apps/tauri/issues/9394.
+/// There are known issues with WebView hardware acceleration on Nvidia GPUs under X11.
+/// See: https://github.com/tauri-apps/tauri/issues/9394.
 ///
 /// This function mitigates those issues by preemptively setting the following environment variables heuristically:
 /// - `WEBKIT_DISABLE_COMPOSITING_MODE=1`
@@ -530,8 +530,6 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
 ///
 /// The variables are only set for the current process, leaving the system untouched.
 pub fn hw_acceleration() {
-    use log::error;
-    use semver::Version;
     use std::process::{Command, Stdio};
 
     let disable_compositing = || {
@@ -571,69 +569,23 @@ pub fn hw_acceleration() {
         return;
     }
 
-    // This will return true only if lshw runs and *don't detect* any GeForce GPUs on the system.
+    // This will return true only if lshw runs and detect a GeForce GPU on the system.
     // lshw won't run inside a Flatpak sandbox.
-    let non_nvidia = if let Ok(cmd) = Command::new("lshw")
+    let is_nvidia = Command::new("lshw")
         .args([
             "-quiet", "-short", "-disable", "disk", "-disable", "volume", "-disable", "usb",
             "-disable", "scsi", "-disable", "pnp", "-c", "display",
         ])
         .stdout(Stdio::piped())
         .output()
-    {
-        !String::from_utf8_lossy(&cmd.stdout).contains("GeForce")
-    } else {
-        debug!("Failed to run `lshw` to list GPUs.");
-        false
-    };
-    if non_nvidia {
-        debug!("No Nvidia GPU was detected. Leaving hardware acceleration as-is.");
+        .map(|cmd| String::from_utf8_lossy(&cmd.stdout).contains("GeForce"))
+        .unwrap_or_default();
+    if is_nvidia {
+        warn!("Detected Nvidia GPU under X11. This may present issues with WebView.");
+        disable_dmabuf_renderer();
         return;
     }
-
-    let gnome_version = if let Ok(cmd) = Command::new("busctl")
-        .args([
-            "--user",
-            "get-property",
-            "org.gnome.Shell",
-            "/org/gnome/Shell",
-            "org.gnome.Shell",
-            "ShellVersion",
-        ])
-        .stdout(Stdio::piped())
-        .output()
-    {
-        let clean_version = String::from_utf8_lossy(&cmd.stdout)
-            .replace("s", "")
-            .replace("\"", "")
-            .trim_ascii()
-            .to_string();
-        clean_version
-    } else {
-        debug!("Failed to get GNOME Shell version via `busctl`.");
-        "unknown".to_string()
-    };
-
-    let known_good_gnome_version =
-        if let Ok(parsed_version) = Version::parse(format!("{}.0", gnome_version).as_str()) {
-            parsed_version <= Version::new(43, 0, 0)
-        } else {
-            error!("Failed to parse GNOME Shell version.");
-            false
-        };
-    if known_good_gnome_version {
-        debug!(
-            "Detected GNOME Shell version {}. Leaving hardware acceleration as-is.",
-            gnome_version
-        );
-        return;
-    }
-
-    warn!(
-        "Detected possibly a Nvidia GPU and GNOME Shell version '{}' under X11.",
-        gnome_version
-    );
-    disable_dmabuf_renderer();
+    debug!("No Nvidia GPU was detected. Leaving hardware acceleration as-is.");
 }
 
 /// Set Memospot environment variables.
