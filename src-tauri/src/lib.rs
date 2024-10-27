@@ -108,6 +108,7 @@ pub fn run() {
         window_config[0] = WindowConfig {
             title: format!("Memospot {}", &app_version),
             user_agent: Some(user_agent),
+            drag_drop_enabled: false, // Stop Tauri from handling drag-and-drop events and pass them to the webview.
             ..Default::default()
         }
         .restore_attribs_from(&rtcfg);
