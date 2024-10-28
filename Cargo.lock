@@ -2337,7 +2337,6 @@ dependencies = [
  "encoding_rs",
  "home",
  "homedir",
- "itertools 0.13.0",
  "log",
  "log4rs",
  "migration",

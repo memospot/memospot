@@ -32,7 +32,6 @@ async_zip = { version = "0.0.17", features = ["zstd", "tokio-fs"] }
 chrono = { version = "0.4", default-features = false }
 encoding_rs = "0.8"
 home = "0.5"
-itertools = "0.13"
 log = "0.4"
 log4rs = { version = "1.3", features = ["background_rotation", "config_parsing", "gzip", "yaml_format"] }
 once_cell = "1"

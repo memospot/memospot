@@ -25,10 +25,6 @@ pub struct RuntimeConfigPaths {
     pub memospot_cwd: PathBuf,
     /// Memospot data directory path.
     pub memospot_data: PathBuf,
-    /// Memospot resources directory path.
-    ///
-    /// This field is set at later stage, at Tauri Builder.
-    pub _memospot_resources: PathBuf,
 }
 #[derive(Debug, PartialEq, Clone)]
 pub struct RuntimeConfig {
@@ -41,7 +37,7 @@ pub struct RuntimeConfig {
     pub memos_url: String,
 
     /// Whether Memospot is managing a local Memos server.
-    pub managed_server: bool,
+    pub is_managed_server: bool,
 
     /// Store current YAML config. May be modified during app runtime.
     ///

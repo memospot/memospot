@@ -2,11 +2,12 @@ use crate::utils::absolute_path;
 use crate::{process, RuntimeConfig};
 use anyhow::{anyhow, Result};
 use homedir::HomeDirExt;
-use itertools::Itertools;
 use log::{debug, info, warn};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use tauri::utils::platform::resource_dir as tauri_resource_dir;
 use tauri_plugin_http::reqwest;
+use tauri_utils::PackageInfo;
 
 /// Spawn Memos server.
 ///
@@ -34,7 +35,7 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
 /// On Linux, Memos will fail to access a `dist` folder under /usr/bin
 /// (where Tauri places the binary), so we look for the `dist` folder
 /// following this order of precedence:
-/// 1. User-provided working directory from the yaml file.
+/// 1. User-provided working directory from the YAML configuration file.
 /// 2. Tauri resource directory.
 /// 3. Memospot data directory.
 /// 4. Memospot current working directory.
@@ -45,42 +46,45 @@ pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
 
     // Prefer user-provided working_dir, if it's not empty.
     if let Some(working_dir) = &rtcfg.yaml.memos.working_dir {
-        let yaml_wd = working_dir.as_str().trim();
-        if !yaml_wd.is_empty() {
-            let expanded_path = Path::new(yaml_wd).expand_home().unwrap_or_default();
-            let path = absolute_path(expanded_path).unwrap_or_default();
-            search_paths.push(path);
+        if !working_dir.trim().is_empty() {
+            Path::new(working_dir)
+                .expand_home()
+                .map(|expanded| {
+                    absolute_path(expanded).map(|absolute| search_paths.push(absolute))
+                })
+                .ok();
         }
     }
-    let binding = rtcfg
-        .paths
-        ._memospot_resources
-        .as_os_str()
-        .to_string_lossy();
 
-    // Tauri uses `canonicalize()` to resolve the resource directory,
-    // which adds a `\\?\` prefix on Windows.
-    let resources = binding.trim_start_matches(r#"\\?\"#);
+    let package_info = PackageInfo {
+        name: "Memospot".into(), // Same as productName from Tauri.toml. Will resolve to `/usr/lib/Memospot`.
+        version: semver::Version::new(0, 0, 0),
+        authors: "",
+        description: "",
+        crate_name: "",
+    };
+    let resource_dir = tauri_resource_dir(&package_info, &tauri::Env::default())
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
 
-    search_paths.extend(Vec::from([
-        PathBuf::from(resources),
+    search_paths.extend([
+        // Tauri uses `canonicalize()` to resolve the resource directory, which adds a `\\?\` prefix on Windows.
+        resource_dir.trim_start_matches(r#"\\?\"#).into(),
         rtcfg.paths.memospot_data.clone(),
         rtcfg.paths.memospot_cwd.clone(),
-    ]));
+    ]);
 
-    let deduplicated: Vec<PathBuf> = search_paths.into_iter().unique().collect();
-    debug!("Looking for Memos `dist` folder at {:#?}", deduplicated);
-
-    for path in deduplicated {
+    debug!("Looking for Memos `dist` folder at {:#?}", search_paths);
+    for path in search_paths {
         if path.as_os_str().is_empty() {
             continue;
         }
-        let dist = path.join("dist");
-        if dist.exists() && dist.is_dir() {
+        if path.join("dist").is_dir() {
             return path;
         }
     }
-
+    // Fallback to data directory.
     rtcfg.paths.memospot_data.clone()
 }
 

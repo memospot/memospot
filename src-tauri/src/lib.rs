@@ -12,10 +12,9 @@ mod zip;
 use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
 use config::Config;
 use dialog::*;
-use log::{debug, info, warn};
+use log::{info, warn};
 use std::env;
 use std::path::PathBuf;
-use tauri::path::BaseDirectory;
 use tauri::Manager;
 use tauri_utils::config::WindowConfig;
 use window::{WebviewWindowExt, WindowConfigExt};
@@ -38,9 +37,8 @@ pub fn run() {
             memospot_config_file: config_path.clone(),
             memospot_cwd: PathBuf::new(),
             memospot_data: memospot_data.clone(),
-            _memospot_resources: PathBuf::new(),
         },
-        managed_server: true,
+        is_managed_server: true,
         memos_url: String::new(),
         yaml: yaml_config.clone(),
         __yaml__: yaml_config,
@@ -65,7 +63,7 @@ pub fn run() {
     );
     info!("Memos URL: {}", config.memos_url);
 
-    config.managed_server = config.memos_url.starts_with(&format!(
+    config.is_managed_server = config.memos_url.starts_with(&format!(
         "http://localhost:{}",
         config.yaml.memos.port.unwrap_or_default()
     ));
@@ -114,7 +112,17 @@ pub fn run() {
         .restore_attribs_from(&config);
     }
 
-    let mut config_ = config.clone();
+    if config.is_managed_server {
+        let config_ = config.clone();
+        tauri::async_runtime::spawn(async move {
+            init::migrate_database(&config_).await;
+            memos::spawn(&config_).unwrap_or_else(|e| {
+                panic_dialog!("Failed to spawn Memos server:\n{}", e);
+            });
+        });
+    }
+
+    let config_ = config.clone();
     let Ok(tauri_app) = tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
@@ -135,38 +143,25 @@ pub fn run() {
                 app.handle().remove_plugin("tauri-plugin-updater");
             }
 
-            if !config_.managed_server {
-                info!(
-                    "Using custom Memos address: {}. Memos server will not be started.",
-                    config_.memos_url
-                );
-                let title_url = config_
-                    .memos_url
-                    .trim_start_matches("http://")
-                    .trim_start_matches("https://")
-                    .trim_end_matches("/");
-                if let Some(main_window) = app.get_webview_window("main") {
-                    main_window
-                        .set_title(&format!("Memospot {} - {}", app_version, title_url))
-                        .unwrap_or_default();
-                }
+            if config_.is_managed_server {
                 return Ok(());
             }
 
-            // Add Tauri resource directory as `_memospot_resources`.
-            config_.paths._memospot_resources =
-                app.path().resolve(".", BaseDirectory::Resource).unwrap();
-            debug!(
-                "Tauri resource directory: {}",
-                config_.paths._memospot_resources.to_string_lossy()
+            info!(
+                "Using custom Memos address: {}. Memos server will not be started.",
+                config_.memos_url
             );
+            let title_url = config_
+                .memos_url
+                .trim_start_matches("http://")
+                .trim_start_matches("https://")
+                .trim_end_matches("/");
+            if let Some(main_window) = app.get_webview_window("main") {
+                main_window
+                    .set_title(&format!("Memospot {} - {}", app_version, title_url))
+                    .unwrap_or_default();
+            }
 
-            tauri::async_runtime::spawn(async move {
-                init::migrate_database(&config_).await;
-                memos::spawn(&config_).unwrap_or_else(|e| {
-                    panic_dialog!("Failed to spawn Memos server:\n{}", e);
-                });
-            });
             Ok(())
         })
         .build(tauri_ctx)
