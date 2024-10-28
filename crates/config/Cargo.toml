@@ -1,10 +1,13 @@
 [package]
 name = "config"
-version = "0.8.0"
-authors = ["Lincoln Nogueira"]
-edition = "2021"
-license = "MIT"
+version = { workspace = true }
+edition = { workspace = true }
+publish = false
 description = "Memospot configuration library"
+
+[lib]
+name = "config"
+path = "src/lib.rs"
 
 [dependencies]
 figment = { version = "0.10", features = ["env", "yaml"] }

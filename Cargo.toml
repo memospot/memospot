@@ -1,41 +1,35 @@
+#: schema https://json.schemastore.org/cargo.json
+
 [workspace]
 members = ["crates/*", "src-tauri"]
 resolver = "2"
 
-[profile.dev]
-# 0, false, or "none": no debug info at all, default for release
-# "line-directives-only": line info directives only. For the nvptx* targets this enables profiling.
-#   For other use cases, line-tables-only is the better, more compatible choice.
-# "line-tables-only": line tables only. Generates the minimal amount of debug info for backtraces with
-#   filename/line number info, but not anything else, i.e. no variable or function parameter info.
-# 1 or "limited": debug info without type or variable-level information.
-#   Generates more detailed module-level info than line-tables-only.
-# 2, true, or "full": full debug info, default for dev
-debug = 0 # Disabling debug info speeds up builds
-
-lto = "off"
-
-[profile.dev.package]
-# Tests depending on serde runs faster with higher optimization level.
-serde.opt-level = 3
+[workspace.package]
+name = "Memospot"
+version = "0.1.8"
+authors = ["Lincoln Nogueira"]
+edition = "2021"
+homepage = "https://memospot.github.io/"
+license = "MIT"
+repository = "https://github.com/memospot/memospot"
+rust-version = "1.77.2"
+description = "Memospot is a desktop version of Memos, a beautiful, privacy-first, lightweight note-taking service."
 
 [profile.release]
-# Controls how many “code generation units” a crate will be split into.
-# More code generation units allows more of a crate to be processed in
-#   parallel possibly reducing compile time, but may produce slower code.
-
-# This option takes an integer greater than 0.
-
-# The default is 256 for incremental builds, and 16 for non-incremental builds.
 codegen-units = 1
+incremental = false
+panic = "abort"
 
-# false: Performs “thin local LTO” which performs “thin” LTO on the local crate only across
+# - false: Performs “thin local LTO” which performs “thin” LTO on the local crate only across
 #   its codegen units. No LTO is performed if codegen units is 1 or opt-level is 0.
-# true or "fat": Performs “fat” LTO which attempts to perform
+#
+# - true or "fat": Performs “fat” LTO which attempts to perform
 #   optimizations across all crates within the dependency graph.
-# "thin": Performs “thin” LTO. This is similar to “fat”, but takes substantially
+#
+# - "thin": Performs “thin” LTO. This is similar to “fat”, but takes substantially
 #   less time to run while still achieving performance gains similar to “fat”.
-# "off": Disables LTO.
+#
+# - "off": Disables LTO.
 lto = true
 
 # 0: no optimizations
@@ -46,12 +40,32 @@ lto = true
 # "z": optimize for binary size, but also turn off loop vectorization.
 opt-level = "s"
 
-panic = "abort"
-
-# none: debuginfo and symbols (if they exist) are copied to the produced binary or
-#   separate files depending on the target (e.g. .pdb files in case of MSVC).
-# debuginfo: debuginfo sections and debuginfo symbols from the symbol table section are
-#   stripped at link time and are not copied to the produced binary or separate files.
-# symbols(true): same as debuginfo, but the rest of the symbol table section is
-#  stripped as well if the linker supports it.
+# - none: debuginfo and symbols (if they exist) are copied to the produced binary or
+# separate files depending on the target (e.g. .pdb files in case of MSVC).
+#
+# - debuginfo: debuginfo sections and debuginfo symbols from the symbol table section are
+# stripped at link time and are not copied to the produced binary or separate files.
+#
+# - symbols(true): same as debuginfo, but the rest of the symbol table section is
+# stripped as well if the linker supports it.
 strip = true
+
+[profile.dev]
+lto = "off"
+
+# - 0, false, or "none": no debug info at all, default for release
+#
+# - "line-directives-only": line info directives only. For the nvptx* targets this enables profiling.
+#   For other use cases, line-tables-only is the better, more compatible choice.
+#
+# - "line-tables-only": line tables only. Generates the minimal amount of debug info for backtraces with
+#   filename/line number info, but not anything else, i.e. no variable or function parameter info.
+#
+# - 1 or "limited": debug info without type or variable-level information.
+#   Generates more detailed module-level info than line-tables-only.
+#
+# - 2, true, or "full": full debug info, default for dev
+debug = 0 # Disabling debug info speeds up builds.
+
+[profile.dev.package]
+serde.opt-level = 3 # Tests depending on serde runs faster with higher optimization level.
