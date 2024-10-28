@@ -1,6 +1,6 @@
-//! This module contains the Tauri handlers for the JS API.
+//! This module contains the Tauri command handlers for the JS API.
 //!
-//! Handlers and state management must be registered
+//! Command handlers and state management must be registered
 //! in `tauri::Builder`, at `lib.rs`.
 //!
 //! The TypeScript/JavaScript API is defined in `src-ui/src/tauri.ts`.

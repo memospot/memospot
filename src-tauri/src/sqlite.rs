@@ -34,7 +34,7 @@ pub async fn get_database_connection(db: &Path) -> Result<DatabaseConnection, an
 
 /// Checkpoint database WAL.
 ///
-/// Memos is currently not being gracefully shutdown, so we checkpoint the
+/// Memos' currently not being gracefully shutdown, so we're checkpointing the
 /// database WAL manually right before closing the app to ensure that all new
 /// data is commited to the main database and that it's properly closed.
 pub async fn checkpoint(db: &Path) -> Result<(), anyhow::Error> {

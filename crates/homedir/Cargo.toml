@@ -1,11 +1,10 @@
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [package]
 name = "homedir"
 version = "0.1.2"
 authors = ["eulegang <eulegang@gmail.com>", "Lars Wirzenius", "Lincoln Nogueira"]
 edition = "2021"
 license = "MIT"
+publish = false
 repository = "https://github.com/eulegang/home-dir"
 description = "expands home directories in a path"
 

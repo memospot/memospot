@@ -1,5 +1,5 @@
+mod cmd;
 mod init;
-mod js_handler;
 mod memos;
 pub mod process;
 mod runtime_config;
@@ -29,7 +29,7 @@ pub fn run() {
     let config_path = memospot_data.join("memospot.yaml");
     let yaml_config = init::config(&config_path);
 
-    let mut rtcfg = RuntimeConfig {
+    let mut config = RuntimeConfig {
         paths: RuntimeConfigPaths {
             memos_bin: PathBuf::new(),
             memos_data: PathBuf::new(),
@@ -45,47 +45,47 @@ pub fn run() {
         yaml: yaml_config.clone(),
         __yaml__: yaml_config,
     };
-    init::setup_logger(&rtcfg);
+    init::setup_logger(&config);
     if cfg!(debug_assertions) {
         // Use Memos in demo mode during development,
         // as it's already seeded with some data.
-        rtcfg.yaml.memos.mode = Some("demo".to_string());
+        config.yaml.memos.mode = Some("demo".to_string());
         // Use an upper port to use a dedicated WebView cache for development.
-        rtcfg.yaml.memos.port = Some(rtcfg.yaml.memos.port.unwrap_or_default() + 1);
+        config.yaml.memos.port = Some(config.yaml.memos.port.unwrap_or_default() + 1);
     }
 
-    rtcfg.yaml.memos.port = Some(init::memos_port(&rtcfg));
-    rtcfg.paths.memos_data = init::memos_data(&rtcfg);
-    rtcfg.paths.memos_db_file = init::database(&rtcfg);
-    rtcfg.memos_url = init::memos_url(&rtcfg);
+    config.yaml.memos.port = Some(init::memos_port(&config));
+    config.paths.memos_data = init::memos_data(&config);
+    config.paths.memos_db_file = init::database(&config);
+    config.memos_url = init::memos_url(&config);
 
     info!(
         "Memos data directory: {}",
-        rtcfg.paths.memos_data.to_string_lossy()
+        config.paths.memos_data.to_string_lossy()
     );
-    info!("Memos URL: {}", rtcfg.memos_url);
+    info!("Memos URL: {}", config.memos_url);
 
-    rtcfg.managed_server = rtcfg.memos_url.starts_with(&format!(
+    config.managed_server = config.memos_url.starts_with(&format!(
         "http://localhost:{}",
-        rtcfg.yaml.memos.port.unwrap_or_default()
+        config.yaml.memos.port.unwrap_or_default()
     ));
 
     info!("Starting Memospot.");
     info!(
         "Memospot data path: {}",
-        rtcfg.paths.memospot_data.to_string_lossy()
+        config.paths.memospot_data.to_string_lossy()
     );
 
-    rtcfg.paths.memospot_bin = env::current_exe().unwrap();
-    rtcfg.paths.memospot_cwd = rtcfg.paths.memospot_bin.parent().unwrap().to_path_buf();
-    rtcfg.paths.memos_bin = init::find_memos(&rtcfg);
+    config.paths.memospot_bin = env::current_exe().unwrap();
+    config.paths.memospot_cwd = config.paths.memospot_bin.parent().unwrap().to_path_buf();
+    config.paths.memos_bin = init::find_memos(&config);
 
     #[cfg(target_os = "linux")]
     init::hw_acceleration();
-    init::set_env_vars(&rtcfg);
+    init::set_env_vars(&config);
 
     {
-        let url = rtcfg.memos_url.clone();
+        let url = config.memos_url.clone();
         tauri::async_runtime::spawn(async move {
             memos::wait_api_ready(&url, 100, 15000).await;
         });
@@ -96,8 +96,8 @@ pub fn run() {
 
     let window_config = &mut tauri_ctx.config_mut().app.windows;
     if !window_config.is_empty() {
-        let custom_user_agent = rtcfg.yaml.memospot.remote.user_agent.as_deref();
-        let user_agent = if rtcfg.yaml.memospot.remote.enabled.unwrap_or_default()
+        let custom_user_agent = config.yaml.memospot.remote.user_agent.as_deref();
+        let user_agent = if config.yaml.memospot.remote.enabled.unwrap_or_default()
             && custom_user_agent.is_some()
         {
             custom_user_agent.unwrap_or_default().to_string()
@@ -111,36 +111,36 @@ pub fn run() {
             drag_drop_enabled: false, // Stop Tauri from handling drag-and-drop events and pass them to the webview.
             ..Default::default()
         }
-        .restore_attribs_from(&rtcfg);
+        .restore_attribs_from(&config);
     }
 
-    let mut rtcfg_setup = rtcfg.clone();
+    let mut config_ = config.clone();
     let Ok(tauri_app) = tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_http::init())
-        .manage(js_handler::MemosURL::manage(rtcfg.memos_url.clone()))
+        .manage(cmd::MemosURL::manage(config_.memos_url.clone()))
         .invoke_handler(tauri::generate_handler![
-            js_handler::get_memos_url,
-            js_handler::ping_memos,
-            js_handler::get_env
+            cmd::get_memos_url,
+            cmd::ping_memos,
+            cmd::get_env
         ])
         .setup(move |app| {
             // Disable updater if the user has disabled it via config file or if running in Flatpak.
-            if !rtcfg.yaml.memospot.updater.enabled.unwrap_or_default()
+            if !config_.yaml.memospot.updater.enabled.unwrap_or_default()
                 || env::var("FLATPAK_ID").is_ok()
             {
                 app.handle().remove_plugin("tauri-plugin-updater");
             }
 
-            if !rtcfg_setup.managed_server {
+            if !config_.managed_server {
                 info!(
                     "Using custom Memos address: {}. Memos server will not be started.",
-                    rtcfg_setup.memos_url
+                    config_.memos_url
                 );
-                let title_url = rtcfg_setup
+                let title_url = config_
                     .memos_url
                     .trim_start_matches("http://")
                     .trim_start_matches("https://")
@@ -154,16 +154,16 @@ pub fn run() {
             }
 
             // Add Tauri resource directory as `_memospot_resources`.
-            rtcfg_setup.paths._memospot_resources =
+            config_.paths._memospot_resources =
                 app.path().resolve(".", BaseDirectory::Resource).unwrap();
             debug!(
                 "Tauri resource directory: {}",
-                rtcfg_setup.paths._memospot_resources.to_string_lossy()
+                config_.paths._memospot_resources.to_string_lossy()
             );
 
             tauri::async_runtime::spawn(async move {
-                init::migrate_database(&rtcfg_setup).await;
-                memos::spawn(&rtcfg_setup).unwrap_or_else(|e| {
+                init::migrate_database(&config_).await;
+                memos::spawn(&config_).unwrap_or_else(|e| {
                     panic_dialog!("Failed to spawn Memos server:\n{}", e);
                 });
             });
@@ -187,7 +187,7 @@ pub fn run() {
                 match window_event {
                     tauri::WindowEvent::Resized { .. } | tauri::WindowEvent::Moved { .. } => {
                         if let Some(main_window) = app_handle.get_webview_window("main") {
-                            main_window.store_attribs_to(&mut rtcfg);
+                            main_window.store_attribs_to(&mut config);
                         }
                     }
                     _ => {}
@@ -196,16 +196,17 @@ pub fn run() {
             tauri::RunEvent::ExitRequested { api, .. } => {
                 api.prevent_exit();
 
-                if cfg!(debug_assertions) {
+                #[cfg(debug_assertions)]
+                {
                     // Restore previous mode and port.
-                    rtcfg.yaml.memos.mode = rtcfg.__yaml__.memos.mode.clone();
-                    rtcfg.yaml.memos.port = rtcfg.__yaml__.memos.port;
+                    config.yaml.memos.mode = config.__yaml__.memos.mode.clone();
+                    config.yaml.memos.port = config.__yaml__.memos.port;
                 }
 
                 // Save the config file, if it has changed.
-                if rtcfg.yaml != rtcfg.__yaml__ {
+                if config.yaml != config.__yaml__ {
                     info!("Configuration has changed. Saving…");
-                    if let Err(e) = Config::save_file(&config_path, &rtcfg.yaml) {
+                    if let Err(e) = Config::save_file(&config_path, &config.yaml) {
                         error_dialog!(
                             "Failed to save config file:\n`{}`\n\n{}",
                             config_path.to_string_lossy(),
@@ -217,7 +218,7 @@ pub fn run() {
                 // Handle Memos shutdown.
                 process::kill_children();
                 {
-                    let db_file = rtcfg.paths.memos_db_file.clone();
+                    let db_file = config.paths.memos_db_file.clone();
                     tauri::async_runtime::block_on(async move {
                         sqlite::wait_checkpoint(&db_file, 100, 15000).await;
                     });

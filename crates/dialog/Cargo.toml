@@ -1,9 +1,10 @@
 [package]
 name = "dialog"
 version = "0.0.1"
-authors = ["Lincoln Nogueira"]
-edition = "2021"
-license = "MIT"
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+publish = { workspace = true }
 description = "Memospot platform-agnostic dialog utilities"
 
 [dependencies]

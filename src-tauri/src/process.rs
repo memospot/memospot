@@ -182,8 +182,8 @@ impl Command {
 
     /// Creates a new Command for launching the given sidecar program.
     ///
-    /// A sidecar program is a embedded external binary in order to make your application work
-    /// or to prevent users having to install additional dependencies (e.g. Node.js, Python, etc).
+    /// A sidecar program is an embedded external binary in order to make your application work
+    /// or to prevent users having to install additional dependencies (e.g. Node.js, Python, etc.).
     pub fn new_sidecar<S: Into<String>>(program: S) -> Result<Self> {
         Ok(Self::new(relative_command_path(program.into())?))
     }
@@ -234,7 +234,7 @@ impl Command {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use memospot::process::{Command, CommandEvent};
+    /// use crate::memospot_lib::process::{Command, CommandEvent};
     /// tauri::async_runtime::spawn(async move {
     ///   let (mut rx, mut child) = Command::new("cargo")
     ///     .args(["tauri", "dev"])
@@ -327,7 +327,7 @@ impl Command {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// use memospot::process::Command;
+    /// use crate::memospot_lib::process::Command;
     /// let status = Command::new("which").args(["ls"]).status().unwrap();
     /// println!("`which` finished with status: {:?}", status.code());
     /// ```
@@ -352,7 +352,7 @@ impl Command {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use memospot::process::Command;
+    /// use crate::memospot_lib::process::{Command, CommandEvent};
     /// let output = Command::new("echo").args(["TAURI"]).output().unwrap();
     /// assert!(output.status.success());
     /// assert_eq!(output.stdout, "TAURI");

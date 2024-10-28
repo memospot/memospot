@@ -1,7 +1,7 @@
 /*
  * Tauri Handlers.
  *
- * The Rust back-end is in `src-tauri/src/js_handler.rs`.
+ * The Rust back-end is in `src-tauri/src/cmd`.
  *
  */
 
