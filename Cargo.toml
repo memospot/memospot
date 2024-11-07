@@ -17,7 +17,7 @@ description = "Memospot is a desktop version of Memos, a beautiful, privacy-firs
 
 [profile.release]
 codegen-units = 1
-incremental = false
+incremental = true
 panic = "abort"
 
 # - false: Performs “thin local LTO” which performs “thin” LTO on the local crate only across
@@ -50,7 +50,11 @@ opt-level = "s"
 # stripped as well if the linker supports it.
 strip = true
 
+[profile.dev.build-override]
+incremental = true
+
 [profile.dev]
+incremental = true
 lto = "off"
 
 # - 0, false, or "none": no debug info at all, default for release

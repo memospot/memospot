@@ -1,14 +1,13 @@
 use crate::memos::Memos;
 use crate::memospot::Memospot;
 
+use anyhow::{bail, Error, Result};
 use figment::providers::{Env, Format, Serialized, Yaml};
 use figment::{Figment, Profile};
 use serde::{Deserialize, Serialize};
-
-use std::io::{Error, ErrorKind, Result};
 use std::path::Path;
-use std::time::Duration;
-use std::{fs, thread};
+use tokio::io::AsyncWriteExt;
+use uuid::Uuid;
 
 #[derive(Default, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Config {
@@ -22,14 +21,19 @@ impl Config {
 #    the configuration is updated by Memospot !
 #
 # For an explained configuration file, see:
-# https://memospot.github.io/configuration.html
+# https://memospot.github.io/configuration
 #
 "#;
 
-    pub fn to_string(&self) -> Result<String> {
-        serde_yaml::to_string(&self).map_err(|e| Error::new(ErrorKind::InvalidData, e))
+    pub fn new() -> Self {
+        Self::default()
     }
-    pub fn init(cfg_path: &Path) -> Result<Config> {
+
+    pub fn to_string(&self) -> Result<String, Error> {
+        Ok(serde_yaml::to_string(&self)?)
+    }
+
+    pub fn init(cfg_path: &Path) -> Result<Config, Error> {
         #[cfg(debug_assertions)]
         const DEFAULT_PROFILE: &str = "debug";
         #[cfg(not(debug_assertions))]
@@ -37,63 +41,91 @@ impl Config {
 
         let default_config = Config::default();
 
-        // This the base figment, without our `Config` defaults.
         let figment = Figment::new()
-            .merge(Yaml::file(cfg_path.to_str().unwrap_or_default()))
+            .merge(Yaml::file(cfg_path))
             .merge(Env::prefixed("MEMOSPOT_"))
             .select(Profile::from_env_or("MEMOSPOT_PROFILE", DEFAULT_PROFILE))
             .join(Serialized::defaults(default_config));
 
-        figment
-            .extract::<Config>()
-            .map_err(|e| Error::new(ErrorKind::InvalidData, e))
+        Ok(figment.extract::<Config>()?)
     }
 
     /// Parse configuration file.
-    pub fn parse_file(cfg_path: &Path) -> Result<Config> {
-        Figment::new()
-            .merge(Yaml::file(cfg_path.to_str().unwrap_or_default()))
-            .extract::<Config>()
-            .map_err(|e| Error::new(ErrorKind::InvalidData, e))
+    pub fn parse_file(cfg_path: &Path) -> Result<Config, Error> {
+        let parsed_config = Figment::new()
+            .merge(Yaml::file(cfg_path))
+            .extract::<Config>()?;
+        Ok(parsed_config)
     }
 
-    /// Save configuration to supplied file.
-    pub fn save_file(cfg_path: &Path, config: &Config) -> Result<()> {
-        if cfg_path.is_dir() {
-            return Err(Error::new(
-                ErrorKind::InvalidInput,
-                "provided path is a directory",
-            ));
+    /// Save current configuration to a file.
+    ///
+    /// This function uses an intermediate rename operation and delayed attempts to achieve atomicity.
+    pub async fn save_to_file(&self, file_path: &Path) -> Result<()> {
+        if file_path.is_dir() {
+            bail!("provided configuration file is a directory");
         }
-
-        let Ok(yaml) = serde_yaml::to_string(&config) else {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                "failed to serialize configuration",
-            ));
+        let Ok(yaml) = serde_yaml::to_string(&self) else {
+            bail!("failed to serialize configuration");
         };
 
         let file_contents = Self::CONFIG_HEADER.to_string() + &yaml;
+        let time_start = tokio::time::Instant::now();
 
-        let mut last_error = Error::new(ErrorKind::Other, "unable to write configuration");
-        for retry in 0..10 {
-            if retry > 0 {
-                thread::sleep(Duration::from_millis(100 * retry));
+        let mut last_error: Option<Error> = None;
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
+        loop {
+            interval.tick().await;
+            if time_start.elapsed() > tokio::time::Duration::from_secs(5) {
+                bail!("unable to write configuration. Timed out after 5 seconds. Last error: {last_error:?}");
             }
 
-            if let Err(e) = fs::write(cfg_path, file_contents.clone()) {
-                last_error = e;
-                continue;
+            let uuid = Uuid::new_v4();
+            let tmp_file = file_path.with_file_name(format!("{}.tmp", uuid));
+
+            let mut file = match tokio::fs::File::create(&tmp_file).await {
+                Ok(f) => f,
+                Err(e) => {
+                    last_error = Some(e.into());
+                    continue;
+                }
             };
 
-            return Ok(());
+            if let Err(e) = file.write_all(file_contents.as_bytes()).await {
+                last_error = Some(e.into());
+                tokio::fs::remove_file(&tmp_file).await.ok();
+                continue;
+            }
+
+            if let Err(e) = file.flush().await {
+                last_error = Some(e.into());
+                tokio::fs::remove_file(&tmp_file).await.ok();
+                continue;
+            }
+
+            if let Err(e) = tokio::fs::rename(&tmp_file, file_path).await {
+                last_error = Some(e.into());
+                tokio::fs::remove_file(&tmp_file).await.ok();
+                continue;
+            }
+
+            break;
         }
-        Err(last_error)
+        Ok(())
     }
 
-    /// Reset configuration file to defaults.
-    pub fn reset_file(cfg_path: &Path) -> Result<()> {
-        let default_config = Config::default();
-        Config::save_file(cfg_path, &default_config)
+    /// Reset configuration file to defaults and save it.
+    pub async fn reset_file(cfg_path: &Path) -> Result<()> {
+        let default_config = Self::default();
+        default_config.save_to_file(cfg_path).await
+    }
+
+    /// Reset configuration file to defaults and save it.
+    ///
+    /// Blocking version of `reset_file`.
+    pub fn reset_file_blocking(cfg_path: &Path) -> Result<()> {
+        let default_config = Self::default();
+        let rt = tokio::runtime::Runtime::new()?;
+        rt.block_on(async { default_config.save_to_file(cfg_path).await })
     }
 }

@@ -279,7 +279,7 @@ pub fn ensure_webview() {
 /// - If configuration file is missing or malformed, optionally reset it to defaults.
 pub fn config(config_path: &PathBuf) -> Config {
     if !config_path.exists() {
-        if let Err(e) = Config::reset_file(config_path) {
+        if let Err(e) = Config::reset_file_blocking(config_path) {
             panic_dialog!(
                 "Failed to create configuration file:\n{}\n\n{}",
                 config_path.to_string_lossy(),
@@ -318,7 +318,7 @@ pub fn config(config_path: &PathBuf) -> Config {
             panic_dialog!("You must fix the config file manually and restart the application.");
         }
 
-        if let Err(e) = Config::reset_file(config_path) {
+        if let Err(e) = Config::reset_file_blocking(config_path) {
             panic_dialog!(
                 "Failed to reset configuration file `{}`:\n{}",
                 config_path.to_string_lossy(),

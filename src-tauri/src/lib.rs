@@ -1,7 +1,7 @@
 mod cmd;
 mod init;
 mod memos;
-pub mod process;
+mod process;
 mod runtime_config;
 mod sqlite;
 mod utils;
@@ -10,9 +10,8 @@ mod window;
 mod zip;
 
 use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
-use config::Config;
 use dialog::*;
-use log::{info, warn};
+use log::{debug, info, warn};
 use std::env;
 use std::path::PathBuf;
 use tauri::Manager;
@@ -44,7 +43,9 @@ pub fn run() {
         __yaml__: yaml_config,
     };
     init::setup_logger(&config);
-    if cfg!(debug_assertions) {
+
+    #[cfg(debug_assertions)]
+    {
         // Use Memos in demo mode during development,
         // as it's already seeded with some data.
         config.yaml.memos.mode = Some("demo".to_string());
@@ -95,8 +96,8 @@ pub fn run() {
     let window_config = &mut tauri_ctx.config_mut().app.windows;
     if !window_config.is_empty() {
         let custom_user_agent = config.yaml.memospot.remote.user_agent.as_deref();
-        let user_agent = if config.yaml.memospot.remote.enabled.unwrap_or_default()
-            && custom_user_agent.is_some()
+        let user_agent = if config.yaml.memospot.remote.enabled.is_some_and(|x| x)
+            && custom_user_agent.is_some_and(|x| !x.is_empty())
         {
             custom_user_agent.unwrap_or_default().to_string()
         } else {
@@ -136,10 +137,12 @@ pub fn run() {
             cmd::get_env
         ])
         .setup(move |app| {
-            // Disable updater if the user has disabled it via config file or if running in Flatpak.
-            if !config_.yaml.memospot.updater.enabled.unwrap_or_default()
-                || env::var("FLATPAK_ID").is_ok()
-            {
+            if config_.yaml.memospot.updater.enabled.is_some_and(|e| !e) {
+                warn!("Disabling updater plugin by user config.");
+                app.handle().remove_plugin("tauri-plugin-updater");
+            }
+            if env::var("FLATPAK_ID").is_ok_and(|id| !id.is_empty()) {
+                debug!("Running in Flatpak. Disabling updater plugin.");
                 app.handle().remove_plugin("tauri-plugin-updater");
             }
 
@@ -176,19 +179,21 @@ pub fn run() {
                 event: window_event,
                 ..
             } => {
-                if label != "main" {
-                    return;
-                }
-                match window_event {
-                    tauri::WindowEvent::Resized { .. } | tauri::WindowEvent::Moved { .. } => {
-                        if let Some(main_window) = app_handle.get_webview_window("main") {
-                            main_window.store_attribs_to(&mut config);
+                if label == "main" {
+                    match window_event {
+                        tauri::WindowEvent::Resized { .. }
+                        | tauri::WindowEvent::Moved { .. } => {
+                            debug!("Main window resized or moved. Storing window attributes…");
+                            if let Some(main_window) = app_handle.get_webview_window("main") {
+                                main_window.store_attribs_to(&mut config)
+                            }
                         }
+                        _ => {}
                     }
-                    _ => {}
                 }
             }
             tauri::RunEvent::ExitRequested { api, .. } => {
+                debug!("Exit requested.");
                 api.prevent_exit();
 
                 #[cfg(debug_assertions)]
@@ -198,19 +203,20 @@ pub fn run() {
                     config.yaml.memos.port = config.__yaml__.memos.port;
                 }
 
-                // Save the config file, if it has changed.
                 if config.yaml != config.__yaml__ {
                     info!("Configuration has changed. Saving…");
-                    if let Err(e) = Config::save_file(&config_path, &config.yaml) {
-                        error_dialog!(
-                            "Failed to save config file:\n`{}`\n\n{}",
-                            config_path.to_string_lossy(),
-                            e.to_string()
-                        );
-                    }
+                    tauri::async_runtime::block_on(async {
+                        if let Err(e) = config.yaml.save_to_file(&config_path).await {
+                            error_dialog!(
+                                "Failed to save config file:\n`{}`\n\n{}",
+                                &config_path.display(),
+                                e
+                            );
+                        }
+                    })
                 }
 
-                // Handle Memos shutdown.
+                debug!("Shutting down Memos server…");
                 process::kill_children();
                 {
                     let db_file = config.paths.memos_db_file.clone();
