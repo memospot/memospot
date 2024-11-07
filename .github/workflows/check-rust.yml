@@ -1,5 +1,4 @@
 name: Check (Rust)
-
 on:
   merge_group:
   pull_request:
@@ -22,13 +21,12 @@ concurrency:
 
 env:
   CACHE_KEY: ${{ github.run_id }}-${{ github.run_number }}
+  CARGO_INCREMENTAL: 1
   CARGO_TERM_COLOR: always
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   RUST_BACKTRACE: full
-  RUSTC_WRAPPER: sccache
+  RUST_TOOLCHAIN: nightly-2024-11-01
   RUSTFLAGS: -Copt-level=1 -Cstrip=symbols -Ccodegen-units=256
-  CARGO_INCREMENTAL: 0
-  SCCACHE_DIR: ${{github.workspace}}/.sccache
-  SCCACHE_GHA_ENABLED: false # required to cache everything at once and avoid rate limiting
   APT_DEPS: >-
     build-essential
     curl
@@ -53,7 +51,7 @@ jobs:
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@21dc36fb71dd22e3317045c0c31a3f4249868b17
-        with: { toolchain: stable, components: rustfmt }
+        with: { toolchain: "${{ env.RUST_TOOLCHAIN }}", components: rustfmt }
 
       - name: Run rustfmt
         run: cargo fmt --all -- --check
@@ -74,19 +72,28 @@ jobs:
     steps:
       - name: Checkout repository,
         uses: actions/checkout@v4
-      # Set env vars
+
       - name: "Set env vars"
         shell: bash
         run: |
           echo CACHE_KEY=$(date +'%Y%m%d') >> $GITHUB_ENV
-
-      - if: ${{ runner.os == 'Windows' }}
-        name: "[Windows] Fix environment variables"
-        run: |
-          $SCCACHE_DIR = "${{env.SCCACHE_DIR}}".replace("/", "\")
-          echo "SCCACHE_DIR=$SCCACHE_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        shell: pwsh
-      # /Set env vars
+          case "${RUNNER_OS}" in
+            Linux)
+              NPROC=$(nproc)
+              ;;
+            macOS)
+              NPROC=$(sysctl -n hw.ncpu)
+              ;;
+            Windows)
+              NPROC=$NUMBER_OF_PROCESSORS
+              ;;
+            *)
+              NPROC=2
+              ;;
+          esac
+          if echo "${RUST_TOOLCHAIN}" | grep -q "^nightly"; then
+            echo "RUSTFLAGS=${RUSTFLAGS} -Zthreads=${NPROC}" >> $GITHUB_ENV
+          fi
 
       - if: ${{ runner.os == 'Linux' }}
         name: "[Linux] Disable initramfs and man-db update"
@@ -123,33 +130,12 @@ jobs:
         uses: dtolnay/rust-toolchain@21dc36fb71dd22e3317045c0c31a3f4249868b17
         with:
           targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
-          toolchain: stable
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
 
       - name: Setup Cargo cache
-        uses: swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84
+        uses: swatinem/rust-cache@82a92a6e8fbeee089604da2575dc567ae9ddeaab
         with: { prefix-key: "cargo-${{ matrix.platform.rust_target }}" }
       # /Rust
-
-      # sccache
-      - name: Install sccache
-        uses: taiki-e/install-action@638d0bf357cd5e20410163cdf70545caa82bfa5f
-        with: { tool: sccache@0.8.2 }
-
-      - name: Initialize sccache environment
-        shell: bash
-        run: sccache --stop-server > /dev/null || true
-
-      - name: Setup sccache cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.SCCACHE_DIR }}
-          key: sccache-${{ matrix.platform.rust_target }}-${{ env.CACHE_KEY }}
-          restore-keys: sccache-${{ matrix.platform.rust_target }}
-
-      - name: Start sccache
-        shell: bash
-        run: sccache --start-server || (sccache --stop-server && sleep 1 && sccache --start-server)
-      # /sccache
 
       # Clippy with SARIF output
       - if: ${{ github.event_name == 'pull_request' }}
@@ -177,8 +163,4 @@ jobs:
         run: cargo clippy --all-features --all-targets --workspace --locked
 
       - name: Run all Rust tests
-        continue-on-error: true
         run: cargo test --workspace --lib -- --nocapture
-
-      - name: Cleanup sccache
-        run: sccache --stop-server

@@ -27,16 +27,13 @@ concurrency:
 
 env:
   CACHE_KEY: ${{ github.run_id }}-${{ github.run_number }}
-  CARGO_INCREMENTAL: 0
+  CARGO_INCREMENTAL: 1
   CARGO_TERM_COLOR: always
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   LATEST_MEMOS_VERSION: NOT_SET
-  NODE_MODULES: ${{github.workspace}}/node_modules
-  RUST_BACKTRACE: short
-  RUSTC_WRAPPER: sccache
+  RUST_BACKTRACE: full
+  RUST_TOOLCHAIN: nightly-2024-11-01
   RUSTFLAGS: -Copt-level=1 -Cstrip=symbols -Ccodegen-units=16
-  SCCACHE_DIR: ${{github.workspace}}/.sccache
-  SCCACHE_GHA_ENABLED: false # required to cache everything at once and avoid rate limiting
   APT_DEPS: >-
     build-essential
     curl
@@ -68,20 +65,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Set env vars
       - name: "Set env vars"
         shell: bash
         run: |
           echo CACHE_KEY=$(date +'%Y%m%d') >> $GITHUB_ENV
           latest_memos_version=$(curl -s "https://api.github.com/repos/memospot/memos-builds/releases/latest" | jq -r '.tag_name' || echo "NOT_SET")
           echo "LATEST_MEMOS_VERSION=$latest_memos_version" >> $GITHUB_ENV
-      - if: ${{ runner.os == 'Windows' }}
-        name: "[Windows] Fix environment variables"
-        run: |
-          $SCCACHE_DIR = "${{env.SCCACHE_DIR}}".replace("/", "\")
-          echo "SCCACHE_DIR=$SCCACHE_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        shell: pwsh
-      # /Set env vars
+          case "${RUNNER_OS}" in
+            Linux)
+              NPROC=$(nproc)
+              ;;
+            macOS)
+              NPROC=$(sysctl -n hw.ncpu)
+              ;;
+            Windows)
+              NPROC=$NUMBER_OF_PROCESSORS
+              ;;
+            *)
+              NPROC=2
+              ;;
+          esac
+          if echo "${RUST_TOOLCHAIN}" | grep -q "^nightly"; then
+            echo "RUSTFLAGS=${RUSTFLAGS} -Zthreads=${NPROC}" >> $GITHUB_ENV
+          fi
 
       - if: ${{ runner.os == 'Linux' }}
         name: "[Linux] Disable initramfs and man-db update"
@@ -115,7 +121,7 @@ jobs:
 
       - if: ${{ runner.os == 'Linux' }}
         name: "[Linux] Install UPX"
-        uses: crazy-max/ghaction-upx@0fc45e912669ba9e8fa2b430e97c8da2a632e29b
+        uses: crazy-max/ghaction-upx@de21b8cbed76979407eeb6e41aa5e270afc3225c
         with: { install-only: true }
 
       - name: Install Just
@@ -127,33 +133,12 @@ jobs:
         uses: dtolnay/rust-toolchain@21dc36fb71dd22e3317045c0c31a3f4249868b17
         with:
           targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
-          toolchain: stable
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
 
       - name: Setup Cargo cache
-        uses: swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84
+        uses: swatinem/rust-cache@82a92a6e8fbeee089604da2575dc567ae9ddeaab
         with: { prefix-key: "cargo-${{ matrix.platform.rust_target }}" }
       # /Rust
-
-      # sccache
-      - name: Install sccache
-        uses: taiki-e/install-action@638d0bf357cd5e20410163cdf70545caa82bfa5f
-        with: { tool: sccache@0.8.2 }
-
-      - name: Initialize sccache environment
-        shell: bash
-        run: sccache --stop-server > /dev/null || true
-
-      - name: Setup sccache cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.SCCACHE_DIR }}
-          key: sccache-${{ matrix.platform.rust_target }}-${{ env.CACHE_KEY }}
-          restore-keys: sccache-${{ matrix.platform.rust_target }}
-
-      - name: Start sccache
-        shell: bash
-        run: sccache --start-server || (sccache --stop-server && sleep 1 && sccache --start-server)
-      # /sccache
 
       # Bun
       - uses: oven-sh/setup-bun@v2
@@ -166,7 +151,7 @@ jobs:
         with:
           key: node_modules-${{ runner.os }}-${{ hashFiles('**/bun.lockb', '**/package.json') }}
           restore-keys: node_modules-${{ runner.os }}
-          path: ${{env.NODE_MODULES}}
+          path: ${{github.workspace}}/node_modules
 
       - name: Cache Bun dependencies
         uses: actions/cache@v4
@@ -188,8 +173,7 @@ jobs:
           path: ./server-dist
 
       - name: Build Tauri App
-        uses: tauri-apps/tauri-action@4ec5841d83495da72c665daa556e6f231b89ae06
-        continue-on-error: true
+        uses: tauri-apps/tauri-action@8c3e0753aa015d00d03631d6d4f64ad59489251d
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -218,6 +202,3 @@ jobs:
           prerelease: true
           args: --verbose --target ${{ matrix.platform.rust_target }}
           includeUpdaterJson: false
-
-      - name: "Cleanup sccache"
-        run: "sccache --stop-server"

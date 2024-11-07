@@ -3,41 +3,41 @@
 # Run `just` in the root of the project to see a list of recipes relevant to manual builds.
 
 # Backtick commands and recipes without a shebang are executed with the shell set here.
-set shell := ["bash", "-c"]
-set windows-shell := ["powershell", "-Command"]
+set shell := ['bash', '-c']
+set windows-shell := ['powershell', '-Command']
 set dotenv-load := true
 
-CI := env_var_or_default("CI", "false")
-NPROC := env_var_or_default("NPROC", num_cpus())
-GITHUB_ENV := env_var_or_default("GITHUB_ENV", ".GITHUB_ENV")
-TAURI_SIGNING_PRIVATE_KEY := env_var_or_default("TAURI_SIGNING_PRIVATE_KEY", "")
-TAURI_SIGNING_PRIVATE_KEY_PASSWORD := env_var_or_default("TAURI_SIGNING_PRIVATE_KEY_PASSWORD", "")
+bash := if os() == 'windows' { 'env -S bash -euo pipefail' } else { '/usr/bin/env -S bash -euo pipefail' }
+powershell := if os() == 'windows' {'powershell.exe'} else {'/usr/bin/env pwsh'}
+bun := if os() == 'windows' { 'bun.exe' } else { '/usr/bin/env bun' }
 
-PATH := if os() == "windows" {
+RUST_TOOLCHAIN := 'nightly-2024-11-01'
+RUSTFLAGS := if RUST_TOOLCHAIN == 'stable' {
+    env_var_or_default('RUSTFLAGS','')
+} else {
+    env_var_or_default('RUSTFLAGS','')+' -Z threads='+num_cpus()
+}
+CI := env_var_or_default('CI', 'false')
+GITHUB_ENV := env_var_or_default('GITHUB_ENV', '.GITHUB_ENV')
+TAURI_SIGNING_PRIVATE_KEY := env_var_or_default('TAURI_SIGNING_PRIVATE_KEY', '')
+TAURI_SIGNING_PRIVATE_KEY_PASSWORD := env_var_or_default('TAURI_SIGNING_PRIVATE_KEY_PASSWORD', '')
+PATH := if os() == 'windows' {
 		env_var_or_default('PROGRAMFILES', 'C:\Program Files') + '\Git\usr\bin;' + env_var_or_default('PATH','')
 	} else {
 		env_var_or_default('PATH','')
 	}
-bash := if os() == "windows" { "env -S bash -euo pipefail" } else { "/usr/bin/env -S bash -euo pipefail" }
-powershell := if os() == 'windows' {'powershell.exe'} else {'/usr/bin/env pwsh'}
-bun := if os() == 'windows' { "bun.exe" } else { "/usr/bin/env bun" }
-
 REPO_ROOT := justfile_directory()
-DPRINT_CACHE_DIR := absolute_path(join(REPO_ROOT,".dprint"))
-RUST_BACKTRACE := "full"
-RUST_TARGETS := if os() == "windows" {
-    "x86_64-pc-windows-msvc"
+DPRINT_CACHE_DIR := absolute_path(join(REPO_ROOT,'.dprint'))
+RUST_BACKTRACE := 'full'
+RUST_TARGETS := if os() == 'windows' {
+    'x86_64-pc-windows-msvc'
 } else if os() == "macos" {
-    "aarch64-apple-darwin x86_64-apple-darwin"
+    'aarch64-apple-darwin x86_64-apple-darwin'
 } else {
-    "x86_64-unknown-linux-gnu"
+    'x86_64-unknown-linux-gnu'
 }
-
-SCCACHE_BIN := if os() == 'windows' { `(Get-Command -ErrorAction SilentlyContinue -Name sccache).Source` } else { `which sccache || echo ""` }
-SCCACHE_ENABLED := if SCCACHE_BIN == "" { "false" } else { path_exists(SCCACHE_BIN) }
-RUSTC_WRAPPER := if SCCACHE_ENABLED == "true" { SCCACHE_BIN } else { env_var_or_default("RUSTC_WRAPPER", "") }
-SCCACHE_DIR := absolute_path(join(REPO_ROOT,".sccache"))
-CARGO_INCREMENTAL := if SCCACHE_ENABLED == "true" { "0" } else { "1" }
+RUSTC_WRAPPER := env_var_or_default('RUSTC_WRAPPER', '')
+CARGO_INCREMENTAL := if RUSTC_WRAPPER == '' { '1' } else { '0' }
 
 RESET := '\033[0m'
 BOLD := '\033[1m'
@@ -163,7 +163,7 @@ test-ts: deps-ts
 [doc('Run app in development mode')]
 dev: dev-killprocesses
     cargo tauri dev
-    just dev-killprocesses sccache-stats
+    just dev-killprocesses
 
 [private]
 [linux]
@@ -261,6 +261,8 @@ build-ui:
 [doc('Build app')]
 build TARGET='all':
     #!{{bash}}
+    rustup toolchain install $RUST_TOOLCHAIN
+    rustup override set $RUST_TOOLCHAIN
     if [ -z $TAURI_SIGNING_PRIVATE_KEY ] && [ -f $HOME/.tauri/memospot_updater.key ]; then
         export TAURI_SIGNING_PRIVATE_KEY=$(cat $HOME/.tauri/memospot_updater.key 2>/dev/null | tr -d '\n' || echo "")
         echo -e "${CYAN}Setting TAURI_SIGNING_PRIVATE_KEY from $HOME/.tauri/memospot_updater.key${RESET}"
@@ -271,7 +273,8 @@ build TARGET='all':
     else
         cargo tauri build -c '{"bundle": {"targets": "{{TARGET}}" }}'
     fi
-    just sccache-stats postbuild
+    just postbuild
+    rustup override unset
 
 [linux]
 flatpak-lint:
@@ -333,13 +336,12 @@ postbuild:
     fi
 
 [doc('Clean project artifacts')]
-clean: sccache-clean
+clean:
     #!{{bash}}
     bun pm cache rm || true
     cargo cache -a || true
     dirs=(
         "./.dprint"
-        "./.sccache"
         "./.task"
         "./build"
         "./build-scripts/node_modules"
@@ -353,22 +355,6 @@ clean: sccache-clean
     for item in "${dirs[@]}"; do
         test -d "$item" && rm -rf "$item"
     done
-
-[group('sccache')]
-sccache-clean:
-    #!{{bash}}
-    test -z $RUSTC_WRAPPER && exit 0
-    sccache --stop-server || true && rm -rf ./.sccache
-
-[group('sccache')]
-sccache-stats:
-    #!{{bash}}
-    if [ $SCCACHE_ENABLED = "false" ]; then
-        echo -e "$YELLOW -- sccache is disabled -- $RESET"
-        exit 0
-    fi
-    echo -e "$CYAN -- sccache stats -- $RESET"
-    sccache --show-stats
 
 [group('lint')]
 [doc('Run all code linters')]
@@ -389,11 +375,7 @@ lint-rs: deps-rs
 [doc('Lint TypeScript code with BiomeJS')]
 lint-ts:
     #!{{bash}}
-    dirs=(
-        "./build-scripts"
-        "./src-ui"
-    )
-    for d in "${dirs[@]}"; do
+    for d in "./build-scripts" "./src-ui"; do
         cd "$REPO_ROOT/$d"
         if ls *.ts 1> /dev/null 2>&1; then
             bunx @biomejs/biome ci .
@@ -418,11 +400,7 @@ fix-rs-dirty:
 [doc('Run BiomeJS safe fixes')]
 fix-ts:
     #!{{bash}}
-    dirs=(
-        "./build-scripts"
-        "./src-ui"
-    )
-    for d in "${dirs[@]}"; do
+    for d in "./build-scripts" "./src-ui"; do
         cd "$REPO_ROOT/$d"
         if ls *.ts 1> /dev/null 2>&1; then
             bun x @biomejs/biome lint --apply .
@@ -433,148 +411,6 @@ fix-ts:
 [doc('Format code with dprint (json, rust, toml, yaml, html, css, typescript and markdown).')]
 fmt:
     dprint fmt --diff
-
-[group('setup')]
-[doc('Install all project dependencies.')]
-setup: setup-platformdeps setup-bun setup-rust setup-toolchain
-
-[group('setup')]
-[macos]
-setup-platformdeps:
-    xcode-select --install
-
-[group('setup')]
-[linux]
-setup-platformdeps:
-    #!{{bash}}
-    for front in nala apt-fast apt; do
-        if ! [ -z $(command -v $front) ]; then
-            aptfront=$front
-            break
-        fi
-    done
-    test -z $aptfront && echo "This script is only compatible with apt-based package managers." && exit 1
-    sudo $aptfront update
-    sudo $aptfront install -y \
-        build-essential \
-        curl \
-        file \
-        git \
-        patchelf \
-        wget \
-        libayatana-appindicator3-dev \
-        libgtk-3-dev \
-        librsvg2-dev \
-        libssl-dev \
-        libwebkit2gtk-4.1-dev \
-        libxdo-dev
-
-[group('setup')]
-[windows]
-setup-platformdeps:
-    #!{{powershell}}
-    Start-Process -Wait -Verb RunAs -FilePath "winget" -ArgumentList "install Microsoft.VisualStudio.2022.BuildTools"
-
-[group('setup')]
-[windows]
-setup-bun:
-    #!{{powershell}}
-    $ErrorActionPreference = "SilentlyContinue"
-    if (Get-Command "bun" -ErrorAction SilentlyContinue) {
-        Write-Host "Bun is already installed."
-    }
-    else if (Get-Command "choco" -ErrorAction SilentlyContinue) {
-        Write-Host "Installing Bun via Chocolatey…"
-        Start-Process -Wait -Verb RunAs -FilePath "choco" -ArgumentList "install bun -y"
-    }
-    else if (Get-Command "winget" -ErrorAction SilentlyContinue) {
-        Write-Host "Installing Bun via Winget…"
-        winget install --id Oven-sh.Bun
-    }
-    else if (Get-Command "scoop" -ErrorAction SilentlyContinue) {
-        Write-Host "Installing Bun via Scoop…"
-        scoop install bun
-    } else {
-        Write-Host -ForegroundColor Red "[ERROR] No package manager found. Please install Bun manually."
-        Write-Host "Alternatively, install Chocolatey, Winget or Scoop and run this task again."
-        Write-Host -ForegroundColor Cyan "`n
-        https://bun.sh
-        https://chocolatey.org/install
-        https://apps.microsoft.com/detail/9NBLGGH4NNS1
-        https://scoop.sh/"
-        Exit 1
-    }
-[group('setup')]
-[linux]
-[macos]
-setup-bun:
-    #!{{bash}}
-    ! test -z $(command -v bun) && echo "Bun is already installed." && exit 0
-    ! test -z $(command -v brew) && brew install oven-sh/bun/bun && exit 0
-    echo -e "${RED}[ERROR] Homebrew not found. Please install Bun manually.${RESET}
-    Alternatively, install Homebrew and run this task again.
-    ${CYAN}
-    https://bun.sh
-    https://brew.sh
-    ${RESET}"
-
-[group('setup')]
-[linux]
-[macos]
-setup-rust:
-    #!{{bash}}
-    if ! [ -z $(command -v rustup) ] && ! [ -z $(command -v rustc) ]; then
-        echo "Rust is already installed." && exit 0
-    fi
-    if ! [ -z $(command -v brew) ]; then
-        brew install rustup-init
-        rustup-init -y
-        source "$HOME/.cargo/env"
-        rustup default stable
-    else
-        echo -e "${RED}[ERROR] Homebrew not found. Please install Rust manually.${RESET}
-        Alternatively, install Homebrew and run this task again.
-        ${CYAN}
-        https://rustup.rs
-        ${RESET}"
-    fi
-
-[group('setup')]
-[windows]
-setup-rust:
-    #!{{powershell}}
-    $ErrorActionPreference = "SilentlyContinue"
-    if ((Get-Command "rustup") -and (Get-Command "rustc")) {
-        Write-Host "Rust is already installed."
-    } else if (Get-Command "choco") {
-        Start-Process -Wait -Verb RunAs -FilePath "choco" -ArgumentList "install rustup.install -y"
-    } else if (Get-Command "winget" -ErrorAction SilentlyContinue) {
-        winget install --id Rustlang.Rustup
-    } else if (Get-Command "scoop" -ErrorAction SilentlyContinue) {
-        scoop install rustup
-    } else {
-        Write-Host -ForegroundColor Red "[ERROR] No package manager found. Please install Rustup manually."
-        Write-Host "Alternatively, install Chocolatey, Winget or Scoop and run this task again."
-        Write-Host -ForegroundColor Cyan "`n
-        https://rustup.rs
-        https://chocolatey.org/install
-        https://apps.microsoft.com/detail/9NBLGGH4NNS1
-        https://scoop.sh/"
-        Exit 1
-    }
-
-[group('setup')]
-setup-toolchain:
-    rustup component add clippy
-    rustup target add {{RUST_TARGETS}}
-    cargo install cargo-binstall@1.10.7 --locked
-    cargo binstall -y \
-        cargo-cache@0.8.3 \
-        cargo-edit@0.13.0 \
-        dprint@0.47.2 \
-        sccache@0.8.2 \
-        tauri-cli@2.0.2 \
-        --locked || exit 1
 
 [group('maintainer')]
 [doc('Delete all GitHub build cache')]

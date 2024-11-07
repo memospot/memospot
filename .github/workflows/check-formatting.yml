@@ -26,6 +26,7 @@ concurrency:
 
 env:
   DPRINT_CACHE_DIR: ${{github.workspace}}/.dprint
+  RUST_TOOLCHAIN: nightly-2024-11-01
 
 jobs:
   dprint:
@@ -42,13 +43,13 @@ jobs:
 
       - name: Setup rustfmt
         uses: dtolnay/rust-toolchain@21dc36fb71dd22e3317045c0c31a3f4249868b17
-        with: { toolchain: stable, components: rustfmt }
+        with: { toolchain: "${{ env.RUST_TOOLCHAIN }}", components: rustfmt }
 
       - name: Install dprint
         uses: jaxxstorm/action-install-gh-release@71d17cb091aa850acb2a1a4cf87258d183eb941b
         with:
           repo: dprint/dprint
-          tag: 0.47.2
+          tag: 0.47.5
           cache: enable
 
       - name: Cache dprint plugins
