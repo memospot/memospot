@@ -84,7 +84,10 @@ export function upxPack(options: UpxOptions) {
 if (import.meta.main) {
     const repoRoot = findRepositoryRoot();
     const exe = process.platform === "win32" ? ".exe" : "";
-    const filesToPack = [`${repoRoot}/target/release/memospot${exe}`];
+    const filesToPack = [
+        `${repoRoot}/target/release/memospot${exe}`,
+        `${repoRoot}/target/x86_64-unknown-linux-gnu/release/memospot${exe}`
+    ];
     const upxOptions = {
         bin: `upx${process.platform === "win32" ? ".exe" : ""}`,
         flags: ["-9"],
