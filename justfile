@@ -12,11 +12,7 @@ powershell := if os() == 'windows' {'powershell.exe'} else {'/usr/bin/env pwsh'}
 bun := if os() == 'windows' { 'bun.exe' } else { '/usr/bin/env bun' }
 
 RUST_TOOLCHAIN := 'nightly-2024-11-01'
-RUSTFLAGS := if RUST_TOOLCHAIN == 'stable' {
-    env_var_or_default('RUSTFLAGS','')
-} else {
-    env_var_or_default('RUSTFLAGS','')+' -Z threads='+num_cpus()
-}
+RUSTFLAGS := env_var_or_default('RUSTFLAGS','') + if RUST_TOOLCHAIN == 'stable' { '' } else { ' -Z threads='+num_cpus() }
 CI := env_var_or_default('CI', 'false')
 GITHUB_ENV := env_var_or_default('GITHUB_ENV', '.GITHUB_ENV')
 TAURI_SIGNING_PRIVATE_KEY := env_var_or_default('TAURI_SIGNING_PRIVATE_KEY', '')

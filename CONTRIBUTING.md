@@ -37,10 +37,10 @@ earthly ls
 - A modern computer, with at least 8 GB of RAM and a decent CPU. Rust compilation is very CPU-intensive. Also, `rust-analyzer` (language server) utilizes circa 2GB of RAM.
 - 20 GB of free disk space on the repository drive, for Rust artifacts.
 
-> [!WARNING]
+> [!IMPORTANT]
 > After installing a tool, make sure it is available in your system PATH environment variable.
 >
-> Open a new terminal window and try to run the tool from there. If it doesn't work, read the tool's installation instructions and setup's output thoroughly.
+> Open a new terminal window and try to run the tool from there. If it doesn't work, read the tool's installation instructions thoroughly and setup it accordingly.
 
 ### OS-specific dependencies
 
@@ -155,7 +155,7 @@ rustup component add clippy
 [Binstall](https://github.com/cargo-bins/cargo-binstall) is a tool for installing pre-built Rust binaries.
 
 > [!TIP]
-> It's possible to use `cargo install` or download the binaries manually instead, but it would take a lot of time and manual work. {style="info"}
+> It's possible to use `cargo install` or download the binaries manually instead, but it would take a lot of time and manual work.
 
 - Homebrew
 
@@ -212,8 +212,6 @@ cargo binstall --disable-telemetry --no-confirm `
 
 ## Memos server build
 
-<details>
-
 [Memos server](https://github.com/usememos/memos) is built separately on the repository [memos-builds](https://github.com/memospot/memos-builds).
 
 A pre-build hook will automatically download the latest release from the companion repository and put it in the `server-dist` folder. Downloaded files will be reused on subsequent builds.
@@ -232,8 +230,6 @@ Sample valid server binary names:
 
 > [!TIP]
 > You can check your current system target triplet with the command `rustc -vV`.
-
-</details>
 
 ## Using Just
 
