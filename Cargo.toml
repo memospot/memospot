@@ -15,6 +15,9 @@ repository = "https://github.com/memospot/memospot"
 rust-version = "1.77.2"
 description = "Memospot is a desktop version of Memos, a beautiful, privacy-first, lightweight note-taking service."
 
+[workspace.dependencies]
+anyhow = "1.0"
+
 [profile.release]
 codegen-units = 1
 incremental = true

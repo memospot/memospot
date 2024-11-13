@@ -27,7 +27,7 @@ portpicker = { path = "../crates/portpicker" }
 writable = { path = "../crates/writable" }
 
 [dependencies]
-anyhow = "1.0"
+anyhow = { workspace = true }
 async_zip = { version = "0.0.17", features = ["zstd", "tokio-fs"] }
 chrono = { version = "0.4", default-features = false }
 encoding_rs = "0.8"
@@ -43,20 +43,22 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = "0.9.33"
 shared_child = "1.0"
+strum = { version = "0.26.3", features = ["strum_macros"] }
+strum_macros = "0.26.4"
 tempfile = "3.13"
 tokio = "1.40"
 url = { version = "2", features = ["serde"] }
 
 [target.'cfg(not(tauri_group))'.dependencies]
-tauri = { version = "2.0", features = ["config-toml"] }
-tauri-plugin-fs = "2.0"
-tauri-plugin-http = { version = "2.0", features = ["gzip"] }
-tauri-plugin-process = "2.0"
-tauri-plugin-shell = "2.0"
-tauri-utils = "2.0"
+tauri = { version = ">=2.1", features = ["config-toml"] }
+tauri-plugin-fs = ">=2"
+tauri-plugin-http = { version = ">=2", features = ["gzip"] }
+tauri-plugin-process = ">=2"
+tauri-plugin-shell = ">=2"
+tauri-utils = ">=2.1"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-updater = "2.0"
+tauri-plugin-updater = "2"
 
 [target.'cfg(windows)'.dependencies]
 winapi = "0.3"
@@ -66,3 +68,4 @@ winreg = "0.52"
 # this feature is used for production builds or when `devPath` points to the filesystem
 # DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]
+devtools = ["tauri/devtools"]

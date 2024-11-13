@@ -5,9 +5,26 @@ use homedir::HomeDirExt;
 use log::{debug, info, warn};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
+use std::sync::{Arc, Mutex};
 use tauri::utils::platform::resource_dir as tauri_resource_dir;
 use tauri_plugin_http::reqwest;
 use tauri_utils::PackageInfo;
+
+type VersionStore = Arc<Mutex<String>>;
+fn version_store() -> &'static VersionStore {
+    static VERSION_STORE: LazyLock<VersionStore> = LazyLock::new(Default::default);
+    &VERSION_STORE
+}
+/// Get Memos version previously stored by [`memos::wait_api_ready()`].
+pub fn get_version() -> String {
+    version_store().lock().unwrap().clone()
+}
+/// Set Memos version on the store.
+pub fn set_version(version: String) {
+    let mut store = version_store().lock().unwrap();
+    *store = version;
+}
 
 /// Spawn Memos server.
 ///
@@ -175,9 +192,7 @@ pub async fn query_version(memos_url: &str) -> Result<String, anyhow::Error> {
 
 /// Poll Memos server until the API responds.
 ///
-/// Currently, it just logs the server version.
-///
-/// This is a blocking function.
+/// Server version is queried and stored in the global state, available via [`memos::get_version()`].
 pub async fn wait_api_ready(memos_url: &str, interval_millis: u64, timeout_millis: u128) {
     let mut version = String::new();
     let mut last_error = String::new();
@@ -211,4 +226,5 @@ pub async fn wait_api_ready(memos_url: &str, interval_millis: u64, timeout_milli
         version,
         time_start.elapsed().as_millis()
     );
+    set_version(version);
 }

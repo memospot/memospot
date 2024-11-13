@@ -1,6 +1,10 @@
 use config::Config;
 
 use std::path::PathBuf;
+use std::sync::LazyLock;
+use std::sync::{Arc, Mutex};
+
+type RuntimeConfigStore = Arc<Mutex<RuntimeConfig>>;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct RuntimeConfigPaths {
@@ -49,4 +53,46 @@ pub struct RuntimeConfig {
     ///
     /// DO NOT modify this field after app startup.
     pub __yaml__: Config,
+}
+impl Default for RuntimeConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+impl RuntimeConfig {
+    pub fn new() -> Self {
+        Self {
+            paths: RuntimeConfigPaths {
+                memos_bin: PathBuf::new(),
+                memos_data: PathBuf::new(),
+                memos_db_file: PathBuf::new(),
+                memospot_bin: PathBuf::new(),
+                memospot_config_file: PathBuf::new(),
+                memospot_cwd: PathBuf::new(),
+                memospot_data: PathBuf::new(),
+            },
+            is_managed_server: true,
+            memos_url: String::new(),
+            yaml: Config::default(),
+            __yaml__: Config::default(),
+        }
+    }
+
+    fn global_store() -> &'static RuntimeConfigStore {
+        static GLOBAL_STORE: LazyLock<RuntimeConfigStore> = LazyLock::new(Default::default);
+        &GLOBAL_STORE
+    }
+
+    /// Retrieve the configuration previously stored in the global store.
+    pub fn from_global_store() -> RuntimeConfig {
+        Self::global_store().lock().unwrap().clone()
+    }
+
+    /// Store current configuration at the global store.
+    ///
+    /// It can be retrieved with [`from_global_store()`].
+    pub fn to_global_store(&self) {
+        let mut store = Self::global_store().lock().unwrap();
+        *store = self.clone();
+    }
 }

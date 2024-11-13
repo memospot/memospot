@@ -79,6 +79,8 @@ pub struct Window {
     pub x: Option<i32>,
     /// (Managed) The window's initial y position.
     pub y: Option<i32>,
+    /// Hide main menu bar.
+    pub hide_menu_bar: Option<bool>,
 }
 impl Default for Window {
     fn default() -> Self {
@@ -91,6 +93,7 @@ impl Default for Window {
             height: Some(720),
             x: Some(0),
             y: Some(0),
+            hide_menu_bar: Some(false),
         }
     }
 }

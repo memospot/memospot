@@ -1,6 +1,7 @@
 mod cmd;
 mod init;
 mod memos;
+mod menu;
 mod process;
 mod runtime_config;
 mod sqlite;
@@ -79,6 +80,8 @@ pub fn run() {
     config.paths.memospot_cwd = config.paths.memospot_bin.parent().unwrap().to_path_buf();
     config.paths.memos_bin = init::find_memos(&config);
 
+    config.to_global_store();
+
     #[cfg(target_os = "linux")]
     init::hw_acceleration();
     init::set_env_vars(&config);
@@ -105,7 +108,7 @@ pub fn run() {
         };
 
         window_config[0] = WindowConfig {
-            title: format!("Memospot {}", &app_version),
+            title: "Memospot".into(),
             user_agent: Some(user_agent),
             drag_drop_enabled: false, // Stop Tauri from handling drag-and-drop events and pass them to the webview.
             ..Default::default()
@@ -136,6 +139,8 @@ pub fn run() {
             cmd::ping_memos,
             cmd::get_env
         ])
+        .menu(menu::build)
+        .on_menu_event(menu::handle_event)
         .setup(move |app| {
             if config_.yaml.memospot.updater.enabled.is_some_and(|e| !e) {
                 warn!("Disabling updater plugin by user config.");
@@ -145,6 +150,13 @@ pub fn run() {
                 debug!("Running in Flatpak. Disabling updater plugin.");
                 app.handle().remove_plugin("tauri-plugin-updater");
             }
+
+            info!(
+                "webview url: {}",
+                &app.get_webview_window("main").unwrap().url().unwrap()
+            );
+
+            menu::update_when_ready(app.handle().clone());
 
             if config_.is_managed_server {
                 return Ok(());
@@ -161,7 +173,7 @@ pub fn run() {
                 .trim_end_matches("/");
             if let Some(main_window) = app.get_webview_window("main") {
                 main_window
-                    .set_title(&format!("Memospot {} - {}", app_version, title_url))
+                    .set_title(&format!("Memospot - {}", title_url))
                     .unwrap_or_default();
             }
 
