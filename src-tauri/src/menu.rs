@@ -117,26 +117,25 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
     .build(handle)?;
 
     #[cfg(target_os = "macos")]
-    {
-        let app_name = handle.config().product_name.clone().unwrap_or_default();
-        let mac_menu = &SubmenuBuilder::new(handle, app_name)
-            .about(Some(AboutMetadata::default()))
-            .separator()
-            .text(
-                MainMenu::AppSettings.index(),
-                MainMenu::AppSettings.as_ref(),
-            )
-            .item(&check_for_updates)
-            .separator()
-            .services()
-            .separator()
-            .hide()
-            .hide_others()
-            .show_all()
-            .separator()
-            .quit()
-            .build()?;
-    }
+    let app_name = handle.config().product_name.clone().unwrap_or_default();
+    #[cfg(target_os = "macos")]
+    let mac_menu = &SubmenuBuilder::new(handle, app_name)
+        .about(Some(AboutMetadata::default()))
+        .separator()
+        .text(
+            MainMenu::AppSettings.index(),
+            MainMenu::AppSettings.as_ref(),
+        )
+        .item(&check_for_updates)
+        .separator()
+        .services()
+        .separator()
+        .hide()
+        .hide_others()
+        .show_all()
+        .separator()
+        .quit()
+        .build()?;
 
     let app_menu = &SubmenuBuilder::new(handle, MainMenu::App.as_ref())
         .items(&[

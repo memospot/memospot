@@ -33,15 +33,14 @@ pub fn get_app_data_path(app_name: &str) -> PathBuf {
     if fallback.exists() {
         return fallback;
     }
-    if cfg!(windows) {
-        if let Ok(path) = env::var("LOCALAPPDATA").or_else(|_| env::var("APPDATA")) {
-            let path = PathBuf::from(path);
-            return if path.ends_with("Local") {
-                path.join(app_name)
-            } else {
-                path.parent().unwrap_or(&path).join("Local").join(app_name)
-            };
-        }
+    #[cfg(target_os = "windows")]
+    if let Ok(app_data) = env::var("LOCALAPPDATA").or_else(|_| env::var("APPDATA")) {
+        let app_data = PathBuf::from(app_data);
+        return if app_data.ends_with("Roaming") {
+            app_data.parent().unwrap().join("Local").join(app_name)
+        } else {
+            app_data.join(app_name)
+        };
     }
 
     fallback
