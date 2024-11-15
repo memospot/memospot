@@ -4,13 +4,15 @@ on:
   pull_request:
     paths:
       - "**/*.rs"
-      - "**/Cargo.{lock,toml}"
+      - "**/Cargo.lock"
+      - "**/Cargo.toml"
       - "**/check-rust.yml"
       - "**/Tauri.toml"
   push:
     paths:
       - "**/*.rs"
-      - "**/Cargo.{lock,toml}"
+      - "**/Cargo.lock"
+      - "**/Cargo.toml"
       - "**/check-rust.yml"
       - "**/Tauri.toml"
   workflow_dispatch:
