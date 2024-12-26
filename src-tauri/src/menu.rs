@@ -13,7 +13,7 @@ use tauri::{
     menu::{Menu, MenuEvent, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder},
     AppHandle, Manager, Runtime,
 };
-use tauri_plugin_shell::ShellExt;
+use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_updater::UpdaterExt;
 use tokio::time::{self, Duration, Instant};
 use url::Url;
@@ -63,10 +63,12 @@ impl MainMenu {
 
 /// Update menu after Memos version is known.
 ///
-/// Displays current Memos version in the help menu.
-pub fn update_when_ready<R: Runtime>(handle: AppHandle<R>) {
+/// Display current Memos version in the help menu.
+pub fn update_with_memos_version<R: Runtime>(handle: &AppHandle<R>) {
     const INTERVAL_MS: u64 = 100;
     const TIMEOUT_MS: u128 = 15000;
+
+    let handle_ = handle.clone();
     async_runtime::spawn(async move {
         let mut interval = time::interval(Duration::from_millis(INTERVAL_MS));
         let time_start = Instant::now();
@@ -85,21 +87,24 @@ pub fn update_when_ready<R: Runtime>(handle: AppHandle<R>) {
             }
         }
 
-        'outer: for item in handle.menu().unwrap().items().iter() {
-            for menu in item.iter() {
-                if let Some(entry) = menu
-                    .as_submenu()
-                    .unwrap()
-                    .get(&MainMenu::HelpMemosVersion.index().to_string())
-                {
-                    entry
-                        .as_menuitem()
-                        .unwrap()
-                        .set_text(format!("Memos v{}", memos::get_version()))
-                        .ok();
-                    break 'outer;
-                }
-            }
+        let Some(main_window) = handle_.get_webview_window("main") else {
+            return;
+        };
+
+        // Find and update the Memos version in the Help menu.
+        if let Some(menu) = main_window.menu() {
+            let version_text = format!("Memos v{}", memos::get_version());
+
+            menu.items()
+                .iter()
+                .flat_map(|item| item.iter())
+                .filter_map(|menu| menu.as_submenu())
+                .find_map(|submenu| {
+                    submenu
+                        .get(&MainMenu::HelpMemosVersion.index().to_string())
+                        .and_then(|entry| entry.as_menuitem().cloned())
+                })
+                .map(|menuitem| menuitem.set_text(version_text));
         }
     });
 }
@@ -145,12 +150,12 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
             )
             .accelerator("CmdOrCtrl+D")
             .build(handle)?,
-            // &MenuItemBuilder::with_id(
-            //     MainMenu::AppSettings.index(),
-            //     MainMenu::AppSettings.as_ref(),
-            // )
-            // .accelerator("CmdOrCtrl+S")
-            // .build(handle)?,
+            &MenuItemBuilder::with_id(
+                MainMenu::AppSettings.index(),
+                MainMenu::AppSettings.as_ref(),
+            )
+            .accelerator("CmdOrCtrl+S")
+            .build(handle)?,
             &PredefinedMenuItem::separator(handle)?,
             #[cfg(target_os = "macos")]
             &PredefinedMenuItem::close_window(handle, None)?,
@@ -261,7 +266,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
 pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
     let mut webview = handle.get_webview_window("main").unwrap();
     let open_link = |url| {
-        handle.shell().open(url, None).ok();
+        handle.opener().open_url(url, None::<&str>).ok();
     };
 
     #[cfg(debug_assertions)]
@@ -275,12 +280,25 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
         MainMenu::AppBrowseDataDirectory => {
             let config = RuntimeConfig::from_global_store();
             handle
-                .shell()
-                .open(
+                .opener()
+                .open_url(
                     config.paths.memospot_data.to_string_lossy().to_string(),
-                    None,
+                    None::<&str>,
                 )
                 .ok();
+        }
+        MainMenu::AppSettings => {
+            let handle_ = handle.clone();
+            tauri::async_runtime::spawn(async move {
+                tauri::WebviewWindowBuilder::new(
+                    &handle_,
+                    "config",
+                    tauri::WebviewUrl::App("config.html".into()),
+                )
+                .title(MainMenu::AppSettings.as_ref().replace("&", ""))
+                .build()
+                .ok();
+            });
         }
         MainMenu::GlobalUpdate => {
             let handle_ = handle.clone();
@@ -294,8 +312,8 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
                     );
                     if user_confirmed {
                         handle_
-                            .shell()
-                            .open(update.download_url.as_str(), None)
+                            .opener()
+                            .open_url(update.download_url.as_str(), None::<&str>)
                             .ok();
                     } else {
                         warn!("User declined update download.");
@@ -310,7 +328,9 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
             webview.open_devtools();
         }
         MainMenu::ViewHideMenuBar => {
-            handle.remove_menu().ok();
+            if let Some(main_window) = handle.get_webview_window("main") {
+                main_window.remove_menu().ok();
+            }
         }
         MainMenu::ViewRefresh => {
             let url = webview.url().unwrap().join("./").unwrap();

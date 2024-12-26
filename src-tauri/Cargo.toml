@@ -51,7 +51,7 @@ url = { version = "2", features = ["serde"] }
 tauri = { version = "^2.1", features = ["config-toml"] }
 tauri-plugin-fs = "^2"
 tauri-plugin-http = { version = "^2", features = ["gzip"] }
-tauri-plugin-shell = ">=2"
+tauri-plugin-opener = "^2"
 tauri-plugin-process = "^2"
 tauri-utils = "^2"
 

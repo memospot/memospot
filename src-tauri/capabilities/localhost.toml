@@ -3,9 +3,7 @@ identifier = "allow-tauri-api-localhost"
 description = "Allows target _blank links to open in the default browser."
 windows = ["*"]
 platforms = ["macOS", "windows", "linux"]
-permissions = [
-    "shell:allow-open",
-]
+permissions = []
 
 [remote]
 urls = [

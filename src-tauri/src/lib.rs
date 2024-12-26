@@ -128,35 +128,37 @@ pub fn run() {
 
     let config_ = config.clone();
     let Ok(tauri_app) = tauri::Builder::default()
-        .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
-        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_http::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(cmd::MemosURL::manage(config_.memos_url.clone()))
         .invoke_handler(tauri::generate_handler![
             cmd::get_memos_url,
             cmd::ping_memos,
             cmd::get_env
         ])
-        .menu(menu::build)
-        .on_menu_event(menu::handle_event)
         .setup(move |app| {
+            let handle = app.handle();
+            if let Some(main_window) = app.get_webview_window("main") {
+                main_window.set_menu(menu::build(handle)?).ok();
+                menu::update_with_memos_version(handle);
+            }
+
             if config_.yaml.memospot.updater.enabled.is_some_and(|e| !e) {
                 warn!("Disabling updater plugin by user config.");
-                app.handle().remove_plugin("tauri-plugin-updater");
+                handle.remove_plugin("tauri-plugin-updater");
             }
             if env::var("FLATPAK_ID").is_ok_and(|id| !id.is_empty()) {
                 debug!("Running in Flatpak. Disabling updater plugin.");
-                app.handle().remove_plugin("tauri-plugin-updater");
+                handle.remove_plugin("tauri-plugin-updater");
             }
 
             info!(
                 "webview url: {}",
                 &app.get_webview_window("main").unwrap().url().unwrap()
             );
-
-            menu::update_when_ready(app.handle().clone());
 
             if config_.is_managed_server {
                 return Ok(());
@@ -186,6 +188,9 @@ pub fn run() {
 
     tauri_app.run(move |app_handle, run_event| {
         match run_event {
+            tauri::RunEvent::MenuEvent(menu_event) => {
+                menu::handle_event(app_handle, menu_event);
+            }
             tauri::RunEvent::WindowEvent {
                 label,
                 event: window_event,
