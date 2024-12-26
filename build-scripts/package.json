@@ -8,9 +8,9 @@
   },
   "devDependencies": {
     "@types/async": "^3.2.24",
-    "@types/bun": "^1.1.10",
+    "@types/bun": "^1.1.14",
     "@types/decompress": "^4.2.7",
-    "jsdoc": "^4.0.3"
+    "jsdoc": "^4.0.4"
   },
   "peerDependencies": {
     "typescript": "^5.4.5"
