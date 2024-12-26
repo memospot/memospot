@@ -27,7 +27,7 @@ env:
   CARGO_TERM_COLOR: always
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   RUST_BACKTRACE: full
-  RUST_TOOLCHAIN: nightly-2024-11-01
+  RUST_TOOLCHAIN: stable
   RUSTFLAGS: -Copt-level=1 -Cstrip=symbols -Ccodegen-units=256
   APT_DEPS: >-
     build-essential

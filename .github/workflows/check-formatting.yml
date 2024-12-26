@@ -26,7 +26,7 @@ concurrency:
 
 env:
   DPRINT_CACHE_DIR: ${{github.workspace}}/.dprint
-  RUST_TOOLCHAIN: nightly-2024-11-01
+  RUST_TOOLCHAIN: stable
 
 jobs:
   dprint:

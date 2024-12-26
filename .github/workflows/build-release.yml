@@ -15,7 +15,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   LATEST_MEMOS_VERSION: NOT_SET
   RUST_BACKTRACE: short
-  RUST_TOOLCHAIN: nightly-2024-11-01
+  RUST_TOOLCHAIN: stable
   RUSTFLAGS: -Copt-level=3 -Cstrip=symbols -Ccodegen-units=1
   APT_DEPS: >-
     build-essential

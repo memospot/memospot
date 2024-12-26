@@ -11,7 +11,7 @@ bash := if os() == 'windows' { 'env -S bash -euo pipefail' } else { '/usr/bin/en
 powershell := if os() == 'windows' {'powershell.exe'} else {'/usr/bin/env pwsh'}
 bun := if os() == 'windows' { 'bun.exe' } else { '/usr/bin/env bun' }
 
-RUST_TOOLCHAIN := 'nightly-2024-11-01'
+RUST_TOOLCHAIN := 'stable'
 RUSTFLAGS := env_var_or_default('RUSTFLAGS','') + if RUST_TOOLCHAIN == 'stable' { '' } else { ' -Z threads='+num_cpus() }
 CI := env_var_or_default('CI', 'false')
 GITHUB_ENV := env_var_or_default('GITHUB_ENV', '.GITHUB_ENV')
@@ -158,6 +158,7 @@ test-ts: deps-ts
 
 [doc('Run app in development mode')]
 dev: dev-killprocesses
+    rustup toolchain install $RUST_TOOLCHAIN
     cargo tauri dev
     just dev-killprocesses
 
@@ -258,7 +259,11 @@ build-ui:
 build TARGET='all':
     #!{{bash}}
     rustup toolchain install $RUST_TOOLCHAIN
-    rustup override set $RUST_TOOLCHAIN
+    if [ "{{TARGET}}" = "no-bundle" ]; then
+        cargo tauri build --no-bundle
+        just postbuild
+        exit 0
+    fi
     if [ -z $TAURI_SIGNING_PRIVATE_KEY ] && [ -f $HOME/.tauri/memospot_updater.key ]; then
         export TAURI_SIGNING_PRIVATE_KEY=$(cat $HOME/.tauri/memospot_updater.key 2>/dev/null | tr -d '\n' || echo "")
         echo -e "${CYAN}Setting TAURI_SIGNING_PRIVATE_KEY from $HOME/.tauri/memospot_updater.key${RESET}"
@@ -270,7 +275,6 @@ build TARGET='all':
         cargo tauri build -c '{"bundle": {"targets": "{{TARGET}}" }}'
     fi
     just postbuild
-    rustup override unset
 
 [linux]
 flatpak-lint:

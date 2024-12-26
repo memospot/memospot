@@ -143,12 +143,9 @@ Bun is a fast JavaScript/TypeScript runtime, bundler, test runner, and package m
 ### Rust toolchain
 
 ```bash
-rustup default nightly-2024-11-01
+rustup default stable
 rustup component add clippy
 ```
-
-> [!TIP]
-> The nightly toolchain allows using `RUSTFLAGS="-Z threads=N"` to greatly speed up build and linting.
 
 ### Cargo binstall
 
