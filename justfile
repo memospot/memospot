@@ -325,10 +325,12 @@ postbuild:
         resolved_path="$(find ./target/release/$artifact -type f 2>&1 | head -n 1)"
         test -f "$resolved_path" && mv -f "$resolved_path" ./build/. 2>/dev/null
     done
-    appimages=($(find ./build/*.AppImage -type f 2>&1))
-    for appimage in "${appimages[@]}"; do
-        ! test -d "${appimage}.home" && mkdir -p "${appimage}.home"
-    done
+    pushd "./build"
+        appimages=($(find *.AppImage -type f 2>&1))
+        for appimage in "${appimages[@]}"; do
+            ! test -d "${appimage}.home" && mkdir -p "${appimage}.home"
+        done
+    popd
     if ls ./build/memos* 1> /dev/null 2>&1; then
         echo -e "${GREEN}Done.${RESET}"
     else
