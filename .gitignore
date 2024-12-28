@@ -2,7 +2,6 @@
 .dprint
 .sccache
 build/
-dist-ui/
 server-dist/
 icon.icns
 .env
@@ -10,6 +9,16 @@ icon.icns
 **/.flatpak-builder
 *.db
 *.gz
+
+### SvelteKit ###
+**/build
+**/.svelte-kit
+**/package
+vite.config.ts.timestamp-*
+
+# Paraglide i18n
+**/project.inlang/cache
+**/lib/paraglide
 
 # Task
 .task

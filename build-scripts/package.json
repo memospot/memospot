@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "fmt": "dprint fmt",
-    "lint": "bunx @biomejs/biome ci ."
+    "lint": "bun x @biomejs/biome ci ."
   },
   "devDependencies": {
     "@types/async": "^3.2.24",

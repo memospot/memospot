@@ -139,7 +139,7 @@ jobs:
       - name: Create dummy build dependencies
         shell: bash
         run: |
-          mkdir -p ./dist-ui ./server-dist/dist
+          mkdir -p ./src-ui/build ./server-dist/dist
           touch ./server-dist/dist/index.html \
                 ./server-dist/memos-x86_64-unknown-linux-gnu \
                 ./server-dist/memos-x86_64-apple-darwin \

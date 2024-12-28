@@ -81,11 +81,12 @@ default:
 
 [private]
 deps-ts:
-    bun install || bun install
+    pushd "src-ui"; bun install; popd
+    pushd "build-scripts"; bun install; popd
 
 [private]
 deps-rs:
-    mkdir -p ./dist-ui
+    mkdir -p ./src-ui/build
 
 [private]
 dev-ui: deps-ts
@@ -220,7 +221,7 @@ upgrade-bun:
 gen-icons-force:
     #!{{bash}}
     cargo tauri icon "assets/app-icon-lossless.webp"
-    cp -f "./src-tauri/icons/icon.ico" "./src-ui/public/favicon.ico"
+    cp -f "./src-tauri/icons/icon.ico" "./src-ui/static/favicon.ico"
     git add "assets/app-icon-lossless.webp" "src-tauri/icons/*"
     # git commit -m "chore: regenerate icons"
 
@@ -232,11 +233,11 @@ gen-icons:
         "assets/app-icon-lossless.webp"
         "src-tauri/icons/**.png"
         "src-tauri/icons/icon.ico"
-        "src-ui/public/favicon.ico"
+        "src-ui/static/favicon.ico"
     )
     for file in "${check_files[@]}"; do
         if ! git diff --quiet --exit-code HEAD -- "$file"; then
-            echo "${YELLOW}$file was modified, regenerating icons…${RESET}"
+            echo "${YELLOW}$file was modified since last commit, regenerating icons…${RESET}"
             just gen-icons-force
             exit 0
         fi
@@ -249,7 +250,7 @@ build-ui-force:
 [doc('Build UI, if needed')]
 build-ui:
     #!{{bash}}
-    if ! git diff --quiet --exit-code HEAD -- "src-ui/src/**" || [ ! -d "./dist-ui/" ] || [ ! -f "./dist-ui/index.html" ]; then
+    if ! git diff --quiet --exit-code HEAD -- "src-ui/src/**" || [ ! -d "./src-ui/build/" ] || [ ! -f "./src-ui/build/index.html" ]; then
         just build-ui-force
     else
         echo -e "${GREEN}UI is up to date.${RESET}"
@@ -328,14 +329,15 @@ postbuild:
     pushd "./build"
         appimages=($(find *.AppImage -type f 2>&1))
         for appimage in "${appimages[@]}"; do
+            ! test -f "${appimage}" && continue
             ! test -d "${appimage}.home" && mkdir -p "${appimage}.home"
         done
-    popd
-    if ls ./build/memos* 1> /dev/null 2>&1; then
+    if ls ./memos* 1> /dev/null 2>&1; then
         echo -e "${GREEN}Done.${RESET}"
     else
         echo -e "${RED}Failed to move files.${RESET}"
     fi
+    popd
 
 [doc('Clean project artifacts')]
 clean:
@@ -347,10 +349,10 @@ clean:
         "./.task"
         "./build"
         "./build-scripts/node_modules"
-        "./dist-ui"
         "./node_modules"
         "./server-dist"
         "./src-ui/.vite"
+        "./src-ui/build"
         "./src-ui/node_modules"
         "./target"
     )
@@ -380,7 +382,7 @@ lint-ts:
     for d in "./build-scripts" "./src-ui"; do
         cd "$REPO_ROOT/$d"
         if ls *.ts 1> /dev/null 2>&1; then
-            bunx @biomejs/biome ci .
+            bun x @biomejs/biome ci .
         fi
     done
 

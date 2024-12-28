@@ -7,7 +7,7 @@ identifier = "com.memospot.app"
 beforeBuildCommand = "just tauri-before-build"
 beforeBundleCommand = "just tauri-before-bundle"
 beforeDevCommand = "just tauri-before-dev"
-frontendDist = "../dist-ui"
+frontendDist = "../src-ui/build"
 devUrl = "http://localhost:1420"
 runner = "cargo"
 

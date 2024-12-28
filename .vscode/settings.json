@@ -25,6 +25,9 @@
   "[rust]": {
     "editor.defaultFormatter": "dprint.dprint"
   },
+  "[svelte]": {
+    "editor.defaultFormatter": "dprint.dprint"
+  },
   "[toml]": {
     "editor.defaultFormatter": "dprint.dprint"
   },
@@ -76,8 +79,9 @@
   "search.exclude": {
     "**/.dprint/**": true,
     "**/.flatpak-builder/**": true,
-    "**/dist-ui/**": true,
+    "**/build/**": true,
     "**/node_modules/**": true,
     "**/target/**": true
-  }
+  },
+  "svelte.enable-ts-plugin": true
 }

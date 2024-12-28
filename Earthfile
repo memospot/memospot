@@ -17,8 +17,8 @@ IMPORT github.com/earthly/lib/rust:3.0.3 AS rust
 # See https://github.com/earthly/lib/tree/main/rust
 
 ARG --global BASE_IMAGE="ubuntu:22.04"
-ARG --global RUST_TOOLCHAIN="nightly-2024-11-01"
-ARG --global BUN_VERSION="1.1.34"
+ARG --global RUST_TOOLCHAIN="stable"
+ARG --global BUN_VERSION="1.1.42"
 ARG --global UPX_VERSION="4.2.4"
 
 FROM $BASE_IMAGE
@@ -112,7 +112,7 @@ CARGOSWEEP:
 # Create dummy build dependencies, so the lint and test does not fail.
 CREATE_DUMMYDEPS:
   FUNCTION
-  RUN mkdir -p ./dist-ui ./server-dist/dist
+  RUN mkdir -p ./src-ui/build ./server-dist/dist
   RUN touch ./server-dist/dist/index.html \
             ./server-dist/memos-x86_64-unknown-linux-gnu \
             ./server-dist/memos-x86_64-apple-darwin \

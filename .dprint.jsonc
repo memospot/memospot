@@ -4,9 +4,8 @@
     "**/node_modules/*",
     "**/.dprint/*",
     "**/.git/*",
-    "**/.sccache/*",
     "**/target/*",
-    "**/dist*/*",
+    "**/build/*",
     "**/gen/schemas/*.json"
   ],
   "includes": [
@@ -15,7 +14,7 @@
     "**/*.{md}",
     "**/*.{rs}",
     "**/*.{toml}",
-    "**/*.{ts,tsx}",
+    "**/*.{js,svelte,ts}",
     "**/*.{yml,yaml}"
   ],
   "lineWidth": 96,
@@ -31,11 +30,15 @@
       {
         "command": "rustfmt --files-with-diff --config-path .rustfmt.toml",
         "exts": ["rs"]
+      },
+      {
+        "command": "bun x @biomejs/biome format --write --line-width={{line_width}} --indent-style=space --indent-size=2 --stdin-file-path={{file_path}}",
+        "exts": ["svelte"]
       }
     ]
   },
   "biome": {
-    "associations": ["**/*.{json,jsonc}", "**/*.{ts,tsx}"],
+    "associations": ["**/*.{json,jsonc}", "**/*.{js,ts}"],
     "indentStyle": "space",
     "indentSize": 4,
     "lineEnding": "lf",

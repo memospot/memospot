@@ -3,7 +3,6 @@
 .vite
 **/target/**
 build/
-dist-ui/
 node_modules
 .env
 .secret

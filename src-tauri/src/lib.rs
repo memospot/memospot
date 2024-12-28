@@ -111,6 +111,7 @@ pub fn run() {
             title: "Memospot".into(),
             user_agent: Some(user_agent),
             drag_drop_enabled: false, // Stop Tauri from handling drag-and-drop events and pass them to the webview.
+            visible: false, // Prevent theme flashing. The frontend code calls getCurrentWebviewWindow().show() immediately after configuring the theme.
             ..Default::default()
         }
         .restore_attribs_from(&config);

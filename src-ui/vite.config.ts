@@ -1,35 +1,40 @@
+import { paraglide } from "@inlang/paraglide-sveltekit/vite";
+import { sveltekit } from "@sveltejs/kit/vite";
+import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 import { defineConfig } from "vite";
-import htmlMinifier from "vite-plugin-html-minifier";
-
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(async () => ({
+    plugins: [
+        paraglide({ project: "./project.inlang", outdir: "./src/lib/paraglide" }),
+        sveltekit()
+    ],
     build: {
-        emptyOutDir: true,
-        outDir: "../dist-ui",
+        emptyOutDir: true, // SvelteKit output is fixed at ./build
         target: ["es2021", "chrome97", "safari13"],
-        minify: !process.env.TAURI_ENV_DEBUG ? "terser" : false,
         sourcemap: !!process.env.TAURI_ENV_DEBUG
     },
-    // prevent vite from obscuring rust errors
+    preprocess: vitePreprocess(),
+    // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
+    //
+    // 1. prevent vite from obscuring rust errors
     clearScreen: false,
-    // Tauri expects a fixed port, fail if that port is not available
+    // 2. tauri expects a fixed port, fail if that port is not available
     server: {
-        host: host || false,
         port: 1420,
         strictPort: true,
+        host: host || false,
         hmr: host
             ? {
                   protocol: "ws",
-                  host: host,
-                  port: 1430
+                  host,
+                  port: 1421
               }
-            : undefined
-    },
-    plugins: [
-        htmlMinifier({
-            minify: true
-        })
-    ]
-});
+            : undefined,
+        watch: {
+            // 3. tell vite to ignore watching `src-tauri`
+            ignored: ["**/src-tauri/**"]
+        }
+    }
+}));

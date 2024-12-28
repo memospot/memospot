@@ -4,11 +4,13 @@
     "DavidAnson.vscode-markdownlint",
     "dprint.dprint",
     "EditorConfig.EditorConfig",
+    "inlang.vs-code-extension",
     "nefrob.vscode-just-syntax",
     "oderwat.indent-rainbow",
     "oven.bun-vscode",
     "redhat.vscode-yaml",
     "rust-lang.rust-analyzer",
+    "svelte.svelte-vscode",
     "tamasfe.even-better-toml",
     "tauri-apps.tauri-vscode"
   ],
