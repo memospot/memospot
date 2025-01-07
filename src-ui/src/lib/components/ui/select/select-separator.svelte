@@ -2,13 +2,14 @@
 import { cn } from "$lib/utils.js";
 import { Select as SelectPrimitive } from "bits-ui";
 
-type $$Props = SelectPrimitive.SeparatorProps;
+interface Props extends SelectPrimitive.SeparatorProps {
+	[key: string]: any;
+}
 
-let className: $$Props["class"] = undefined;
-export { className as class };
+let { class: className = undefined, ...rest }: Props = $props();
 </script>
 
 <SelectPrimitive.Separator
   class={cn("bg-muted -mx-1 my-1 h-px", className)}
-  {...$$restProps}
+  {...rest}
 />

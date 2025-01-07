@@ -3,19 +3,24 @@ import { cn, flyAndScale } from "$lib/utils.js";
 import { Select as SelectPrimitive } from "bits-ui";
 import { scale } from "svelte/transition";
 
-type $$Props = SelectPrimitive.ContentProps;
+interface Props extends SelectPrimitive.ContentProps {
+	[key: string]: any;
+}
 
-let className: $$Props["class"] = undefined;
-export let sideOffset: $$Props["sideOffset"] = 4;
-export let inTransition: $$Props["inTransition"] = flyAndScale;
-export let inTransitionConfig: $$Props["inTransitionConfig"] = undefined;
-export let outTransition: $$Props["outTransition"] = scale;
-export let outTransitionConfig: $$Props["outTransitionConfig"] = {
-	start: 0.95,
-	opacity: 0,
-	duration: 50,
-};
-export { className as class };
+let {
+	class: className = undefined,
+	sideOffset = 4,
+	inTransition = flyAndScale,
+	inTransitionConfig = undefined,
+	outTransition = scale,
+	outTransitionConfig = {
+		start: 0.95,
+		opacity: 0,
+		duration: 50,
+	},
+	children,
+	...rest
+}: Props = $props();
 </script>
 
 <SelectPrimitive.Content
@@ -28,9 +33,9 @@ export { className as class };
     "bg-popover text-popover-foreground relative z-50 min-w-[8rem] overflow-hidden rounded-md border shadow-md focus:outline-none",
     className,
   )}
-  {...$$restProps}
+  {...rest}
 >
   <div class="w-full p-1">
-    <slot />
+    {@render children?.()}
   </div>
 </SelectPrimitive.Content>
