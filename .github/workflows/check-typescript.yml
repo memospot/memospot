@@ -74,8 +74,12 @@ jobs:
 
       - name: Install dependencies with Bun
         shell: bash
-        run: bun install --frozen-lockfile || bun install --frozen-lockfile
-      # /Bun
+        run: |
+          pushd ./build-scripts; bun install; popd
+          pushd ./src-ui; bun install; popd
 
       - name: Run Bun tests
-        run: bun test || bun test
+        shell: bash
+        run: |
+          pushd ./build-scripts; bun test; popd
+          pushd ./src-ui; bun test; popd
