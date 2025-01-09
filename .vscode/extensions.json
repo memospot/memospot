@@ -1,6 +1,7 @@
 {
   "recommendations": [
     "biomejs.biome",
+    "naumovs.color-highlight",
     "DavidAnson.vscode-markdownlint",
     "dprint.dprint",
     "EditorConfig.EditorConfig",
