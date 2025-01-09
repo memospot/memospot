@@ -595,7 +595,11 @@ pub fn hw_acceleration() {
 ///
 /// Should be called after init::hw_acceleration() to allow user-defined overrides.
 pub fn set_env_vars(rtcfg: &RuntimeConfig) {
-    if let Some(memospot_env) = &rtcfg.yaml.memospot.env {
+    if !rtcfg.yaml.memospot.env.enabled.unwrap_or_default() {
+        return;
+    }
+
+    if let Some(memospot_env) = &rtcfg.yaml.memospot.env.vars {
         for (key, value) in memospot_env {
             // SAFETY: The unsafe block is required due to the potential for race conditions in a multithreaded context.
             // Shouldn't be an issue here.

@@ -1,30 +1,31 @@
 <script lang="ts">
+import { Toaster } from "$lib/components/ui/sonner";
 import { m } from "$lib/i18n";
+import type { Component } from "svelte";
 import EyeOpen from "svelte-radix/EyeOpen.svelte";
 import Gear from "svelte-radix/Gear.svelte";
 import Pencil2 from "svelte-radix/Pencil2.svelte";
-import Advanced from "./Advanced.svelte";
 import Memos from "./Memos.svelte";
+import Memospot from "./Memospot.svelte";
 import Navbar from "./Navbar.svelte";
 import View from "./View.svelte";
 
-// Sections data.
 const sections: Array<{
 	id: string;
 	label: string;
-	icon?: any;
-	component: any;
+	icon?: Component;
+	component: Component;
 }> = [
-	{ id: "memos", label: "Memos", icon: Pencil2, component: Memos },
 	{ id: "view", label: m.view(), icon: EyeOpen, component: View },
-	{ id: "advanced", label: m.advanced(), icon: Gear, component: Advanced },
+	{ id: "memos", label: m.memos(), icon: Pencil2, component: Memos },
+	{ id: "memospot", label: m.memospot(), icon: Gear, component: Memospot },
 ];
 
 let activeSection: string = $state(
 	sections.find((s) => s.id === window.location.hash.slice(1))?.id || sections[0].id,
 );
 
-const animateSection = () => {
+function animateSectionTransition() {
 	const sectionAnimation = "motion-preset-fade";
 	const mainSelector = document.querySelector("main");
 
@@ -32,21 +33,19 @@ const animateSection = () => {
 	setTimeout(() => {
 		mainSelector?.classList.remove(sectionAnimation);
 	}, 800);
-};
+}
 
-const updateSection = (sectionId: string) => {
+function updateSection(sectionId: string) {
 	activeSection = sectionId;
 	window.location.hash = `#${sectionId}`;
-	animateSection();
-};
+	animateSectionTransition();
+}
 </script>
 
 <div class="container p-4 min-w-screen motion-preset-fade">
   <div class="flex flex-col gap-4">
-    <!-- Navbar -->
     <Navbar {sections} {activeSection} onSectionChange={updateSection} />
 
-    <!-- Main content -->
     <main class="flex-1 w-full">
       {#each sections as section}
         {#if activeSection === section.id}
@@ -56,3 +55,4 @@ const updateSection = (sectionId: string) => {
     </main>
   </div>
 </div>
+<Toaster duration={1500} visibleToasts={1}/>

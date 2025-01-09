@@ -12,54 +12,61 @@
 /*
 * https://tailwindcss.com/docs/background-color
 * https://hslpicker.com/
+* https://nearest-tailwind-color.netlify.app/
 
-gray-400: 218 10.6% 64.9%
-gray-600: 215 13.8% 34.1%
-gray-700: 217 19.1% 26.7%
-gray-800: 215 27.9% 16.9%
-neutral-800: 0 0% 14.9%
-neutral-900: 0 0% 9%
-zinc-50: 0 0% 98%
-zinc-100: 240 4.8% 95.9%
-zinc-200: 240 5.9% 90%
-zinc-700: 240 5% 26%
-zinc-800: 240 3.7% 15.9%
-zinc-900: 240 5.9% 10%
-zinc-950: 240 10% 3.9%
+cyan-400: 188 85.7% 53.3%;
+cyan-600: 192 91.4% 36.5%;
+gray-400: 218 10.6% 64.9%;
+gray-600: 215 13.8% 34.1%;
+gray-700: 217 19.1% 26.7%;
+gray-800: 215 27.9% 16.9%;
+neutral-800: 0 0% 14.9%;
+neutral-900: 0 0% 9%;
+orange-600: 14 82% 57%;
+red-600: 0 72.2% 50.6%;
+teal-600: 175 83.9% 31.6%;
+teal-800: 177 74.8% 20.2%;
+zinc-50: 0 0% 98%;
+zinc-100: 240 4.8% 95.9%;
+zinc-200: 240 5.9% 90%;
+zinc-700: 240 5% 26%;
+zinc-800: 240 3.7% 15.9%;
+zinc-900: 240 5.9% 10%;
+zinc-950: 240 10% 3.9%;
 
 Memos:
-bg-primary-darker: 177 74.8% 20.2%
+bg-primary-darker: 177 74.8% 20.2%;
 */
 @layer base {
     :root {
-        --background: 240 4.8% 95.9%; /* hsl(240, 4.8%, 95.9%) */
-        --foreground: 215 27.9% 16.9%; /* hsl(215, 27.9%, 16.9%) */
+        --background: 240 4.8% 95.9%;
+        --foreground: 215 27.9% 16.9%;
 
-        --muted: 218 10.6% 64.9%; /* hsl(218, 10.6%, 64.9%) */
-        --muted-foreground: 220 8.9% 46.1%; /* hsl(220, 8.9%, 46.1%) */
+        --muted: 218 10.6% 64.9%;
+        --muted-foreground: 220 8.9% 46.1%;
 
-        --popover: 0 0% 100%; /* hsl(0, 0%, 100%) */
-        --popover-foreground: 224 71.4% 4.1%; /* hsl(224, 71.4%, 4.1%) */
+        --popover: 0 0% 100%;
+        --popover-foreground: 224 71.4% 4.1%;
 
-        --card: 0 0% 100%; /* hsl(0, 0%, 100%) */
-        --card-foreground: 224 71.4% 4.1%; /* hsl(224, 71.4%, 4.1%) */
+        --card: 0 0% 100%;
+        --card-foreground: 224 71.4% 4.1%;
 
-        --border: 220 13% 91%; /* hsl(220, 13%, 91%) */
-        --input: 240 4.8% 95.9%; /* hsl(240, 4.8%, 95.9%) */
+        --border: 220 13% 91%;
+        --input: 240 4.8% 95.9%;
 
-        --primary: 175 83.9% 31.6%; /* hsl(175, 83.9%, 31.6%) */
-        --primary-foreground: 210 20% 98%; /* hsl(210, 20%, 98%) */
+        --primary: 192 91.4% 36.5%;
+        --primary-foreground: 210 20% 98%;
 
-        --secondary: 0 0% 100%; /* hsl(220, 14.3%, 95.9%) */
-        --secondary-foreground: 220.9 39.3% 11%; /* hsl(220.9, 39.3%, 11%) */
+        --secondary: 0 0% 100%;
+        --secondary-foreground: 220.9 39.3% 11%;
 
-        --accent: 220 14.3% 95.9%; /* hsl(220, 14.3%, 95.9%) */
-        --accent-foreground: 220.9 39.3% 11%; /* hsl(220.9, 39.3%, 11%) */
+        --accent: 220 14.3% 95.9%;
+        --accent-foreground: 220.9 39.3% 11%;
 
-        --destructive: 0 72.2% 50.6%; /* hsl(0, 72.2%, 50.6%) */
-        --destructive-foreground: 210 20% 98%; /* hsl(210, 20%, 98%) */
+        --destructive: 0 72.2% 50.6%;
+        --destructive-foreground: 210 20% 98%;
 
-        --ring: 224 71.4% 4.1%; /* hsl(224, 71.4%, 4.1%) */
+        --ring: 224 71.4% 4.1%;
 
         --glow: #0891b2; /* theme(colors.cyan.600) */
         --glow-error: #991b1b; /* theme(colors.red.800) */
@@ -76,35 +83,35 @@ bg-primary-darker: 177 74.8% 20.2%
     }
 
     .dark {
-        --background: 240 5.9% 10%; /* hsl(240, 5.9%, 10%) */
-        --foreground: 218 10.6% 64.9%; /* hsl(218, 10.6%, 64.9%) */
+        --background: 240 5.9% 10%;
+        --foreground: 218 10.6% 64.9%;
 
-        --muted: 215 27.9% 16.9%; /* hsl(215, 27.9%, 16.9%) */
-        --muted-foreground: 217.9 10.6% 64.9%; /* hsl(217.9, 10.6%, 64.9%) */
+        --muted: 215 27.9% 16.9%;
+        --muted-foreground: 217.9 10.6% 64.9%;
 
-        --popover: 240 3.7% 15.9%; /* hsl(240, 3.7%, 15.9%) */
-        --popover-foreground: 210 20% 98%; /* hsl(210, 20%, 98%) */
+        --popover: 240 3.7% 15.9%;
+        --popover-foreground: 210 20% 98%;
 
-        --card: 240 3.7% 15.9%; /* hsl(240, 3.7%, 15.9%) */
-        --card-foreground: 218 10.6% 64.9%; /* hsl(218, 10.6%, 64.9%) */
+        --card: 240 3.7% 15.9%;
+        --card-foreground: 218 10.6% 64.9%;
 
-        --border: 240 5% 26%; /* hsl(240, 5%, 26%) */
-        --input-foreground: 212 7.9% 42.2%; /* hsl(212, 7.9%, 42.2%) */
-        --input: 240 5.9% 10%; /* hsl(240, 5.9%, 10%) */
+        --border: 240 5% 26%;
+        --input-foreground: 212 7.9% 42.2%;
+        --input: 240 5.9% 10%;
 
-        --primary: 177 74.8% 20.2%; /* hsl(177, 74.8%, 20.2%) */
-        --primary-foreground: 220.9 39.3% 11%; /* hsl(220.9, 39.3%, 11%) */
+        --primary: 188 85.7% 53.3%;
+        --primary-foreground: 220.9 39.3% 11%;
 
-        --secondary: 240 3.7% 15.9%; /* hsl(14, 82%, 57%)  */
-        --secondary-foreground: 218 10.6% 64.9%; /* hsl(218, 10.6%, 64.9%) */
+        --secondary: 240 3.7% 15.9%;
+        --secondary-foreground: 218 10.6% 64.9%;
 
-        --accent: 240 5.9% 10%; /* hsl(240, 5.9%, 10%) */
-        --accent-foreground: 210 20% 98%; /* hsl(210, 20%, 98%) */
+        --accent: 240 5.9% 10%;
+        --accent-foreground: 210 20% 98%;
 
-        --destructive: 0 62.8% 30.6%; /* hsl(0, 62.8%, 30.6%) */
-        --destructive-foreground: 210 20% 98%; /* hsl(210, 20%, 98%) */
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 210 20% 98%;
 
-        --ring: 216 12.2% 83.9%; /* hsl(216, 12.2%, 83.9%) */
+        --ring: 216 12.2% 83.9%;
 
         --glow: #22d3ee; /* theme(colors.cyan.400) */
         --glow-error: #dc2626; /* theme(colors.red.600) */

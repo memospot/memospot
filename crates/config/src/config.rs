@@ -2,18 +2,24 @@ use crate::memos::Memos;
 use crate::memospot::Memospot;
 
 use anyhow::{bail, Error, Result};
-use figment::providers::{Env, Format, Serialized, Yaml};
+use figment::providers::{Env, Format, Json, Serialized, Yaml};
 use figment::{Figment, Profile};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use tokio::io::AsyncWriteExt;
+use ts_rs::TS;
 use uuid::Uuid;
 
-#[derive(Default, Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(TS, Default, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Config {
     pub memos: Memos,
     pub memospot: Memospot,
 }
+
+#[cfg(debug_assertions)]
+const CONFIG_PROFILE: &str = "debug";
+#[cfg(not(debug_assertions))]
+const CONFIG_PROFILE: &str = "release";
 
 impl Config {
     const CONFIG_HEADER: &'static str = r#"#
@@ -34,17 +40,24 @@ impl Config {
     }
 
     pub fn init(cfg_path: &Path) -> Result<Config, Error> {
-        #[cfg(debug_assertions)]
-        const DEFAULT_PROFILE: &str = "debug";
-        #[cfg(not(debug_assertions))]
-        const DEFAULT_PROFILE: &str = "release";
-
         let default_config = Config::default();
 
         let figment = Figment::new()
             .merge(Yaml::file(cfg_path))
             .merge(Env::prefixed("MEMOSPOT_"))
-            .select(Profile::from_env_or("MEMOSPOT_PROFILE", DEFAULT_PROFILE))
+            .select(Profile::from_env_or("MEMOSPOT_PROFILE", CONFIG_PROFILE))
+            .join(Serialized::defaults(default_config));
+
+        Ok(figment.extract::<Config>()?)
+    }
+
+    pub fn from_json(json: &str) -> Result<Config, Error> {
+        let default_config = Config::default();
+
+        let figment = Figment::new()
+            .merge(Json::string(json))
+            .merge(Env::prefixed("MEMOSPOT_"))
+            .select(Profile::from_env_or("MEMOSPOT_PROFILE", CONFIG_PROFILE))
             .join(Serialized::defaults(default_config));
 
         Ok(figment.extract::<Config>()?)

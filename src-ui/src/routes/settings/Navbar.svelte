@@ -1,4 +1,6 @@
 <script lang="ts">
+import { cn } from "$lib/utils";
+
 let {
 	sections,
 	activeSection,
@@ -15,17 +17,18 @@ let {
 >
   {#each sections as section}
     <button
-      class="w-56 px-4 py-2 text-lg rounded-2xl transition-colors hover:translate-y-[-1px] hover:drop-shadow
-                    {activeSection === section.id
-        ? 'bg-secondary text-secondary-foreground border'
-        : 'hover:bg-secondary/80 text-muted-foreground'}"
+      class={cn(
+        "w-56 px-4 py-2 text-lg rounded-2xl transition-colors hover:translate-y-[-1px] hover:drop-shadow",
+        activeSection === section.id
+          ? "bg-secondary text-secondary-foreground border"
+          : "hover:bg-secondary/80 text-muted-foreground",
+      )}
       onclick={() => onSectionChange(section.id)}
     >
       <div class="flex flex-row items-start">
         {#if section.icon}
           <section.icon
-            class="self-center w-6 mr-4 opacity-70 shrink-0 motion-preset-pop
-"
+            class="self-center w-6 mr-4 opacity-70 shrink-0 motion-preset-pop"
           />
         {/if}
         {section.label}

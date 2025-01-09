@@ -54,7 +54,7 @@ const commonProps: Record<string, any> = $derived(restProps);
     {/if}
 
     <div class="self-center justify-end">
-      <Switch bind:state />
+      <Switch bind:checked={state} />
     </div>
   </div>
   {#if children}

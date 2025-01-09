@@ -1,4 +1,6 @@
 use config::Config;
+use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use std::path::PathBuf;
 use std::sync::LazyLock;
@@ -6,7 +8,7 @@ use std::sync::{Arc, Mutex};
 
 type RuntimeConfigStore = Arc<Mutex<RuntimeConfig>>;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(TS, Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct RuntimeConfigPaths {
     /// Memos binary file path.
     pub memos_bin: PathBuf,
@@ -30,7 +32,14 @@ pub struct RuntimeConfigPaths {
     /// Memospot data directory path.
     pub memospot_data: PathBuf,
 }
-#[derive(Debug, PartialEq, Clone)]
+
+#[derive(TS, Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[ts(export)]
+enum ExportTSBindings {
+    Config(Config),
+}
+
+#[derive(TS, Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct RuntimeConfig {
     /// Store paths used throughout the app.
     pub paths: RuntimeConfigPaths,
@@ -39,6 +48,9 @@ pub struct RuntimeConfig {
     ///
     /// URL always ends with a slash.
     pub memos_url: String,
+
+    /// User-Agent header sent to Memos server.
+    pub user_agent: String,
 
     /// Whether Memospot is managing a local Memos server.
     pub is_managed_server: bool,
@@ -73,6 +85,7 @@ impl RuntimeConfig {
             },
             is_managed_server: true,
             memos_url: String::new(),
+            user_agent: String::new(),
             yaml: Config::default(),
             __yaml__: Config::default(),
         }

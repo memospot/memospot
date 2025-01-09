@@ -102,7 +102,7 @@ upx:
 
 # Tauri hooks
 [private]
-tauri-before-build: download-memos-binaries gen-icons build-ui
+tauri-before-build: download-memos-binaries gen-icons gen-bindings build-ui
 
 [private]
 tauri-before-bundle: deps-ts upx
@@ -244,6 +244,13 @@ gen-icons:
     done
     echo -e "${GREEN}App icons are up to date.${RESET}"
 
+gen-bindings:
+    #!{{bash}}
+    export TS_RS_EXPORT_DIR="$REPO_ROOT/src-ui/src/lib/types/gen"
+    mkdir -p "$TS_RS_EXPORT_DIR"
+    echo -e "${CYAN}Generating TypeScript bindings… This might take a while.${RESET}"
+    cargo test export_bindings
+
 build-ui-force:
     cd "src-ui"; bun run build
 
@@ -259,7 +266,6 @@ build-ui:
 [doc('Build app')]
 build TARGET='all':
     #!{{bash}}
-    rustup toolchain install $RUST_TOOLCHAIN
     if [ "{{TARGET}}" = "no-bundle" ]; then
         cargo tauri build --no-bundle
         just postbuild

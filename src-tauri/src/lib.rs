@@ -40,6 +40,7 @@ pub fn run() {
         },
         is_managed_server: true,
         memos_url: String::new(),
+        user_agent: String::new(),
         yaml: yaml_config.clone(),
         __yaml__: yaml_config,
     };
@@ -94,22 +95,22 @@ pub fn run() {
     }
 
     let mut tauri_ctx = tauri::generate_context!();
+
     let app_version = tauri_ctx.package_info().version.to_string();
+    let custom_user_agent = config.yaml.memospot.remote.user_agent.as_deref();
+    config.user_agent = custom_user_agent
+        .filter(|x| !x.is_empty() && config.yaml.memospot.remote.enabled.unwrap_or(false))
+        .map(|x| x.to_string())
+        .unwrap_or_else(|| {
+            format!("Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Memospot/{}", &app_version)
+        });
 
     let window_config = &mut tauri_ctx.config_mut().app.windows;
     if !window_config.is_empty() {
-        let custom_user_agent = config.yaml.memospot.remote.user_agent.as_deref();
-        let user_agent = if config.yaml.memospot.remote.enabled.is_some_and(|x| x)
-            && custom_user_agent.is_some_and(|x| !x.is_empty())
-        {
-            custom_user_agent.unwrap_or_default().to_string()
-        } else {
-            format!("Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Memospot/{}", &app_version)
-        };
-
         window_config[0] = WindowConfig {
             title: "Memospot".into(),
-            user_agent: Some(user_agent),
+            url: tauri::WebviewUrl::App("/loader".into()),
+            user_agent: Some(config.user_agent.clone()),
             drag_drop_enabled: false, // Stop Tauri from handling drag-and-drop events and pass them to the webview.
             visible: false, // Prevent theme flashing. The frontend code calls getCurrentWebviewWindow().show() immediately after configuring the theme.
             ..Default::default()
@@ -133,12 +134,16 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(cmd::MemosURL::manage(config_.memos_url.clone()))
         .invoke_handler(tauri::generate_handler![
             cmd::get_memos_url,
             cmd::ping_memos,
-            cmd::get_env
+            cmd::get_env,
+            cmd::get_config,
+            cmd::set_config,
+            cmd::path_exists
         ])
         .setup(move |app| {
             let handle = app.handle();
@@ -214,17 +219,24 @@ pub fn run() {
                 debug!("Exit requested.");
                 api.prevent_exit();
 
+                #[cfg(not(debug_assertions))]
+                let final_config = RuntimeConfig::from_global_store();
+
+                #[cfg(debug_assertions)]
+                let mut final_config = RuntimeConfig::from_global_store();
+
                 #[cfg(debug_assertions)]
                 {
                     // Restore previous mode and port.
-                    config.yaml.memos.mode = config.__yaml__.memos.mode.clone();
-                    config.yaml.memos.port = config.__yaml__.memos.port;
+                    final_config.yaml.memos.mode = final_config.__yaml__.memos.mode.clone();
+                    final_config.yaml.memos.port = final_config.__yaml__.memos.port;
                 }
 
-                if config.yaml != config.__yaml__ {
+                // if config.yaml != config.__yaml__ {
+                if final_config.yaml != final_config.__yaml__ {
                     info!("Configuration has changed. Saving…");
                     tauri::async_runtime::block_on(async {
-                        if let Err(e) = config.yaml.save_to_file(&config_path).await {
+                        if let Err(e) = final_config.yaml.save_to_file(&config_path).await {
                             error_dialog!(
                                 "Failed to save config file:\n`{}`\n\n{}",
                                 &config_path.display(),
@@ -237,7 +249,7 @@ pub fn run() {
                 debug!("Shutting down Memos server…");
                 process::kill_children();
                 {
-                    let db_file = config.paths.memos_db_file.clone();
+                    let db_file = final_config.paths.memos_db_file.clone();
                     tauri::async_runtime::block_on(async move {
                         sqlite::wait_checkpoint(&db_file, 100, 15000).await;
                     });

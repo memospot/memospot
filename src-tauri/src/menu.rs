@@ -109,10 +109,14 @@ pub fn update_with_memos_version<R: Runtime>(handle: &AppHandle<R>) {
     });
 }
 
+pub fn build_empty<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Menu<R>> {
+    Menu::with_items(handle, &[])
+}
+
 pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Menu<R>> {
     let config = RuntimeConfig::from_global_store();
     if config.yaml.memospot.window.hide_menu_bar == Some(true) {
-        return Menu::with_items(handle, &[]);
+        return build_empty(handle);
     }
 
     let check_for_updates = MenuItemBuilder::with_id(
@@ -290,35 +294,26 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
         MainMenu::AppSettings => {
             let handle_ = handle.clone();
             tauri::async_runtime::spawn(async move {
-                #[cfg(target_os = "macos")]
-                tauri::WebviewWindowBuilder::new(
+                let window_builder = tauri::WebviewWindowBuilder::new(
                     &handle_,
                     "config",
                     tauri::WebviewUrl::App("/settings".into()),
                 )
                 .title(MainMenu::AppSettings.as_ref().replace("&", ""))
-                .title_bar_style(tauri::TitleBarStyle::Overlay)
                 .center()
                 .min_inner_size(800.0, 600.0)
                 .inner_size(1160.0, 720.0)
                 .disable_drag_drop_handler()
                 .visible(false)
-                .build()
-                .ok();
+                .menu(build_empty(&handle_).unwrap());
+
                 #[cfg(not(target_os = "macos"))]
-                tauri::WebviewWindowBuilder::new(
-                    &handle_,
-                    "config",
-                    tauri::WebviewUrl::App("/settings".into()),
-                )
-                .title(MainMenu::AppSettings.as_ref().replace("&", ""))
-                .center()
-                .min_inner_size(800.0, 600.0)
-                .inner_size(1160.0, 720.0)
-                .disable_drag_drop_handler()
-                .visible(false) // Prevent theme flashing. The frontend code calls getCurrentWebviewWindow().show() immediately after configuring the theme.
-                .build()
-                .ok();
+                window_builder.build().ok();
+                #[cfg(target_os = "macos")]
+                window_builder
+                    .title_bar_style(tauri::TitleBarStyle::Overlay)
+                    .build()
+                    .ok();
             });
         }
         MainMenu::GlobalUpdate => {

@@ -6,6 +6,7 @@
   "organizeImports": {
     "enabled": true,
     "ignore": [
+      "**/gen/**",
       "**/lib/paraglide/**", // Paraglide auto-generated files.
       "**/.svelte-kit/**" // SvelteKit auto-generated files.
     ]
@@ -13,6 +14,7 @@
   "linter": {
     "enabled": true,
     "ignore": [
+      "**/gen/**",
       "**/lib/paraglide/**", // Paraglide auto-generated files.
       "**/.svelte-kit/**" // SvelteKit auto-generated files.
     ],

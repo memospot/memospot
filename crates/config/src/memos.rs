@@ -2,9 +2,10 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use ts_rs::TS;
 
 /// Memos configuration.
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(TS, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Memos {
     /// Memos binary path.
     pub binary_path: Option<String>,

@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use crate::log::Log;
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(TS, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Backups {
     /// Enable backups.
     pub enabled: Option<bool>,
@@ -18,7 +19,7 @@ impl Default for Backups {
         }
     }
 }
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(TS, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Migrations {
     /// Enable database migrations.
     /// Can be disabled to use Memospot with an uncertified Memos version.
@@ -32,7 +33,7 @@ impl Default for Migrations {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(TS, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct RemoteServer {
     /// Enable remote server. This will disable spawning a local Memos server.
     pub enabled: Option<bool>,
@@ -49,7 +50,21 @@ impl Default for RemoteServer {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(TS, Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub struct EnvironmentVariables {
+    pub enabled: Option<bool>,
+    pub vars: Option<HashMap<String, String>>,
+}
+impl Default for EnvironmentVariables {
+    fn default() -> Self {
+        Self {
+            enabled: Some(false),
+            vars: None,
+        }
+    }
+}
+
+#[derive(TS, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Updater {
     pub enabled: Option<bool>,
 }
@@ -61,7 +76,7 @@ impl Default for Updater {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(TS, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Window {
     /// Whether the window should be centered upon creation.
     pub center: Option<bool>,
@@ -98,12 +113,12 @@ impl Default for Window {
     }
 }
 
-#[derive(Default, Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(TS, Default, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Memospot {
     /// Backups settings.
     pub backups: Backups,
     /// Custom system environment variables to pass to Memospot.
-    pub env: Option<HashMap<String, String>>,
+    pub env: EnvironmentVariables,
     /// Database migrations settings.
     pub migrations: Migrations,
     // Log settings.

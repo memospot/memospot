@@ -27,19 +27,55 @@ export async function open(url: string): Promise<void> {
  * Get Memos URL.
  */
 export async function getMemosURL(): Promise<string> {
-    return TAURI ? invoke("get_memos_url") : Promise.resolve("/");
+    if (!TAURI) return Promise.resolve("/");
+    return invoke("get_memos_url");
 }
 
 /**
  * Ping Memos server.
+ *
+ * @returns true if /healthz endpoint returns "Service ready."
  */
-export async function pingMemos(): Promise<boolean> {
-    return TAURI ? (await invoke("ping_memos")) === "true" : Promise.resolve(true);
+export async function pingMemos(memosUrl: string, timeoutMillis = 1000): Promise<boolean> {
+    if (!TAURI) return Promise.reject(browserError);
+    return (
+        (await invoke("ping_memos", { memosUrl: memosUrl, timeoutMillis: timeoutMillis })) ===
+        true
+    );
 }
 
 /**
  * Get an environment variable.
  */
 export async function getEnv(name: string): Promise<string> {
-    return TAURI ? invoke("get_env", { name: name }) : Promise.resolve("");
+    if (!TAURI) return Promise.reject(browserError);
+    return invoke("get_env", { name: name }) as Promise<string>;
+}
+
+export async function getConfig(): Promise<string> {
+    if (!TAURI) return Promise.reject(browserError);
+    return invoke("get_config") as Promise<string>;
+}
+
+/**
+ * Set the configuration.
+ *
+ * Takes a JSON Patch (RFC 6902) as the argument.
+ * @param JSONPatch
+ * @returns
+ */
+export async function setConfig(JSONPatch: string): Promise<boolean> {
+    if (!TAURI) return Promise.reject(browserError);
+    return invoke("set_config", { patch: JSONPatch }) as Promise<boolean>;
+}
+
+/**
+ * Check if a path exists.
+ *
+ * @param path
+ * @returns boolean
+ */
+export async function pathExists(path: string): Promise<boolean> {
+    if (!TAURI) return Promise.reject(browserError);
+    return invoke("path_exists", { path: path }) as Promise<boolean>;
 }

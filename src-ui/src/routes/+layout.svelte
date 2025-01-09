@@ -9,9 +9,9 @@ import { onMount } from "svelte";
 let { children } = $props();
 
 onMount(() => {
-	// All webview windows are created in a hidden state to prevent the flash of unstyled content.
+	// All WebView windows are created in a hidden state to prevent flashing unstyled content.
 	// This shows the window whenever the component is mounted.
-	// It leads to a delay in the window creation, but its the best approach for now.
+	// It causes a delay to the window creation, but it's the best approach for now.
 	(async () => {
 		await getCurrentWebviewWindow().show();
 	})();
