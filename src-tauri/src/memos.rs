@@ -137,7 +137,7 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
     // Add user's environment variables
     if let Some(memos_env) = &rtcfg.yaml.memos.env {
         for (key, value) in memos_env {
-            env_vars.insert(make_env_key(key), value.into());
+            env_vars.insert(key.into(), value.into());
         }
     }
 
