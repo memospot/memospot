@@ -34,6 +34,7 @@ RUST_TARGETS := if os() == 'windows' {
 }
 RUSTC_WRAPPER := env_var_or_default('RUSTC_WRAPPER', '')
 CARGO_INCREMENTAL := if RUSTC_WRAPPER == '' { '1' } else { '0' }
+TS_RS_EXPORT_DIR:= absolute_path(join(REPO_ROOT,'src-ui/src/lib/types/gen'))
 
 RESET := '\033[0m'
 BOLD := '\033[1m'
@@ -246,7 +247,6 @@ gen-icons:
 
 gen-bindings:
     #!{{bash}}
-    export TS_RS_EXPORT_DIR="$REPO_ROOT/src-ui/src/lib/types/gen"
     mkdir -p "$TS_RS_EXPORT_DIR"
     echo -e "${CYAN}Generating TypeScript bindings… This might take a while.${RESET}"
     cargo test export_bindings

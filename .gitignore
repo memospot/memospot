@@ -9,6 +9,7 @@ icon.icns
 **/.flatpak-builder
 *.db
 *.gz
+src-tauri/bindings/**
 
 ### SvelteKit ###
 **/build

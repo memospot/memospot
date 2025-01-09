@@ -1,18 +1,18 @@
 <script lang="ts">
 import { Setting, SettingToggle } from "$lib/components/ui/setting/index";
-import { Toaster } from "$lib/components/ui/sonner";
 import { Switch } from "$lib/components/ui/switch/index";
 import { debouncePromise } from "$lib/debounce";
 import { envFromKV, envToKV } from "$lib/environmentVariables";
 import { m } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
-import { getConfig, pingMemos, setConfig } from "$lib/tauri";
+import { getConfig, pingMemos } from "$lib/tauri";
+import type { Config } from "$lib/types/gen/Config";
 import * as jsonpatch from "fast-json-patch";
 import { onMount } from "svelte";
 import { toast } from "svelte-sonner";
 
-let initialConfig: any = $state({});
-let currentConfig: any = $state({});
+let initialConfig = $state({}) as Config;
+let currentConfig = $state({}) as Config;
 let input = $state({
 	remoteEnabled: false,
 	remoteURL: "",
@@ -23,6 +23,24 @@ let input = $state({
 	loggingEnabled: false,
 	envVarsEnabled: false,
 	envVars: "",
+});
+
+onMount(async () => {
+	const initialJSON = await getConfig();
+	initialConfig = JSON.parse(initialJSON);
+	currentConfig = jsonpatch.deepClone(initialConfig);
+
+	input = {
+		remoteEnabled: currentConfig.memospot.remote.enabled as boolean,
+		remoteURL: currentConfig.memospot.remote.url as string,
+		remoteUserAgent: currentConfig.memospot.remote.user_agent as string,
+		updaterEnabled: currentConfig.memospot.updater.enabled as boolean,
+		migrationsEnabled: currentConfig.memospot.migrations.enabled as boolean,
+		backupsEnabled: currentConfig.memospot.backups.enabled as boolean,
+		loggingEnabled: currentConfig.memospot.log.enabled as boolean,
+		envVarsEnabled: currentConfig.memospot.env.enabled as boolean,
+		envVars: envFromKV(currentConfig.memospot.env.vars as { [key: string]: string }),
+	};
 });
 
 async function updateSetting(updateFn?: () => void): Promise<boolean> {
@@ -77,7 +95,7 @@ async function updateRemoteServerUrl(e: Event) {
 			}
 		} catch (error) {
 			toast.error("Invalid URL. Value restored.");
-			(e.target as HTMLInputElement).value = initialConfig.memospot.remote.url;
+			(e.target as HTMLInputElement).value = initialConfig.memospot.remote.url as string;
 			return;
 		}
 	}
@@ -89,7 +107,7 @@ async function updateRemoteServerUrl(e: Event) {
 			toast.error("No Memos server found. Value restored.", {
 				duration: 5000,
 			});
-			(e.target as HTMLInputElement).value = initialConfig.memospot.remote.url;
+			(e.target as HTMLInputElement).value = initialConfig.memospot.remote.url as string;
 			return;
 		}
 
@@ -99,27 +117,9 @@ async function updateRemoteServerUrl(e: Event) {
 		} else {
 			currentConfig.memospot.remote.url = initialConfig.memospot.remote.url;
 		}
-		input.remoteURL = currentConfig.memospot.remote.url;
+		input.remoteURL = currentConfig.memospot.remote.url as string;
 	}, intervalMs)();
 }
-
-onMount(async () => {
-	const initialJSON = await getConfig();
-	initialConfig = JSON.parse(initialJSON);
-	currentConfig = jsonpatch.deepClone(initialConfig);
-
-	input = {
-		remoteEnabled: currentConfig.memospot.remote.enabled,
-		remoteURL: currentConfig.memospot.remote.url,
-		remoteUserAgent: currentConfig.memospot.remote.user_agent,
-		updaterEnabled: currentConfig.memospot.updater.enabled,
-		migrationsEnabled: currentConfig.memospot.migrations.enabled,
-		backupsEnabled: currentConfig.memospot.backups.enabled,
-		loggingEnabled: currentConfig.memospot.log.enabled,
-		envVarsEnabled: currentConfig.memospot.env.enabled,
-		envVars: envFromKV(currentConfig.memospot.env.vars),
-	};
-});
 </script>
 
 <div class="space-y-4">

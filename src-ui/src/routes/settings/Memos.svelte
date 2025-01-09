@@ -1,5 +1,4 @@
 <script lang="ts">
-import type { Config } from "$lib/bindings/Config";
 import * as Select from "$lib/components/ui/select";
 import { Setting } from "$lib/components/ui/setting/index";
 import { debouncePromise } from "$lib/debounce";
@@ -7,6 +6,7 @@ import { envFromKV, envToKV } from "$lib/environmentVariables";
 import { m } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
 import { getConfig, pathExists } from "$lib/tauri";
+import type { Config } from "$lib/types/gen/Config";
 import type { Selected } from "bits-ui";
 import * as jsonpatch from "fast-json-patch";
 import { onMount } from "svelte";
