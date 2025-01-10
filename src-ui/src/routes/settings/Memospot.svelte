@@ -31,15 +31,15 @@ onMount(async () => {
 	currentConfig = jsonpatch.deepClone(initialConfig);
 
 	input = {
-		remoteEnabled: currentConfig.memospot.remote.enabled as boolean,
-		remoteURL: currentConfig.memospot.remote.url as string,
-		remoteUserAgent: currentConfig.memospot.remote.user_agent as string,
-		updaterEnabled: currentConfig.memospot.updater.enabled as boolean,
-		migrationsEnabled: currentConfig.memospot.migrations.enabled as boolean,
-		backupsEnabled: currentConfig.memospot.backups.enabled as boolean,
-		loggingEnabled: currentConfig.memospot.log.enabled as boolean,
-		envVarsEnabled: currentConfig.memospot.env.enabled as boolean,
-		envVars: envFromKV(currentConfig.memospot.env.vars as { [key: string]: string }),
+		remoteEnabled: (currentConfig.memospot.remote.enabled as boolean) || false,
+		remoteURL: (currentConfig.memospot.remote.url as string) || "",
+		remoteUserAgent: (currentConfig.memospot.remote.user_agent as string) || "",
+		updaterEnabled: (currentConfig.memospot.updater.enabled as boolean) || false,
+		migrationsEnabled: (currentConfig.memospot.migrations.enabled as boolean) || false,
+		backupsEnabled: (currentConfig.memospot.backups.enabled as boolean) || false,
+		loggingEnabled: (currentConfig.memospot.log.enabled as boolean) || false,
+		envVarsEnabled: (currentConfig.memospot.env.enabled as boolean) || false,
+		envVars: envFromKV((currentConfig.memospot.env.vars as { [key: string]: string }) || {}),
 	};
 });
 
@@ -147,6 +147,7 @@ async function updateRemoteServerUrl(e: Event) {
         type="url"
         bind:value={input.remoteURL}
         onfocusout={updateRemoteServerUrl}
+        onkeypress={(e) => e.key === "Enter" && updateRemoteServerUrl(e)}
         class="p-2 rounded-md border bg-input min-w-max md:w-96"
         disabled={!input.remoteEnabled}
       />

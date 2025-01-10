@@ -33,13 +33,13 @@ onMount(async () => {
 	initialConfig = JSON.parse(initialJSON);
 	currentConfig = jsonpatch.deepClone(initialConfig);
 	input = {
-		mode: currentConfig.memos.mode as string,
-		binaryPath: currentConfig.memos.binary_path as string,
-		workingDir: currentConfig.memos.working_dir as string,
-		dataDir: currentConfig.memos.data as string,
-		bindAddr: currentConfig.memos.addr as string,
-		bindPort: currentConfig.memos.port as number,
-		envVars: envFromKV(currentConfig.memos.env as { [key: string]: string }),
+		mode: (currentConfig.memos.mode as string) || "prod",
+		binaryPath: (currentConfig.memos.binary_path as string) || "",
+		workingDir: (currentConfig.memos.working_dir as string) || "",
+		dataDir: (currentConfig.memos.data as string) || "",
+		bindAddr: (currentConfig.memos.addr as string) || "",
+		bindPort: (currentConfig.memos.port as number) || 0,
+		envVars: envFromKV((currentConfig.memos.env as { [key: string]: string }) || {}),
 	};
 });
 
