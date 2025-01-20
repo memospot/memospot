@@ -198,7 +198,6 @@ update-rs:
 [doc('Update npm packages')]
 update-ts:
     #!{{bash}}
-    bun update
     pushd "./src-ui"; bun update; popd
     pushd "./build-scripts"; bun update; popd
     just fmt
@@ -454,7 +453,7 @@ bumpversion VERSION:
     cargo set-version --package memospot --locked "$clean"
     cargo generate-lockfile
     just fmt
-    git add ./src-tauri/Cargo.toml ./src-tauri/Tauri.toml ./Cargo.lock
+    git add ./src-tauri/Cargo.toml ./src-tauri/Tauri.toml ./Cargo.lock ./Cargo.toml
     git commit -m "chore: bump version to v$clean"
 
 [group('maintainer')]
