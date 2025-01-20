@@ -682,7 +682,7 @@ dependencies = [
 
 [[package]]
 name = "config"
-version = "0.1.8"
+version = "2.0.0"
 dependencies = [
  "anyhow",
  "figment",
@@ -2597,7 +2597,7 @@ dependencies = [
 
 [[package]]
 name = "memospot"
-version = "0.1.8"
+version = "2.0.0"
 dependencies = [
  "anyhow",
  "async_zip",
@@ -2640,7 +2640,7 @@ dependencies = [
 
 [[package]]
 name = "migration"
-version = "0.1.8"
+version = "2.0.0"
 dependencies = [
  "homedir",
  "itertools 0.13.0",
