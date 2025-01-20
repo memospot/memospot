@@ -36,4 +36,12 @@ y: number | null,
 /**
  * Hide main menu bar.
  */
-hide_menu_bar: boolean | null, };
+hide_menu_bar: boolean | null, 
+/**
+ * Theme.
+ */
+theme: string | null, 
+/**
+ * Language.
+ */
+language: string | null, };

@@ -28,6 +28,37 @@ pub async fn get_memos_url(memos_url: State<'_, MemosURL>) -> Result<String, Str
     Ok(memos_url.0.lock().await.clone())
 }
 
+pub struct Language(pub Mutex<String>);
+impl Language {
+    pub fn manage(language: String) -> Self {
+        Self(Mutex::new(language))
+    }
+}
+#[command]
+pub async fn get_language(language: State<'_, Language>) -> Result<String, String> {
+    Ok(language.0.lock().await.clone())
+}
+#[command]
+pub async fn set_language(new: String, language: State<'_, Language>) -> Result<bool, String> {
+    debug!("Setting language to {}", new);
+    *language.0.lock().await = new.clone();
+    let patch = json!(
+        [
+            {
+                "op": "replace",
+                "path": "/memospot/window/language",
+                "value": new
+            }
+        ]
+    );
+    set_config(patch.to_string()).await.unwrap();
+
+    let current_language = language.0.lock().await.clone();
+    debug!("Current language is now {}", current_language);
+
+    Ok(true)
+}
+
 #[command]
 pub async fn ping_memos(memos_url: &str, timeout_millis: u64) -> Result<bool, String> {
     let config = RuntimeConfig::from_global_store();
@@ -63,7 +94,7 @@ pub async fn get_env(name: &str) -> Result<String, String> {
     Ok(std::env::var(String::from(name)).unwrap_or(String::from("")))
 }
 
-// Get the runtime config from the global store.
+/// Get the app config from the global store.
 #[command]
 pub async fn get_config() -> Result<String, String> {
     let config = RuntimeConfig::from_global_store();
@@ -77,6 +108,20 @@ pub async fn get_config() -> Result<String, String> {
     Ok(serialized)
 }
 
+/// Get the default app config.
+#[command]
+pub async fn get_default_config() -> Result<String, String> {
+    let serialized = match serde_json::to_string(&RuntimeConfig::default().yaml) {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Failed to serialize config: {}", e);
+            String::from("{}")
+        }
+    };
+    Ok(serialized)
+}
+
+/// Apply a configuration patch.
 #[command]
 pub async fn set_config(patch: String) -> Result<bool, String> {
     debug!("Applying configuration patch: {:?}", patch);
@@ -95,7 +140,6 @@ pub async fn set_config(patch: String) -> Result<bool, String> {
         error!("Failed to parse configuration: {}", e);
         json!({})
     });
-    // debug!("Current config: {}", deserialized_config);
 
     let deserialized_patch: Patch = match serde_json::from_str(patch.as_str()) {
         Ok(p) => p,
@@ -114,8 +158,6 @@ pub async fn set_config(patch: String) -> Result<bool, String> {
         error!("Failed to apply configuration patch: {}", e);
     });
 
-    // debug!("New config: {}", deserialized_config);
-
     let new_config: Config = match serde_json::from_value(deserialized_config) {
         Ok(c) => c,
         Err(e) => {
@@ -127,7 +169,7 @@ pub async fn set_config(patch: String) -> Result<bool, String> {
     runtime_config.yaml = new_config.clone();
     RuntimeConfig::to_global_store(&runtime_config);
 
-    info!("Configuration has changed. Saving…");
+    info!("Configuration updated by user. Saving…");
 
     let config_path = runtime_config.paths.memospot_config_file.clone();
     if let Err(e) = runtime_config.yaml.save_to_file(&config_path).await {

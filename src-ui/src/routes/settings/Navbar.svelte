@@ -1,12 +1,20 @@
 <script lang="ts">
 import { cn } from "$lib/utils";
+import type { Component } from "svelte";
+
+export type Section = {
+	id: string;
+	label: string;
+	icon?: Component;
+	component: Component;
+};
 
 let {
 	sections,
 	activeSection,
 	onSectionChange,
 }: {
-	sections: Array<{ id: string; label: string; icon?: any }>;
+	sections: Section[];
 	activeSection: string;
 	onSectionChange: (sectionId: string) => void;
 } = $props();

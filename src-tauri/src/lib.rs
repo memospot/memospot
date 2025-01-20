@@ -137,11 +137,17 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(cmd::MemosURL::manage(config_.memos_url.clone()))
+        .manage(cmd::Language::manage(
+            config_.yaml.memospot.window.language.unwrap_or_default(),
+        ))
         .invoke_handler(tauri::generate_handler![
             cmd::get_memos_url,
+            cmd::get_language,
+            cmd::set_language,
             cmd::ping_memos,
             cmd::get_env,
             cmd::get_config,
+            cmd::get_default_config,
             cmd::set_config,
             cmd::path_exists
         ])
@@ -206,7 +212,6 @@ pub fn run() {
                     match window_event {
                         tauri::WindowEvent::Resized { .. }
                         | tauri::WindowEvent::Moved { .. } => {
-                            debug!("Main window resized or moved. Storing window attributes…");
                             if let Some(main_window) = app_handle.get_webview_window("main") {
                                 main_window.store_attribs_to(&mut config)
                             }

@@ -75,6 +75,9 @@ sudo apt install --no-install-recommends -qq \
     -y
 ```
 
+> [!NOTE]
+> Should you experience an error regarding `soup3-sys`, you may need to manually set `PKG_CONFIG_PATH` with `export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig/:/usr/share/pkgconfig"`. You can make this permanent by adding the line to your `.bashrc` or `.bash_profile` file.
+
 </details>
 
 <details>

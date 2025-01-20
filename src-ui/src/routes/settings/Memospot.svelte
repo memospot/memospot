@@ -5,7 +5,7 @@ import { debouncePromise } from "$lib/debounce";
 import { envFromKV, envToKV } from "$lib/environmentVariables";
 import { m } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
-import { getConfig, pingMemos } from "$lib/tauri";
+import { getAppConfig, getDefaultAppConfig, pingMemos } from "$lib/tauri";
 import type { Config } from "$lib/types/gen/Config";
 import * as jsonpatch from "fast-json-patch";
 import { onMount } from "svelte";
@@ -26,48 +26,49 @@ let input = $state({
 });
 
 onMount(async () => {
-	const initialJSON = await getConfig();
+	const initialJSON = await getAppConfig();
 	initialConfig = JSON.parse(initialJSON);
 	currentConfig = jsonpatch.deepClone(initialConfig);
-
-	input = {
-		remoteEnabled: (currentConfig.memospot.remote.enabled as boolean) || false,
-		remoteURL: (currentConfig.memospot.remote.url as string) || "",
-		remoteUserAgent: (currentConfig.memospot.remote.user_agent as string) || "",
-		updaterEnabled: (currentConfig.memospot.updater.enabled as boolean) || false,
-		migrationsEnabled: (currentConfig.memospot.migrations.enabled as boolean) || false,
-		backupsEnabled: (currentConfig.memospot.backups.enabled as boolean) || false,
-		loggingEnabled: (currentConfig.memospot.log.enabled as boolean) || false,
-		envVarsEnabled: (currentConfig.memospot.env.enabled as boolean) || false,
-		envVars: envFromKV((currentConfig.memospot.env.vars as { [key: string]: string }) || {}),
-	};
+	await setPageToInitialConfig();
 });
 
-async function updateSetting(updateFn?: () => void): Promise<boolean> {
-	return await debouncePromise(async () => {
-		updateFn?.();
-		return await patchConfig(initialConfig, currentConfig).then(
-			() => {
-				initialConfig = jsonpatch.deepClone(currentConfig);
-			},
-			() => {
-				currentConfig = jsonpatch.deepClone(initialConfig);
-			},
-		);
-	})();
+async function setPageToInitialConfig() {
+	input = {
+		remoteEnabled: (initialConfig.memospot.remote.enabled as boolean) || false,
+		remoteURL: (initialConfig.memospot.remote.url as string) || "",
+		remoteUserAgent: (initialConfig.memospot.remote.user_agent as string) || "",
+		updaterEnabled: (initialConfig.memospot.updater.enabled as boolean) || false,
+		migrationsEnabled: (initialConfig.memospot.migrations.enabled as boolean) || false,
+		backupsEnabled: (initialConfig.memospot.backups.enabled as boolean) || false,
+		loggingEnabled: (initialConfig.memospot.log.enabled as boolean) || false,
+		envVarsEnabled: (initialConfig.memospot.env.enabled as boolean) || false,
+		envVars: envFromKV((initialConfig.memospot.env.vars as Record<string, string>) || {}),
+	};
+
+	currentConfig.memospot = jsonpatch.deepClone(initialConfig.memospot);
+}
+
+async function setPageToDefaultConfig() {
+	const defaultJSON = JSON.parse(await getDefaultAppConfig()) as Config;
+	input = {
+		remoteEnabled: (defaultJSON.memospot.remote.enabled as boolean) || false,
+		remoteURL: (defaultJSON.memospot.remote.url as string) || "",
+		remoteUserAgent: (defaultJSON.memospot.remote.user_agent as string) || "",
+		updaterEnabled: (defaultJSON.memospot.updater.enabled as boolean) || false,
+		migrationsEnabled: (defaultJSON.memospot.migrations.enabled as boolean) || false,
+		backupsEnabled: (defaultJSON.memospot.backups.enabled as boolean) || false,
+		loggingEnabled: (defaultJSON.memospot.log.enabled as boolean) || false,
+		envVarsEnabled: (defaultJSON.memospot.env.enabled as boolean) || false,
+		envVars: envFromKV((defaultJSON.memospot.env.vars as Record<string, string>) || {}),
+	};
+
+	currentConfig.memospot = jsonpatch.deepClone(defaultJSON.memospot);
 }
 
 async function updateEnvVars(e: Event) {
-	const inputText = (e.target as HTMLInputElement).value;
-	const kv = envToKV(inputText);
-
+	const kv = envToKV(input.envVars);
 	currentConfig.memospot.env.vars = kv;
-	if (await updateSetting()) {
-		initialConfig.memospot.env.vars = kv;
-		input.envVars = envFromKV(kv);
-	} else {
-		currentConfig.memospot.env.vars = initialConfig.memospot.env.vars;
-	}
+	input.envVars = envFromKV(kv);
 }
 
 /**
@@ -78,153 +79,153 @@ async function updateEnvVars(e: Event) {
  * @param e
  */
 async function updateRemoteServerUrl(e: Event) {
-	if (!e || !e.target) return;
-	let inputText = (e.target as HTMLInputElement).value.trim();
-	if (inputText.length > 0) {
-		if (!inputText.startsWith("http://") && !inputText.startsWith("https://")) {
-			inputText = inputText.replace(":/", "").replaceAll("/", "");
-			inputText = `https://${inputText}`;
+	let inputURL = input.remoteURL.trim();
+
+	if (inputURL.length > 0) {
+		if (!inputURL.startsWith("http://") && !inputURL.startsWith("https://")) {
+			inputURL = inputURL.replace(":/", "").replaceAll("/", "");
+			inputURL = `https://${inputURL}`;
 		}
-		if (!inputText.endsWith("/")) {
-			inputText += "/";
+		if (!inputURL.endsWith("/")) {
+			inputURL += "/";
 		}
 		try {
-			const url = new URL(inputText);
+			const url = new URL(inputURL);
 			if (url.protocol !== "http:" && url.protocol !== "https:") {
 				throw new Error();
 			}
 		} catch (error) {
-			toast.error("Invalid URL. Value restored.");
-			(e.target as HTMLInputElement).value = initialConfig.memospot.remote.url as string;
+			toast.error(m.settingsMemospotErrInvalidServer(), {
+				duration: 5000,
+			});
+			input.remoteURL = initialConfig.memospot.remote.url || "";
 			return;
 		}
 	}
 
 	const intervalMs = 300;
 	await debouncePromise(async () => {
-		if (inputText && !(await pingMemos(inputText))) {
-			// toast.error(m.memospotRemoteServerURLInvalid());
-			toast.error("No Memos server found. Value restored.", {
+		if (inputURL && !(await pingMemos(inputURL))) {
+			toast.error(m.settingsMemospotErrInvalidServer(), {
 				duration: 5000,
 			});
-			(e.target as HTMLInputElement).value = initialConfig.memospot.remote.url as string;
+			input.remoteURL = initialConfig.memospot.remote.url || "";
 			return;
 		}
 
-		currentConfig.memospot.remote.url = inputText;
-		if (await updateSetting()) {
-			initialConfig.memospot.remote.url = inputText;
-		} else {
-			currentConfig.memospot.remote.url = initialConfig.memospot.remote.url;
-		}
-		input.remoteURL = currentConfig.memospot.remote.url as string;
+		currentConfig.memospot.remote.url = inputURL;
+		input.remoteURL = inputURL;
 	}, intervalMs)();
+}
+
+async function updateSetting(updateFn?: () => void): Promise<boolean> {
+	return await debouncePromise(async () => {
+		updateFn?.();
+		return await patchConfig(initialConfig, currentConfig).then(
+			(_ok) => {
+				initialConfig = jsonpatch.deepClone(currentConfig);
+			},
+			(_err) => {
+				currentConfig = jsonpatch.deepClone(initialConfig);
+			},
+		);
+	})();
 }
 </script>
 
 <div class="space-y-4">
   <div>
     <h3 class="text-lg font-medium">
-      {m.memospotDescription()}
+      {m.settingsMemospotDescription()}
     </h3>
+
+    <p class="text-sm text-muted-foreground">{m.settingsOverview()}</p>
   </div>
 
   <SettingToggle
-    name={m.memospotRemoteServer()}
-    desc={m.memospotRemoteServerDescription()}
+    name={m.settingsMemospotRemoteServer()}
+    desc={m.settingsMemospotRemoteServerDescription()}
     bind:state={input.remoteEnabled}
     onclick={() => {
       currentConfig.memospot.remote.enabled = input.remoteEnabled;
-      updateSetting();
     }}
   >
     <Setting
-      name={m.memospotRemoteServerURL()}
-      desc={m.memospotRemoteServerURLDescription()}
+      name={m.settingsMemospotRemoteServerURL()}
+      desc={m.settingsMemospotRemoteServerURLDescription()}
     >
       <input
         id="url"
         type="url"
         bind:value={input.remoteURL}
         onfocusout={updateRemoteServerUrl}
-        onkeypress={(e) => e.key === "Enter" && updateRemoteServerUrl(e)}
+        onkeypress={async (e) => e.key === "Enter" && await updateRemoteServerUrl(e)}
         class="p-2 rounded-md border bg-input min-w-max md:w-96"
         disabled={!input.remoteEnabled}
       />
     </Setting>
     <Setting
-      name={m.memospotUserAgent()}
-      desc={m.memospotUserAgentDescription()}
+      name={m.settingsMemospotUserAgent()}
+      desc={m.settingsMemospotUserAgentDescription()}
     >
       <input
         id="userAgent"
         type="text"
         bind:value={input.remoteUserAgent}
         onfocusout={() => {
-          currentConfig.memospot.remote.user_agent = input.remoteUserAgent;
-          updateSetting();
-        }}
-        onkeypress={(e) =>
-          e.key === "Enter" &&
-          updateSetting(() => {
             currentConfig.memospot.remote.user_agent = input.remoteUserAgent;
-          })}
+          }}
         class="p-2 rounded-md border bg-input min-w-max md:w-96"
         disabled={!input.remoteEnabled}
       />
     </Setting>
   </SettingToggle>
 
-  <Setting name={m.memospotUpdater()} desc={m.memospotUpdaterDescription()}>
+  <Setting name={m.settingsMemospotUpdater()} desc={m.settingsMemospotUpdaterDescription()}>
     <Switch
       bind:checked={input.updaterEnabled}
       onclick={() => {
         currentConfig.memospot.updater.enabled = input.updaterEnabled;
-        updateSetting();
       }}
     />
   </Setting>
 
   <Setting
-    name={m.memospotMigrations()}
-    desc={m.memospotMigrationsDescription()}
+    name={m.settingsMemospotMigrations()}
+    desc={m.settingsMemospotMigrationsDescription()}
   >
     <Switch
       bind:checked={input.migrationsEnabled}
       onclick={() => {
         currentConfig.memospot.migrations.enabled = input.migrationsEnabled;
-        updateSetting();
       }}
     />
   </Setting>
 
-  <Setting name={m.memospotBackups()} desc={m.memospotBackupsDescription()}>
+  <Setting name={m.settingsMemospotBackups()} desc={m.settingsMemospotBackupsDescription()}>
     <Switch
       bind:checked={input.backupsEnabled}
       onclick={() => {
         currentConfig.memospot.backups.enabled = input.backupsEnabled;
-        updateSetting();
       }}
     />
   </Setting>
 
-  <Setting name={m.memospotLogging()} desc={m.memospotLoggingDescription()}>
+  <Setting name={m.settingsMemospotLogging()} desc={m.settingsMemospotLoggingDescription()}>
     <Switch
       bind:checked={input.loggingEnabled}
       onclick={() => {
         currentConfig.memospot.log.enabled = input.loggingEnabled;
-        updateSetting();
       }}
     />
   </Setting>
 
   <SettingToggle
-    name={m.memospotEnvironmentVariables()}
-    desc={m.memospotEnvironmentVariablesDescription()}
+    name={m.settingsMemospotEnvironmentVariables()}
+    desc={m.settingsMemospotEnvironmentVariablesDescription()}
     bind:state={input.envVarsEnabled}
     onclick={() => {
       currentConfig.memospot.env.enabled = input.envVarsEnabled;
-      updateSetting();
     }}
   >
     <textarea
@@ -233,9 +234,29 @@ async function updateRemoteServerUrl(e: Event) {
       class="p-2 rounded-md border bg-background min-w-max w-full leading-tight"
       bind:value={input.envVars}
       onfocusout={updateEnvVars}
-      onkeypress={(e) => e.key === "Enter" && updateEnvVars(e)}
+      onkeypress={async (e) => e.key === "Enter" && (await updateEnvVars(e))}
       disabled={!input.envVarsEnabled}
     >
     </textarea>
   </SettingToggle>
+
+  <div class="flex flex-row space-x-1 justify-end">
+    <button
+      class="border-box inline-flex items-center justify-center rounded-md bg-secondary text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px]"
+      type="button"
+      onclick={async () => await setPageToDefaultConfig()}
+      >{m.settingsLoadDefaults()}</button
+    >
+    <button
+      class="border-box inline-flex items-center justify-center rounded-md bg-secondary text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px]"
+      type="button"
+      onclick={async () => await setPageToInitialConfig()}
+      >{m.settingsReloadCurrent()}</button
+    >
+    <button
+      class="border-box inline-flex items-center justify-center rounded-md bg-primary text-zinc-50 text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px] [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
+      type="button"
+      onclick={async () => await updateSetting()}>{m.settingsSave()}</button
+    >
+  </div>
 </div>

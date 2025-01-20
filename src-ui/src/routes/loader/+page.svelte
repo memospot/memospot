@@ -92,7 +92,7 @@ onMount(async () => {
 >
   <div>
     <h1 id="status" class="text-xl">
-      {redirectDetails.isError ? m.somethingWentWrong() : m.waitingForServer()}
+      {redirectDetails.isError ? m.settingsSomethingWentWrong() : m.loaderWaitingForServer()}
     </h1>
   </div>
   <div>
@@ -100,7 +100,7 @@ onMount(async () => {
       href="https://usememos.com/"
       target="_blank"
       referrerpolicy="origin"
-      title={m.clickToOpenMemosWebsite()}
+      title={m.loaderClickToOpenMemosWebsite()}
     >
       <img
         src="powered_by_memos{theme === 'dark' ? '_dark' : ''}.webp"
@@ -121,17 +121,17 @@ onMount(async () => {
     </p>
     {#if redirectDetails.isError}
       <p class="mt-2">
-        {m.noResponse()}
+        {m.loaderNoResponse()}
         <br />
         {#if redirectDetails.isLocalhost}
-          {m.tryRestartingMemospot()}
+          {m.loaderTryRestartingMemospot()}
         {:else}
-          {@html m.errRemoteServerNotReachable()}
+          {@html m.loaderErrRemoteServerNotReachable()}
         {/if}
       </p>
       <div class="mt-4 flex flex-row gap-2 justify-center">
         <button
-          title={m.checkAgainIfServerStarted()}
+          title={m.loaderCheckAgainIfServerStarted()}
           class="w-fit px-4 py-2 text-lg rounded-2xl transition-colors hover:bg-secondary/80 text-muted-foreground border hover:translate-y-[-1px] hover:drop-shadow"
           onclick={() => window.location.replace(window.location.href)}
         >

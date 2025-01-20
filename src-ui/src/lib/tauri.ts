@@ -45,6 +45,25 @@ export async function pingMemos(memosUrl: string, timeoutMillis = 1000): Promise
 }
 
 /**
+ * Get the current application language.
+ * @returns the current language
+ */
+export async function getAppLanguage(): Promise<string> {
+    if (!TAURI) return Promise.reject(browserError);
+    return invoke("get_language") as Promise<string>;
+}
+
+/**
+ * Set the application language.
+ * @param tag the language to set
+ * @returns true if the language was set
+ */
+export async function setAppLanguage(tag: string): Promise<boolean> {
+    if (!TAURI) return Promise.reject(browserError);
+    return invoke("set_language", { new: tag }) as Promise<boolean>;
+}
+
+/**
  * Get an environment variable.
  */
 export async function getEnv(name: string): Promise<string> {
@@ -52,9 +71,14 @@ export async function getEnv(name: string): Promise<string> {
     return invoke("get_env", { name: name }) as Promise<string>;
 }
 
-export async function getConfig(): Promise<string> {
+export async function getAppConfig(): Promise<string> {
     if (!TAURI) return Promise.reject(browserError);
     return invoke("get_config") as Promise<string>;
+}
+
+export async function getDefaultAppConfig(): Promise<string> {
+    if (!TAURI) return Promise.reject(browserError);
+    return invoke("get_default_config") as Promise<string>;
 }
 
 /**
@@ -64,7 +88,7 @@ export async function getConfig(): Promise<string> {
  * @param JSONPatch
  * @returns
  */
-export async function setConfig(JSONPatch: string): Promise<boolean> {
+export async function setAppConfig(JSONPatch: string): Promise<boolean> {
     if (!TAURI) return Promise.reject(browserError);
     return invoke("set_config", { patch: JSONPatch }) as Promise<boolean>;
 }

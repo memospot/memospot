@@ -109,7 +109,7 @@ tauri-before-build: download-memos-binaries gen-icons gen-bindings build-ui
 tauri-before-bundle: deps-ts upx
 
 [private]
-tauri-before-dev: download-memos-binaries dev-ui
+tauri-before-dev: download-memos-binaries gen-icons gen-bindings dev-ui
 # /Tauri hooks
 
 [group('test')]

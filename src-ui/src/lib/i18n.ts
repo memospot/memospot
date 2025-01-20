@@ -2,6 +2,8 @@ import * as messages from "$lib/paraglide/messages.js";
 import * as runtime from "$lib/paraglide/runtime.js";
 import { createI18n } from "@inlang/paraglide-sveltekit";
 
+export type Language = (typeof runtime.availableLanguageTags)[number];
+
 /**
  * Creates an i18n instance that manages internationalization.
  */
@@ -33,26 +35,16 @@ const fallbacks: Record<string, string> = {
 /**
  * Detect the most appropriate translation to use based on the user's preference and current browser language.
  */
-export function detectLanguage() {
+export function detectLanguage(userPreferredLanguage?: string) {
     if (typeof window === "undefined") return;
 
     const browserLanguage = navigator.language;
     const shortLanguage = browserLanguage.slice(0, 2);
-    const userPreferredLanguage = localStorage.getItem(
-        "i18n-user-preference"
-    ) as runtime.AvailableLanguageTag | null;
-
-    if (
-        userPreferredLanguage &&
-        runtime.availableLanguageTags.includes(userPreferredLanguage)
-    ) {
-        runtime.setLanguageTag(userPreferredLanguage);
-        return;
-    }
 
     for (const languageTag of runtime.availableLanguageTags) {
         if (
             [
+                userPreferredLanguage === languageTag,
                 browserLanguage === languageTag,
                 fallbacks[browserLanguage] === languageTag,
                 fallbacks[shortLanguage] === languageTag,

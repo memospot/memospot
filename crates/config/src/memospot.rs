@@ -96,6 +96,10 @@ pub struct Window {
     pub y: Option<i32>,
     /// Hide main menu bar.
     pub hide_menu_bar: Option<bool>,
+    /// Theme.
+    pub theme: Option<String>,
+    /// Language.
+    pub language: Option<String>,
 }
 impl Default for Window {
     fn default() -> Self {
@@ -109,6 +113,8 @@ impl Default for Window {
             x: Some(0),
             y: Some(0),
             hide_menu_bar: Some(false),
+            theme: None,
+            language: None,
         }
     }
 }
