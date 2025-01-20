@@ -47,6 +47,7 @@ BINSTALL:
 SETUP_BASE_IMAGE:
   FUNCTION
   FROM $BASE_IMAGE
+  ENV PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig/:/usr/share/pkgconfig"
   ENV DEBIAN_FRONTEND=noninteractive
   ENV HOME="${HOME:-/root}"
 
