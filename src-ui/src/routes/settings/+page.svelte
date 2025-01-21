@@ -56,4 +56,10 @@ async function updateSection(sectionId: string) {
     </main>
   </div>
 </div>
-<Toaster duration={1500} visibleToasts={1} position="bottom-left"/>
+<Toaster duration={1500} visibleToasts={1} position="bottom-left"  toastOptions={{
+  class: "[text-shadow:_1px_1px_1px_rgb(0_0_0_/_60%)]",
+  classes: {
+    error: 'bg-destructive',
+    success: 'bg-primary',
+  },
+}}/>

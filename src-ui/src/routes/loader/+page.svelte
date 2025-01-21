@@ -76,7 +76,6 @@ async function redirectWhenReady() {
 		});
 	}
 
-	// updateMs();
 	redirectDetails.isError = true;
 
 	return redirectDetails;
