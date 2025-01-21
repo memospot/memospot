@@ -260,7 +260,7 @@ async function updateLanguage(s: Selected<string> | undefined) {
       >{m.settingsReloadCurrent()}</button
     >
     <button
-      class="border-box inline-flex items-center justify-center rounded-md bg-primary text-zinc-50 text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px] [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
+      class="border-box inline-flex items-center justify-center rounded-md bg-primary text-zinc-50 text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px] [text-shadow:_1px_1px_0_rgb(0_0_0_/_90%)]"
       type="button"
       onclick={async () => await updateSetting()}>{m.settingsSave()}</button
     >
