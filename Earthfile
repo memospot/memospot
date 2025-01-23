@@ -18,7 +18,7 @@ IMPORT github.com/earthly/lib/rust:3.0.3 AS rust
 
 ARG --global BASE_IMAGE="ubuntu:22.04"
 ARG --global RUST_TOOLCHAIN="stable"
-ARG --global BUN_VERSION="1.1.42"
+ARG --global BUN_VERSION="1.2.0"
 ARG --global UPX_VERSION="4.2.4"
 
 FROM $BASE_IMAGE

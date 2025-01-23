@@ -8,7 +8,7 @@ on:
       - "**/gen/schemas/*.json"
       - "**/*.{icns,ico,png,svg,webp}"
       - "**/*.{dll,nsi,nsh,wxs,xml}"
-      - "**/*.{lock,lockb}"
+      - "**/*.{lock,lock}"
       - "**/justfile"
   push:
     paths-ignore:
@@ -16,7 +16,7 @@ on:
       - "**/gen/schemas/*.json"
       - "**/*.{icns,ico,png,svg,webp}"
       - "**/*.{dll,nsi,nsh,wxs,xml}"
-      - "**/*.{lock,lockb}"
+      - "**/*.{lock,lock}"
       - "**/justfile"
   workflow_dispatch:
 
@@ -52,7 +52,7 @@ jobs:
       - name: Cache Bun dependencies
         uses: actions/cache@v4
         with:
-          key: bundeps-${{ runner.os }}-${{ hashFiles('**/bun.lockb', '**/package.json') }}
+          key: bundeps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
           restore-keys: bundeps-${{ runner.os }}
           path: ~/.bun
 

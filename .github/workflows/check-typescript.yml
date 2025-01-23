@@ -5,13 +5,13 @@ on:
   pull_request:
     paths:
       - "**/*.{cts,mts,ts,tsx}"
-      - "**/bun.lockb"
+      - "**/bun.lock"
       - "**/check-typescript.yml"
       - "**/package.json"
   push:
     paths:
       - "**/*.{cts,mts,ts,tsx}"
-      - "**/bun.lockb"
+      - "**/bun.lock"
       - "**/check-typescript.yml"
       - "**/package.json"
   workflow_dispatch:
@@ -60,14 +60,14 @@ jobs:
         name: Cache node_modules
         uses: actions/cache@v4
         with:
-          key: node_modules-${{ runner.os }}-${{ hashFiles('**/bun.lockb', '**/package.json') }}
+          key: node_modules-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
           restore-keys: node_modules-${{ runner.os }}
           path: ${{github.workspace}}/node_modules
 
       - name: Cache Bun dependencies
         uses: actions/cache@v4
         with:
-          key: bundeps-${{ runner.os }}-${{ hashFiles('**/bun.lockb', '**/package.json') }}
+          key: bundeps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
           restore-keys: bundeps-${{ runner.os }}
           path: ~/.bun
 

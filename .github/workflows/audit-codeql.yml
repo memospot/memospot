@@ -6,13 +6,13 @@ on:
     paths:
       - "**/audit-codeql.yml"
       - "**/*.{cts,mts,ts,tsx}"
-      - "**/bun.lockb"
+      - "**/bun.lock"
       - "**/package.json"
   pull_request:
     paths:
       - "**/audit-codeql.yml"
       - "**/*.{cts,mts,ts,tsx}"
-      - "**/bun.lockb"
+      - "**/bun.lock"
       - "**/package.json"
   schedule: [{ cron: "0 9 */15 * *" }] # 9 AM, every 15 days
   workflow_dispatch:
