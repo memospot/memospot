@@ -20,7 +20,7 @@
     "crypto": "^1.0.1",
     "decompress": "^4.2.1",
     "fs": "^0.0.1-security",
-    "minimatch": "^9.0.5",
+    "minimatch": "^10.0.1",
     "os": "^0.1.2",
     "path": "^0.12.7"
   }
