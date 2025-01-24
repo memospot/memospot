@@ -11,31 +11,36 @@ import type { Section } from "./Navbar.svelte";
 import View from "./View.svelte";
 
 const sections: Section[] = [
-	{ id: "view", label: m.settingsView(), icon: EyeOpen, component: View },
-	{ id: "memospot", label: m.settingsMemospot(), icon: Gear, component: Memospot },
-	{ id: "memos", label: m.settingsMemos(), icon: Pencil2, component: Memos },
+    { id: "view", label: m.settingsView(), icon: EyeOpen, component: View },
+    {
+        id: "memospot",
+        label: m.settingsMemospot(),
+        icon: Gear,
+        component: Memospot
+    },
+    { id: "memos", label: m.settingsMemos(), icon: Pencil2, component: Memos }
 ];
 
 let activeSection: string = $state(
-	sections.find((s) => s.id === window.location.hash.slice(1))?.id || sections[0].id,
+    sections.find((s) => s.id === window.location.hash.slice(1))?.id || sections[0].id
 );
 
 async function animateSectionTransition() {
-	const sectionAnimation = "motion-preset-fade";
-	const mainSelector = document.querySelector("main");
+    const sectionAnimation = "motion-preset-fade";
+    const mainSelector = document.querySelector("main");
 
-	mainSelector?.classList.add(sectionAnimation);
-	await new Promise(() => {
-		setTimeout(() => {
-			mainSelector?.classList.remove(sectionAnimation);
-		}, 800);
-	});
+    mainSelector?.classList.add(sectionAnimation);
+    await new Promise(() => {
+        setTimeout(() => {
+            mainSelector?.classList.remove(sectionAnimation);
+        }, 800);
+    });
 }
 
 async function updateSection(sectionId: string) {
-	activeSection = sectionId;
-	window.location.hash = `#${sectionId}`;
-	await animateSectionTransition();
+    activeSection = sectionId;
+    window.location.hash = `#${sectionId}`;
+    await animateSectionTransition();
 }
 </script>
 
@@ -56,10 +61,15 @@ async function updateSection(sectionId: string) {
     </main>
   </div>
 </div>
-<Toaster duration={1500} visibleToasts={1} position="bottom-left"  toastOptions={{
-  class: "[text-shadow:_1px_1px_1px_rgb(0_0_0_/_60%)]",
-  classes: {
-    error: 'bg-destructive',
-    success: 'bg-primary',
-  },
-}}/>
+<Toaster
+  duration={1500}
+  visibleToasts={1}
+  position="bottom-left"
+  toastOptions={{
+  class: "[text-shadow:_1px_1px_1px_rgb(0_0_0_/_60%)] text-zinc-50",
+    classes: {
+      error: "bg-destructive",
+      success: "bg-primary",
+    },
+  }}
+/>

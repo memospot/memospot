@@ -15,12 +15,10 @@
     "editor.defaultFormatter": "dprint.dprint"
   },
   "[jsonc]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
+    "editor.defaultFormatter": "dprint.dprint"
   },
   "[markdown]": {
-    "editor.defaultFormatter": "dprint.dprint",
-    "editor.formatOnSave": true,
-    "editor.formatOnPaste": true
+    "editor.defaultFormatter": "dprint.dprint"
   },
   "[rust]": {
     "editor.defaultFormatter": "dprint.dprint"
@@ -50,6 +48,7 @@
   "editor.codeActionsOnSave": {
     "source.organizeImports.biome": "explicit"
   },
+  "editor.defaultFormatter": "dprint.dprint",
   "editor.formatOnSave": true,
   "editor.wordBasedSuggestions": "off",
   "editor.quickSuggestionsDelay": 200,

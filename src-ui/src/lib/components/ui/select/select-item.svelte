@@ -4,16 +4,16 @@ import { Select as SelectPrimitive } from "bits-ui";
 import Check from "svelte-radix/Check.svelte";
 
 interface Props extends SelectPrimitive.ItemProps {
-	[key: string]: any;
+    [key: string]: any;
 }
 
 let {
-	class: className = undefined,
-	value,
-	label = undefined,
-	disabled = undefined,
-	children,
-	...rest
+    class: className = undefined,
+    value,
+    label = undefined,
+    disabled = undefined,
+    children,
+    ...rest
 }: Props = $props();
 </script>
 

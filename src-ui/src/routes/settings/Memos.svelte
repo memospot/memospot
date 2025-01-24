@@ -1,5 +1,11 @@
 <script lang="ts">
-import * as Select from "$lib/components/ui/select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "$lib/components/ui/select";
 import { Setting } from "$lib/components/ui/setting/index";
 import { debouncePromise } from "$lib/debounce";
 import { envFromKV, envToKV } from "$lib/environmentVariables";
@@ -19,134 +25,134 @@ import { toast } from "svelte-sonner";
 let initialConfig = $state({}) as Config;
 let currentConfig = $state({}) as Config;
 let input = $state({
-	mode: "",
-	binaryPath: "",
-	workingDir: "",
-	dataDir: "",
-	bindAddr: "",
-	bindPort: 0,
-	envVars: "",
+    mode: "",
+    binaryPath: "",
+    workingDir: "",
+    dataDir: "",
+    bindAddr: "",
+    bindPort: 0,
+    envVars: ""
 });
 
 const memosModeNames = {
-	prod: m.settingsMemosModeProduction(),
-	dev: m.settingsMemosModeDevelopment(),
-	demo: m.settingsMemosModeDemonstration(),
+    prod: m.settingsMemosModeProduction(),
+    dev: m.settingsMemosModeDevelopment(),
+    demo: m.settingsMemosModeDemonstration()
 } as const;
 
 let selectedMode: Selected<string> = $derived({
-	label: memosModeNames[input.mode as keyof typeof memosModeNames],
-	value: input.mode,
+    label: memosModeNames[input.mode as keyof typeof memosModeNames],
+    value: input.mode
 });
 
 onMount(async () => {
-	const initialJSON = await getAppConfig();
-	initialConfig = JSON.parse(initialJSON);
-	currentConfig = jsonpatch.deepClone(initialConfig);
-	await setPageToInitialConfig();
+    const initialJSON = await getAppConfig();
+    initialConfig = JSON.parse(initialJSON);
+    currentConfig = jsonpatch.deepClone(initialConfig);
+    await setPageToInitialConfig();
 });
 
 async function setPageToInitialConfig() {
-	input = {
-		mode: (initialConfig.memos.mode as string) || "prod",
-		binaryPath: (initialConfig.memos.binary_path as string) || "",
-		workingDir: (initialConfig.memos.working_dir as string) || "",
-		dataDir: (initialConfig.memos.data as string) || "",
-		bindAddr: (initialConfig.memos.addr as string) || "",
-		bindPort: (initialConfig.memos.port as number) || 0,
-		envVars: envFromKV((initialConfig.memos.env as Record<string, string>) || {}),
-	};
+    input = {
+        mode: (initialConfig.memos.mode as string) || "prod",
+        binaryPath: (initialConfig.memos.binary_path as string) || "",
+        workingDir: (initialConfig.memos.working_dir as string) || "",
+        dataDir: (initialConfig.memos.data as string) || "",
+        bindAddr: (initialConfig.memos.addr as string) || "",
+        bindPort: (initialConfig.memos.port as number) || 0,
+        envVars: envFromKV((initialConfig.memos.env as Record<string, string>) || {})
+    };
 
-	currentConfig.memos = jsonpatch.deepClone(initialConfig.memos);
+    currentConfig.memos = jsonpatch.deepClone(initialConfig.memos);
 }
 
 async function setPageToDefaultConfig() {
-	const defaultJSON = JSON.parse(await getDefaultAppConfig()) as Config;
-	input = {
-		mode: (defaultJSON.memos.mode as string) || "prod",
-		binaryPath: (defaultJSON.memos.binary_path as string) || "",
-		workingDir: (defaultJSON.memos.working_dir as string) || "",
-		dataDir: (defaultJSON.memos.data as string) || "",
-		bindAddr: (defaultJSON.memos.addr as string) || "",
-		bindPort: (defaultJSON.memos.port as number) || 0,
-		envVars: envFromKV((defaultJSON.memos.env as Record<string, string>) || {}),
-	};
+    const defaultJSON = JSON.parse(await getDefaultAppConfig()) as Config;
+    input = {
+        mode: (defaultJSON.memos.mode as string) || "prod",
+        binaryPath: (defaultJSON.memos.binary_path as string) || "",
+        workingDir: (defaultJSON.memos.working_dir as string) || "",
+        dataDir: (defaultJSON.memos.data as string) || "",
+        bindAddr: (defaultJSON.memos.addr as string) || "",
+        bindPort: (defaultJSON.memos.port as number) || 0,
+        envVars: envFromKV((defaultJSON.memos.env as Record<string, string>) || {})
+    };
 
-	currentConfig.memos = jsonpatch.deepClone(defaultJSON.memos);
+    currentConfig.memos = jsonpatch.deepClone(defaultJSON.memos);
 }
 
 async function setMemosMode(s: Selected<string> | undefined) {
-	input.mode = s?.value ?? "prod";
-	currentConfig.memos.mode = input.mode;
+    input.mode = s?.value ?? "prod";
+    currentConfig.memos.mode = input.mode;
 }
 
 async function validateMemosDataDir(e: Event | KeyboardEvent) {
-	if (e.type === "keypress" && (e as KeyboardEvent).key !== "Enter") return;
+    if (e.type === "keypress" && (e as KeyboardEvent).key !== "Enter") return;
 
-	await validatePath(e).then(
-		(_ok) => {
-			currentConfig.memos.data = input.dataDir;
-		},
-		(_err) => {
-			input.dataDir = initialConfig.memos.data as string;
-		},
-	);
+    await validatePath(e).then(
+        (_ok) => {
+            currentConfig.memos.data = input.dataDir;
+        },
+        (_err) => {
+            input.dataDir = initialConfig.memos.data as string;
+        }
+    );
 }
 
 async function validateMemosBinaryPath(e: Event | KeyboardEvent) {
-	if (e.type === "keypress" && (e as KeyboardEvent).key !== "Enter") return;
+    if (e.type === "keypress" && (e as KeyboardEvent).key !== "Enter") return;
 
-	await validatePath(e).then(
-		(_ok) => {
-			currentConfig.memos.binary_path = input.binaryPath;
-		},
-		(_err) => {
-			input.binaryPath = initialConfig.memos.binary_path as string;
-		},
-	);
+    await validatePath(e).then(
+        (_ok) => {
+            currentConfig.memos.binary_path = input.binaryPath;
+        },
+        (_err) => {
+            input.binaryPath = initialConfig.memos.binary_path as string;
+        }
+    );
 }
 
 async function validateMemosWorkingDir(e: Event | KeyboardEvent) {
-	if (e.type === "keypress" && (e as KeyboardEvent).key !== "Enter") return;
+    if (e.type === "keypress" && (e as KeyboardEvent).key !== "Enter") return;
 
-	await validatePath(e).then(
-		(_ok) => {
-			currentConfig.memos.working_dir = input.workingDir;
-		},
-		(_err) => {
-			input.workingDir = initialConfig.memos.working_dir as string;
-		},
-	);
+    await validatePath(e).then(
+        (_ok) => {
+            currentConfig.memos.working_dir = input.workingDir;
+        },
+        (_err) => {
+            input.workingDir = initialConfig.memos.working_dir as string;
+        }
+    );
 }
 
 async function validatePath(e: Event) {
-	const input = e.target as HTMLInputElement;
-	if (!input.value || (await pathExists(input.value))) {
-		// Must allow empty paths.
-		return Promise.resolve();
-	}
-	toast.error(m.settingsErrPathDoesNotExist());
-	return Promise.reject();
+    const input = e.target as HTMLInputElement;
+    if (!input.value || (await pathExists(input.value))) {
+        // Must allow empty paths.
+        return Promise.resolve();
+    }
+    toast.error(m.settingsErrPathDoesNotExist());
+    return Promise.reject();
 }
 
-async function setMemosEnvVars(e: Event) {
-	const kv = envToKV(input.envVars);
-	currentConfig.memos.env = kv;
-	input.envVars = envFromKV(kv);
+async function setMemosEnvVars(_: Event) {
+    const kv = envToKV(input.envVars);
+    currentConfig.memos.env = kv;
+    input.envVars = envFromKV(kv);
 }
 
 async function updateSetting(updateFn?: () => void): Promise<boolean> {
-	return await debouncePromise(async () => {
-		updateFn?.();
-		return await patchConfig(initialConfig, currentConfig).then(
-			(_ok) => {
-				initialConfig = jsonpatch.deepClone(currentConfig);
-			},
-			(_err) => {
-				currentConfig = jsonpatch.deepClone(initialConfig);
-			},
-		);
-	})();
+    return debouncePromise(async () => {
+        updateFn?.();
+        return await patchConfig(initialConfig, currentConfig).then(
+            (_ok) => {
+                initialConfig = jsonpatch.deepClone(currentConfig);
+            },
+            (_err) => {
+                currentConfig = jsonpatch.deepClone(initialConfig);
+            }
+        );
+    })();
 }
 </script>
 
@@ -165,27 +171,22 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
   </div>
 
   <Setting name={m.settingsMemosMode()} desc={m.settingsMemosModeDescription()}>
-    <Select.Root selected={selectedMode} onSelectedChange={setMemosMode}>
-      <Select.Trigger class="ml-1 min-w-max md:w-64">
-        <Select.Value placeholder={m.settingsMemosMode()} />
-      </Select.Trigger>
-      <Select.Content>
-        <Select.Item value="prod">
-          {memosModeNames.prod}<LightningBolt
-            class="h-[1.2rem] w-[1.2rem] ml-auto"
-          />
-        </Select.Item>
-        <Select.Item value="dev">
-          {memosModeNames.dev}
-          <Code class="h-[1.2rem] w-[1.2rem] ml-auto" />
-        </Select.Item>
-        <Select.Item value="demo">
-          {memosModeNames.demo}<LockClosed
-            class="h-[1.2rem] w-[1.2rem] ml-auto"
-          />
-        </Select.Item>
-      </Select.Content>
-    </Select.Root>
+    <Select selected={selectedMode} onSelectedChange={setMemosMode}>
+      <SelectTrigger class="ml-1 min-w-max md:w-64">
+        <SelectValue placeholder={m.settingsMemosMode()} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="prod">
+          {memosModeNames.prod} <LightningBolt class="h-[1.2rem] w-[1.2rem] ml-auto" />
+        </SelectItem>
+        <SelectItem value="dev">
+          {memosModeNames.dev} <Code class="h-[1.2rem] w-[1.2rem] ml-auto" />
+        </SelectItem>
+        <SelectItem value="demo">
+          {memosModeNames.demo} <LockClosed class="h-[1.2rem] w-[1.2rem] ml-auto" />
+        </SelectItem>
+      </SelectContent>
+    </Select>
   </Setting>
 
   <Setting
@@ -279,21 +280,28 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
 
   <div class="flex flex-row space-x-1 justify-end">
     <button
+      tabindex="-1"
       class="border-box inline-flex items-center justify-center rounded-md bg-secondary text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px]"
       type="button"
       onclick={async () => await setPageToDefaultConfig()}
-      >{m.settingsLoadDefaults()}</button
     >
+      {m.settingsLoadDefaults()}
+    </button>
     <button
+      tabindex="-1"
       class="border-box inline-flex items-center justify-center rounded-md bg-secondary text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px]"
       type="button"
       onclick={async () => await setPageToInitialConfig()}
-      >{m.settingsReloadCurrent()}</button
     >
+      {m.settingsReloadCurrent()}
+    </button>
     <button
+      tabindex="0"
       class="border-box inline-flex items-center justify-center rounded-md bg-primary text-zinc-50 text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px] [text-shadow:_1px_1px_0_rgb(0_0_0_/_90%)]"
       type="button"
-      onclick={async () => await updateSetting()}>{m.settingsSave()}</button
+      onclick={async () => await updateSetting()}
     >
+      {m.settingsSave()}
+    </button>
   </div>
 </div>

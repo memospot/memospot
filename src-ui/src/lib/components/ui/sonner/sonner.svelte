@@ -2,7 +2,7 @@
 import { mode } from "mode-watcher";
 import { Toaster as Sonner, type ToasterProps as SonnerProps } from "svelte-sonner";
 interface Props extends SonnerProps {
-	[key: string]: any;
+    [key: string]: any;
 }
 
 let { ...rest }: Props = $props();

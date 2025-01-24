@@ -26,26 +26,3 @@ export function debouncePromise(
         return new Promise((resolve) => resolves.push(resolve));
     };
 }
-
-/**
- * Debounce a function, ensuring only the last call's result is returned.
- * @param func The function to debounce
- * @param wait Delay in milliseconds. Defaults to 300ms.
- * @returns A debounced version of the function
- */
-export function debounce<F extends (...args: any[]) => any>(
-    func: F,
-    wait = 300
-): (...args: Parameters<F>) => void {
-    let timeoutId: Timer | null = null;
-
-    return (...args: Parameters<F>) => {
-        if (timeoutId) {
-            clearTimeout(timeoutId);
-        }
-
-        timeoutId = setTimeout(() => {
-            func(...args);
-        }, wait);
-    };
-}

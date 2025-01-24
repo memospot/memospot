@@ -9,80 +9,81 @@ import Update from "svelte-radix/Update.svelte";
 import { MediaQuery } from "svelte/reactivity";
 
 const CONFIG = {
-	MAX_RETRIES: 10,
-	RETRY_DELAY_MS: 300,
-	EXPONENTIAL_BACKOFF: true,
-	DEBUG_NO_REDIRECT: !isTauri(),
+    MAX_RETRIES: 10,
+    RETRY_DELAY_MS: 300,
+    EXPONENTIAL_BACKOFF: true,
+    DEBUG_NO_REDIRECT: !isTauri()
 };
 
 let theme = $state("system");
 userPrefersMode.subscribe((value) => {
-	theme = value;
+    theme = value;
 });
 
 const darkTheme = new MediaQuery("prefers-color-scheme: dark");
 $effect(() => {
-	if (theme === "system") {
-		theme = darkTheme.current ? "dark" : "light";
-	}
-	document.documentElement.setAttribute("data-theme", theme);
+    if (theme === "system") {
+        theme = darkTheme.current ? "dark" : "light";
+    }
+    document.documentElement.setAttribute("data-theme", theme);
 });
 
 let redirectDetails = $state({
-	isError: false,
-	isLocalhost: false,
-	memosUrl: "",
-	displayUrl: "",
-	replyMs: 0,
-	pingStartTime: 0,
-	retries: 0,
+    isError: false,
+    isLocalhost: false,
+    memosUrl: "",
+    displayUrl: "",
+    replyMs: 0,
+    pingStartTime: 0,
+    retries: 0
 });
 
 async function redirectWhenReady() {
-	const debugNoRedirect =
-		CONFIG.DEBUG_NO_REDIRECT ||
-		["true", "on", "1"].includes((await getEnv("MEMOSPOT_NO_REDIRECT")).toLowerCase());
+    const debugNoRedirect =
+        CONFIG.DEBUG_NO_REDIRECT ||
+        ["true", "on", "1"].includes((await getEnv("MEMOSPOT_NO_REDIRECT")).toLowerCase());
 
-	const memosUrl = await getMemosURL().then((url) =>
-		url.endsWith("/") ? url.slice(0, -1) : url,
-	);
-	redirectDetails.memosUrl = memosUrl;
-	redirectDetails.isLocalhost = memosUrl.startsWith("http://localhost");
-	redirectDetails.displayUrl =
-		memosUrl.replace("http://", "").replace("https://", "") || "_URL_";
-	redirectDetails.pingStartTime = Date.now();
+    const memosUrl = await getMemosURL().then((url) =>
+        url.endsWith("/") ? url.slice(0, -1) : url
+    );
+    redirectDetails.memosUrl = memosUrl;
+    redirectDetails.isLocalhost = memosUrl.startsWith("http://localhost");
+    redirectDetails.displayUrl =
+        memosUrl.replace("http://", "").replace("https://", "") || "_URL_";
+    redirectDetails.pingStartTime = Date.now();
 
-	const updateMs = () => {
-		redirectDetails.replyMs = Date.now() - redirectDetails.pingStartTime;
-	};
+    const updateMs = () => {
+        redirectDetails.replyMs = Date.now() - redirectDetails.pingStartTime;
+    };
 
-	for (
-		redirectDetails.retries = 0;
-		redirectDetails.retries < CONFIG.MAX_RETRIES;
-		redirectDetails.retries++
-	) {
-		if (!debugNoRedirect && (await pingMemos(memosUrl))) {
-			updateMs();
+    for (
+        redirectDetails.retries = 0;
+        redirectDetails.retries < CONFIG.MAX_RETRIES;
+        redirectDetails.retries++
+    ) {
+        if (!debugNoRedirect && (await pingMemos(memosUrl))) {
+            updateMs();
 
-			globalThis.location.replace(memosUrl);
-			return redirectDetails;
-		}
-		await new Promise((resolve) => {
-			updateMs();
-			setTimeout(
-				resolve,
-				CONFIG.RETRY_DELAY_MS * (CONFIG.EXPONENTIAL_BACKOFF ? redirectDetails.retries + 1 : 1),
-			);
-		});
-	}
+            globalThis.location.replace(memosUrl);
+            return redirectDetails;
+        }
+        await new Promise((resolve) => {
+            updateMs();
+            setTimeout(
+                resolve,
+                CONFIG.RETRY_DELAY_MS *
+                    (CONFIG.EXPONENTIAL_BACKOFF ? redirectDetails.retries + 1 : 1)
+            );
+        });
+    }
 
-	redirectDetails.isError = true;
+    redirectDetails.isError = true;
 
-	return redirectDetails;
+    return redirectDetails;
 }
 
 onMount(async () => {
-	redirectDetails = await redirectWhenReady();
+    redirectDetails = await redirectWhenReady();
 });
 </script>
 
@@ -91,7 +92,11 @@ onMount(async () => {
 >
   <div>
     <h1 id="status" class="text-xl">
-      {redirectDetails.isError ? m.settingsSomethingWentWrong() : m.loaderWaitingForServer()}
+      {
+        redirectDetails.isError
+        ? m.settingsSomethingWentWrong()
+        : m.loaderWaitingForServer()
+      }
     </h1>
   </div>
   <div>
@@ -103,9 +108,7 @@ onMount(async () => {
     >
       <img
         src="powered_by_memos{theme === 'dark' ? '_dark' : ''}.webp"
-        class="!h-60 p-6 logo logo-glow {redirectDetails.isError
-          ? 'error'
-          : ''}"
+        class="!h-60 p-6 logo logo-glow {redirectDetails.isError ? 'error' : ''}"
         alt="Memos"
       />
     </a>
@@ -115,8 +118,8 @@ onMount(async () => {
       <a
         class="hover:underline hover:text-cyan-500"
         href={redirectDetails.memosUrl}
-        target="_blank">{redirectDetails.displayUrl}</a
-      >
+        target="_blank"
+      >{redirectDetails.displayUrl}</a>
     </p>
     {#if redirectDetails.isError}
       <p class="mt-2">
@@ -157,31 +160,31 @@ onMount(async () => {
 </main>
 
 <style>
-  img {
+img {
     image-rendering: high-quality;
-  }
-  @keyframes glow {
+}
+@keyframes glow {
     0%,
     100% {
-      filter: drop-shadow(0 0 4vh var(--glow));
+        filter: drop-shadow(0 0 4vh var(--glow));
     }
     50% {
-      filter: none;
+        filter: none;
     }
-  }
-  .logo-glow {
+}
+.logo-glow {
     padding: 3.5em; /* Prevent square box on webkit */
     animation: glow 2s ease-in-out infinite;
     transition:
-      filter 1s ease-in-out,
-      transform 0.3s ease-in-out;
+        filter 1s ease-in-out,
+        transform 0.3s ease-in-out;
     will-change: filter, transform;
-  }
-  .logo-glow.error {
+}
+.logo-glow.error {
     animation: 0.5s ease-in-out;
     filter: drop-shadow(0 0 4vh var(--glow-error));
-  }
-  .logo-glow:hover {
+}
+.logo-glow:hover {
     transform: scale(1.02);
-  }
+}
 </style>

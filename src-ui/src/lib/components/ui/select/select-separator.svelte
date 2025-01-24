@@ -3,7 +3,7 @@ import { cn } from "$lib/utils.js";
 import { Select as SelectPrimitive } from "bits-ui";
 
 interface Props extends SelectPrimitive.SeparatorProps {
-	[key: string]: any;
+    [key: string]: any;
 }
 
 let { class: className = undefined, ...rest }: Props = $props();

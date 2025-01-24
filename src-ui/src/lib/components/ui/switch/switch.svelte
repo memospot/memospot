@@ -3,8 +3,8 @@ import { cn } from "$lib/utils.js";
 import { Switch as SwitchPrimitive } from "bits-ui";
 
 interface Props extends SwitchPrimitive.Props {
-	class?: string;
-	checked?: boolean;
+    class?: string;
+    checked?: boolean;
 }
 
 let { class: className = undefined, checked = $bindable(false), ...rest }: Props = $props();

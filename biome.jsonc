@@ -1,7 +1,8 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
   "formatter": {
-    "enabled": false // Code formatting is mostly handled by dprint.
+    // Code formatting is handled by dprint.
+    "enabled": false
   },
   "organizeImports": {
     "enabled": true,
@@ -35,12 +36,7 @@
   },
   "overrides": [
     {
-      "include": ["*.svelte"],
-      "formatter": {
-        "enabled": true,
-        "lineWidth": 96,
-        "indentWidth": 2
-      },
+      "include": ["**/*.svelte"],
       "linter": {
         "rules": {
           "style": {

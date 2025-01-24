@@ -4,22 +4,22 @@ import { Select as SelectPrimitive } from "bits-ui";
 import { scale } from "svelte/transition";
 
 interface Props extends SelectPrimitive.ContentProps {
-	[key: string]: any;
+    [key: string]: any;
 }
 
 let {
-	class: className = undefined,
-	sideOffset = 4,
-	inTransition = flyAndScale,
-	inTransitionConfig = undefined,
-	outTransition = scale,
-	outTransitionConfig = {
-		start: 0.95,
-		opacity: 0,
-		duration: 50,
-	},
-	children,
-	...rest
+    class: className = undefined,
+    sideOffset = 4,
+    inTransition = flyAndScale,
+    inTransitionConfig = undefined,
+    outTransition = scale,
+    outTransitionConfig = {
+        start: 0.95,
+        opacity: 0,
+        duration: 50
+    },
+    children,
+    ...rest
 }: Props = $props();
 </script>
 

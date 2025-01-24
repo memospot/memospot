@@ -28,6 +28,12 @@ pub async fn get_memos_url(memos_url: State<'_, MemosURL>) -> Result<String, Str
     Ok(memos_url.0.lock().await.clone())
 }
 
+#[command]
+pub async fn get_theme() -> Result<String, String> {
+    let config = RuntimeConfig::from_global_store();
+    Ok(config.yaml.memospot.window.theme.unwrap_or_default())
+}
+
 pub struct Language(pub Mutex<String>);
 impl Language {
     pub fn manage(language: String) -> Self {
@@ -38,20 +44,26 @@ impl Language {
 pub async fn get_language(language: State<'_, Language>) -> Result<String, String> {
     Ok(language.0.lock().await.clone())
 }
+
 #[command]
 pub async fn set_language(new: String, language: State<'_, Language>) -> Result<bool, String> {
     debug!("Setting language to {}", new);
     *language.0.lock().await = new.clone();
-    let patch = json!(
-        [
-            {
-                "op": "replace",
-                "path": "/memospot/window/language",
-                "value": new
-            }
-        ]
-    );
-    set_config(patch.to_string()).await.unwrap();
+
+    let mut config = RuntimeConfig::from_global_store();
+    config.yaml.memospot.window.language = Some(new.clone());
+    RuntimeConfig::to_global_store(&config);
+
+    info!("Configuration updated by user. Saving…");
+
+    let config_path = config.paths.memospot_config_file.clone();
+    if let Err(e) = config.yaml.save_to_file(&config_path).await {
+        error_dialog!(
+            "Failed to save configuration file:\n`{}`\n\n{}",
+            &config_path.display(),
+            e
+        );
+    }
 
     let current_language = language.0.lock().await.clone();
     debug!("Current language is now {}", current_language);

@@ -142,6 +142,7 @@ pub fn run() {
         ))
         .invoke_handler(tauri::generate_handler![
             cmd::get_memos_url,
+            cmd::get_theme,
             cmd::get_language,
             cmd::set_language,
             cmd::ping_memos,

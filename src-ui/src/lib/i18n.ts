@@ -1,6 +1,7 @@
 import * as messages from "$lib/paraglide/messages.js";
 import * as runtime from "$lib/paraglide/runtime.js";
 import { createI18n } from "@inlang/paraglide-sveltekit";
+import { getAppLanguage } from "./tauri";
 
 export type Language = (typeof runtime.availableLanguageTags)[number];
 
@@ -34,6 +35,8 @@ const fallbacks: Record<string, string> = {
 
 /**
  * Detect the most appropriate translation to use based on the user's preference and current browser language.
+ *
+ * Must be called after ParaglideJS is initialized.
  */
 export function detectLanguage(userPreferredLanguage?: string) {
     if (typeof window === "undefined") return;
@@ -56,4 +59,18 @@ export function detectLanguage(userPreferredLanguage?: string) {
             break;
         }
     }
+    return "";
+}
+
+export async function initI18n() {
+    if (typeof window === "undefined") return;
+
+    return getAppLanguage().then(
+        (language) => {
+            detectLanguage(language);
+        },
+        (_err) => {
+            return;
+        }
+    );
 }

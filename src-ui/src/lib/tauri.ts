@@ -2,14 +2,14 @@
  * Tauri Handlers.
  *
  * The Rust back-end is in `src-tauri/src/cmd`.
- *
  */
+
 import { invoke as TauriInvoke, isTauri } from "@tauri-apps/api/core";
 import { open as TauriOpen } from "@tauri-apps/plugin-shell";
 
 const browserError = new Error("Not running in Tauri!");
-const TAURI = isTauri();
-const invoke = TAURI ? TauriInvoke : async () => browserError.message;
+const TAURI = typeof window !== "undefined" && isTauri();
+const invoke = TAURI ? TauriInvoke : async () => Promise.reject(browserError.message);
 
 /**
  * Open a URL.
@@ -27,8 +27,8 @@ export async function open(url: string): Promise<void> {
  * Get Memos URL.
  */
 export async function getMemosURL(): Promise<string> {
-    if (!TAURI) return Promise.resolve("/");
-    return invoke("get_memos_url");
+    // if (!TAURI) return Promise.resolve("/");
+    return (await invoke("get_memos_url")) as string;
 }
 
 /**
@@ -37,11 +37,14 @@ export async function getMemosURL(): Promise<string> {
  * @returns true if /healthz endpoint returns "Service ready."
  */
 export async function pingMemos(memosUrl: string, timeoutMillis = 1000): Promise<boolean> {
-    if (!TAURI) return Promise.reject(browserError);
-    return (
-        (await invoke("ping_memos", { memosUrl: memosUrl, timeoutMillis: timeoutMillis })) ===
-        true
-    );
+    return (await invoke("ping_memos", {
+        memosUrl: memosUrl,
+        timeoutMillis: timeoutMillis
+    })) as boolean;
+}
+
+export async function getAppTheme(): Promise<string> {
+    return (await invoke("get_theme")) as string;
 }
 
 /**
@@ -49,8 +52,7 @@ export async function pingMemos(memosUrl: string, timeoutMillis = 1000): Promise
  * @returns the current language
  */
 export async function getAppLanguage(): Promise<string> {
-    if (!TAURI) return Promise.reject(browserError);
-    return invoke("get_language") as Promise<string>;
+    return (await invoke("get_language")) as string;
 }
 
 /**
@@ -59,26 +61,22 @@ export async function getAppLanguage(): Promise<string> {
  * @returns true if the language was set
  */
 export async function setAppLanguage(tag: string): Promise<boolean> {
-    if (!TAURI) return Promise.reject(browserError);
-    return invoke("set_language", { new: tag }) as Promise<boolean>;
+    return (await invoke("set_language", { new: tag })) as boolean;
 }
 
 /**
  * Get an environment variable.
  */
 export async function getEnv(name: string): Promise<string> {
-    if (!TAURI) return Promise.reject(browserError);
-    return invoke("get_env", { name: name }) as Promise<string>;
+    return (await invoke("get_env", { name: name })) as string;
 }
 
 export async function getAppConfig(): Promise<string> {
-    if (!TAURI) return Promise.reject(browserError);
-    return invoke("get_config") as Promise<string>;
+    return (await invoke("get_config")) as string;
 }
 
 export async function getDefaultAppConfig(): Promise<string> {
-    if (!TAURI) return Promise.reject(browserError);
-    return invoke("get_default_config") as Promise<string>;
+    return (await invoke("get_default_config")) as string;
 }
 
 /**
@@ -89,8 +87,7 @@ export async function getDefaultAppConfig(): Promise<string> {
  * @returns
  */
 export async function setAppConfig(JSONPatch: string): Promise<boolean> {
-    if (!TAURI) return Promise.reject(browserError);
-    return invoke("set_config", { patch: JSONPatch }) as Promise<boolean>;
+    return (await invoke("set_config", { patch: JSONPatch })) as boolean;
 }
 
 /**
@@ -100,6 +97,5 @@ export async function setAppConfig(JSONPatch: string): Promise<boolean> {
  * @returns boolean
  */
 export async function pathExists(path: string): Promise<boolean> {
-    if (!TAURI) return Promise.reject(browserError);
-    return invoke("path_exists", { path: path }) as Promise<boolean>;
+    return (await invoke("path_exists", { path: path })) as boolean;
 }

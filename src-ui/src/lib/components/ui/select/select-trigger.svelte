@@ -4,7 +4,7 @@ import { Select as SelectPrimitive } from "bits-ui";
 import CaretSort from "svelte-radix/CaretSort.svelte";
 
 interface Props extends SelectPrimitive.TriggerProps {
-	[key: string]: any;
+    [key: string]: any;
 }
 
 let { class: className = undefined, children, ...rest }: Props = $props();

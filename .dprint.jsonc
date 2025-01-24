@@ -23,6 +23,7 @@
   "plugins": [
     "https://plugins.dprint.dev/biome-0.7.1.wasm",
     "https://plugins.dprint.dev/exec-0.5.1.json@492414e39dea4dccc07b4af796d2f4efdb89e84bae2bd4e1e924c0cc050855bf",
+    "https://plugins.dprint.dev/g-plane/markup_fmt-v0.18.0.wasm",
     "https://plugins.dprint.dev/prettier-0.53.0.json@0d99b2a3836d0e3434826e678167524394b5e4a44b20af7278ba49c4508bd3d7",
     "https://plugins.dprint.dev/toml-0.6.4.wasm"
   ],
@@ -31,10 +32,6 @@
       {
         "command": "rustfmt --files-with-diff --config-path .rustfmt.toml",
         "exts": ["rs"]
-      },
-      {
-        "command": "bun x @biomejs/biome format --write --line-width={{line_width}} --indent-style=space --indent-size=2 --stdin-file-path={{file_path}}",
-        "exts": ["svelte"]
       }
     ]
   },
@@ -49,8 +46,14 @@
     "json.indentStyle": "space",
     "json.lineWidth": 96
   },
+  "markup": {
+    "associations": ["**/*.{html,svelte}"],
+    "indentWidth": 2,
+    "printWidth": 96,
+    "svelte.scriptIndent": false
+  },
   "prettier": {
-    "associations": ["**/*.{css,html}", "**/*.md", "**/*.{yaml,yml}"],
+    "associations": ["**/*.css", "**/*.md", "**/*.{yaml,yml}"],
     "eol": "lf",
     "printWidth": 96,
     "useTabs": false,

@@ -6,7 +6,6 @@ import type { Config } from "./types/gen/Config";
 
 /**
  * Generate a configuration patch (RFC 6902) and send it to the Tauri back-end.
- * @param config
  */
 export async function patchConfig(initial: Config, current: Config) {
     const diff = jsonpatch.compare(initial, current);

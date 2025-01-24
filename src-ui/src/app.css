@@ -122,6 +122,7 @@ bg-primary-darker: 177 74.8% 20.2%;
     * {
         @apply border-border;
     }
+
     body {
         @apply bg-background text-foreground;
     }
