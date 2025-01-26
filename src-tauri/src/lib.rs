@@ -115,7 +115,7 @@ pub fn run() {
             visible: false, // Prevent theme flashing. The frontend code calls getCurrentWebviewWindow().show() immediately after configuring the theme.
             ..Default::default()
         }
-        .restore_attribs_from(&config);
+        .restore_window_state();
     }
 
     if config.is_managed_server {
@@ -214,7 +214,7 @@ pub fn run() {
                         tauri::WindowEvent::Resized { .. }
                         | tauri::WindowEvent::Moved { .. } => {
                             if let Some(main_window) = app_handle.get_webview_window("main") {
-                                main_window.store_attribs_to(&mut config)
+                                main_window.persist_window_state();
                             }
                         }
                         _ => {}

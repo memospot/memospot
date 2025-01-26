@@ -2,33 +2,35 @@ use crate::runtime_config::RuntimeConfig;
 use tauri::WebviewWindow;
 use tauri_utils::config::WindowConfig;
 pub trait WebviewWindowExt {
-    fn store_attribs_to(&self, cfg: &mut RuntimeConfig);
+    fn persist_window_state(&self);
 }
 impl WebviewWindowExt for WebviewWindow {
-    /// Store the following Window attributes in YAML config:
+    /// Store the following Window attributes to the global store:
     ///
     /// - maximized
     /// - width
     /// - height
     /// - x
     /// - y
-    ///
-    /// This function is called whenever the window is resized or moved.
-    fn store_attribs_to(&self, cfg: &mut RuntimeConfig) {
-        let window = &mut cfg.yaml.memospot.window;
+    fn persist_window_state(&self) {
+        let mut config = RuntimeConfig::from_global_store();
+        let window = &mut config.yaml.memospot.window;
+
         window.maximized = Some(self.is_maximized().unwrap_or_default());
         window.width = Some(self.inner_size().unwrap_or_default().width);
         window.height = Some(self.outer_size().unwrap_or_default().height);
         window.x = Some(self.outer_position().unwrap_or_default().x);
         window.y = Some(self.outer_position().unwrap_or_default().y);
+
+        RuntimeConfig::to_global_store(&config);
     }
 }
 
 pub trait WindowConfigExt {
-    fn restore_attribs_from(self, cfg: &RuntimeConfig) -> WindowConfig;
+    fn restore_window_state(self) -> WindowConfig;
 }
 impl WindowConfigExt for WindowConfig {
-    /// Restore the following Window attributes from YAML config into a WindowConfig object:
+    /// Restore the following Window attributes from the global store into a WindowConfig object:
     ///
     /// - center
     /// - fullscreen
@@ -38,8 +40,10 @@ impl WindowConfigExt for WindowConfig {
     /// - height
     /// - x
     /// - y
-    fn restore_attribs_from(mut self, cfg: &RuntimeConfig) -> WindowConfig {
-        let window = &cfg.yaml.memospot.window;
+    fn restore_window_state(mut self) -> WindowConfig {
+        let config = RuntimeConfig::from_global_store();
+        let window = &config.yaml.memospot.window;
+
         self.center = window.center.unwrap_or_default();
         self.fullscreen = window.fullscreen.unwrap_or_default();
         self.maximized = window.maximized.unwrap_or_default();
