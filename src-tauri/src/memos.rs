@@ -58,6 +58,8 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
             spawn_memos()?;
             warn!("Success.");
         }
+        #[cfg(not(unix))]
+        return Err(e);
     }
 
     Ok(())
