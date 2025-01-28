@@ -32,8 +32,8 @@ use tauri::async_runtime::{block_on as block_on_task, channel, Receiver, Sender}
 type ChildStore = Arc<Mutex<HashMap<u32, Arc<SharedChild>>>>;
 
 fn commands() -> &'static ChildStore {
-    use once_cell::sync::Lazy;
-    static STORE: Lazy<ChildStore> = Lazy::new(Default::default);
+    use std::sync::LazyLock;
+    static STORE: LazyLock<ChildStore> = LazyLock::new(Default::default);
     &STORE
 }
 
