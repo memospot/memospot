@@ -133,7 +133,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
     let app_name = handle.config().product_name.clone().unwrap_or_default();
 
     #[cfg(target_os = "macos")]
-    let mac_menu = &SubmenuBuilder::new(handle, app_name)
+    let mac_menu = &SubmenuBuilder::new(handle, &app_name)
         .about(Some(AboutMetadata::default()))
         .separator()
         .text(

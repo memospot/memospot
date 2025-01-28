@@ -2817,7 +2817,6 @@ dependencies = [
  "log",
  "log4rs",
  "migration",
- "once_cell",
  "os_pipe",
  "path-clean",
  "portpicker",
