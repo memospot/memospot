@@ -94,7 +94,10 @@ export async function parseSha256Sums(source: string): Promise<Record<string, st
             sha256Sums = fs.readFileSync(source, "utf8");
         }
     } else {
-        const response = await fetch(source, { redirect: "follow", method: "GET" });
+        const response = await fetch(source, {
+            redirect: "follow",
+            method: "GET"
+        });
         sha256Sums = await response.text();
     }
 
@@ -150,7 +153,10 @@ async function downloadMemos() {
     ];
 
     // Fetch data from GitHub API.
-    const response = await fetch(repoUrl, { method: "GET", redirect: "follow" });
+    const response = await fetch(repoUrl, {
+        method: "GET",
+        redirect: "follow"
+    });
     if (!response.ok) {
         throw new Error(`Failed to fetch GitHub release: ${response.statusText}`);
     }
@@ -300,9 +306,9 @@ async function main() {
         if (!fs.existsSync(`${serverDistDir}/${bin}`)) {
             return false;
         }
+        const fstat = fs.statSync(`${serverDistDir}/${bin}`);
         return (
-            fs.statSync(`${serverDistDir}/${bin}`).ctimeMs >=
-            Date.now() - 1000 * 60 * 60 * 24 * 7 // 7 days
+            fstat.size > 1024 * 1024 && fstat.ctimeMs >= Date.now() - 1000 * 60 * 60 * 24 * 7 // 7 days
         );
     });
     if (foundRecent) {

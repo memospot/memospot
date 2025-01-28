@@ -347,7 +347,10 @@ postbuild:
 [doc('Clean project artifacts')]
 clean:
     #!{{bash}}
-    bun pm cache rm || true
+    set +e
+    for d in "./src-ui" "./build-scripts"; do
+        pushd "$d" && bun pm cache rm && popd
+    done
     cargo cache -a || true
     dirs=(
         "./.dprint"
@@ -364,6 +367,7 @@ clean:
     for item in "${dirs[@]}"; do
         test -d "$item" && rm -rf "$item"
     done
+    exit 0
 
 [group('lint')]
 [doc('Run all code linters')]

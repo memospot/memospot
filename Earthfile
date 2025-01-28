@@ -110,16 +110,6 @@ CARGOSWEEP:
     $EARTHLY_FUNCTIONS_HOME/copy-output.sh "$output";
   RUN $EARTHLY_FUNCTIONS_HOME/rename-output.sh
 
-# Create dummy build dependencies, so the lint and test does not fail.
-CREATE_DUMMYDEPS:
-  FUNCTION
-  RUN mkdir -p ./src-ui/build ./server-dist/dist
-  RUN touch ./server-dist/dist/index.html \
-            ./server-dist/memos-x86_64-unknown-linux-gnu \
-            ./server-dist/memos-x86_64-apple-darwin \
-            ./server-dist/memos-aarc64-apple-darwin \
-            ./server-dist/memos-x86_64-pc-windows-msvc.exe
-
 install:
   DO +SETUP_BASE_IMAGE
   DO +SETUP_BUN
@@ -139,7 +129,6 @@ source:
 lint:
   FROM +source
   CACHE /builder/.dprint/
-  DO +CREATE_DUMMYDEPS
   DO rust+SET_CACHE_MOUNTS_ENV
   RUN --mount=$EARTHLY_RUST_CARGO_HOME_CACHE --mount=$EARTHLY_RUST_TARGET_CACHE \
     just lint
@@ -147,7 +136,6 @@ lint:
 
 test:
   FROM +source
-  DO +CREATE_DUMMYDEPS
   DO rust+SET_CACHE_MOUNTS_ENV
   RUN --mount=$EARTHLY_RUST_CARGO_HOME_CACHE --mount=$EARTHLY_RUST_TARGET_CACHE \
     just test
