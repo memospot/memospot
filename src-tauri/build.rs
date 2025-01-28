@@ -2,6 +2,11 @@
 ///
 /// This makes the linter happy when the repository is not fully set up.
 fn ensure_dummy_deps() {
+    let src_ui = std::env::current_dir()
+        .expect("Failed to get current directory!")
+        .join("../src-ui/build");
+    std::fs::create_dir_all(&src_ui).ok();
+
     let server_dist = std::env::current_dir()
         .expect("Failed to get current directory!")
         .join("../server-dist");

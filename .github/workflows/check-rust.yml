@@ -152,7 +152,7 @@ jobs:
       - if: ${{ github.event_name == 'pull_request' }}
         name: "Install sarif-fmt and clippy-sarif"
         uses: taiki-e/install-action@638d0bf357cd5e20410163cdf70545caa82bfa5f
-        with: { tool: "clippy-sarif@0.6.6, sarif-fmt@0.6.6" }
+        with: { tool: "clippy-sarif@0.7.0, sarif-fmt@0.7.0" }
 
       # Clippy with SARIF output
       - if: ${{ github.event_name == 'pull_request' }}
@@ -171,7 +171,6 @@ jobs:
 
       - if: ${{ github.event_name != 'pull_request' }}
         name: Run clippy with standard output
-        continue-on-error: true
         run: cargo clippy --all-features --all-targets --workspace --locked
 
       - name: Run all Rust tests
