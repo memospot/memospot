@@ -1,14 +1,16 @@
 [package]
 name = "portpicker"
-version = "0.0.1"
-authors = ["Lincoln Nogueira"]
-edition = "2021"
-license = "MIT"
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+publish = { workspace = true }
+repository = "https://github.com/memospot/memospot/crates/portpicker"
 description = "Slim TCP port picker"
 
 [features]
 rand = ["dep:rand"]
 
 [dependencies.rand]
-version = "0.8.5"
+version = "0.8"
 optional = true

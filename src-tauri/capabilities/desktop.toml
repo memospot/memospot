@@ -1,0 +1,5 @@
+#:schema ../gen/schemas/desktop-schema.json
+identifier = "desktop-only-capabilities"
+description = "Updater permissions"
+platforms = ["macOS", "windows", "linux"]
+permissions = ["updater:default"]

@@ -1,0 +1,13 @@
+[package]
+name = "dialog"
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+publish = { workspace = true }
+repository = "https://github.com/memospot/memospot/crates/dialog"
+description = "Memospot platform-agnostic dialog utilities"
+
+[dependencies]
+log = "0.4"
+native-dialog = "0.7"

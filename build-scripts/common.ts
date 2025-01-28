@@ -11,28 +11,28 @@ import * as Bun from "bun";
  */
 export function runSync(command: string, args: string[], cwd?: string) {
     const fullCommand = [command, ...args].join(" ");
-
+    let cmd: Bun.SyncSubprocess<"pipe", "pipe">;
     try {
         console.debug("Running command: ", fullCommand, " via Bun");
-        const cmd = Bun.spawnSync([command, ...args], {
+        cmd = Bun.spawnSync([command, ...args], {
             stdout: "pipe",
             stderr: "pipe",
             cwd: cwd
         });
-        const output = new TextDecoder().decode(cmd.stdout);
-        const error = new TextDecoder().decode(cmd.stderr);
-        if (!cmd.success || cmd.exitCode !== 0 || error !== "") {
-            throw new Error(`Command exited with code ${cmd.exitCode}.\n${error}`);
-        }
-        return {
-            success: cmd.success,
-            code: cmd.exitCode,
-            stdout: output,
-            stderr: error
-        };
     } catch (error) {
         throw new Error(`ERROR: Failed to execute \`${fullCommand}\`: ${error}`);
     }
+    const output = new TextDecoder().decode(cmd.stdout);
+    const error = new TextDecoder().decode(cmd.stderr);
+    if (!cmd.success || cmd.exitCode !== 0 || error !== "") {
+        throw new Error(`Command exited with code ${cmd.exitCode}.\n${error}`);
+    }
+    return {
+        success: cmd.success,
+        code: cmd.exitCode,
+        stdout: output,
+        stderr: error
+    };
 }
 
 /**

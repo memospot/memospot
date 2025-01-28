@@ -2,13 +2,24 @@
 .dprint
 .sccache
 build/
-dist-ui/
 server-dist/
 icon.icns
 .env
-
+.secret
+**/.flatpak-builder
 *.db
 *.gz
+src-tauri/bindings/
+
+### SvelteKit ###
+**/build
+**/.svelte-kit
+**/package
+vite.config.ts.timestamp-*
+
+# Paraglide i18n
+**/project.inlang/cache
+**/lib/paraglide
 
 # Task
 .task
@@ -78,6 +89,9 @@ Sessionx.vim
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+
+### Zed
+.zed
 
 # Ignore all local history of files
 .history

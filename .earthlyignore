@@ -1,0 +1,8 @@
+.dprint/
+.flatpak-builder/
+.vite
+**/target/**
+build/
+node_modules
+.env
+.secret

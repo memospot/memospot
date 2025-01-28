@@ -1,0 +1,84 @@
+name: Check (TypeScript)
+
+on:
+  merge_group:
+  pull_request:
+    paths:
+      - "**/*.{cts,mts,ts,tsx}"
+      - "**/bun.lock"
+      - "**/check-typescript.yml"
+      - "**/package.json"
+  push:
+    paths:
+      - "**/*.{cts,mts,ts,tsx}"
+      - "**/bun.lock"
+      - "**/check-typescript.yml"
+      - "**/package.json"
+  workflow_dispatch:
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  biome:
+    name: TypeScript lint
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Biome
+        uses: biomejs/setup-biome@1cbe33ead22c7a2fded3b52fa2893611c815c9b5
+        with: { version: latest }
+
+      - name: Lint code with Biome
+        run: biome ci . || biome ci .
+
+  test:
+    name: TypeScript tests
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - runner: ubuntu-latest
+          - runner: macos-13
+          - runner: windows-latest
+
+    runs-on: ${{ matrix.platform.runner }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+
+      - # node_modules is not cached on Windows as it breaks subsequent runs
+        if: ${{ runner.os != 'Windows' }}
+        name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          key: node_modules-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
+          restore-keys: node_modules-${{ runner.os }}
+          path: ${{github.workspace}}/node_modules
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          key: bundeps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
+          restore-keys: bundeps-${{ runner.os }}
+          path: ~/.bun
+
+      - name: Install dependencies with Bun
+        shell: bash
+        run: |
+          pushd ./build-scripts; bun install; popd
+          pushd ./src-ui; bun install; popd
+
+      - name: Run Bun tests
+        shell: bash
+        run: |
+          pushd ./build-scripts; bun test; popd
+          pushd ./src-ui; bun test; popd

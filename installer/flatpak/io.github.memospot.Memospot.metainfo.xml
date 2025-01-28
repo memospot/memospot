@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+    <id>io.github.memospot.Memospot</id>
+    <name>Memospot</name>
+    <developer id="io.github.memospot">
+        <name>Lincoln Nogueira</name>
+    </developer>
+    <summary>Your notes, your way. Capture your thoughts in a markdown-based note-taking solution</summary>
+    <summary xml:lang="pt-BR">Suas notas, do seu jeito. Capture seus pensamentos em uma solução de anotações baseada em markdown</summary>
+    <metadata_license>MIT</metadata_license>
+    <project_license>MIT</project_license>
+    <url type="homepage">https://memospot.github.io/overview.html</url>
+    <url type="bugtracker">https://github.com/memospot/memospot/issues</url>
+    <url type="vcs-browser">https://github.com/memospot/memospot</url>
+    <supports>
+        <internet>offline-only</internet>
+        <control>pointing</control>
+        <control>keyboard</control>
+    </supports>
+    <recommends>
+        <display_length compare="ge">1360</display_length>
+    </recommends>
+    <content_rating type="oars-1.1"/><!-- https://www.freedesktop.org/software/appstream/docs/chap-Metadata.html#tag-description -->
+    <description>
+        <p>Full-featured desktop version of Memos - a privacy-first, lightweight note-taking solution.</p>
+        <p xml:lang="pt-BR">Versão desktop do Memos - um serviço de anotações leve e privado.</p>
+        <p>
+            Use Memos locally without the Docker overhead or easily test it before deploying a container. Data can be seamlessly moved between instances.
+        </p>
+        <p xml:lang="pt-BR">
+            Use o Memos localmente sem o Docker ou teste-o facilmente antes de implantar um container. Os dados podem ser movidos de forma transparente entre instâncias.
+        </p>
+        <p>Key features:</p>
+        <p xml:lang="pt-BR">Características:</p>
+        <ul>
+            <li>Easy-to-use</li>
+            <li xml:lang="pt-BR">Fácil de usar</li>
+            <li>Lightweight</li>
+            <li xml:lang="pt-BR">Leve</li>
+            <li>Built-in server</li>
+            <li xml:lang="pt-BR">Servidor integrado</li>
+            <li>Optional client-only mode</li>
+            <li xml:lang="pt-BR">Modo opcional apenas-cliente</li>
+            <li>Full-featured Memos experience</li>
+            <li xml:lang="pt-BR">Experiência completa do Memos</li>
+            <li>Portable data</li>
+            <li xml:lang="pt-BR">Dados portáteis</li>
+            <li>Enhanced privacy</li>
+            <li xml:lang="pt-BR">Privacidade aprimorada</li>
+        </ul>
+        <p>Extra information:</p>
+        <p xml:lang="pt-BR">Informações extras:</p>
+        <p>For advanced configuration and troubleshooting, see the related links.</p>
+        <p xml:lang="pt-BR">Para configurações avançadas e solução de problemas, veja os links relacionados.</p>
+        <p>Supporting:</p>
+        <p xml:lang="pt-BR">Suporte:</p>
+        <p>If you appreciate this project, be sure to ⭐star it on GitHub.</p>
+        <p xml:lang="pt-BR">Se você gostou deste projeto, certifique-se de ⭐estrelar no GitHub.</p>
+    </description>
+    <categories>
+        <category>Office</category>
+        <category>Education</category>
+    </categories>
+    <keywords>
+        <keyword translate="no">Memos</keyword>
+        <keyword translate="no">memo</keyword>
+        <keyword translate="no">markdown</keyword>
+        <keyword translate="no">mermaid</keyword>
+        <keyword>notes</keyword>
+        <keyword xml:lang="pt-BR">anotações</keyword>
+        <keyword>self-hosted</keyword>
+        <keyword xml:lang="pt-BR">auto-hospedado</keyword>
+        <keyword>microblog</keyword>
+        <keyword translate="no">golang</keyword>
+        <keyword translate="no">react</keyword>
+        <keyword translate="no">tauri</keyword>
+        <keyword translate="no">rust</keyword>
+    </keywords>
+    <launchable type="desktop-id">io.github.memospot.Memospot.desktop</launchable>
+    <screenshots>
+        <screenshot type="default">
+            <image>https://raw.githubusercontent.com/memospot/memospot/main/assets/gnome_dark.webp</image>
+            <caption>Dark theme</caption>
+        </screenshot>
+        <screenshot>
+            <image>https://raw.githubusercontent.com/memospot/memospot/main/assets/gnome_light.webp</image>
+            <caption>Light theme</caption>
+        </screenshot>
+    </screenshots>
+    <releases>
+        <release version="0.1.8" date="2024-10-31">
+            <description></description>
+        </release>
+    </releases>
+</component>

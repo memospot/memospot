@@ -1,0 +1,47 @@
+id: io.github.memospot.Memospot
+
+runtime: org.gnome.Platform
+runtime-version: "46"
+sdk: org.gnome.Sdk
+
+command: memospot
+
+finish-args:
+  - --device=dri # HW acceleration.
+  - --share=ipc
+  - --share=network # Needed to spawn the server.
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --talk-name=org.gtk.vfs.*
+  - --filesystem=xdg-run/gvfs
+  - --filesystem=xdg-run/gvfsd
+  - --filesystem=xdg-download
+  - --persist=.memospot
+
+modules:
+  - name: memospot
+    buildsystem: simple
+    sources:
+      - type: file
+        path: ../../build/Memospot_0.1.8_amd64.deb
+        only-arches: [x86_64]
+      - type: file
+        path: io.github.memospot.Memospot.metainfo.xml
+    build-commands:
+      - |
+        export FLATPAK_ID="${FLATPAK_ID:-io.github.memospot.Memospot}"
+        ar -x *.deb
+        tar -xf data.tar.gz
+
+        sed -i "s/Icon=memospot/Icon=${FLATPAK_ID}/" usr/share/applications/Memospot.desktop
+
+        install -Dm755 usr/bin/memospot /app/bin/memospot
+        install -Dm755 usr/bin/memos /app/bin/memos
+        install -Dm644 usr/share/applications/Memospot.desktop /app/share/applications/${FLATPAK_ID}.desktop
+
+        for size in 32x32 128x128 256x256@2; do
+          install -Dm 644 usr/share/icons/hicolor/${size}/apps/memospot.png \
+            /app/share/icons/hicolor/${size}/apps/${FLATPAK_ID}.png
+        done
+
+        install -Dm644 ${FLATPAK_ID}.metainfo.xml /app/share/metainfo/${FLATPAK_ID}.metainfo.xml

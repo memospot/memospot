@@ -1,253 +1,273 @@
-use home::home_dir;
-use log::{error, info, warn};
-use native_dialog::{MessageDialog, MessageType};
-use path_clean::PathClean;
+mod cmd;
+mod init;
+mod localize;
+mod memos;
+mod menu;
+mod process;
+mod runtime_config;
+mod sqlite;
+mod utils;
+mod webview;
+mod window;
+mod zip;
+
+use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
+use dialog::*;
+use log::{debug, info, warn};
 use std::env;
-use std::io::Result;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+use tauri::Manager;
+use tauri_utils::config::WindowConfig;
+use window::{WebviewWindowExt, WindowConfigExt};
 
-#[macro_export]
-macro_rules! panic_dialog {
-    ($($arg:tt)*) => {
-        panic_dialog(&format!($($arg)*));
-        panic!("Fatal error: {}", &format!($($arg)*));
+#[warn(unused_extern_crates)]
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    localize::localize();
+
+    init::ensure_webview();
+
+    let memospot_data = init::data_path("memospot");
+    let config_path = memospot_data.join("memospot.yaml");
+    let yaml_config = init::config(&config_path);
+
+    let mut config = RuntimeConfig {
+        paths: RuntimeConfigPaths {
+            memos_bin: PathBuf::new(),
+            memos_data: PathBuf::new(),
+            memos_db_file: PathBuf::new(),
+            memospot_bin: PathBuf::new(),
+            memospot_config_file: config_path.clone(),
+            memospot_cwd: PathBuf::new(),
+            memospot_data: memospot_data.clone(),
+        },
+        is_managed_server: true,
+        memos_url: String::new(),
+        user_agent: String::new(),
+        yaml: yaml_config.clone(),
+        __yaml__: yaml_config,
     };
-}
+    init::setup_logger(&config);
 
-#[macro_export]
-macro_rules! info_dialog {
-    ($($arg:tt)*) => {
-        info_dialog(&format!($($arg)*));
-    };
-}
-
-#[macro_export]
-macro_rules! warn_dialog {
-    ($($arg:tt)*) => {
-        warn_dialog(&format!($($arg)*));
-    };
-}
-
-#[macro_export]
-macro_rules! error_dialog {
-    ($($arg:tt)*) => {
-        error_dialog(&format!($($arg)*));
-    };
-}
-
-pub fn panic_dialog(msg: &str) {
-    const FATAL_ERROR: &str = "Fatal error";
-    MessageDialog::new()
-        .set_type(MessageType::Error)
-        .set_title(FATAL_ERROR)
-        .set_text(msg)
-        .show_alert()
-        .unwrap_or_default();
-    error!("{}: {}", FATAL_ERROR, msg);
-    panic!("{}: {}", FATAL_ERROR, msg);
-}
-
-pub fn info_dialog(msg: &str) {
-    info!("{}", msg);
-    MessageDialog::new()
-        .set_type(MessageType::Info)
-        .set_title("Info")
-        .set_text(msg)
-        .show_alert()
-        .unwrap_or_default();
-}
-
-pub fn warn_dialog(msg: &str) {
-    warn!("{}", msg);
-    MessageDialog::new()
-        .set_type(MessageType::Warning)
-        .set_title("Warning")
-        .set_text(msg)
-        .show_alert()
-        .unwrap_or_default();
-}
-
-pub fn error_dialog(msg: &str) {
-    error!("{}", msg);
-    MessageDialog::new()
-        .set_type(MessageType::Error)
-        .set_title("Error")
-        .set_text(msg)
-        .show_alert()
-        .unwrap_or_default();
-}
-
-pub fn confirm_dialog(title: &str, msg: &str, icon: MessageType) -> bool {
-    MessageDialog::new()
-        .set_type(icon)
-        .set_title(title)
-        .set_text(msg)
-        .show_confirm()
-        .unwrap_or_default()
-}
-
-/// Get the data path to supplied application name.
-///
-/// Probe paths:
-///   - ~/.config/{app_name}
-///   - ~/.{app_name}
-///
-/// Default path:
-///   - Windows: `%LOCALAPPDATA%\{app_name}`
-///   - POSIX-compliant systems: `~/.{app_name}`.
-///
-/// Fallback:
-///   - `%APPDATA%\..\Local\{app_name}` (Windows)
-///   - `~/.{app_name}`
-///
-/// Home directory is determined by the [`home`](https://docs.rs/home) crate.
-pub fn get_app_data_path(app_name: &str) -> PathBuf {
-    let home = home_dir().unwrap_or_default();
-    let fallback = home.join(format!(".{}", app_name));
-    let xdg_config_path = env::var("XDG_CONFIG_HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| home.join(".config"))
-        .join(app_name);
-
-    if xdg_config_path.exists() {
-        return xdg_config_path;
+    #[cfg(debug_assertions)]
+    {
+        // Use Memos in demo mode during development,
+        // as it's already seeded with some data.
+        config.yaml.memos.mode = Some("demo".to_string());
+        // Use an upper port to use a dedicated WebView cache for development.
+        config.yaml.memos.port = Some(config.yaml.memos.port.unwrap_or_default() + 1);
     }
-    if fallback.exists() {
-        return fallback;
+
+    config.yaml.memos.port = Some(init::memos_port(&config));
+    config.paths.memos_data = init::memos_data(&config);
+    config.paths.memos_db_file = init::database(&config);
+    config.memos_url = init::memos_url(&config);
+
+    info!(
+        "Memos data directory: {}",
+        config.paths.memos_data.to_string_lossy()
+    );
+    info!("Memos URL: {}", config.memos_url);
+
+    config.is_managed_server = config.memos_url.starts_with(&format!(
+        "http://localhost:{}",
+        config.yaml.memos.port.unwrap_or_default()
+    ));
+
+    info!("Starting Memospot.");
+    info!(
+        "Memospot data path: {}",
+        config.paths.memospot_data.to_string_lossy()
+    );
+
+    config.paths.memospot_bin = env::current_exe().unwrap();
+    config.paths.memospot_cwd = config.paths.memospot_bin.parent().unwrap().to_path_buf();
+    config.paths.memos_bin = init::find_memos(&config);
+
+    config.to_global_store();
+
+    #[cfg(target_os = "linux")]
+    init::hw_acceleration();
+    init::set_env_vars(&config);
+
+    {
+        let url = config.memos_url.clone();
+        tauri::async_runtime::spawn(async move {
+            memos::wait_api_ready(&url, 100, 15000).await;
+        });
     }
-    if cfg!(windows) {
-        if let Ok(path) = env::var("LOCALAPPDATA").or_else(|_| env::var("APPDATA")) {
-            let path = PathBuf::from(path);
-            return if path.ends_with("Local") {
-                path.join(app_name)
-            } else {
-                path.parent().unwrap_or(&path).join("Local").join(app_name)
-            };
+
+    let mut tauri_ctx = tauri::generate_context!();
+
+    let app_version = tauri_ctx.package_info().version.to_string();
+    let custom_user_agent = config.yaml.memospot.remote.user_agent.as_deref();
+    config.user_agent = custom_user_agent
+        .filter(|x| !x.is_empty() && config.yaml.memospot.remote.enabled.unwrap_or(false))
+        .map(|x| x.to_string())
+        .unwrap_or_else(|| {
+            format!("Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Memospot/{}", &app_version)
+        });
+
+    let window_config = &mut tauri_ctx.config_mut().app.windows;
+    if !window_config.is_empty() {
+        window_config[0] = WindowConfig {
+            title: "Memospot".into(),
+            url: tauri::WebviewUrl::App("/loader".into()),
+            user_agent: Some(config.user_agent.clone()),
+            drag_drop_enabled: false, // Stop Tauri from handling drag-and-drop events and pass them to the webview.
+            visible: false, // Prevent theme flashing. The frontend code calls getCurrentWebviewWindow().show() immediately after configuring the theme.
+            ..Default::default()
         }
+        .restore_window_state();
     }
 
-    fallback
-}
-
-/// Get the absolute path to supplied path.
-pub fn absolute_path(path: impl AsRef<Path>) -> Result<PathBuf> {
-    let path = path.as_ref();
-
-    let absolute_path = if path.is_absolute() {
-        path.to_path_buf()
-    } else {
-        env::current_dir()?.join(path)
-    }
-    .clean();
-
-    Ok(absolute_path)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn remove_env_vars() {
-        // SAFETY: This is a test function, and removing a process environment
-        // variable is generally safe. The unsafe block is required due to the
-        // potential for race conditions in a multithreaded context.
-        unsafe {
-            env::remove_var("APPDATA");
-            env::remove_var("HOME");
-            env::remove_var("LOCALAPPDATA");
-            env::remove_var("XDG_CONFIG_HOME");
-        }
+    if config.is_managed_server {
+        let config_ = config.clone();
+        tauri::async_runtime::spawn(async move {
+            init::migrate_database(&config_).await;
+            memos::spawn(&config_).unwrap_or_else(|e| {
+                panic_dialog!("Failed to spawn Memos server:\n{}", e);
+            });
+        });
     }
 
-    fn ensure_env_vars() {
-        let home = std::env::var("HOME").unwrap_or_default();
-        let app_data = std::env::var("APPDATA").unwrap_or_default();
-        let local_app_data = std::env::var("LOCALAPPDATA").unwrap_or_default();
-
-        // SAFETY: This is a test function, and setting a process environment
-        // variable is generally safe. The unsafe block is required due to the
-        // potential for race conditions in a multithreaded context.
-        unsafe {
-            if home.is_empty() {
-                env::set_var(
-                    "HOME",
-                    if cfg!(windows) {
-                        r"C:\Users\foo"
-                    } else {
-                        r"/home/foo"
-                    },
-                );
+    let config_ = config.clone();
+    let Ok(tauri_app) = tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_http::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(cmd::MemosURL::manage(config_.memos_url.clone()))
+        .manage(cmd::Language::manage(
+            config_.yaml.memospot.window.language.unwrap_or_default(),
+        ))
+        .invoke_handler(tauri::generate_handler![
+            cmd::get_memos_url,
+            cmd::get_theme,
+            cmd::get_language,
+            cmd::set_language,
+            cmd::ping_memos,
+            cmd::get_env,
+            cmd::get_config,
+            cmd::get_default_config,
+            cmd::set_config,
+            cmd::path_exists
+        ])
+        .setup(move |app| {
+            let handle = app.handle();
+            if let Some(main_window) = app.get_webview_window("main") {
+                main_window.set_menu(menu::build(handle)?).ok();
+                menu::update_with_memos_version(handle);
             }
-            if app_data.is_empty() {
-                env::set_var("APPDATA", r"C:\Users\foo\AppData\Roaming");
+
+            if config_.yaml.memospot.updater.enabled.is_some_and(|e| !e) {
+                warn!("Disabling updater plugin by user config.");
+                handle.remove_plugin("tauri-plugin-updater");
             }
-            if local_app_data.is_empty() {
-                env::set_var("LOCALAPPDATA", r"C:\Users\foo\AppData\Local");
+            if env::var("FLATPAK_ID").is_ok_and(|id| !id.is_empty()) {
+                debug!("Running in Flatpak. Disabling updater plugin.");
+                handle.remove_plugin("tauri-plugin-updater");
             }
+
+            info!(
+                "webview url: {}",
+                &app.get_webview_window("main").unwrap().url().unwrap()
+            );
+
+            if config_.is_managed_server {
+                return Ok(());
+            }
+
+            info!(
+                "Using custom Memos address: {}. Memos server will not be started.",
+                config_.memos_url
+            );
+            let title_url = config_
+                .memos_url
+                .trim_start_matches("http://")
+                .trim_start_matches("https://")
+                .trim_end_matches("/");
+            if let Some(main_window) = app.get_webview_window("main") {
+                main_window
+                    .set_title(&format!("Memospot - {}", title_url))
+                    .unwrap_or_default();
+            }
+
+            Ok(())
+        })
+        .build(tauri_ctx)
+    else {
+        panic_dialog!("Failed to build Tauri application!");
+    };
+
+    tauri_app.run(move |app_handle, run_event| {
+        match run_event {
+            tauri::RunEvent::MenuEvent(menu_event) => {
+                menu::handle_event(app_handle, menu_event);
+            }
+            tauri::RunEvent::WindowEvent {
+                label,
+                event: window_event,
+                ..
+            } => {
+                if label == "main" {
+                    match window_event {
+                        tauri::WindowEvent::Resized { .. }
+                        | tauri::WindowEvent::Moved { .. } => {
+                            if let Some(main_window) = app_handle.get_webview_window("main") {
+                                main_window.persist_window_state();
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            tauri::RunEvent::ExitRequested { api, .. } => {
+                debug!("Exit requested.");
+                api.prevent_exit();
+
+                #[cfg(not(debug_assertions))]
+                let final_config = RuntimeConfig::from_global_store();
+
+                #[cfg(debug_assertions)]
+                let mut final_config = RuntimeConfig::from_global_store();
+
+                #[cfg(debug_assertions)]
+                {
+                    // Restore previous mode and port.
+                    final_config.yaml.memos.mode = final_config.__yaml__.memos.mode.clone();
+                    final_config.yaml.memos.port = final_config.__yaml__.memos.port;
+                }
+
+                // if config.yaml != config.__yaml__ {
+                if final_config.yaml != final_config.__yaml__ {
+                    info!("Configuration has changed. Saving…");
+                    tauri::async_runtime::block_on(async {
+                        if let Err(e) = final_config.yaml.save_to_file(&config_path).await {
+                            error_dialog!(
+                                "Failed to save config file:\n`{}`\n\n{}",
+                                &config_path.display(),
+                                e
+                            );
+                        }
+                    })
+                }
+
+                debug!("Shutting down Memos server…");
+                process::kill_children();
+                {
+                    let db_file = final_config.paths.memos_db_file.clone();
+                    tauri::async_runtime::block_on(async move {
+                        sqlite::wait_checkpoint(&db_file, 100, 15000).await;
+                    });
+                }
+                info!("Memospot closed.");
+                app_handle.cleanup_before_exit();
+                std::process::exit(0);
+            }
+            _ => {}
         }
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn test_get_data_path_windows() {
-        remove_env_vars();
-
-        // Test fallback to USERPROFILE (via home crate).
-        assert!(get_app_data_path("memospot")
-            .to_string_lossy()
-            .ends_with("memospot"));
-
-        // Test fallback via APPDATA (ancient Windows versions).
-        env::set_var("APPDATA", r"C:\Users\foo\AppData\Roaming");
-        assert_eq!(
-            get_app_data_path("memospot"),
-            PathBuf::from(r"C:\Users\foo\AppData\Local\memospot")
-        );
-
-        // Test a standard system with LOCALAPPDATA set.
-        env::set_var("LOCALAPPDATA", r"C:\Users\foo\AppData\Local");
-        assert_eq!(
-            get_app_data_path("memospot"),
-            PathBuf::from(r"C:\Users\foo\AppData\Local\memospot")
-        );
-    }
-
-    #[test]
-    fn test_get_data_path() {
-        ensure_env_vars();
-        let data_path = get_app_data_path("memospot");
-        assert!(data_path.has_root());
-        assert!(data_path.is_absolute());
-        assert!(data_path.to_string_lossy().ends_with("memospot"));
-    }
-
-    #[test]
-    fn test_xdg_config_home() -> Result<()> {
-        remove_env_vars();
-        let tmp_dir = tempfile::tempdir()?;
-        let xdg_config_home = tmp_dir.path().join(".config");
-        unsafe {
-            env::set_var("XDG_CONFIG_HOME", &xdg_config_home);
-        }
-        assert_eq!(
-            env::var("XDG_CONFIG_HOME").unwrap(),
-            xdg_config_home.clone().to_string_lossy()
-        );
-
-        // Test fallback to HOME/.memospot.
-        assert!(get_app_data_path("memospot")
-            .to_string_lossy()
-            .ends_with("memospot"));
-
-        // Create XDG_CONFIG_HOME/memospot.
-        std::fs::create_dir_all(xdg_config_home.join("memospot"))?;
-        assert!(get_app_data_path("memospot")
-            .to_string_lossy()
-            .ends_with(if cfg!(windows) {
-                r".config\memospot"
-            } else {
-                ".config/memospot"
-            }));
-        Ok(())
-    }
+    });
 }

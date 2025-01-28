@@ -18,11 +18,12 @@
     "editor.defaultFormatter": "dprint.dprint"
   },
   "[markdown]": {
-    "editor.defaultFormatter": "dprint.dprint",
-    "editor.formatOnSave": true,
-    "editor.formatOnPaste": true
+    "editor.defaultFormatter": "dprint.dprint"
   },
   "[rust]": {
+    "editor.defaultFormatter": "dprint.dprint"
+  },
+  "[svelte]": {
     "editor.defaultFormatter": "dprint.dprint"
   },
   "[toml]": {
@@ -42,10 +43,12 @@
     "**/*.{toml,json,jsonc,yml,yaml,md}|.dprint.jsonc": " dprint check"
   },
   "code-runner.ignoreSelection": true,
-
+  "color-highlight.matchHslWithNoFunction": true,
+  "color-highlight.languages": ["css", "svelte", "tailwindcss"],
   "editor.codeActionsOnSave": {
     "source.organizeImports.biome": "explicit"
   },
+  "editor.defaultFormatter": "dprint.dprint",
   "editor.formatOnSave": true,
   "editor.wordBasedSuggestions": "off",
   "editor.quickSuggestionsDelay": 200,
@@ -71,21 +74,15 @@
     "MD033": false
   },
   "prettier.enable": false,
-  "rust-analyzer.cargo.extraEnv": {
-    "RUST_BACKTRACE": "full"
-  },
-  "rust-analyzer.check.command": "clippy",
   "rust-analyzer.checkOnSave": true,
-  "rust-analyzer.server.extraEnv": {
-    "RUSTUP_TOOLCHAIN": "stable"
-  },
-  "rust-analyzer.cargo.buildScripts.useRustcWrapper": true,
   "rust-analyzer.check.allTargets": false,
+  "rust-analyzer.check.command": "clippy",
   "search.exclude": {
     "**/.dprint/**": true,
-    "**/.sccache/**": true,
-    "**/dist-ui/**": true,
+    "**/.flatpak-builder/**": true,
+    "**/build/**": true,
     "**/node_modules/**": true,
     "**/target/**": true
-  }
+  },
+  "svelte.enable-ts-plugin": true
 }

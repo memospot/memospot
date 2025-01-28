@@ -2,9 +2,10 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use ts_rs::TS;
 
 /// Memos configuration.
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(TS, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Memos {
     /// Memos binary path.
     pub binary_path: Option<String>,
@@ -35,4 +36,17 @@ pub struct Memos {
     pub env: Option<HashMap<String, String>>,
     // Memos server log settings.
     // pub log: Log,
+}
+impl Default for Memos {
+    fn default() -> Self {
+        Self {
+            binary_path: None,
+            working_dir: None,
+            data: None,
+            mode: Some("prod".to_string()),
+            addr: Some("127.0.0.1".to_string()),
+            port: Some(0),
+            env: None,
+        }
+    }
 }

@@ -1,59 +1,73 @@
-name: Check formatting with dprint
+name: Check (formatting)
 
 on:
+  merge_group:
   pull_request:
-    branches: "*"
     paths-ignore:
       - "**/.idea/*"
+      - "**/gen/schemas/*.json"
       - "**/*.{icns,ico,png,svg,webp}"
-      - "**/*.{nsi,wxs}"
-      - "**/*.dll"
-      - "**/*.xml"
-      - "**/bun.lockb"
-
+      - "**/*.{dll,nsi,nsh,wxs,xml}"
+      - "**/*.{lock,lock}"
+      - "**/justfile"
   push:
-    branches: "*"
     paths-ignore:
       - "**/.idea/*"
+      - "**/gen/schemas/*.json"
       - "**/*.{icns,ico,png,svg,webp}"
-      - "**/*.{nsi,wxs}"
-      - "**/*.dll"
-      - "**/*.xml"
-      - "**/bun.lockb"
-
+      - "**/*.{dll,nsi,nsh,wxs,xml}"
+      - "**/*.{lock,lock}"
+      - "**/justfile"
   workflow_dispatch:
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
 
 env:
   DPRINT_CACHE_DIR: ${{github.workspace}}/.dprint
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  RUST_TOOLCHAIN: stable
 
 jobs:
   dprint:
     name: Check formatting with dprint
     runs-on: ubuntu-latest
     steps:
+      - name: Ensure LF line endings
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+
       - name: Checkout
-        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938
+        uses: actions/checkout@v4
 
       - name: Setup rustfmt
-        uses: dtolnay/rust-toolchain@7b1c307e0dcbda6122208f10795a713336a9b35a
-        with: { toolchain: stable, components: rustfmt }
+        uses: dtolnay/rust-toolchain@21dc36fb71dd22e3317045c0c31a3f4249868b17
+        with: { toolchain: "${{ env.RUST_TOOLCHAIN }}", components: rustfmt }
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          key: bundeps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
+          restore-keys: bundeps-${{ runner.os }}
+          path: ~/.bun
 
       - name: Install dprint
         uses: jaxxstorm/action-install-gh-release@71d17cb091aa850acb2a1a4cf87258d183eb941b
         with:
           repo: dprint/dprint
-          tag: 0.47.2
+          tag: 0.48.0
           cache: enable
 
       - name: Cache dprint plugins
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+        uses: actions/cache@v4
         with:
           path: ${{ env.DPRINT_CACHE_DIR }}
-          key: cache-dprint-${{ hashFiles('**/.dprint.jsonc','.dprint/plugin-cache-manifest.json') }}
-          restore-keys: cache-dprint
+          key: cache-dprint-plugins-${{ hashFiles('**/.dprint.jsonc','.dprint/plugin-cache-manifest.json') }}
+          restore-keys: cache-dprint-plugins
 
       - run: dprint check

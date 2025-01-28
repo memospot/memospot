@@ -1,0 +1,31 @@
+name: Audit (RustSec)
+
+on:
+  merge_group:
+  pull_request:
+    paths:
+      - "**/audit-rust.yml"
+      - "**/Cargo.{lock,toml}"
+  push:
+    paths:
+      - "**/audit-rust.yml"
+      - "**/Cargo.{lock,toml}"
+  schedule: [{ cron: "0 0 * * *" }]
+  workflow_dispatch:
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  audit-rust:
+    name: Audit with RustSec
+    runs-on: ubuntu-latest
+    permissions: { issues: write, checks: write }
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Rust audit
+        uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998
+        with: { token: "${{ secrets.GITHUB_TOKEN }}" }

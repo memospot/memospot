@@ -3,124 +3,76 @@
 
 [package]
 name = "memospot"
-version = "0.1.7"
-authors = ["Lincoln Nogueira"]
-edition = "2021"
-license = "MIT"
-repository = "https://github.com/memospot/memospot"
-description = "Memospot is a desktop version of Memos, a beautiful, privacy-first, lightweight note-taking service."
+version = "2.0.0" # can't be inherited from workspace; i18n-embed-fl requires a fixed version
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+publish = { workspace = true }
+repository = { workspace = true }
+description = { workspace = true }
 
-[build-dependencies.tauri-build]
-features = ["config-toml"]
-version = "1.5"
+[lib]
+name = "memospot_lib"
+crate-type = ["staticlib", "cdylib", "lib"]
 
-[dependencies.config]
-path = "../crates/config"
-version = "0.0.2"
+[build-dependencies]
+tauri-build = { features = ["config-toml"], version = "2.0" }
+
+[target.'cfg(not(local_crates))'.dependencies]
+config = { path = "../crates/config" }
+dialog = { path = "../crates/dialog" }
+homedir = { path = "../crates/homedir" }
+migration = { path = "../crates/migration" }
+portpicker = { path = "../crates/portpicker" }
+writable = { path = "../crates/writable" }
 
 [dependencies]
-home = "0.5.9"
+anyhow = { workspace = true }
+async_zip = { version = "0.0.17", features = ["zstd", "tokio-fs"] }
+chrono = { version = "0.4", default-features = false }
+encoding_rs = "0.8"
+home = "0.5"
+json-patch = "3.0.1"
+log = "0.4"
+log4rs = { version = "1.3", features = ["background_rotation", "config_parsing", "gzip", "yaml_format"] }
+os_pipe = "1"
+path-clean = "1.0"
+sea-orm = { version = "1.1.3", default-features = false, features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
+semver = "1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+shared_child = "1.0"
+strum_macros = "0.26.4"
+tempfile = "3.14"
+tokio = "1.42"
+ts-rs = "10.1"
+url = { version = "2", features = ["serde"] }
 
-[dependencies.homedir]
-path = "../crates/homedir"
-version = "0.1.1"
+[target.'cfg(not(i18n_group))'.dependencies]
+i18n-embed = { version = "0.14", features = ["fluent-system", "desktop-requester"] }
+i18n-embed-fl = "0.7"
+rust-embed = "8"
 
-[dependencies.migration]
-path = "../crates/migration"
-version = "0.1.3"
+[target.'cfg(not(tauri_group))'.dependencies]
+tauri = { version = "^2.1", features = ["config-toml"] }
+tauri-plugin-fs = "^2"
+tauri-plugin-http = { version = "^2", features = ["gzip"] }
+tauri-plugin-opener = "^2"
+tauri-plugin-process = "^2"
+tauri-plugin-shell = "^2"
+tauri-utils = "^2"
 
-[dependencies.portpicker]
-path = "../crates/portpicker"
-version = "0.0.1"
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = "^2"
 
-[dependencies.writable]
-path = "../crates/writable"
-version = "0.0.1"
-
-[dependencies.anyhow]
-version = "1.0.81"
-
-[dependencies.async_zip]
-version = "0.0.17"
-features = ["zstd", "tokio-fs"]
-
-[dependencies.chrono]
-version = "0.4.35"
-default-features = false
-
-[dependencies.itertools]
-version = "0.13.0"
-
-[dependencies.log]
-version = "0.4.21"
-
-[dependencies.log4rs]
-features = ["background_rotation", "config_parsing", "gzip", "yaml_format"]
-version = "1.3.0"
-
-[dependencies.native-dialog]
-version = "0.7.0"
-
-[dependencies.path-clean]
-version = "1.0.1"
-
-[dependencies.reqwest]
-features = ["gzip"]
-version = "0.12.1"
-
-[dependencies.semver]
-version = "1"
-
-[dependencies.serde]
-features = ["derive"]
-version = "1.0"
-
-[dependencies.serde_json]
-version = "1.0"
-
-[dependencies.serde_yaml]
-version = "0.9.33"
-default-features = false
-
-[dependencies.sea-orm]
-version = "1.0"
-default-features = false
-features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"]
-
-[dependencies.tauri]
-version = "1.6.1"
-default-features = true
-features = [
-    "process-relaunch",
-    "updater",
-    "config-toml",
-    "http-request",
-    "shell-open",
-    "shell-sidecar",
-    "window-all",
-]
-
-[dependencies.tauri-utils]
-version = "1.5.3"
-default-features = false
-
-[dependencies.tempfile]
-version = "3.10.1"
-
-[dependencies.tokio]
-version = "1.36.0"
-
-[target.'cfg(windows)'.dependencies.winapi]
-version = "0.3.9"
-
-[target.'cfg(windows)'.dependencies.winreg]
-version = "0.52.0"
-
-[dependencies.url]
-features = ["serde"]
-version = "2"
+[target.'cfg(windows)'.dependencies]
+winreg = "0.52"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
 # DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]
+devtools = ["tauri/devtools"]
+
+[package.metadata.cargo-machete]
+ignored = ["tauri-build"]

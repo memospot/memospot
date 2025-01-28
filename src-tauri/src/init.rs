@@ -1,5 +1,6 @@
 use crate::runtime_config::RuntimeConfig;
 use crate::sqlite;
+use crate::utils::*;
 /// Runtime checks and initialization code.
 ///
 /// Functions in this module panics with native dialogs instead of returning errors.
@@ -7,11 +8,10 @@ use crate::sqlite;
 use crate::webview;
 use crate::zip;
 use config::Config;
+use dialog::*;
 use homedir::HomeDirExt;
 use log::{debug, info, warn};
-use memospot::*;
 use migration::{Migrator, MigratorTrait};
-use native_dialog::MessageType;
 use std::env;
 use std::env::consts::OS;
 use std::fs::File;
@@ -80,7 +80,7 @@ pub fn memos_data(rtcfg: &RuntimeConfig) -> PathBuf {
 ///
 /// Use Memospot data directory if user-provided path is empty or ".".
 /// Optionally, resolve a user-provided directory.
-pub fn backup_directory(rtcfg: &RuntimeConfig) -> PathBuf {
+pub fn ensure_backup_directory(rtcfg: &RuntimeConfig) -> PathBuf {
     let folder_name = "backups";
     let default_path = rtcfg.paths.memospot_data.join(folder_name);
 
@@ -140,17 +140,22 @@ pub fn database(rtcfg: &RuntimeConfig) -> PathBuf {
         db_path.with_extension("db-shm"),
     ];
     for file in files {
+        if !file.exists() {
+            continue;
+        }
         // Remove demo database in dev/debug mode. Demo database is not handled by
         // migrations and can prevent Memos from starting if the model is outdated.
         if cfg!(debug_assertions) && rtcfg.yaml.memos.mode.as_deref() == Some("demo") {
-            if file.exists() {
-                if let Err(e) = std::fs::remove_file(&file) {
-                    warn_dialog!("Failed to remove demo database:\n{}", e);
-                }
+            match std::fs::remove_file(&file) {
+                Ok(_) => warn!(
+                    "Demo database \"{}\" removed.",
+                    file.file_name().unwrap_or_default().to_string_lossy()
+                ),
+                Err(e) => warn_dialog!("Failed to remove demo database:\n{}", e),
             }
             continue;
         }
-        if file.exists() && !&file.is_writable() {
+        if !&file.is_writable() {
             panic_dialog!("Database file is not writable:\n{}", file.to_string_lossy());
         }
     }
@@ -167,25 +172,27 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
         return;
     }
 
-    let db = sqlite::get_database_connection(rtcfg)
+    let db_file = rtcfg.paths.memos_db_file.clone();
+    let db_conn = sqlite::get_database_connection(&db_file)
         .await
         .unwrap_or_else(|e| {
             panic_dialog!("Failed to connect to the database:\n{}", e.to_string());
         });
-    let migration_amount = Migrator::get_pending_migrations(&db)
+    let migration_amount = Migrator::get_pending_migrations(&db_conn)
         .await
         .unwrap_or_default()
         .len();
-    let _ = db.close().await;
+    let _ = db_conn.close().await;
     if migration_amount == 0 {
         debug!("No pending migrations found.");
         return;
     }
 
     if rtcfg.yaml.memospot.backups.enabled.unwrap_or_default() {
+        let backup_path = ensure_backup_directory(rtcfg);
         let datetime = chrono::Local::now().format("%Y%m%d-%H%M%S").to_string();
         let backup_name = format!("db-{}-pre-migration.zst.zip", datetime);
-        let backup_path = rtcfg.paths._memospot_backups.join(&backup_name);
+        let backup_path = backup_path.join(&backup_name);
         let start_time = Instant::now();
         let backup = zip::related_files(
             &rtcfg.paths.memos_db_file,
@@ -207,15 +214,16 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
     }
 
     let start_time = Instant::now();
-    let db = sqlite::get_database_connection(rtcfg)
+    let db_file = rtcfg.paths.memos_db_file.clone();
+    let db_conn = sqlite::get_database_connection(&db_file)
         .await
         .unwrap_or_else(|e| {
             panic_dialog!("Failed to connect to the database:\n{}", e.to_string());
         });
-    if let Err(e) = Migrator::up(&db, None).await {
+    if let Err(e) = Migrator::up(&db_conn, None).await {
         warn_dialog!("Failed to run database migrations:\n{}", e.to_string());
     }
-    db.close().await.unwrap_or_else(|e| {
+    db_conn.close().await.unwrap_or_else(|e| {
         panic_dialog!("Failed to close database connection:\n{}", e.to_string());
     });
 
@@ -271,7 +279,7 @@ pub fn ensure_webview() {
 /// - If configuration file is missing or malformed, optionally reset it to defaults.
 pub fn config(config_path: &PathBuf) -> Config {
     if !config_path.exists() {
-        if let Err(e) = Config::reset_file(config_path) {
+        if let Err(e) = Config::reset_file_blocking(config_path) {
             panic_dialog!(
                 "Failed to create configuration file:\n{}\n\n{}",
                 config_path.to_string_lossy(),
@@ -310,7 +318,7 @@ pub fn config(config_path: &PathBuf) -> Config {
             panic_dialog!("You must fix the config file manually and restart the application.");
         }
 
-        if let Err(e) = Config::reset_file(config_path) {
+        if let Err(e) = Config::reset_file_blocking(config_path) {
             panic_dialog!(
                 "Failed to reset configuration file `{}`:\n{}",
                 config_path.to_string_lossy(),
@@ -320,22 +328,9 @@ pub fn config(config_path: &PathBuf) -> Config {
         cfg_reader = Ok(Config::default());
     }
 
-    let mut config = cfg_reader.unwrap_or_else(|e| {
+    cfg_reader.unwrap_or_else(|e| {
         panic_dialog!("Failed to parse configuration file:\n{}", e.to_string());
-    });
-
-    if cfg!(debug_assertions) {
-        // Use Memos in demo mode during development,
-        // as it's already seeded with some data.
-        config.memos.mode = Some("demo".to_string());
-
-        let current_port = config.memos.port.unwrap_or_default();
-        // Use an upper port to use a dedicated WebView cache for development.
-        if current_port != 0 {
-            config.memos.port = Some(current_port + 1);
-        }
-    }
-    config
+    })
 }
 
 /// Ensure that Memos port is available.
@@ -353,6 +348,8 @@ pub fn memos_port(rtcfg: &RuntimeConfig) -> u16 {
 }
 
 /// Memos URL.
+///
+/// It's ensured to end with a slash.
 ///
 /// If remote server is enabled, return the configured URL.
 /// Otherwise, return the default Memos address for the spawned server.
@@ -476,7 +473,7 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
     // a multithreaded context.
     unsafe {
         // Allows using $ENV{MEMOSPOT_DATA} in log4rs config.
-        std::env::set_var(
+        env::set_var(
             "MEMOSPOT_DATA",
             rtcfg.paths.memospot_data.to_string_lossy().to_string(),
         );
@@ -519,4 +516,96 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
         "Failed to setup logging!\nPlease delete `{}` and restart the application.",
         log_config.to_string_lossy()
     );
+}
+
+#[cfg(target_os = "linux")]
+/// Set up WebView hardware acceleration.
+///
+/// There are known issues with WebView hardware acceleration on Nvidia GPUs under X11.
+/// See: https://github.com/tauri-apps/tauri/issues/9394.
+///
+/// This function mitigates those issues by preemptively setting the following environment variables heuristically:
+/// - `WEBKIT_DISABLE_COMPOSITING_MODE=1`
+/// - `WEBKIT_DISABLE_DMABUF_RENDERER=1`
+///
+/// The variables are only set for the current process, leaving the system untouched.
+pub fn hw_acceleration() {
+    use std::process::{Command, Stdio};
+
+    let disable_compositing = || {
+        warn!("Forcing software rendering preemptively with 'WEBKIT_DISABLE_COMPOSITING_MODE=1'. Should this cause you issues, override this heuristic by setting 'memospot.env.WEBKIT_DISABLE_COMPOSITING_MODE'='0' on `memospot.yaml`.");
+        // SAFETY: There's potential for race conditions in a multi-threaded context.
+        // Shouldn't be an issue here.
+        unsafe {
+            env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
+        }
+    };
+    let disable_dmabuf_renderer = || {
+        warn!("Disabling DMABuf rendering preemptively with 'WEBKIT_DISABLE_DMABUF_RENDERER=1'. Should this cause you issues, override this heuristic by setting 'memospot.env.WEBKIT_DISABLE_DMABUF_RENDERER'='0' on `memospot.yaml`.");
+        // SAFETY: There's potential for race conditions in a multi-threaded context.
+        // Shouldn't be an issue here.
+        unsafe {
+            env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+        }
+    };
+
+    if !Path::new("/dev/dri").exists() {
+        warn!("No GPU renderer was detected.");
+        disable_compositing();
+        return;
+    }
+
+    let is_x11 = env::var("WAYLAND_DISPLAY").is_err()
+        && env::var("XDG_SESSION_TYPE").unwrap_or_default() == "x11";
+    if !is_x11 {
+        debug!("No X11 session detected. Leaving hardware acceleration as-is.");
+        return;
+    }
+
+    let is_flatpak = env::var("FLATPAK_ID").is_ok();
+    if is_flatpak {
+        warn!("Running as a Flatpak container under X11. This may present issues with Nvidia GPUs.");
+        disable_dmabuf_renderer();
+        return;
+    }
+
+    // This will return true only if lshw runs and detect a GeForce GPU on the system.
+    // lshw won't run inside a Flatpak sandbox.
+    let is_nvidia = Command::new("lshw")
+        .args([
+            "-quiet", "-short", "-disable", "disk", "-disable", "volume", "-disable", "usb",
+            "-disable", "scsi", "-disable", "pnp", "-c", "display",
+        ])
+        .stdout(Stdio::piped())
+        .output()
+        .map(|cmd| String::from_utf8_lossy(&cmd.stdout).contains("GeForce"))
+        .unwrap_or_default();
+    if is_nvidia {
+        warn!("Detected Nvidia GPU under X11. This may present issues with WebView.");
+        disable_dmabuf_renderer();
+        return;
+    }
+    debug!("No Nvidia GPU was detected. Leaving hardware acceleration as-is.");
+}
+
+/// Set Memospot environment variables.
+///
+/// This is intended to configure the WebView on edge cases, like passing
+/// WEBKIT_DISABLE_COMPOSITING_MODE=1 to disable hardware acceleration on Linux.
+///
+/// Should be called after init::hw_acceleration() to allow user-defined overrides.
+pub fn set_env_vars(rtcfg: &RuntimeConfig) {
+    if !rtcfg.yaml.memospot.env.enabled.unwrap_or_default() {
+        return;
+    }
+
+    if let Some(memospot_env) = &rtcfg.yaml.memospot.env.vars {
+        for (key, value) in memospot_env {
+            // SAFETY: The unsafe block is required due to the potential for race conditions in a multithreaded context.
+            // Shouldn't be an issue here.
+            unsafe {
+                env::set_var(key, value);
+            }
+        }
+    }
 }

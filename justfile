@@ -3,34 +3,38 @@
 # Run `just` in the root of the project to see a list of recipes relevant to manual builds.
 
 # Backtick commands and recipes without a shebang are executed with the shell set here.
-set shell := ["bash", "-c"]
-set windows-shell := ["powershell", "-Command"]
+set shell := ['bash', '-c']
+set windows-shell := ['powershell', '-Command']
 set dotenv-load := true
 
-CI := env_var_or_default("CI", "false")
-NPROC := env_var_or_default("NPROC", num_cpus())
-GITHUB_ENV := env_var_or_default("GITHUB_ENV", ".GITHUB_ENV")
-TAURI_PRIVATE_KEY := env_var_or_default("TAURI_PRIVATE_KEY", "")
-TAURI_KEY_PASSWORD := env_var_or_default("TAURI_KEY_PASSWORD", "")
+bash := if os() == 'windows' { 'env -S bash -euo pipefail' } else { '/usr/bin/env -S bash -euo pipefail' }
+powershell := if os() == 'windows' {'powershell.exe'} else {'/usr/bin/env pwsh'}
+bun := if os() == 'windows' { 'bun.exe' } else { '/usr/bin/env bun' }
 
-PATH := if os() == "windows" {
+RUST_TOOLCHAIN := 'stable'
+RUSTFLAGS := env_var_or_default('RUSTFLAGS','') + if RUST_TOOLCHAIN == 'stable' { '' } else { ' -Z threads='+num_cpus() }
+CI := env_var_or_default('CI', 'false')
+GITHUB_ENV := env_var_or_default('GITHUB_ENV', '.GITHUB_ENV')
+TAURI_SIGNING_PRIVATE_KEY := env_var_or_default('TAURI_SIGNING_PRIVATE_KEY', '')
+TAURI_SIGNING_PRIVATE_KEY_PASSWORD := env_var_or_default('TAURI_SIGNING_PRIVATE_KEY_PASSWORD', '')
+PATH := if os() == 'windows' {
 		env_var_or_default('PROGRAMFILES', 'C:\Program Files') + '\Git\usr\bin;' + env_var_or_default('PATH','')
 	} else {
 		env_var_or_default('PATH','')
 	}
-bash := if os() == "windows" { "env -S bash -euo pipefail" } else { "/usr/bin/env -S bash -euo pipefail" }
-powershell := if os() == 'windows' {'powershell.exe'} else {'/usr/bin/env pwsh'}
-bun := if os() == 'windows' { "bun.exe" } else { "/usr/bin/env bun" }
-
 REPO_ROOT := justfile_directory()
-DPRINT_CACHE_DIR := absolute_path(join(REPO_ROOT,".dprint"))
-RUST_BACKTRACE := "full"
-
-SCCACHE_BIN := if os() == 'windows' { `(Get-Command -ErrorAction SilentlyContinue -Name saccache).Source` } else { `which sccache || echo ""` }
-SCCACHE_ENABLED := if SCCACHE_BIN == "" { "false" } else { path_exists(SCCACHE_BIN) }
-RUSTC_WRAPPER := if SCCACHE_ENABLED == "true" { SCCACHE_BIN } else { env_var_or_default("RUSTC_WRAPPER", "") }
-SCCACHE_DIR := absolute_path(join(REPO_ROOT,".sccache"))
-CARGO_INCREMENTAL := if SCCACHE_ENABLED == "true" { "0" } else { "1" }
+DPRINT_CACHE_DIR := absolute_path(join(REPO_ROOT,'.dprint'))
+RUST_BACKTRACE := 'full'
+RUST_TARGETS := if os() == 'windows' {
+    'x86_64-pc-windows-msvc'
+} else if os() == "macos" {
+    'aarch64-apple-darwin x86_64-apple-darwin'
+} else {
+    'x86_64-unknown-linux-gnu'
+}
+RUSTC_WRAPPER := env_var_or_default('RUSTC_WRAPPER', '')
+CARGO_INCREMENTAL := if RUSTC_WRAPPER == '' { '1' } else { '0' }
+TS_RS_EXPORT_DIR:= absolute_path(join(REPO_ROOT,'src-ui/src/lib/types/gen'))
 
 RESET := '\033[0m'
 BOLD := '\033[1m'
@@ -78,13 +82,12 @@ default:
 
 [private]
 deps-ts:
-    #!{{bash}}
-    bun install || bun install
+    pushd "src-ui"; bun install; popd
+    pushd "build-scripts"; bun install; popd
 
 [private]
 deps-rs:
-    #!{{bash}}
-    mkdir -p ./dist-ui
+    mkdir -p ./src-ui/build
 
 [private]
 dev-ui: deps-ts
@@ -92,22 +95,21 @@ dev-ui: deps-ts
 
 [private]
 download-memos-binaries: deps-ts
-    bun run ./build-scripts/downloadMemosBuildsHook.ts
+    bun run ./build-scripts/downloadMemos.ts
 
 [private]
 upx:
-    #!{{bash}}
-    bun run ./build-scripts/upxPackHook.ts || true
+    bun run ./build-scripts/upxPack.ts || true
 
 # Tauri hooks
 [private]
-tauri-before-build: download-memos-binaries gen-icons build-ui
+tauri-before-build: download-memos-binaries gen-icons gen-bindings build-ui
 
 [private]
 tauri-before-bundle: deps-ts upx
 
 [private]
-tauri-before-dev: download-memos-binaries dev-ui
+tauri-before-dev: download-memos-binaries gen-icons gen-bindings dev-ui
 # /Tauri hooks
 
 [group('test')]
@@ -158,23 +160,25 @@ test-ts: deps-ts
 
 [doc('Run app in development mode')]
 dev: dev-killprocesses
+    rustup toolchain install $RUST_TOOLCHAIN
     cargo tauri dev
-    just dev-killprocesses sccache-stats
+    just dev-killprocesses
 
 [private]
 [linux]
 [macos]
 dev-killprocesses:
     #!{{bash}}
-    processes=("memospot" "memos")
-    for process in "${processes[@]}"; do
+    for process in "memospot" "memos"; do
         killall $process > /dev/null 2>&1 || true
     done
 [private]
 [windows]
 dev-killprocesses:
     #!{{powershell}}
-    [System.Diagnostics.Process]::GetProcesses() | Where-Object { $_.ProcessName -eq "memospot" -or $_.ProcessName -eq "memos" } | Stop-Process -Force -ErrorAction SilentlyContinue
+    [System.Diagnostics.Process]::GetProcesses() | Where-Object {
+        $_.ProcessName -in "memospot", "memos"
+    } | Stop-Process -Force -ErrorAction SilentlyContinue
 
 [group('update')]
 [doc('Update project dependencies')]
@@ -194,7 +198,6 @@ update-rs:
 [doc('Update npm packages')]
 update-ts:
     #!{{bash}}
-    bun update
     pushd "./src-ui"; bun update; popd
     pushd "./build-scripts"; bun update; popd
     just fmt
@@ -218,7 +221,7 @@ upgrade-bun:
 gen-icons-force:
     #!{{bash}}
     cargo tauri icon "assets/app-icon-lossless.webp"
-    cp -f "./src-tauri/icons/icon.ico" "./src-ui/public/favicon.ico"
+    cp -f "./src-tauri/icons/icon.ico" "./src-ui/static/favicon.ico"
     git add "assets/app-icon-lossless.webp" "src-tauri/icons/*"
     # git commit -m "chore: regenerate icons"
 
@@ -230,16 +233,22 @@ gen-icons:
         "assets/app-icon-lossless.webp"
         "src-tauri/icons/**.png"
         "src-tauri/icons/icon.ico"
-        "src-ui/public/favicon.ico"
+        "src-ui/static/favicon.ico"
     )
     for file in "${check_files[@]}"; do
         if ! git diff --quiet --exit-code HEAD -- "$file"; then
-            echo "${YELLOW}$file was modified, regenerating icons...${RESET}"
+            echo "${YELLOW}$file was modified since last commit, regenerating icons…${RESET}"
             just gen-icons-force
             exit 0
         fi
     done
     echo -e "${GREEN}App icons are up to date.${RESET}"
+
+gen-bindings:
+    #!{{bash}}
+    mkdir -p "$TS_RS_EXPORT_DIR"
+    echo -e "${CYAN}Generating TypeScript bindings… This might take a while.${RESET}"
+    cargo test export_bindings
 
 build-ui-force:
     cd "src-ui"; bun run build
@@ -247,100 +256,118 @@ build-ui-force:
 [doc('Build UI, if needed')]
 build-ui:
     #!{{bash}}
-    if ! git diff --quiet --exit-code HEAD -- "src-ui/src/**" || [ ! -d "./dist-ui/" ] || [ ! -f "./dist-ui/index.html" ]; then
+    if ! git diff --quiet --exit-code HEAD -- "src-ui/src/**" || [ ! -d "./src-ui/build/" ] || [ ! -f "./src-ui/build/index.html" ]; then
         just build-ui-force
     else
         echo -e "${GREEN}UI is up to date.${RESET}"
     fi
 
 [doc('Build app')]
-build:
+build TARGET='all':
     #!{{bash}}
-    export RUSTFLAGS="-Ctarget-cpu=native -Copt-level=3 -Cstrip=symbols -Ccodegen-units=8"
-    if [ -z $TAURI_PRIVATE_KEY ] && [ -f $HOME/.tauri/memospot_updater.key ]; then
-        export TAURI_PRIVATE_KEY=$(cat $HOME/.tauri/memospot_updater.key 2>/dev/null | tr -d '\n' || echo "")
-        echo -e "${CYAN}Setting TAURI_PRIVATE_KEY from $HOME/.tauri/memospot_updater.key${RESET}"
+    if [ "{{TARGET}}" = "no-bundle" ]; then
+        cargo tauri build --no-bundle
+        just postbuild
+        exit 0
     fi
-    if [ -z $TAURI_PRIVATE_KEY ] || [ -z $TAURI_KEY_PASSWORD ]; then
-        echo -e "${MAGENTA}Environment not fully configured. Building without updater.${RESET}"
-        cargo tauri build -c '{"tauri": {"updater": {"active": false}}}'
+    if [ -z $TAURI_SIGNING_PRIVATE_KEY ] && [ -f $HOME/.tauri/memospot_updater.key ]; then
+        export TAURI_SIGNING_PRIVATE_KEY=$(cat $HOME/.tauri/memospot_updater.key 2>/dev/null | tr -d '\n' || echo "")
+        echo -e "${CYAN}Setting TAURI_SIGNING_PRIVATE_KEY from $HOME/.tauri/memospot_updater.key${RESET}"
+    fi
+    if [ -z $TAURI_SIGNING_PRIVATE_KEY ] || [ -z $TAURI_SIGNING_PRIVATE_KEY_PASSWORD ]; then
+        echo -e "${YELLOW}Environment not fully configured. Building without updater.${RESET}"
+        cargo tauri build -c '{"bundle": {"targets": "{{TARGET}}" }, "plugins": {"updater": {}}}'
     else
-        cargo tauri build
+        cargo tauri build -c '{"bundle": {"targets": "{{TARGET}}" }}'
     fi
-    just sccache-stats postbuild
+    just postbuild
+
+[linux]
+flatpak-lint:
+    #!{{bash}}
+    flatpak install -y flathub org.flatpak.Builder
+    shopt -s expand_aliases
+    alias flatpak-builder-lint="flatpak run --command=flatpak-builder-lint org.flatpak.Builder"
+    flatpak-builder-lint appstream ./installer/flatpak/io.github.memospot.Memospot.metainfo.xml
+    flatpak-builder-lint manifest ./installer/flatpak/io.github.memospot.Memospot.yml
+    flatpak-builder-lint repo ./target/flatpak-repo
+
+[linux]
+flatpak-build:
+    #!{{bash}}
+    just build deb
+    flatpak-builder --force-clean --user --install-deps-from=flathub --repo=./target/flatpak-repo --install ./target/flatpak ./installer/flatpak/io.github.memospot.Memospot.yml
+
+[linux]
+flatpak-run:
+    flatpak run io.github.memospot.Memospot
+
+[linux]
+debug-env:
+    #!{{bash}}
+    pid="$(pidof memospot)"
+    test -z $pid && echo -e "${RED}Memospot is not running.${RESET}" && exit 1
+    tr '\0' '\n' < /proc/$pid/environ | sort
 
 [private]
 postbuild:
     #!{{bash}}
     set +e
-    echo -e "${CYAN}Moving relevant build files to ./build directory...${RESET}"
-    mkdir -p ./build || true
+    echo -e "${CYAN}Moving relevant build files to ./build directory…${RESET}"
+    ! test -d "./build" && mkdir -p "./build"
     artifacts=(
         "bundle/appimage/*.AppImage"
         "bundle/deb/*.deb"
         "bundle/msi/*.msi"
         "bundle/nsis/*.exe"
+        "bundle/rpm/*.rpm"
         "dist/"
         "memos"
         "memos.exe"
         "memospot"
         "memospot.exe"
     )
-    for file in "${artifacts[@]}"; do
-        resolved_path="$(find ./target/release/$file 2>&1 | head -n 1)"
-        if [ -f "$resolved_path" ]; then
-            mv -f "$resolved_path" ./build/. 2>/dev/null
-        fi
+    for artifact in "${artifacts[@]}"; do
+        resolved_path="$(find ./target/release/$artifact -type f 2>&1 | head -n 1)"
+        test -f "$resolved_path" && mv -f "$resolved_path" ./build/. 2>/dev/null
     done
-    appimage="$(find ./build/*.AppImage 2>&1 | head -n 1)"
-    if [ -f "$appimage" ]; then
-        mkdir -p "${appimage}.home"
-    fi
-    if ls ./build/memos* 1> /dev/null 2>&1; then
+    pushd "./build"
+        appimages=($(find *.AppImage -type f 2>&1))
+        for appimage in "${appimages[@]}"; do
+            ! test -f "${appimage}" && continue
+            ! test -d "${appimage}.home" && mkdir -p "${appimage}.home"
+        done
+    if ls ./memos* 1> /dev/null 2>&1; then
         echo -e "${GREEN}Done.${RESET}"
     else
         echo -e "${RED}Failed to move files.${RESET}"
     fi
+    popd
 
 [doc('Clean project artifacts')]
-clean: sccache-clean
+clean:
     #!{{bash}}
-    bun pm cache rm || true
+    set +e
+    for d in "./src-ui" "./build-scripts"; do
+        pushd "$d" && bun pm cache rm && popd
+    done
     cargo cache -a || true
     dirs=(
         "./.dprint"
-        "./.sccache"
         "./.task"
         "./build"
         "./build-scripts/node_modules"
-        "./dist-ui"
         "./node_modules"
         "./server-dist"
         "./src-ui/.vite"
+        "./src-ui/build"
         "./src-ui/node_modules"
         "./target"
     )
     for item in "${dirs[@]}"; do
-        if [ -d "$item" ]; then
-            rm -rf "$item"
-        fi
+        test -d "$item" && rm -rf "$item"
     done
-
-[group('sccache')]
-sccache-clean:
-    #!{{bash}}
-    if [ -z $RUSTC_WRAPPER ]; then exit 0; fi
-    sccache --stop-server || true && rm -rf ./.sccache
-
-[group('sccache')]
-sccache-stats:
-    #!{{bash}}
-    if [ $SCCACHE_ENABLED = "false" ]; then
-        echo -e "$YELLOW -- sccache is disabled -- $RESET"
-        exit 0
-    fi
-    echo -e "$CYAN -- sccache stats -- $RESET"
-    sccache --show-stats;
+    exit 0
 
 [group('lint')]
 [doc('Run all code linters')]
@@ -361,14 +388,10 @@ lint-rs: deps-rs
 [doc('Lint TypeScript code with BiomeJS')]
 lint-ts:
     #!{{bash}}
-    dirs=(
-        "./build-scripts"
-        "./src-ui"
-    )
-    for d in "${dirs[@]}"; do
+    for d in "./build-scripts" "./src-ui"; do
         cd "$REPO_ROOT/$d"
         if ls *.ts 1> /dev/null 2>&1; then
-            bunx @biomejs/biome ci .
+            bun x @biomejs/biome ci .
         fi
     done
 
@@ -379,7 +402,6 @@ fix: fix-ts fix-rs
 [group('fix')]
 [doc('Run cargo fix (requires clean repo)')]
 fix-rs:
-    #!{{bash}}
     cargo fix || just fix-rs-dirty
 
 [group('fix')]
@@ -391,11 +413,7 @@ fix-rs-dirty:
 [doc('Run BiomeJS safe fixes')]
 fix-ts:
     #!{{bash}}
-    dirs=(
-        "./build-scripts"
-        "./src-ui"
-    )
-    for d in "${dirs[@]}"; do
+    for d in "./build-scripts" "./src-ui"; do
         cd "$REPO_ROOT/$d"
         if ls *.ts 1> /dev/null 2>&1; then
             bun x @biomejs/biome lint --apply .
@@ -406,145 +424,6 @@ fix-ts:
 [doc('Format code with dprint (json, rust, toml, yaml, html, css, typescript and markdown).')]
 fmt:
     dprint fmt --diff
-
-[group('setup')]
-[doc('Install all project dependencies.')]
-setup: setup-platformdeps setup-bun setup-rust setup-toolchain
-
-[group('setup')]
-[macos]
-setup-platformdeps:
-    xcode-select --install
-
-[group('setup')]
-[linux]
-setup-platformdeps:
-    #!{{bash}}
-    sudo apt update -y
-    sudo apt install -y \
-        build-essential \
-        curl \
-        file \
-        libgtk-3-dev \
-        librsvg2-dev \
-        libssl-dev \
-        libwebkit2gtk-4.0-dev \
-        patchelf \
-        wget \
-        git
-    sudo apt install -y libappindicator3-dev 2>/dev/null || true
-[group('setup')]
-[windows]
-setup-platformdeps:
-    #!{{powershell}}
-    Start-Process -Wait -Verb RunAs -FilePath "winget" -ArgumentList "install Microsoft.VisualStudio.2022.BuildTools"
-
-[group('setup')]
-[windows]
-setup-bun:
-    #!{{powershell}}
-    $ErrorActionPreference = "SilentlyContinue"
-    if (Get-Command "bun" -ErrorAction SilentlyContinue) {
-        Write-Host "Bun is already installed."
-    }
-    else if (Get-Command "choco" -ErrorAction SilentlyContinue) {
-        Write-Host "Installing Bun via Chocolatey..."
-        Start-Process -Wait -Verb RunAs -FilePath "choco" -ArgumentList "install bun -y"
-    }
-    else if (Get-Command "winget" -ErrorAction SilentlyContinue) {
-        Write-Host "Installing Bun via Winget..."
-        winget install --id Oven-sh.Bun
-    }
-    else if (Get-Command "scoop" -ErrorAction SilentlyContinue) {
-        Write-Host "Installing Bun via Scoop..."
-        scoop install bun
-    } else {
-        Write-Host -ForegroundColor Red "[ERROR] No package manager found. Please install Bun manually."
-        Write-Host "Alternatively, install Chocolatey, Winget or Scoop and run this task again."
-        Write-Host -ForegroundColor Cyan "`n
-        https://bun.sh
-        https://chocolatey.org/install
-        https://apps.microsoft.com/detail/9NBLGGH4NNS1
-        https://scoop.sh/"
-        Exit 1
-    }
-[group('setup')]
-[linux]
-[macos]
-setup-bun:
-    #!{{bash}}
-    if ! [ -z $(command -v bun) ]; then
-        echo "Bun is already installed." && exit 0
-    fi
-    if ! [ -z $(command -v brew) ]; then
-        brew install oven-sh/bun/bun
-    else
-        echo -e "${RED}[ERROR] Homebrew not found. Please install Bun manually.${RESET}
-        Alternatively, install Homebrew and run this task again.
-        ${CYAN}
-        https://bun.sh
-        https://brew.sh
-        ${RESET}"
-    fi
-
-[group('setup')]
-[linux]
-[macos]
-setup-rust:
-    #!{{bash}}
-    if ! [ -z $(command -v rustup) ] && ! [ -z $(command -v rustc) ]; then
-        echo "Rust is already installed." && exit 0
-    fi
-    if ! [ -z $(command -v brew) ]; then
-        brew install rustup-init
-        rustup-init -y
-        source "$HOME/.cargo/env"
-        rustup default stable
-    else
-        echo -e "${RED}[ERROR] Homebrew not found. Please install Rust manually.${RESET}
-        Alternatively, install Homebrew and run this task again.
-        ${CYAN}
-        https://rustup.rs
-        ${RESET}"
-    fi
-
-[group('setup')]
-[windows]
-setup-rust:
-    #!{{powershell}}
-    $ErrorActionPreference = "SilentlyContinue"
-    if ((Get-Command "rustup") -and (Get-Command "rustc")) {
-        Write-Host "Rust is already installed."
-    } else if (Get-Command "choco") {
-        Start-Process -Wait -Verb RunAs -FilePath "choco" -ArgumentList "install rustup.install -y"
-    } else if (Get-Command "winget" -ErrorAction SilentlyContinue) {
-        winget install --id Rustlang.Rustup
-    } else if (Get-Command "scoop" -ErrorAction SilentlyContinue) {
-        scoop install rustup
-    } else {
-        Write-Host -ForegroundColor Red "[ERROR] No package manager found. Please install Rustup manually."
-        Write-Host "Alternatively, install Chocolatey, Winget or Scoop and run this task again."
-        Write-Host -ForegroundColor Cyan "`n
-        https://rustup.rs
-        https://chocolatey.org/install
-        https://apps.microsoft.com/detail/9NBLGGH4NNS1
-        https://scoop.sh/"
-        Exit 1
-    }
-
-[group('setup')]
-setup-toolchain:
-    #!{{bash}}
-    rustup component add clippy
-    rustup target add aarch64-apple-darwin x86_64-apple-darwin x86_64-pc-windows-msvc x86_64-unknown-linux-gnu
-    cargo install cargo-binstall --locked -y
-    cargo binstall \
-        cargo-cache@0.8.3 \
-        cargo-edit@0.12.3 \
-        dprint@0.47.2 \
-        sccache@0.8.1 \
-        tauri-cli@1.6.0 \
-        --locked --targets x86_64-unknown-linux-musl -y || exit 1
 
 [group('maintainer')]
 [doc('Delete all GitHub build cache')]
@@ -575,10 +454,10 @@ repo-status:
 bumpversion VERSION:
     #!{{bash}}
     clean="{{trim_start_match(VERSION, "v")}}"
-    pushd ./src-tauri; cargo set-version --package memospot --locked "$clean"; popd
+    cargo set-version --locked "$clean"
     cargo generate-lockfile
     just fmt
-    git add ./src-tauri/Cargo.toml ./src-tauri/Tauri.toml ./Cargo.lock
+    git add ./src-tauri/Cargo.toml ./src-tauri/Tauri.toml ./Cargo.lock ./Cargo.toml
     git commit -m "chore: bump version to v$clean"
 
 [group('maintainer')]

@@ -1,21 +1,21 @@
 [package]
 name = "config"
-version = "0.0.2"
-authors = ["Lincoln Nogueira"]
-edition = "2021"
-license = "MIT"
-description = "Memospot configuration library"
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+publish = { workspace = true }
+repository = "https://github.com/memospot/memospot/crates/config"
+description = "Memospot configuration file definitions"
 
 [dependencies]
-serde_yaml = "0.9.33"
-
-[dependencies.figment]
-version = "0.10.15"
-features = ["env", "yaml"]
-
-[dependencies.serde]
-features = ["derive"]
-version = "1.0"
+anyhow = { workspace = true }
+figment = { version = "0.10", features = ["env", "json", "yaml"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9.34"
+tokio = { version = "1.42", features = ["fs", "io-std", "io-util", "macros", "rt", "rt-multi-thread", "time"] }
+ts-rs = "10.1"
+uuid = { version = "1.11", features = ["v4"] }
 
 [dev-dependencies]
-tempfile = "3.10.1"
+tempfile = "3.14"
