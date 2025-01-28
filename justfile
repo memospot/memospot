@@ -99,6 +99,7 @@ download-memos-binaries: deps-ts
 
 [private]
 upx:
+    #!{{bash}}
     bun run ./build-scripts/upxPack.ts || true
 
 # Tauri hooks
