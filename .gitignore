@@ -90,6 +90,9 @@ Sessionx.vim
 !.vscode/extensions.json
 !.vscode/settings.json
 
+### Zed
+.zed
+
 # Ignore all local history of files
 .history
 .ionide

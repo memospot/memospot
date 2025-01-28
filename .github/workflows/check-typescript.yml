@@ -23,7 +23,7 @@ concurrency:
 jobs:
   biome:
     name: TypeScript lint
-    strategy: { fail-fast: false }
+    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

@@ -1,7 +1,8 @@
 name: Build (Release)
 on:
   push:
-    tags-ignore: "v*.*.*-*"
+    tags-ignore:
+      - "v*.*.*-*"
   workflow_dispatch:
 
 concurrency:

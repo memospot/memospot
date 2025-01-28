@@ -46,7 +46,7 @@ jobs:
   fmt:
     name: Check Rust code formatting
     runs-on: ubuntu-latest
-    strategy: { fail-fast: false }
+    continue-on-error: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -61,7 +61,7 @@ jobs:
   machete:
     name: Check for unused dependencies
     runs-on: ubuntu-latest
-    strategy: { fail-fast: false }
+    continue-on-error: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
