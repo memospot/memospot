@@ -1023,7 +1023,7 @@ checksum = "3c877555693c14d2f84191cfd3ad8582790fc52b5e2274b40b59cf5f5cea25c7"
 
 [[package]]
 name = "dialog"
-version = "0.0.1"
+version = "2.0.0"
 dependencies = [
  "log",
  "native-dialog",
@@ -1983,7 +1983,7 @@ dependencies = [
 
 [[package]]
 name = "homedir"
-version = "0.1.2"
+version = "2.0.0"
 dependencies = [
  "home",
  "nix",
@@ -3702,7 +3702,7 @@ dependencies = [
 
 [[package]]
 name = "portpicker"
-version = "0.0.1"
+version = "2.0.0"
 dependencies = [
  "rand 0.8.5",
 ]
@@ -6842,7 +6842,7 @@ dependencies = [
 
 [[package]]
 name = "writable"
-version = "0.0.1"
+version = "2.0.0"
 dependencies = [
  "nix",
  "tempfile",

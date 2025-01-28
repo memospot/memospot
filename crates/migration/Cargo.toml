@@ -5,6 +5,7 @@ authors = { workspace = true }
 edition = { workspace = true }
 license = { workspace = true }
 publish = { workspace = true }
+repository = "https://github.com/memospot/memospot/crates/migration"
 description = "Memospot database migration"
 
 [target.'cfg(not(local_crates))'.dependencies]

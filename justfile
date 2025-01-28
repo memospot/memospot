@@ -454,7 +454,7 @@ repo-status:
 bumpversion VERSION:
     #!{{bash}}
     clean="{{trim_start_match(VERSION, "v")}}"
-    cargo set-version --package memospot --locked "$clean"
+    cargo set-version --locked "$clean"
     cargo generate-lockfile
     just fmt
     git add ./src-tauri/Cargo.toml ./src-tauri/Tauri.toml ./Cargo.lock ./Cargo.toml

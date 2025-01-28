@@ -1,11 +1,11 @@
 [package]
 name = "homedir"
-version = "0.1.2"
+version = { workspace = true }
 authors = ["eulegang <eulegang@gmail.com>", "Lars Wirzenius", "Lincoln Nogueira"]
-edition = "2021"
+edition = { workspace = true }
 license = "MIT"
 publish = false
-repository = "https://github.com/eulegang/home-dir"
+repository = "https://github.com/memospot/memospot/crates/homedir"
 description = "expands home directories in a path"
 
 [dependencies]

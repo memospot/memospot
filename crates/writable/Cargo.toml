@@ -1,13 +1,10 @@
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [package]
 name = "writable"
-version = "0.0.1"
-authors = ["Lincoln Nogueira"]
-edition = "2021"
-keywords = ["writable", "file", "directory", "permission", "access"]
-license = "MIT"
-readme = "README.md"
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+publish = { workspace = true }
 repository = "https://github.com/memospot/memospot/crates/writable"
 description = "Extension Trait to Path and PathBuf to check whether a file or directory is writable"
 
