@@ -7,6 +7,8 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use std::sync::{Arc, Mutex};
+#[cfg(unix)]
+use std::{fs, os::unix::fs::PermissionsExt};
 use tauri::utils::platform::resource_dir as tauri_resource_dir;
 use tauri_plugin_http::reqwest;
 use tauri_utils::PackageInfo;
@@ -35,12 +37,29 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
     let cwd = get_cwd(rtcfg);
     debug!("Memos environment: {:#?}", env_vars);
     debug!("Memos working directory: {}", cwd.to_string_lossy());
-    tauri::async_runtime::spawn(async move {
-        process::Command::new(command)
-            .envs(env_vars)
+
+    let spawn_memos = || -> Result<(), anyhow::Error> {
+        process::Command::new(&command)
+            .envs(env_vars.clone())
             .current_dir(cwd.clone())
-            .spawn()
-    });
+            .spawn()?;
+        Ok(())
+    };
+    if let Err(e) = spawn_memos() {
+        warn!("Failed to spawn Memos server: {}.", e);
+
+        #[cfg(unix)]
+        {
+            warn!("Attempting to add executable permissions to the binary…");
+            let mut perms = fs::metadata(&command)?.permissions();
+            perms.set_mode(0o755);
+            fs::set_permissions(&command, perms)?;
+
+            spawn_memos()?;
+            warn!("Success.");
+        }
+    }
+
     Ok(())
 }
 
