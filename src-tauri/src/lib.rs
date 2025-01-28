@@ -1,5 +1,6 @@
 mod cmd;
 mod init;
+mod localize;
 mod memos;
 mod menu;
 mod process;
@@ -22,6 +23,8 @@ use window::{WebviewWindowExt, WindowConfigExt};
 #[warn(unused_extern_crates)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    localize::localize();
+
     init::ensure_webview();
 
     let memospot_data = init::data_path("memospot");

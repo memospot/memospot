@@ -2,6 +2,8 @@ use crate::memos;
 use crate::runtime_config::RuntimeConfig;
 use dialog::{confirm_dialog, info_dialog, MessageType};
 
+use crate::fl;
+use crate::localize::fl;
 use log::{debug, error, warn};
 use std::convert::AsRef;
 use strum_macros::AsRefStr;
@@ -20,39 +22,41 @@ use url::Url;
 
 #[derive(AsRefStr, FromRepr, Clone, Copy)]
 enum MainMenu {
-    #[strum(serialize = "&App")]
+    #[strum(serialize = "app")]
     App,
-    #[strum(serialize = "&Browse data directory…")]
-    AppBrowseDataDirectory,
-    #[strum(serialize = "&Settings")]
+    #[strum(serialize = "settings")]
     AppSettings,
-    #[strum(serialize = "&Check for updates…")]
+    #[strum(serialize = "browse-data-directory")]
+    AppBrowseDataDirectory,
+    #[strum(serialize = "check-for-updates")]
     GlobalUpdate,
-    #[strum(serialize = "&View")]
+    #[strum(serialize = "view")]
     View,
-    #[strum(serialize = "&Developer Tools")]
+    #[strum(serialize = "developer-tools")]
     ViewDevTools,
-    #[strum(serialize = "&Hide menu bar")]
+    #[strum(serialize = "hide-menu-bar")]
     ViewHideMenuBar,
-    #[strum(serialize = "&Refresh")]
+    #[strum(serialize = "refresh")]
     ViewRefresh,
-    #[strum(serialize = "Reload &View")]
+    #[strum(serialize = "reload-view")]
     ViewReload,
-    #[strum(serialize = "&Help")]
+    #[strum(serialize = "window")]
+    Window,
+    #[strum(serialize = "help")]
     Help,
-    #[strum(serialize = "&Memospot version")]
+    #[strum(serialize = "memospot-version")]
     HelpMemospotVersion,
-    #[strum(serialize = "&Documentation")]
+    #[strum(serialize = "documentation")]
     HelpMemospotDocumentation,
-    #[strum(serialize = "&Release Notes")]
+    #[strum(serialize = "release-notes")]
     HelpMemospotReleaseNotes,
-    #[strum(serialize = "&Report an Issue…")]
+    #[strum(serialize = "report-issue")]
     HelpMemospotReportIssue,
-    #[strum(serialize = "Memos version")]
+    #[strum(serialize = "memos-version")]
     HelpMemosVersion,
-    #[strum(serialize = "Documentation")]
+    #[strum(serialize = "documentation")]
     HelpMemosDocumentation,
-    #[strum(serialize = "Release Notes")]
+    #[strum(serialize = "release-notes")]
     HelpMemosReleaseNotes,
 }
 impl MainMenu {
@@ -88,6 +92,7 @@ pub fn update_with_memos_version<R: Runtime>(handle: &AppHandle<R>) {
         }
 
         let Some(main_window) = handle_.get_webview_window("main") else {
+            error!("Unable to set Memos version in menu. Main window not found.");
             return;
         };
 
@@ -121,19 +126,19 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
 
     let check_for_updates = MenuItemBuilder::with_id(
         MainMenu::GlobalUpdate.index(),
-        MainMenu::GlobalUpdate.as_ref(),
+        fl(MainMenu::GlobalUpdate.as_ref()),
     )
     .build(handle)?;
 
-    #[cfg(target_os = "macos")]
     let app_name = handle.config().product_name.clone().unwrap_or_default();
+
     #[cfg(target_os = "macos")]
     let mac_menu = &SubmenuBuilder::new(handle, app_name)
         .about(Some(AboutMetadata::default()))
         .separator()
         .text(
             MainMenu::AppSettings.index(),
-            MainMenu::AppSettings.as_ref(),
+            fl(MainMenu::AppSettings.as_ref()),
         )
         .item(&check_for_updates)
         .separator()
@@ -146,19 +151,19 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
         .quit()
         .build()?;
 
-    let app_menu = &SubmenuBuilder::new(handle, MainMenu::App.as_ref())
+    let app_menu = &SubmenuBuilder::new(handle, app_name)
         .items(&[
             &MenuItemBuilder::with_id(
-                MainMenu::AppBrowseDataDirectory.index(),
-                MainMenu::AppBrowseDataDirectory.as_ref(),
-            )
-            .accelerator("CmdOrCtrl+D")
-            .build(handle)?,
-            &MenuItemBuilder::with_id(
                 MainMenu::AppSettings.index(),
-                MainMenu::AppSettings.as_ref(),
+                fl(MainMenu::AppSettings.as_ref()),
             )
             .accelerator("CmdOrCtrl+S")
+            .build(handle)?,
+            &MenuItemBuilder::with_id(
+                MainMenu::AppBrowseDataDirectory.index(),
+                fl(MainMenu::AppBrowseDataDirectory.as_ref()),
+            )
+            .accelerator("CmdOrCtrl+D")
             .build(handle)?,
             &PredefinedMenuItem::separator(handle)?,
             #[cfg(target_os = "macos")]
@@ -170,32 +175,32 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
         ])
         .build()?;
 
-    let view_menu = &SubmenuBuilder::new(handle, MainMenu::View.as_ref())
+    let view_menu = &SubmenuBuilder::new(handle, fl(MainMenu::View.as_ref()))
         .items(&[
             #[cfg(target_os = "macos")]
             &PredefinedMenuItem::fullscreen(handle, None)?,
             #[cfg(any(debug_assertions, feature = "devtools"))]
             &MenuItemBuilder::with_id(
                 MainMenu::ViewDevTools.index(),
-                MainMenu::ViewDevTools.as_ref(),
+                fl(MainMenu::ViewDevTools.as_ref()),
             )
             .accelerator("CmdOrCtrl+Shift+I")
             .build(handle)?,
             &MenuItemBuilder::with_id(
                 MainMenu::ViewHideMenuBar.index(),
-                MainMenu::ViewHideMenuBar.as_ref(),
+                fl(MainMenu::ViewHideMenuBar.as_ref()),
             )
             .accelerator("CmdOrCtrl+H")
             .build(handle)?,
             &MenuItemBuilder::with_id(
                 MainMenu::ViewRefresh.index(),
-                MainMenu::ViewRefresh.as_ref(),
+                fl(MainMenu::ViewRefresh.as_ref()),
             )
             .accelerator("F5")
             .build(handle)?,
             &MenuItemBuilder::with_id(
                 MainMenu::ViewReload.index(),
-                MainMenu::ViewReload.as_ref(),
+                fl(MainMenu::ViewReload.as_ref()),
             )
             .accelerator("CmdOrCtrl+R")
             .build(handle)?,
@@ -203,7 +208,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
         .build()?;
 
     #[cfg(target_os = "macos")]
-    let window_menu = &SubmenuBuilder::new(handle, "Window")
+    let window_menu = &SubmenuBuilder::new(handle, fl(MainMenu::Window.as_ref()))
         .items(&[
             &PredefinedMenuItem::minimize(handle, None)?,
             &PredefinedMenuItem::maximize(handle, None)?,
@@ -212,7 +217,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
         ])
         .build()?;
 
-    let help_menu = &SubmenuBuilder::new(handle, MainMenu::Help.as_ref())
+    let help_menu = &SubmenuBuilder::new(handle, fl(MainMenu::Help.as_ref()))
         .item(
             &MenuItemBuilder::with_id(
                 MainMenu::HelpMemospotVersion.index(),
@@ -224,15 +229,15 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
         .separator()
         .text(
             MainMenu::HelpMemospotDocumentation.index(),
-            MainMenu::HelpMemospotDocumentation.as_ref(),
+            fl(MainMenu::HelpMemospotDocumentation.as_ref()),
         )
         .text(
             MainMenu::HelpMemospotReleaseNotes.index(),
-            MainMenu::HelpMemospotReleaseNotes.as_ref(),
+            fl(MainMenu::HelpMemospotReleaseNotes.as_ref()),
         )
         .text(
             MainMenu::HelpMemospotReportIssue.index(),
-            MainMenu::HelpMemospotReportIssue.as_ref(),
+            fl(MainMenu::HelpMemospotReportIssue.as_ref()),
         )
         .item(
             &MenuItemBuilder::with_id(
@@ -245,11 +250,11 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
         .separator()
         .text(
             MainMenu::HelpMemosDocumentation.index(),
-            MainMenu::HelpMemosDocumentation.as_ref(),
+            fl(MainMenu::HelpMemosDocumentation.as_ref()),
         )
         .text(
             MainMenu::HelpMemosReleaseNotes.index(),
-            MainMenu::HelpMemosReleaseNotes.as_ref(),
+            fl(MainMenu::HelpMemosReleaseNotes.as_ref()),
         )
         .build()?;
 
@@ -296,10 +301,10 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
             tauri::async_runtime::spawn(async move {
                 let window_builder = tauri::WebviewWindowBuilder::new(
                     &handle_,
-                    "config",
+                    "settings",
                     tauri::WebviewUrl::App("/settings".into()),
                 )
-                .title(MainMenu::AppSettings.as_ref().replace("&", ""))
+                .title(fl(MainMenu::AppSettings.as_ref()).replace("&", ""))
                 .center()
                 .min_inner_size(800.0, 600.0)
                 .inner_size(1160.0, 720.0)
@@ -321,9 +326,8 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
             tauri::async_runtime::spawn(async move {
                 if let Some(update) = handle_.updater().unwrap().check().await.unwrap() {
                     let user_confirmed = confirm_dialog(
-                        "Update available",
-                        "Version {} is available for download.\n\n\
-                            \n\nDo you want to download it?",
+                        fl!("dialog-update-title").as_str(),
+                        fl!("dialog-update-message", version = update.version).as_str(),
                         MessageType::Info,
                     );
                     if user_confirmed {
@@ -335,7 +339,7 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
                         warn!("User declined update download.");
                     }
                 } else {
-                    info_dialog!("No update available.");
+                    info_dialog(fl!("dialog-update-no-update").as_str());
                 }
             });
         }

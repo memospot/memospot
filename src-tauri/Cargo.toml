@@ -3,7 +3,7 @@
 
 [package]
 name = "memospot"
-version = { workspace = true }
+version = "2.0.0"
 authors = { workspace = true }
 edition = { workspace = true }
 license = { workspace = true }
@@ -48,6 +48,11 @@ tempfile = "3.14"
 tokio = "1.42"
 ts-rs = "10.1"
 url = { version = "2", features = ["serde"] }
+
+[target.'cfg(not(i18n_group))'.dependencies]
+i18n-embed = { version = "0.14", features = ["fluent-system", "desktop-requester"] }
+i18n-embed-fl = "0.7"
+rust-embed = "8"
 
 [target.'cfg(not(tauri_group))'.dependencies]
 tauri = { version = "^2.1", features = ["config-toml"] }
