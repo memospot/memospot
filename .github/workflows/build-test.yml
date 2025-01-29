@@ -207,4 +207,9 @@ jobs:
         with:
           name: memospot-${{ matrix.platform.rust_target }}
           path: |
-            ${{ github.workspace }}/target/${{ matrix.platform.rust_target }}/release/bundle/**/*.*
+            ${{ github.workspace }}/target/${{ matrix.platform.rust_target }}/release/bundle/dmg/*.dmg
+            ${{ github.workspace }}/target/${{ matrix.platform.rust_target }}/release/bundle/deb/*.deb
+            ${{ github.workspace }}/target/${{ matrix.platform.rust_target }}/release/bundle/rpm/*.rpm
+            ${{ github.workspace }}/target/${{ matrix.platform.rust_target }}/release/bundle/appimage/*.AppImage
+            ${{ github.workspace }}/target/${{ matrix.platform.rust_target }}/release/bundle/msi/*.msi
+            ${{ github.workspace }}/target/${{ matrix.platform.rust_target }}/release/bundle/nsis/*.exe

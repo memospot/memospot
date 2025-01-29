@@ -21,7 +21,7 @@ jobs:
   audit-rust:
     name: Audit with RustSec
     runs-on: ubuntu-latest
-    permissions: { issues: write, checks: write }
+    permissions: { issues: read, checks: write }
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
