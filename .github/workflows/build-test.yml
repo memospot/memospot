@@ -202,3 +202,9 @@ jobs:
           prerelease: true
           args: --verbose --target ${{ matrix.platform.rust_target }}
           includeUpdaterJson: false
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: memospot-${{ matrix.platform.rust_target }}
+          path: |
+            ${{ github.workspace }}/target/${{ matrix.platform.rust_target }}/release/bundle/**/*.*
