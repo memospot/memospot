@@ -225,17 +225,26 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
             .build(handle)?,
         )
         .separator()
-        .text(
-            MainMenu::HelpMemospotDocumentation.index(),
-            fl(MainMenu::HelpMemospotDocumentation.as_ref()),
+        .item(
+            &MenuItemBuilder::with_id(
+                MainMenu::HelpMemospotDocumentation.index(),
+                fl(MainMenu::HelpMemospotDocumentation.as_ref()),
+            )
+            .build(handle)?,
         )
-        .text(
-            MainMenu::HelpMemospotReleaseNotes.index(),
-            fl(MainMenu::HelpMemospotReleaseNotes.as_ref()),
+        .item(
+            &MenuItemBuilder::with_id(
+                MainMenu::HelpMemospotReleaseNotes.index(),
+                fl(MainMenu::HelpMemospotReleaseNotes.as_ref()),
+            )
+            .build(handle)?,
         )
-        .text(
-            MainMenu::HelpMemospotReportIssue.index(),
-            fl(MainMenu::HelpMemospotReportIssue.as_ref()),
+        .item(
+            &MenuItemBuilder::with_id(
+                MainMenu::HelpMemospotReportIssue.index(),
+                fl(MainMenu::HelpMemospotReportIssue.as_ref()),
+            )
+            .build(handle)?,
         )
         .item(
             &MenuItemBuilder::with_id(
@@ -246,28 +255,32 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
             .build(handle)?,
         )
         .separator()
-        .text(
-            MainMenu::HelpMemosDocumentation.index(),
-            fl(MainMenu::HelpMemosDocumentation.as_ref()),
+        .item(
+            &MenuItemBuilder::with_id(
+                MainMenu::HelpMemosDocumentation.index(),
+                fl(MainMenu::HelpMemosDocumentation.as_ref()),
+            )
+            .build(handle)?,
         )
-        .text(
-            MainMenu::HelpMemosReleaseNotes.index(),
-            fl(MainMenu::HelpMemosReleaseNotes.as_ref()),
+        .item(
+            &MenuItemBuilder::with_id(
+                MainMenu::HelpMemosReleaseNotes.index(),
+                fl(MainMenu::HelpMemosReleaseNotes.as_ref()),
+            )
+            .build(handle)?,
         )
         .build()?;
 
-    Menu::with_items(
+    #[cfg(target_os = "macos")]
+    let menu = Menu::with_items(
         handle,
-        &[
-            #[cfg(target_os = "macos")]
-            mac_menu,
-            app_menu,
-            view_menu,
-            #[cfg(target_os = "macos")]
-            window_menu,
-            help_menu,
-        ],
-    )
+        &[mac_menu, app_menu, view_menu, window_menu, help_menu],
+    )?;
+
+    #[cfg(not(target_os = "macos"))]
+    let menu = Menu::with_items(handle, &[app_menu, view_menu, help_menu])?;
+
+    Ok(menu)
 }
 
 pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {

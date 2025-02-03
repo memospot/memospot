@@ -157,8 +157,18 @@ pub fn run() {
         ])
         .setup(move |app| {
             let handle = app.handle();
+
+            // Set the menu at the application level for macOS
+            #[cfg(target_os = "macos")]
+            {
+                app.set_menu(menu::build(handle)?)?;
+            }
+
             if let Some(main_window) = app.get_webview_window("main") {
-                main_window.set_menu(menu::build(handle)?).ok();
+                // For non-macOS platforms, set the menu on the window
+                #[cfg(not(target_os = "macos"))]
+                main_window.set_menu(menu::build(handle)?)?;
+
                 menu::update_with_memos_version(handle);
             }
 
