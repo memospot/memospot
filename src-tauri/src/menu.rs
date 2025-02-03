@@ -135,7 +135,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
 
     let settings = MenuItemBuilder::new(fl(MainMenu::AppSettings.as_ref()))
         .id(MainMenu::AppSettings.index())
-        .accelerator("CmdOrCtrl+S")
+        .accelerator("CmdOrCtrl+,")
         .build(handle)?;
 
     let browse_data_directory =
@@ -149,8 +149,6 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
         .about(Some(AboutMetadata::default()))
         .separator()
         .item(&settings)
-        .item(&browse_data_directory)
-        .item(&check_for_updates)
         .separator()
         .services()
         .separator()
@@ -163,6 +161,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
 
     let app_menu = &SubmenuBuilder::new(handle, fl(MainMenu::App.as_ref()))
         .items(&[
+            #[cfg(not(target_os = "macos"))]
             &settings,
             &browse_data_directory,
             &PredefinedMenuItem::separator(handle)?,
@@ -170,7 +169,6 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
             &PredefinedMenuItem::close_window(handle, None)?,
             #[cfg(not(target_os = "macos"))]
             &PredefinedMenuItem::quit(handle, None)?,
-            #[cfg(not(target_os = "macos"))]
             &check_for_updates,
         ])
         .build()?;
