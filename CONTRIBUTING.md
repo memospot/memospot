@@ -196,6 +196,12 @@ cargo binstall --disable-telemetry \
     -y
 ```
 
+> [!WARNING]
+> Should you experience issues with `cargo-tauri` under macOS, like `bad CPU type in executable`, try building it manually using `cargo install --locked --target=$(rustc -vV | sed -n 's|host: ||p') tauri-cli`.
+
+> [!WARNING]
+> If you experience issues with bun build, install node and it will fallback automatically when needed.
+
 ##### Powershell
 
 ```powershell

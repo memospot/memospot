@@ -133,14 +133,23 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
     #[cfg(target_os = "macos")]
     let app_name = handle.config().product_name.clone().unwrap_or_default();
 
+    let settings = MenuItemBuilder::new(fl(MainMenu::AppSettings.as_ref()))
+        .id(MainMenu::AppSettings.index())
+        .accelerator("CmdOrCtrl+S")
+        .build(handle)?;
+
+    let browse_data_directory =
+        MenuItemBuilder::new(fl(MainMenu::AppBrowseDataDirectory.as_ref()))
+            .id(MainMenu::AppBrowseDataDirectory.index())
+            .accelerator("CmdOrCtrl+D")
+            .build(handle)?;
+
     #[cfg(target_os = "macos")]
     let mac_menu = &SubmenuBuilder::new(handle, app_name)
         .about(Some(AboutMetadata::default()))
         .separator()
-        .text(
-            MainMenu::AppSettings.index(),
-            fl(MainMenu::AppSettings.as_ref()),
-        )
+        .item(&settings)
+        .item(&browse_data_directory)
         .item(&check_for_updates)
         .separator()
         .services()
@@ -154,18 +163,8 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
 
     let app_menu = &SubmenuBuilder::new(handle, fl(MainMenu::App.as_ref()))
         .items(&[
-            &MenuItemBuilder::with_id(
-                MainMenu::AppSettings.index(),
-                fl(MainMenu::AppSettings.as_ref()),
-            )
-            .accelerator("CmdOrCtrl+S")
-            .build(handle)?,
-            &MenuItemBuilder::with_id(
-                MainMenu::AppBrowseDataDirectory.index(),
-                fl(MainMenu::AppBrowseDataDirectory.as_ref()),
-            )
-            .accelerator("CmdOrCtrl+D")
-            .build(handle)?,
+            &settings,
+            &browse_data_directory,
             &PredefinedMenuItem::separator(handle)?,
             #[cfg(target_os = "macos")]
             &PredefinedMenuItem::close_window(handle, None)?,

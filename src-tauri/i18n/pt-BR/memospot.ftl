@@ -12,7 +12,7 @@ dialog-update-message =
 dialog-update-no-update = Nenhuma atualização disponível.
 
 view = &Exibição
-developer-tools = &Ferramentas do desenvolvedor...
+developer-tools = &Ferramentas do desenvolvedor…
 hide-menu-bar = &Esconder barra de menu
 refresh = &Atualizar
 reload-view = &Recarregar
@@ -24,4 +24,4 @@ memos-version = &Versão do Memos
 memospot-version = &Versão do Memospot
 documentation = &Documentação
 release-notes = &Notas de lançamento
-report-issue = &Reportar um problema...
+report-issue = &Reportar um problema…
