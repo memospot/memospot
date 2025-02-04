@@ -81,7 +81,7 @@ pub fn update_with_memos_version<R: Runtime>(handle: &AppHandle<R>) {
             interval.tick().await;
             if time_start.elapsed().as_millis() > TIMEOUT_MS {
                 debug!(
-                    "Unable to set Memos version in menu. Timed out ({}ms).",
+                    "Unable to set Memos version in Help menu. Timed out ({}ms).",
                     TIMEOUT_MS
                 );
                 break;
@@ -130,9 +130,6 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
     )
     .build(handle)?;
 
-    #[cfg(target_os = "macos")]
-    let app_name = handle.config().product_name.clone().unwrap_or_default();
-
     let settings = MenuItemBuilder::new(fl(MainMenu::AppSettings.as_ref()))
         .id(MainMenu::AppSettings.index())
         .accelerator("CmdOrCtrl+,")
@@ -143,6 +140,9 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
             .id(MainMenu::AppBrowseDataDirectory.index())
             .accelerator("CmdOrCtrl+D")
             .build(handle)?;
+
+    #[cfg(target_os = "macos")]
+    let app_name = handle.config().product_name.clone().unwrap_or_default();
 
     #[cfg(target_os = "macos")]
     let mac_menu = &SubmenuBuilder::new(handle, app_name)
@@ -182,7 +182,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
                 MainMenu::ViewDevTools.index(),
                 fl(MainMenu::ViewDevTools.as_ref()),
             )
-            .accelerator("CmdOrCtrl+Shift+I")
+            .accelerator("CmdOrCtrl+Shift+C")
             .build(handle)?,
             &MenuItemBuilder::with_id(
                 MainMenu::ViewHideMenuBar.index(),
@@ -327,7 +327,7 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
                 window_builder.build().ok();
                 #[cfg(target_os = "macos")]
                 window_builder
-                    .title_bar_style(tauri::TitleBarStyle::Overlay)
+                    .title_bar_style(tauri::TitleBarStyle::Visible)
                     .build()
                     .ok();
             });

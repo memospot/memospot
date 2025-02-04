@@ -84,8 +84,6 @@ pub fn run() {
     config.paths.memospot_cwd = config.paths.memospot_bin.parent().unwrap().to_path_buf();
     config.paths.memos_bin = init::find_memos(&config);
 
-    config.to_global_store();
-
     #[cfg(target_os = "linux")]
     init::hw_acceleration();
     init::set_env_vars(&config);
@@ -100,13 +98,17 @@ pub fn run() {
     let mut tauri_ctx = tauri::generate_context!();
 
     let app_version = tauri_ctx.package_info().version.to_string();
-    let custom_user_agent = config.yaml.memospot.remote.user_agent.as_deref();
-    config.user_agent = custom_user_agent
-        .filter(|x| !x.is_empty() && config.yaml.memospot.remote.enabled.unwrap_or(false))
+    config.user_agent = config.yaml.memospot.remote.user_agent.as_deref()
+        .filter(|x| !x.is_empty() && config.yaml.memospot.remote.enabled.unwrap_or_default())
         .map(|x| x.to_string())
         .unwrap_or_else(|| {
             format!("Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Memospot/{}", &app_version)
         });
+    warn!("WebView user agent: {}", &config.user_agent);
+
+    // Store `config` and make it immutable after this point.
+    config.to_global_store();
+    let config = config.clone();
 
     let window_config = &mut tauri_ctx.config_mut().app.windows;
     if !window_config.is_empty() {
@@ -114,8 +116,10 @@ pub fn run() {
             title: "Memospot".into(),
             url: tauri::WebviewUrl::App("/loader".into()),
             user_agent: Some(config.user_agent.clone()),
-            drag_drop_enabled: false, // Stop Tauri from handling drag-and-drop events and pass them to the webview.
-            visible: false, // Prevent theme flashing. The frontend code calls getCurrentWebviewWindow().show() immediately after configuring the theme.
+            // Stop Tauri from handling drag-and-drop events and pass them to the webview.
+            drag_drop_enabled: false,
+            // Prevent theme flashing. The frontend code calls getCurrentWebviewWindow().show() immediately after configuring the theme.
+            visible: false,
             ..Default::default()
         }
         .restore_window_state();
@@ -156,53 +160,37 @@ pub fn run() {
             cmd::path_exists
         ])
         .setup(move |app| {
-            let handle = app.handle();
+            let app_handle = app.handle();
 
-            // Set the menu at the application level for macOS
-            #[cfg(target_os = "macos")]
-            {
-                app.set_menu(menu::build(handle)?)?;
-            }
+            // Menu must be set at the application level to also work in macOS.
+            app.set_menu(menu::build(app_handle)?)?;
 
-            if let Some(main_window) = app.get_webview_window("main") {
-                // For non-macOS platforms, set the menu on the window
-                #[cfg(not(target_os = "macos"))]
-                main_window.set_menu(menu::build(handle)?)?;
-
-                menu::update_with_memos_version(handle);
-            }
+            menu::update_with_memos_version(app_handle);
 
             if config_.yaml.memospot.updater.enabled.is_some_and(|e| !e) {
                 warn!("Disabling updater plugin by user config.");
-                handle.remove_plugin("tauri-plugin-updater");
+                app_handle.remove_plugin("tauri-plugin-updater");
             }
             if env::var("FLATPAK_ID").is_ok_and(|id| !id.is_empty()) {
                 debug!("Running in Flatpak. Disabling updater plugin.");
-                handle.remove_plugin("tauri-plugin-updater");
+                app_handle.remove_plugin("tauri-plugin-updater");
             }
 
-            info!(
-                "webview url: {}",
-                &app.get_webview_window("main").unwrap().url().unwrap()
-            );
-
-            if config_.is_managed_server {
-                return Ok(());
-            }
-
-            info!(
-                "Using custom Memos address: {}. Memos server will not be started.",
-                config_.memos_url
-            );
-            let title_url = config_
-                .memos_url
-                .trim_start_matches("http://")
-                .trim_start_matches("https://")
-                .trim_end_matches("/");
-            if let Some(main_window) = app.get_webview_window("main") {
-                main_window
-                    .set_title(&format!("Memospot - {}", title_url))
-                    .unwrap_or_default();
+            if !config_.is_managed_server {
+                info!(
+                    "Running in client mode for `{}`. Memos server will not be started.",
+                    config_.memos_url
+                );
+                let title_url = config_
+                    .memos_url
+                    .trim_start_matches("http://")
+                    .trim_start_matches("https://")
+                    .trim_end_matches("/");
+                if let Some(main_window) = app.get_webview_window("main") {
+                    main_window
+                        .set_title(&format!("Memospot - {}", title_url))
+                        .unwrap_or_default();
+                }
             }
 
             Ok(())
@@ -240,7 +228,6 @@ pub fn run() {
 
                 #[cfg(not(debug_assertions))]
                 let final_config = RuntimeConfig::from_global_store();
-
                 #[cfg(debug_assertions)]
                 let mut final_config = RuntimeConfig::from_global_store();
 
@@ -251,7 +238,6 @@ pub fn run() {
                     final_config.yaml.memos.port = final_config.__yaml__.memos.port;
                 }
 
-                // if config.yaml != config.__yaml__ {
                 if final_config.yaml != final_config.__yaml__ {
                     info!("Configuration has changed. Saving…");
                     tauri::async_runtime::block_on(async {
