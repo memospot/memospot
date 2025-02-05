@@ -159,7 +159,7 @@ rustup component add clippy rust-analyzer
 
 [Binstall](https://github.com/cargo-bins/cargo-binstall) is a tool for installing pre-built Rust binaries.
 
-> [!INFO]
+> [!NOTE]
 > It's possible to use `cargo install` or download the binaries manually instead, but it will take a lot of time.
 
 - Homebrew

@@ -86,10 +86,6 @@ deps-ts:
     pushd "build-scripts"; bun install; popd
 
 [private]
-deps-rs:
-    mkdir -p ./src-ui/build
-
-[private]
 dev-ui: deps-ts
     cd "src-ui"; bun x vite
 
@@ -119,19 +115,19 @@ test: test-ts test-crates test-rs test-tauri
 
 [group('test')]
 [doc('Run all crate tests')]
-test-crates: deps-rs
+test-crates:
     cargo test --workspace --exclude memospot --lib -- --nocapture
 
 [group('test')]
 [doc('Run all Rust tests')]
-test-rs: deps-rs
+test-rs:
     #!{{bash}}
     export CARGO_PROFILE_TEST_BUILD_OVERRIDE_DEBUG=true
     cargo test --workspace --lib -- --nocapture
 
 [group('test')]
 [doc('Run all Tauri tests')]
-test-tauri: deps-rs
+test-tauri:
     cargo test --package memospot --lib -- --nocapture
 
 [group('test')]
@@ -380,7 +376,7 @@ lint-dprint:
 
 [group('lint')]
 [doc('Lint Rust code with cargo fmt and clippy')]
-lint-rs: deps-rs
+lint-rs:
     cargo fmt --all --check
     cargo clippy --all-features --all-targets --workspace --locked
 
