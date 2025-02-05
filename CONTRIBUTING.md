@@ -94,6 +94,7 @@ xcode-select --install
 <summary>Windows</summary>
 
 [Git](https://git-scm.com/downloads/win)
+
 ```powershell
 winget install --id Git.Git -e --source winget
 ```
@@ -101,7 +102,7 @@ winget install --id Git.Git -e --source winget
 [Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 
 ```powershell
-winget install --id=Microsoft.VisualStudio.2022.BuildTools -e
+winget install -e --id Microsoft.VisualStudio.2022.BuildTools --override "--passive --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 ```
 
 [Edge WebView2](https://developer.microsoft.com/microsoft-edge/webview2/#download-section)
@@ -121,13 +122,37 @@ Bun is a fast JavaScript/TypeScript runtime, bundler, test runner, and package m
 - Homebrew
 
   ```bash
-    brew install oven-sh/bun/bun
+  brew install oven-sh/bun/bun
   ```
 
 - Winget
 
   ```powershell
-    winget install --id Oven-sh.Bun
+  winget install --id Oven-sh.Bun
+  ```
+
+### Node JS
+
+Node is a JavaScript runtime built on Chrome's V8 JavaScript engine.
+
+> [!NOTE]
+> Bun should soon replace Node entirely on this project.
+>
+> Make sure Node is installed if you get any front-end build errors.
+
+> [!TIP]
+> Any version starting from Node 18 should work.
+
+- Homebrew
+
+  ```bash
+  brew install node@22
+  ```
+
+- Winget
+
+  ```powershell
+  winget install --id OpenJS.NodeJS.LTS
   ```
 
 ### Rust
@@ -137,15 +162,15 @@ Bun is a fast JavaScript/TypeScript runtime, bundler, test runner, and package m
 - Homebrew
 
   ```bash
-    brew install rustup-init
-    rustup-init -y
-    source "$HOME/.cargo/env"
+  brew install rustup-init
+  rustup-init -y
+  source "$HOME/.cargo/env"
   ```
 
 - Winget
 
   ```powershell
-    winget install --id Rustlang.Rustup
+  winget install --id Rustlang.Rustup
   ```
 
 ### Rust toolchain
@@ -203,12 +228,10 @@ cargo binstall --disable-telemetry \
 
 > [!WARNING]
 > Should you experience issues with `cargo-tauri` under macOS, like `bad CPU type in executable`, try building it manually:
+>
 > ```bash
 > cargo install --locked --target=$(rustc -vV | sed -n 's|host: ||p') tauri-cli
 > ```
-
-> [!WARNING]
-> If you experience issues with `bun build`, install `node`. It will fallback automatically when needed.
 
 ##### Powershell
 
@@ -222,8 +245,7 @@ cargo binstall --disable-telemetry `
     -y
 ```
 
-> [!TIP]
-> `cargo binstall` outputs the tools to `$HOME/.cargo/bin` which already should be in your PATH.
+> [!TIP] > `cargo binstall` outputs the tools to `$HOME/.cargo/bin` which already should be in your PATH.
 
 ## Memos server build
 
@@ -253,6 +275,7 @@ git clone https://github.com/memospot/memospot.git
 ```
 
 ## Changing into the project directory
+
 ```bash
 cd memospot
 ```
@@ -266,7 +289,7 @@ cd memospot
 > Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 > ```
 
-At this point, everything should be ready to go. 
+At this point, everything should be ready to go.
 
 Listing all available Just recipes:
 
