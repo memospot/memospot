@@ -184,6 +184,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
             )
             .accelerator("CmdOrCtrl+Shift+C")
             .build(handle)?,
+            #[cfg(not(target_os = "macos"))]
             &MenuItemBuilder::with_id(
                 MainMenu::ViewHideMenuBar.index(),
                 fl(MainMenu::ViewHideMenuBar.as_ref()),
