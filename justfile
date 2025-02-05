@@ -161,7 +161,6 @@ test-ts: deps-ts
 
 [doc('Run app in development mode')]
 dev: dev-killprocesses
-    rustup toolchain install $RUST_TOOLCHAIN
     cargo tauri dev
     just dev-killprocesses
 
@@ -212,7 +211,7 @@ upgrade: upgrade-rust upgrade-bun
 upgrade-rust:
     rustup update
     rustup self update
-    rustup component add clippy
+    rustup component add clippy rust-analyzer
 
 [group('upgrade')]
 [doc('Upgrade bun runtime')]

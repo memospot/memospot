@@ -76,7 +76,8 @@ sudo apt install --no-install-recommends -qq \
 ```
 
 > [!NOTE]
-> Should you experience an error regarding `soup3-sys`, you may need to manually set `PKG_CONFIG_PATH` with `export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig/:/usr/share/pkgconfig"`. You can make this permanent by adding the line to your `.bashrc` or `.bash_profile` file.
+> Should you experience an error regarding `soup3-sys`, you may need to manually set `PKG_CONFIG_PATH` with `export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig/:/usr/share/pkgconfig"`.
+> You can make this permanent by adding the line to your `.bashrc` or `.bash_profile` file.
 
 </details>
 
@@ -92,15 +93,20 @@ xcode-select --install
 <details>
 <summary>Windows</summary>
 
+[Git](https://git-scm.com/downloads/win)
+```powershell
+winget install --id Git.Git -e --source winget
+```
+
 [Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 
-```Shell
+```powershell
 winget install --id=Microsoft.VisualStudio.2022.BuildTools -e
 ```
 
 [Edge WebView2](https://developer.microsoft.com/microsoft-edge/webview2/#download-section)
 
-```Shell
+```powershell
 winget install --id=Microsoft.EdgeWebView2Runtime -e
 ```
 
@@ -140,22 +146,21 @@ Bun is a fast JavaScript/TypeScript runtime, bundler, test runner, and package m
 
   ```powershell
     winget install --id Rustlang.Rustup
-    rustup-init -y
   ```
 
 ### Rust toolchain
 
 ```bash
 rustup default stable
-rustup component add clippy
+rustup component add clippy rust-analyzer
 ```
 
 ### Cargo binstall
 
 [Binstall](https://github.com/cargo-bins/cargo-binstall) is a tool for installing pre-built Rust binaries.
 
-> [!TIP]
-> It's possible to use `cargo install` or download the binaries manually instead, but it would take a lot of time and manual work.
+> [!INFO]
+> It's possible to use `cargo install` or download the binaries manually instead, but it will take a lot of time.
 
 - Homebrew
 
@@ -197,15 +202,18 @@ cargo binstall --disable-telemetry \
 ```
 
 > [!WARNING]
-> Should you experience issues with `cargo-tauri` under macOS, like `bad CPU type in executable`, try building it manually using `cargo install --locked --target=$(rustc -vV | sed -n 's|host: ||p') tauri-cli`.
+> Should you experience issues with `cargo-tauri` under macOS, like `bad CPU type in executable`, try building it manually:
+> ```bash
+> cargo install --locked --target=$(rustc -vV | sed -n 's|host: ||p') tauri-cli
+> ```
 
 > [!WARNING]
-> If you experience issues with bun build, install node and it will fallback automatically when needed.
+> If you experience issues with `bun build`, install `node`. It will fallback automatically when needed.
 
 ##### Powershell
 
 ```powershell
-cargo binstall --disable-telemetry --no-confirm `
+cargo binstall --disable-telemetry `
     cargo-cache@0.8.3 `
     cargo-edit@0.13.0 `
     dprint@0.47.5 `
@@ -214,6 +222,7 @@ cargo binstall --disable-telemetry --no-confirm `
     -y
 ```
 
+> [!TIP]
 > `cargo binstall` outputs the tools to `$HOME/.cargo/bin` which already should be in your PATH.
 
 ## Memos server build
@@ -237,9 +246,29 @@ Sample valid server binary names:
 > [!TIP]
 > You can check your current system target triplet with the command `rustc -vV`.
 
+## Cloning the repository
+
+```bash
+git clone https://github.com/memospot/memospot.git
+```
+
+## Changing into the project directory
+```bash
+cd memospot
+```
+
 ## Using Just
 
-After installing Just and cloning the project repository, you can open a terminal, `cd` into the project directory and see all available recipes:
+> [!IMPORTANT]
+> Under Windows, you must allow PowerShell script execution:
+>
+> ```powershell
+> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+> ```
+
+At this point, everything should be ready to go. 
+
+Listing all available Just recipes:
 
 ```bash
 just --list
