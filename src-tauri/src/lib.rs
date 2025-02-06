@@ -13,6 +13,7 @@ mod zip;
 
 use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
 use dialog::*;
+use localize::*;
 use log::{debug, info, warn};
 use std::env;
 use std::path::PathBuf;
@@ -130,7 +131,10 @@ pub fn run() {
         tauri::async_runtime::spawn(async move {
             init::migrate_database(&config_).await;
             memos::spawn(&config_).unwrap_or_else(|e| {
-                panic_dialog!("Failed to spawn Memos server:\n{}", e);
+                panic_dialog!(
+                    "{}",
+                    fl!("panic-failed-to-spawn-memos", error = e.to_string())
+                );
             });
         });
     }

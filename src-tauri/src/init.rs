@@ -1,10 +1,11 @@
-use crate::runtime_config::RuntimeConfig;
-use crate::sqlite;
-use crate::utils::*;
 /// Runtime checks and initialization code.
 ///
 /// Functions in this module panics with native dialogs instead of returning errors.
 /// Main purpose is to unclutter `main.rs`.
+use crate::fl;
+use crate::runtime_config::RuntimeConfig;
+use crate::sqlite;
+use crate::utils::*;
 use crate::webview;
 use crate::zip;
 use config::Config;
@@ -14,6 +15,7 @@ use log::{debug, info, warn};
 use migration::{Migrator, MigratorTrait};
 use std::env;
 use std::env::consts::OS;
+use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -27,17 +29,23 @@ pub fn data_path(app_name: &str) -> PathBuf {
     if !data_path.exists() {
         if let Err(e) = std::fs::create_dir_all(&data_path) {
             panic_dialog!(
-                "Failed to create data directory `{}`:\n{}",
-                data_path.to_string_lossy(),
-                e.to_string()
+                "{}",
+                fl!(
+                    "panic-failed-to-create-data-directory",
+                    dir = data_path.to_string_lossy(),
+                    error = e.to_string()
+                ),
             );
         }
     }
 
     if !&data_path.is_writable() {
         panic_dialog!(
-            "Data directory is not writable:\n{}",
-            data_path.to_string_lossy()
+            "{}",
+            fl!(
+                "panic-data-directory-is-not-writable",
+                dir = data_path.to_string_lossy()
+            )
         );
     }
     data_path
@@ -71,8 +79,11 @@ pub fn memos_data(rtcfg: &RuntimeConfig) -> PathBuf {
     }
 
     panic_dialog!(
-        "Failed to resolve custom Memos data directory!\n{}\n\nEnsure it exists and is a directory, or remove the setting `memos.data` to use the default data path.",
-        path.to_string_lossy()
+        "{}",
+        fl!(
+            "panic-unable-to-resolve-custom-data-directory",
+            dir = path.to_string_lossy()
+        )
     );
 }
 
@@ -106,21 +117,33 @@ pub fn ensure_backup_directory(rtcfg: &RuntimeConfig) -> PathBuf {
     if !path.exists() {
         if let Err(e) = std::fs::create_dir_all(&path) {
             panic_dialog!(
-                "Failed to create backup directory `{}`:\n{}",
-                path.to_string_lossy(),
-                e.to_string()
+                "{}",
+                fl!(
+                    "panic-unable-to-create-backup-directory",
+                    dir = path.to_string_lossy(),
+                    error = e.to_string()
+                )
             );
         }
     }
 
     if path.is_file() {
-        panic_dialog!("Backup directory is a file:\n{}", path.to_string_lossy());
+        panic_dialog!(
+            "{}",
+            fl!(
+                "panic-backup-directory-is-a-file",
+                dir = path.to_string_lossy()
+            )
+        );
     }
 
     if !&path.is_writable() {
         panic_dialog!(
-            "Backup directory is not writable:\n{}",
-            path.to_string_lossy()
+            "{}",
+            fl!(
+                "panic-backup-directory-is-not-writable",
+                dir = path.to_string_lossy()
+            )
         );
     }
 
@@ -156,7 +179,13 @@ pub fn database(rtcfg: &RuntimeConfig) -> PathBuf {
             continue;
         }
         if !&file.is_writable() {
-            panic_dialog!("Database file is not writable:\n{}", file.to_string_lossy());
+            panic_dialog!(
+                "{}",
+                fl!(
+                    "panic-database-file-is-not-writable",
+                    file = file.to_string_lossy()
+                )
+            );
         }
     }
     db_path
@@ -176,7 +205,10 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
     let db_conn = sqlite::get_database_connection(&db_file)
         .await
         .unwrap_or_else(|e| {
-            panic_dialog!("Failed to connect to the database:\n{}", e.to_string());
+            panic_dialog!(
+                "{}",
+                fl!("panic-failed-to-connect-to-database", error = e.to_string())
+            );
         });
     let migration_amount = Migrator::get_pending_migrations(&db_conn)
         .await
@@ -218,13 +250,28 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
     let db_conn = sqlite::get_database_connection(&db_file)
         .await
         .unwrap_or_else(|e| {
-            panic_dialog!("Failed to connect to the database:\n{}", e.to_string());
+            panic_dialog!(
+                "{}",
+                fl!("panic-failed-to-connect-to-database", error = e.to_string())
+            );
         });
     if let Err(e) = Migrator::up(&db_conn, None).await {
-        warn_dialog!("Failed to run database migrations:\n{}", e.to_string());
+        warn_dialog!(
+            "{}",
+            fl!(
+                "panic-failed-to-run-database-migrations",
+                error = e.to_string()
+            )
+        );
     }
     db_conn.close().await.unwrap_or_else(|e| {
-        panic_dialog!("Failed to close database connection:\n{}", e.to_string());
+        panic_dialog!(
+            "{}",
+            fl!(
+                "panic-failed-to-close-database-connection",
+                error = e.to_string()
+            )
+        );
     });
 
     info!(
@@ -241,11 +288,10 @@ pub fn ensure_webview() {
     }
 
     let user_confirmed = confirm_dialog(
-            "WebView Error",
-            "WebView is *required* for this application to work and it's not available on this system!\
-            \n\nDo you want to install it?",
-            MessageType::Error,
-        );
+        fl("prompt-install-webview-title").as_str(),
+        fl("prompt-install-webview-message").as_str(),
+        MessageType::Error,
+    );
     if !user_confirmed {
         warn!("User declined to setup WebView.");
         exit(1);
@@ -254,8 +300,8 @@ pub fn ensure_webview() {
     tauri::async_runtime::block_on(async move {
         if let Err(e) = webview::install().await {
             error_dialog!(
-                "Failed to install WebView:\n{}\n\nPlease install it manually.",
-                e
+                "{}",
+                fl!("error-failed-to-install-webview", error = e.to_string())
             );
 
             if let Err(e) = webview::open_install_website() {
@@ -266,10 +312,7 @@ pub fn ensure_webview() {
     });
 
     if !webview::is_available() {
-        panic_dialog!(
-            "Unable to setup WebView!\n\n\
-                Please install it manually and relaunch the application."
-        );
+        panic_dialog!("{}", fl!("error-failed-to-install-webview", error = ""));
     }
 }
 
@@ -316,6 +359,14 @@ pub fn config(config_path: &PathBuf) -> Config {
 
         if !user_confirmed {
             panic_dialog!("You must fix the config file manually and restart the application.");
+        }
+
+        if let Err(e) = fs::copy(config_path, config_path.with_extension("bak")) {
+            panic_dialog!(
+                "Failed to backup current configuration file `{}`:\n{}",
+                config_path.to_string_lossy(),
+                e.to_string()
+            );
         }
 
         if let Err(e) = Config::reset_file_blocking(config_path) {
