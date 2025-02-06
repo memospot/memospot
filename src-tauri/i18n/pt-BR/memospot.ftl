@@ -68,6 +68,9 @@ panic-failed-to-run-database-migrations =
 panic-failed-to-close-database-connection =
     Falha ao fechar a conexão com o banco de dados:
     {$error}
+warn-failed-to-backup-database =
+    Falha ao fazer backup do banco de dados:
+    {$error}
 prompt-install-webview-title = Erro no WebView
 prompt-install-webview-message =
     O WebView é *obrigatório* para o funcionamento deste
@@ -79,3 +82,55 @@ error-failed-to-install-webview =
     {$error}
 
     Por favor, instale-o manualmente.
+panic-config-unable-to-create =
+    Não foi possível criar o arquivo de configuração!
+    {$file}
+    {$error}
+panic-config-is-not-a-file =
+    O caminho fornecido para a configuração é um diretório.
+    Deve ser um arquivo!
+    {$path}
+panic-config-is-not-writable =
+    O arquivo de configuração não é gravável!
+    {$file}
+prompt-config-error-title = Erro na configuração
+prompt-config-error-message =
+    Erro ao ler o arquivo de configuração:
+    {$error}
+
+    Redefinir o arquivo de configuração?
+panic-config-error =
+    Por favor, corrija o arquivo de configuração
+    manualmente e reinicie o aplicativo.
+panic-config-unable-to-backup =
+    Falha ao fazer backup do arquivo de configuração atual!
+
+    {$error}
+panic-config-unable-to-reset =
+    Não foi possível redefinir o arquivo de configuração!
+
+    {$error}
+panic-config-parse-error =
+    Erro ao ler o arquivo de configuração:
+    {$error}
+panic-portpicker-error =
+    Falha ao encontrar uma porta livre para o Memos escutar!
+error-invalid-server-url =
+    URL do servidor inválida:
+    {$url}
+
+    A URL deve iniciar com "http".
+    Verifique as configurações.
+panic-unable-to-find-memos-binary = Não foi possível encontrar o binário do servidor do Memos!
+panic-log-config-write-error =
+    Falha ao gravar o arquivo de configuração de log:
+    {$file}
+    {$error}
+panic-log-config-reset-error =
+        Falha ao redefinir o arquivo de configuração de log:
+        {$file}
+        Por favor, exclua este arquivo e reinicie o aplicativo.
+panic-log-setup-error =
+    Falha ao configurar o log!
+    Por favor, exclua este arquivo e reinicie o aplicativo:
+    {$file}

@@ -240,7 +240,10 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
                 );
             }
             Err(e) => {
-                warn_dialog!("Failed to backup Memos database:\n{}", e);
+                warn_dialog!(
+                    "{}",
+                    fl!("warn-failed-to-backup-database", error = e.to_string())
+                );
             }
         }
     }
@@ -324,63 +327,70 @@ pub fn config(config_path: &PathBuf) -> Config {
     if !config_path.exists() {
         if let Err(e) = Config::reset_file_blocking(config_path) {
             panic_dialog!(
-                "Failed to create configuration file:\n{}\n\n{}",
-                config_path.to_string_lossy(),
-                e.to_string()
+                "{}",
+                fl!(
+                    "panic-config-unable-to-create",
+                    file = config_path.to_string_lossy(),
+                    error = e.to_string()
+                )
             );
         }
     }
 
     if config_path.is_dir() {
         panic_dialog!(
-            "Provided configuration path is a directory! It must be a file.\n{}",
-            config_path.to_string_lossy()
+            "{}",
+            fl!(
+                "panic-config-is-not-a-file",
+                path = config_path.to_string_lossy()
+            )
         );
     }
 
     if !config_path.is_writable() {
         panic_dialog!(
-            "Configuration file is not writable:\n{}",
-            config_path.to_string_lossy()
+            "{}",
+            fl!(
+                "panic-config-is-not-writable",
+                file = config_path.to_string_lossy()
+            )
         );
     }
 
     let mut cfg_reader = Config::init(config_path);
     if let Err(e) = cfg_reader {
         let user_confirmed = confirm_dialog(
-            "Configuration Error",
-            &format!(
-                "Failed to parse configuration file:\n\n{}\n\n\
-                Do you want to reset the configuration file and start the application with default settings?",
-                e
-            ),
-            MessageType::Warning
+            fl!("prompt-config-error-title").as_str(),
+            fl!("prompt-config-error-message", error = e.to_string()).as_str(),
+            MessageType::Warning,
         );
 
         if !user_confirmed {
-            panic_dialog!("You must fix the config file manually and restart the application.");
+            panic_dialog!("{}", fl!("panic-config-error"));
         }
 
-        if let Err(e) = fs::copy(config_path, config_path.with_extension("bak")) {
+        let now = chrono::Local::now().format("%Y%m%d-%H%M%S").to_string();
+        if let Err(e) = fs::copy(
+            config_path,
+            config_path.with_extension(format!("{}.bak", now)),
+        ) {
             panic_dialog!(
-                "Failed to backup current configuration file `{}`:\n{}",
-                config_path.to_string_lossy(),
-                e.to_string()
+                "{}",
+                fl!("panic-config-unable-to-backup", error = e.to_string())
             );
         }
 
         if let Err(e) = Config::reset_file_blocking(config_path) {
             panic_dialog!(
-                "Failed to reset configuration file `{}`:\n{}",
-                config_path.to_string_lossy(),
-                e.to_string()
+                "{}",
+                fl!("panic-config-unable-to-reset", error = e.to_string())
             );
         }
         cfg_reader = Ok(Config::default());
     }
 
     cfg_reader.unwrap_or_else(|e| {
-        panic_dialog!("Failed to parse configuration file:\n{}", e.to_string());
+        panic_dialog!("{}", fl!("panic-config-parse-error", error = e.to_string()));
     })
 }
 
@@ -395,7 +405,7 @@ pub fn memos_port(rtcfg: &RuntimeConfig) -> u16 {
         return free_port;
     }
 
-    panic_dialog!("Failed to find an open port!");
+    panic_dialog!("{}", fl!("panic-portpicker-error"));
 }
 
 /// Memos URL.
@@ -416,10 +426,7 @@ pub fn memos_url(rtcfg: &RuntimeConfig) -> String {
 
     let url = rtcfg.yaml.memospot.remote.url.as_deref().unwrap();
     if url.is_empty() || !url.starts_with("http") {
-        panic_dialog!(
-            "Invalid remote server URL: `{}`\n\nURL must start with http:// or https://.\nCheck memospot.yaml.",
-            url
-        );
+        error_dialog!("{}", fl!("error-invalid-server-url", url = url));
     }
 
     url.trim_end_matches('/').to_string() + "/"
@@ -477,7 +484,7 @@ pub fn find_memos(rtcfg: &RuntimeConfig) -> PathBuf {
         }
     }
 
-    panic_dialog!("Unable to find Memos server!");
+    panic_dialog!("{}", fl!("panic-unable-to-find-memos-binary"));
 }
 
 static LOGGING_CONFIG_YAML: &str = r#"
@@ -539,9 +546,12 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
         let config_template = LOGGING_CONFIG_YAML.replace("    ", "  ");
         if let Err(e) = file.write_all(config_template.as_bytes()) {
             panic_dialog!(
-                "Failed to write to `{}`:\n{}",
-                log_config.to_string_lossy(),
-                e.to_string()
+                "{}",
+                fl!(
+                    "panic-log-config-write-error",
+                    file = log_config.to_string_lossy(),
+                    error = e.to_string()
+                )
             );
         }
         if let Err(e) = file.flush() {
@@ -553,8 +563,11 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
         }
     } else {
         panic_dialog!(
-            "Failed to truncate `{}`. Please delete it and restart the application.",
-            log_config.to_string_lossy()
+            "{}",
+            fl!(
+                "panic-log-config-reset-error",
+                file = log_config.to_string_lossy()
+            )
         );
     }
 
@@ -564,8 +577,8 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
     }
 
     panic_dialog!(
-        "Failed to setup logging!\nPlease delete `{}` and restart the application.",
-        log_config.to_string_lossy()
+        "{}",
+        fl!("panic-log-setup-error", file = log_config.to_string_lossy())
     );
 }
 

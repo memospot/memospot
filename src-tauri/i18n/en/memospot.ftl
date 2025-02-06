@@ -68,6 +68,9 @@ panic-failed-to-run-database-migrations =
 panic-failed-to-close-database-connection =
     Failed to close database connection:
     {$error}
+warn-failed-to-backup-database =
+    Failed to backup database:
+    {$error}
 prompt-install-webview-title = WebView Error
 prompt-install-webview-message =
     A WebView is *required* for this application to
@@ -78,4 +81,54 @@ error-failed-to-install-webview =
     Failed to install WebView:
     {$error}
     Please install it manually.
+panic-config-unable-to-create =
+    Unable to create configuration file!
+    {$file}
+    {$error}
+panic-config-is-not-a-file =
+    Provided configuration path is a directory.
+    It must be a file!
+    {$path}
+panic-config-is-not-writable =
+    Configuration file is not writable!
+    {$file}
+prompt-config-error-title = Configuration Error
+prompt-config-error-message =
+    Failed to parse configuration file:
+    {$error}
 
+    Reset the configuration file?
+panic-config-error =
+    Please, fix the configuration file
+    manually and restart the application.
+panic-config-unable-to-backup =
+    Failed to backup the current configuration file!
+
+    {$error}
+panic-config-unable-to-reset =
+    Unable to reset the configuration file!
+
+    {$error}
+panic-config-parse-error =
+    Error while parsing the configuration file:
+    {$error}
+panic-portpicker-error =
+    Failed to find a free port to bind Memos to!
+error-invalid-server-url =
+    Invalid remote server URL:
+    {$url}
+
+    URL must start with "http".
+panic-unable-to-find-memos-binary = Unable to find Memos server binary!
+panic-log-config-write-error =
+    Failed to write log configuration file:
+    {$file}
+    {$error}
+panic-log-config-reset-error =
+    Failed to reset the log configuration file:
+    {$file}
+    Please delete it and restart the application.
+panic-log-setup-error =
+    Failed to setup logging!
+    Please delete this file and restart the application:
+    {$file}
