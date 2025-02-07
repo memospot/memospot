@@ -27,7 +27,7 @@ use writable::PathExt;
 pub fn data_path(app_name: &str) -> PathBuf {
     let data_path = get_app_data_path(app_name);
     if !data_path.exists() {
-        if let Err(e) = std::fs::create_dir_all(&data_path) {
+        if let Err(e) = fs::create_dir_all(&data_path) {
             panic_dialog!(
                 "{}",
                 fl!(
@@ -372,7 +372,7 @@ pub fn config(config_path: &PathBuf) -> Config {
         let now = chrono::Local::now().format("%Y%m%d-%H%M%S").to_string();
         if let Err(e) = fs::copy(
             config_path,
-            config_path.with_extension(format!("{}.bak", now)),
+            config_path.with_extension(format!("{}.yaml", now)),
         ) {
             panic_dialog!(
                 "{}",
@@ -399,9 +399,8 @@ pub fn config(config_path: &PathBuf) -> Config {
 /// Tries to find a free port if the configured one is already
 /// in use and updates the referenced configuration in place.
 pub fn memos_port(rtcfg: &RuntimeConfig) -> u16 {
-    if let Some(free_port) =
-        portpicker::find_free_port(rtcfg.yaml.memos.port.unwrap_or_default())
-    {
+    let preferred_port = rtcfg.yaml.memos.port.unwrap_or_default();
+    if let Some(free_port) = portpicker::find_free_port(preferred_port) {
         return free_port;
     }
 
