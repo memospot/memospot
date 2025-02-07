@@ -326,7 +326,8 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
                 .min_inner_size(800.0, 600.0)
                 .inner_size(1160.0, 720.0)
                 .disable_drag_drop_handler()
-                .visible(false)
+                .visible(cfg!(debug_assertions))
+                .focused(true)
                 .menu(build_empty(&handle_).unwrap());
 
                 #[cfg(not(target_os = "macos"))]

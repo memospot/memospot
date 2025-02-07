@@ -119,8 +119,8 @@ pub fn run() {
             user_agent: Some(config.user_agent.clone()),
             // Stop Tauri from handling drag-and-drop events and pass them to the webview.
             drag_drop_enabled: false,
-            // Prevent theme flashing. The frontend code calls getCurrentWebviewWindow().show() immediately after configuring the theme.
-            visible: false,
+            // Prevent theme flashing on release builds. The frontend code calls getCurrentWebviewWindow().show() immediately after configuring the theme.
+            visible: cfg!(debug_assertions),
             ..Default::default()
         }
         .restore_window_state();
