@@ -42,6 +42,6 @@ hide_menu_bar: boolean | null,
  */
 theme: string | null, 
 /**
- * Language.
+ * Locale.
  */
-language: string | null, };
+locale: string | null, };

@@ -1,9 +1,24 @@
 import * as messages from "$lib/paraglide/messages.js";
 import * as runtime from "$lib/paraglide/runtime.js";
 import { createI18n } from "@inlang/paraglide-sveltekit";
-import { getAppLanguage } from "./tauri";
+import { getAppLocale } from "./tauri";
 
-export type Language = (typeof runtime.availableLanguageTags)[number];
+// TODO: upgrade Paraglide to v2 when it's out of beta.
+// Pre-adoption of Paraglide v2 naming convention.
+/**
+ * The project's available locales.
+ */
+export const locales = runtime.availableLanguageTags;
+/**
+ * Check if a locale is available on the project.
+ */
+export const isLocale = runtime.isAvailableLanguageTag;
+/**
+ * Set the current locale.
+ */
+export const setLocale = runtime.setLanguageTag;
+
+export type Locale = (typeof locales)[number];
 
 /**
  * Creates an i18n instance that manages internationalization.
@@ -15,17 +30,17 @@ export const i18n = createI18n(runtime, {
 /**
  * Translated messages.
  *
- * Messages are defined in `src/i18n/{languageTag}.json`.
+ * Messages are defined in `src/i18n/{locale}.json`.
  *
  * See: [Paraglide-SvelteKit Docs](https://inlang.com/m/dxnzrydw/paraglide-sveltekit-i18n/getting-started#using-messages-in-code)
  */
 export const m = messages;
 
 /**
- * Fallbacks for languages.
+ * Locale fallbacks.
  *
- * Key: browser language tag/short language tag.
- * Value: app language tag.
+ * Key: browser locale/short locale.
+ * Value: app locale.
  */
 const fallbacks: Record<string, string> = {
     "zh-HK": "zh-Hant",
@@ -34,40 +49,49 @@ const fallbacks: Record<string, string> = {
 };
 
 /**
- * Detect the most appropriate translation to use based on the user's preference and current browser language.
+ * Detect the most appropriate translation to use based on the user's preference and current browser locale.
  *
  * Must be called after ParaglideJS is initialized.
+ *
+ * Order of preference:
+ * 1. User's preferred locale.
+ * 2. Exact browser locale.
+ * 3. Configured fallbacks.
+ * 4. Configured short code fallbacks.
+ * 5. Short code.
  */
-export function detectLanguage(userPreferredLanguage?: string) {
+export function detectLocale(preferredLocale?: string) {
     if (typeof window === "undefined") return;
 
-    const browserLanguage = navigator.language;
-    const shortLanguage = browserLanguage.slice(0, 2);
+    const browserLocale = navigator.language;
+    const shortLocale = browserLocale.slice(0, 2);
 
-    for (const languageTag of runtime.availableLanguageTags) {
-        if (
-            [
-                userPreferredLanguage === languageTag,
-                browserLanguage === languageTag,
-                fallbacks[browserLanguage] === languageTag,
-                fallbacks[shortLanguage] === languageTag,
-                shortLanguage === languageTag,
-                shortLanguage === languageTag.slice(0, 2)
-            ].some(Boolean)
-        ) {
-            runtime.setLanguageTag(languageTag);
-            break;
+    const priorities = [
+        preferredLocale,
+        browserLocale,
+        fallbacks[browserLocale],
+        fallbacks[shortLocale]
+    ];
+    for (const locale of priorities) {
+        if (locale && isLocale(locale)) {
+            return setLocale(locale);
         }
     }
-    return "";
+
+    for (const appLocale of locales) {
+        const shortAppLocale = appLocale.slice(0, 2);
+        if (shortLocale === shortAppLocale) {
+            return setLocale(appLocale);
+        }
+    }
 }
 
 export async function initI18n() {
     if (typeof window === "undefined") return;
 
-    return getAppLanguage().then(
-        (language) => {
-            detectLanguage(language);
+    return getAppLocale().then(
+        (locale) => {
+            detectLocale(locale);
         },
         (_err) => {
             return;

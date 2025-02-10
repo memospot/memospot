@@ -4,7 +4,8 @@
 
 @font-face {
     font-family: "color-emoji";
-    src: local("Apple Color Emoji"), local("Twemoji Mozilla"), local("Noto Color Emoji"),
+    src:
+        local("Apple Color Emoji"), local("Twemoji Mozilla"), local("Noto Color Emoji"),
         local("Segoe UI Emoji"), local("Segoe UI Symbol"), local("EmojiOne Color"),
         local("Android Emoji");
 }
@@ -73,8 +74,9 @@ bg-primary-darker: 177 74.8% 20.2%;
 
         --radius: 0.4rem;
 
-        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto,
-            "Helvetica Neue", Arial, sans-serif, color-emoji;
+        font-family:
+            -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+            Arial, sans-serif, color-emoji;
         font-synthesis: none;
         text-rendering: optimizeLegibility;
         -webkit-font-smoothing: antialiased;

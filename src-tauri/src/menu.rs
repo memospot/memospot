@@ -230,7 +230,6 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
             .enabled(false)
             .build(handle)?,
         )
-        .separator()
         .item(
             &MenuItemBuilder::with_id(
                 MainMenu::HelpMemospotDocumentation.index(),
@@ -252,6 +251,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
             )
             .build(handle)?,
         )
+        .separator()
         .item(
             &MenuItemBuilder::with_id(
                 MainMenu::HelpMemosVersion.index(),
@@ -260,7 +260,6 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
             .enabled(false)
             .build(handle)?,
         )
-        .separator()
         .item(
             &MenuItemBuilder::with_id(
                 MainMenu::HelpMemosDocumentation.index(),

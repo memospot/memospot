@@ -24,7 +24,7 @@
     "https://plugins.dprint.dev/biome-0.7.1.wasm",
     "https://plugins.dprint.dev/exec-0.5.1.json@492414e39dea4dccc07b4af796d2f4efdb89e84bae2bd4e1e924c0cc050855bf",
     "https://plugins.dprint.dev/g-plane/markup_fmt-v0.18.0.wasm",
-    "https://plugins.dprint.dev/prettier-0.53.0.json@0d99b2a3836d0e3434826e678167524394b5e4a44b20af7278ba49c4508bd3d7",
+    "https://plugins.dprint.dev/prettier-0.54.0.json@b168e6754c9a2cb388454df69f360d3cf6c4e196a218148d20ce72b936c49dab",
     "https://plugins.dprint.dev/toml-0.6.4.wasm"
   ],
   "exec": {

@@ -34,24 +34,24 @@ pub async fn get_theme() -> Result<String, String> {
     Ok(config.yaml.memospot.window.theme.unwrap_or_default())
 }
 
-pub struct Language(pub Mutex<String>);
-impl Language {
-    pub fn manage(language: String) -> Self {
-        Self(Mutex::new(language))
+pub struct Locale(pub Mutex<String>);
+impl Locale {
+    pub fn manage(locale: String) -> Self {
+        Self(Mutex::new(locale))
     }
 }
 #[command]
-pub async fn get_language(language: State<'_, Language>) -> Result<String, String> {
-    Ok(language.0.lock().await.clone())
+pub async fn get_locale(locale: State<'_, Locale>) -> Result<String, String> {
+    Ok(locale.0.lock().await.clone())
 }
 
 #[command]
-pub async fn set_language(new: String, language: State<'_, Language>) -> Result<bool, String> {
-    debug!("Setting language to {}", new);
-    *language.0.lock().await = new.clone();
+pub async fn set_locale(new: String, locale: State<'_, Locale>) -> Result<bool, String> {
+    debug!("Setting locale to {}", new);
+    *locale.0.lock().await = new.clone();
 
     let mut config = RuntimeConfig::from_global_store();
-    config.yaml.memospot.window.language = Some(new.clone());
+    config.yaml.memospot.window.locale = Some(new.clone());
     RuntimeConfig::to_global_store(&config);
 
     info!("Configuration updated by user. Saving…");
@@ -65,8 +65,8 @@ pub async fn set_language(new: String, language: State<'_, Language>) -> Result<
         );
     }
 
-    let current_language = language.0.lock().await.clone();
-    debug!("Current language is now {}", current_language);
+    let current_locale = locale.0.lock().await.clone();
+    debug!("Current locale is now {}", current_locale);
 
     Ok(true)
 }

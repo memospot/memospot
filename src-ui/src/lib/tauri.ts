@@ -48,20 +48,20 @@ export async function getAppTheme(): Promise<string> {
 }
 
 /**
- * Get the current application language.
- * @returns the current language
+ * Get the current application locale.
+ * @returns the current locale
  */
-export async function getAppLanguage(): Promise<string> {
-    return (await invoke("get_language")) as string;
+export async function getAppLocale(): Promise<string> {
+    return (await invoke("get_locale")) as string;
 }
 
 /**
- * Set the application language.
- * @param tag the language to set
- * @returns true if the language was set
+ * Set the application locale.
+ * @param tag the locale to set
+ * @returns true if the locale was set
  */
-export async function setAppLanguage(tag: string): Promise<boolean> {
-    return (await invoke("set_language", { new: tag })) as boolean;
+export async function setAppLocale(tag: string): Promise<boolean> {
+    return (await invoke("set_locale", { new: tag })) as boolean;
 }
 
 /**

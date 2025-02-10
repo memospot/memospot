@@ -9,10 +9,9 @@ import {
 import { Setting } from "$lib/components/ui/setting/index";
 import { Switch } from "$lib/components/ui/switch/index";
 import { debouncePromise } from "$lib/debounce";
-import { detectLanguage, m } from "$lib/i18n";
-import { availableLanguageTags, setLanguageTag } from "$lib/paraglide/runtime.js";
+import { type Locale, detectLocale, locales, m, setLocale } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
-import { getAppConfig, getDefaultAppConfig, setAppLanguage } from "$lib/tauri";
+import { getAppConfig, getDefaultAppConfig, setAppLocale } from "$lib/tauri";
 import type { Config } from "$lib/types/gen/Config";
 import type { Selected } from "bits-ui";
 import * as jsonpatch from "fast-json-patch";
@@ -22,7 +21,6 @@ import LightningBolt from "svelte-radix/LightningBolt.svelte";
 import Moon from "svelte-radix/Moon.svelte";
 import Sun from "svelte-radix/Sun.svelte";
 
-type Language = (typeof availableLanguageTags)[number];
 type Theme = "system" | "light" | "dark";
 
 let initialConfig = $state({}) as Config;
@@ -32,7 +30,7 @@ let input = $state({
     maximized: false,
     fullscreen: false,
     centered: false,
-    language: "system" as Language,
+    locale: "system" as Locale,
     theme: "system" as Theme
 });
 
@@ -47,26 +45,26 @@ let selectedTheme = $derived({
     value: input.theme
 });
 
-let languagesDisplayNames: Record<string, string> = {};
-for (const tag of availableLanguageTags.toSorted()) {
-    const displayName = new Intl.DisplayNames([tag], { type: "language" }).of(tag);
+let localeDisplayNames: Record<string, string> = {};
+for (const locale of locales.toSorted()) {
+    const displayName = new Intl.DisplayNames([locale], { type: "language" }).of(locale);
     if (!displayName) {
-        const error = new Error(`Language tag "${tag}" is not recognized by the browser.`);
+        const error = new Error(`Locale "${locale}" is not recognized by the browser.`);
         console.error(error);
         if (import.meta.env.DEV) {
             alert(error.message);
         }
         continue;
     }
-    languagesDisplayNames[tag] = displayName.slice(0, 1).toUpperCase() + displayName.slice(1);
+    localeDisplayNames[locale] = displayName.slice(0, 1).toUpperCase() + displayName.slice(1);
 }
 
-let selectedLanguageTag = $derived({
+let selectedLocale = $derived({
     label:
-        input.language === ("system" as Language)
+        input.locale === ("system" as Locale)
             ? m.settingsViewSystem()
-            : languagesDisplayNames[input.language as Language],
-    value: input.language
+            : localeDisplayNames[input.locale as Locale],
+    value: input.locale
 });
 
 onMount(async () => {
@@ -82,7 +80,7 @@ async function setPageToInitialConfig() {
         maximized: (initialConfig.memospot.window.maximized as boolean) || false,
         fullscreen: (initialConfig.memospot.window.fullscreen as boolean) || false,
         centered: (initialConfig.memospot.window.center as boolean) || false,
-        language: (initialConfig.memospot.window.language || "system") as Language,
+        locale: (initialConfig.memospot.window.locale || "system") as Locale,
         theme: (initialConfig.memospot.window.theme ||
             localStorage.getItem("mode-watcher-mode") ||
             "system") as Theme
@@ -98,7 +96,7 @@ async function setPageToDefaultConfig() {
         maximized: (defaultJSON.memospot.window.maximized as boolean) || false,
         fullscreen: (defaultJSON.memospot.window.fullscreen as boolean) || false,
         centered: (defaultJSON.memospot.window.center as boolean) || false,
-        language: (defaultJSON.memospot.window.language || "system") as Language,
+        locale: (defaultJSON.memospot.window.locale || "system") as Locale,
         theme: (defaultJSON.memospot.window.theme || "system") as Theme
     };
 
@@ -110,22 +108,22 @@ async function updateTheme(s: Selected<string> | undefined) {
     currentConfig.memospot.window.theme = input.theme;
 }
 
-async function updateLanguage(s: Selected<string> | undefined) {
-    input.language = (s?.value || "system") as Language;
-    currentConfig.memospot.window.language = input.language;
+async function updateLocale(s: Selected<string> | undefined) {
+    input.locale = (s?.value || "system") as Locale;
+    currentConfig.memospot.window.locale = input.locale;
 
-    if (input.language === ("system" as Language)) {
-        detectLanguage(input.language);
+    if (input.locale === ("system" as Locale)) {
+        detectLocale(input.locale);
     } else {
-        setLanguageTag(input.language);
+        setLocale(input.locale);
     }
 
-    await setAppLanguage(input.language);
+    await setAppLocale(input.locale);
 }
 
 async function updateSetting(updateFn?: () => void): Promise<void> {
-    const languageChanged =
-        initialConfig.memospot.window.language !== currentConfig.memospot.window.language;
+    const localeChanged =
+        initialConfig.memospot.window.locale !== currentConfig.memospot.window.locale;
 
     await debouncePromise(async () => {
         updateFn?.();
@@ -145,7 +143,7 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
         setTheme(input.theme);
     }
 
-    if (languageChanged) {
+    if (localeChanged) {
         window.location.reload();
     }
 }
@@ -180,18 +178,18 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
   </Setting>
 
   <Setting
-    name={m.settingsViewLanguage()}
-    desc={m.settingsViewLanguageDescription()}
+    name={m.settingsViewLocale()}
+    desc={m.settingsViewLocaleDescription()}
   >
-    <Select selected={selectedLanguageTag} onSelectedChange={updateLanguage}>
+    <Select selected={selectedLocale} onSelectedChange={updateLocale}>
       <SelectTrigger class="ml-2 w-64">
-        <SelectValue placeholder={m.settingsViewLanguage()} />
+        <SelectValue placeholder={m.settingsViewLocale()} />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="system">
           {m.settingsViewSystem()} <LightningBolt class="h-[1.2rem] w-[1.2rem] ml-auto" />
         </SelectItem>
-        {#each Object.entries(languagesDisplayNames) as [code, displayName]}
+        {#each Object.entries(localeDisplayNames) as [code, displayName]}
           <SelectItem value={code}>
             {displayName}
           </SelectItem>

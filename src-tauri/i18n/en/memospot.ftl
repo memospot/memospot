@@ -2,7 +2,7 @@
 # Make sure they don't conflict with other mnemonics in the same context.
 
 # Menu items
-appmenu = &App
+appmenu = &Application
 appmenu-quit = &Quit
 appmenu-browse-data-directory = &Browse data directory…
 appmenu-settings = &Settings

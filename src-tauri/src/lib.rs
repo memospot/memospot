@@ -1,6 +1,6 @@
 mod cmd;
+mod i18n;
 mod init;
-mod localize;
 mod memos;
 mod menu;
 mod process;
@@ -13,7 +13,7 @@ mod zip;
 
 use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
 use dialog::*;
-use localize::*;
+use i18n::*;
 use log::{debug, info, warn};
 use std::env;
 use std::path::PathBuf;
@@ -24,7 +24,7 @@ use window::{WebviewWindowExt, WindowConfigExt};
 #[warn(unused_extern_crates)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    localize::localize();
+    i18n::localize();
 
     init::ensure_webview();
 
@@ -48,6 +48,16 @@ pub fn run() {
         yaml: yaml_config.clone(),
         __yaml__: yaml_config,
     };
+
+    let locale = &config
+        .yaml
+        .memospot
+        .window
+        .locale
+        .clone()
+        .unwrap_or_default();
+
+    i18n::reload(locale.as_str());
     init::setup_logger(&config);
 
     #[cfg(debug_assertions)]
@@ -148,14 +158,14 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(cmd::MemosURL::manage(config_.memos_url.clone()))
-        .manage(cmd::Language::manage(
-            config_.yaml.memospot.window.language.unwrap_or_default(),
+        .manage(cmd::Locale::manage(
+            config_.yaml.memospot.window.locale.unwrap_or_default(),
         ))
         .invoke_handler(tauri::generate_handler![
             cmd::get_memos_url,
             cmd::get_theme,
-            cmd::get_language,
-            cmd::set_language,
+            cmd::get_locale,
+            cmd::set_locale,
             cmd::ping_memos,
             cmd::get_env,
             cmd::get_config,

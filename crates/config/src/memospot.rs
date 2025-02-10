@@ -98,8 +98,8 @@ pub struct Window {
     pub hide_menu_bar: Option<bool>,
     /// Theme.
     pub theme: Option<String>,
-    /// Language.
-    pub language: Option<String>,
+    /// Locale.
+    pub locale: Option<String>,
 }
 impl Default for Window {
     fn default() -> Self {
@@ -114,7 +114,7 @@ impl Default for Window {
             y: Some(0),
             hide_menu_bar: Some(false),
             theme: None,
-            language: None,
+            locale: None,
         }
     }
 }
