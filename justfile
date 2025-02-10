@@ -243,8 +243,19 @@ gen-icons:
 gen-bindings:
     #!{{bash}}
     mkdir -p "$TS_RS_EXPORT_DIR"
-    echo -e "${CYAN}Generating TypeScript bindings… This might take a while.${RESET}"
-    cargo test export_bindings
+    # Files listed here may affect the frontend bindings.
+    check_files=(
+        "crates/config/**/*"
+        "src-tauri/src/runtime_config.rs"
+    )
+    for file in "${check_files[@]}"; do
+        if ! git diff --quiet --exit-code HEAD -- "$file"; then
+            echo -e "${YELLOW}${file} was modified since last commit, regenerating TypeScript bindings…${RESET}"
+            pushd src-tauri; cargo test export_bindings; popd
+            exit 0
+        fi
+    done
+    echo -e "${CYAN}Skipping TypeScript bindings regeneration, no changes detected.${RESET}"
 
 build-ui-force:
     cd "src-ui"; bun run build
