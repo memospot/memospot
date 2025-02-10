@@ -57,9 +57,6 @@ strip = true
 incremental = true
 
 [profile.dev]
-incremental = true
-lto = "off"
-
 # - 0, false, or "none": no debug info at all, default for release
 #
 # - "line-directives-only": line info directives only. For the nvptx* targets this enables profiling.
