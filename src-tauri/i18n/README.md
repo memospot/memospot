@@ -3,8 +3,10 @@
 > [!WARNING]
 > The new file name/locale tag must be a valid browser locale.
 > See [`navigator.language`](https://www.localeplanet.com/support/browser.html)
->
-> For simplified/traditional Chinese, use zh-Hans/zh-Hant as the locale.
+
+> [!IMPORTANT]
+> For now, it's best to use specific locale keys rather than generic ones.
+> Language fallbacks and overrides need work, as they don't work on all platforms.
 
 1. Add a new translation file for the new locale at `i18n/{locale}/memospot.ftl`
 

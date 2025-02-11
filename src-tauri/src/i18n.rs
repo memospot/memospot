@@ -70,6 +70,7 @@ pub fn localize() {
 ///
 /// Should be called after the configuration has been loaded.
 /// TODO: add fallback handling.
+/// TODO: fix override on KDE and macOS. (confirmed working only on GNOME and Windows)
 pub fn reload(preferred_locale: &str) {
     if preferred_locale.is_empty() || preferred_locale == "system" {
         return;
