@@ -62,7 +62,9 @@ jobs:
         with:
           key: node_modules-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
           restore-keys: node_modules-${{ runner.os }}
-          path: ${{github.workspace}}/node_modules
+          path: |
+            ${{github.workspace}}/node_modules
+            ${{github.workspace}}/**/node_modules
 
       - name: Cache Bun dependencies
         uses: actions/cache@v4
