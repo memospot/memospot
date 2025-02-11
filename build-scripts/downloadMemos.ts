@@ -1,5 +1,16 @@
 /**
  * This script runs before `Tauri build` step.
+ *
+ * Downloads Memos binaries from GitHub and unpacks them into the `./server-dist`
+ * directory using the naming convention required by Tauri for bundling.
+ *
+ * - Currently, only downloads the latest release.
+ * - Skips if the binary is already up-to-date.
+ * - Uses GITHUB_TOKEN for higher rate limit.
+ * - Retries with backoff on rate limit errors.
+ *
+ * Usage:
+ *  bun run ./build-scripts/downloadMemos.ts [--all]
  */
 
 import fs from "node:fs";
@@ -9,6 +20,49 @@ import decompress from "decompress";
 import { minimatch } from "minimatch";
 import { findRepositoryRoot } from "./common";
 import type { GitHubAsset, GitHubRelease } from "./types/download_memos";
+
+const release_repository = "memospot/memos-builds" as const;
+
+/**
+ * Globs to match Memos binaries for platforms supported by Memospot.
+ */
+export const supportedPlatforms = [
+    "memos-*-darwin-arm64.tar.gz",
+    "memos-*-darwin-x86_64.tar.gz",
+    "memos-*-linux-x86_64.tar.gz",
+    "memos-*-windows-x86_64.zip"
+] as const;
+
+export function getDownloadFilesGlob(): string[] {
+    if (process.argv.includes("--all")) {
+        return supportedPlatforms.toSorted();
+    }
+
+    const platform = process.platform.replace("win32", "windows");
+    const arch = process.arch.replaceAll("x64", "x86_64");
+
+    if (import.meta.env.CI === "true") {
+        console.log(
+            `\x1b[32mCI environment detected, matching assets only for ${platform}/${arch}.\x1b[0m`
+        );
+        return supportedPlatforms.filter((p) => p.includes(platform) && p.includes(arch));
+    }
+
+    console.log(
+        `\x1b[32mnon-CI environment detected, matching assets for ${platform}/${arch}.\x1b[0m`
+    );
+
+    if (platform === "windows") {
+        return supportedPlatforms.filter((p) => p.includes(platform));
+    }
+
+    if (["linux", "darwin"].includes(platform)) {
+        // Linux and macOS can cross-compile to Windows with cargo-xwin.
+        return supportedPlatforms.filter((p) => p.includes(platform) || p.includes("windows"));
+    }
+
+    return supportedPlatforms.toSorted();
+}
 
 /**
  * Convert a GOOS-GOARCH build file name to a Rust target triple.
@@ -61,6 +115,20 @@ export function makeTripletFromFileName(filename: string): string {
     return triplet.endsWith("-") ? triplet.slice(0, -1) : triplet;
 }
 
+function getDefaultRequestHeaders() {
+    const headers = {
+        "User-Agent": "Bun"
+    };
+    if (process.env.GITHUB_TOKEN) {
+        return {
+            ...headers,
+            Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+            "X-GitHub-Api-Version": "2022-11-28"
+        };
+    }
+    return headers;
+}
+
 /**
  * Calculate the sha256 hex digest of a given file.
  *
@@ -94,11 +162,27 @@ export async function parseSha256Sums(source: string): Promise<Record<string, st
             sha256Sums = fs.readFileSync(source, "utf8");
         }
     } else {
+        console.log(`Downloading ${source}…`);
+
         const response = await fetch(source, {
             redirect: "follow",
-            method: "GET"
+            method: "GET",
+            headers: getDefaultRequestHeaders()
         });
-        sha256Sums = await response.text();
+        if (response.status === 200) {
+            sha256Sums = await response.text();
+        } else if (
+            response.status === 403 &&
+            response.headers.get("X-RateLimit-Remaining") === "0"
+        ) {
+            const resetTime = response.headers.get("X-RateLimit-Reset");
+            const waitTime = Number(resetTime) * 1000 - Date.now();
+            console.log(`Rate limit exceeded, waiting for ${waitTime / 1000} seconds`);
+            await new Promise((resolve) => setTimeout(resolve, waitTime));
+            return parseSha256Sums(source);
+        } else {
+            throw new Error(`Failed to download file: ${response.statusText}`);
+        }
     }
 
     const lines = sha256Sums.split("\n");
@@ -124,38 +208,48 @@ export async function downloadFile(srcURL: string, dstFile: string) {
     const file = Bun.file(dstFile);
     const writer = file.writer();
 
-    await fetch(srcURL, { redirect: "follow" }).then(async (response) => {
-        if (!response.ok) {
-            throw new Error(`Failed to download file: ${response.statusText}`);
-        }
-        const reader = response.body?.getReader();
-        while (reader) {
-            const { done, value } = await reader.read();
-            if (done) {
-                break;
+    console.log(`Downloading ${srcURL}…`);
+
+    await fetch(srcURL, { redirect: "follow", headers: getDefaultRequestHeaders() }).then(
+        async (response) => {
+            if (
+                response.status === 403 &&
+                response.headers.get("X-RateLimit-Remaining") === "0"
+            ) {
+                const resetTime = response.headers.get("X-RateLimit-Reset");
+                const waitTime = Number(resetTime) * 1000 - Date.now();
+                console.log(`Rate limit exceeded, waiting for ${waitTime / 1000} seconds`);
+                await new Promise((resolve) => setTimeout(resolve, waitTime));
+                return downloadFile(srcURL, dstFile);
             }
-            writer.write(value);
+
+            if (!response.ok) {
+                throw new Error(`Failed to download file: ${response.statusText}`);
+            }
+            const reader = response.body?.getReader();
+            while (reader) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    break;
+                }
+                writer.write(value);
+            }
+        },
+        () => {
+            console.log(`Unable to download ${srcURL}.`);
         }
-    });
+    );
     writer.end();
 }
 
-async function downloadMemos() {
-    const repo = "memospot/memos-builds";
-    const repoUrl = `https://api.github.com/repos/${repo}/releases/latest`;
-
-    // Match only platforms that Memospot also supports
-    const downloadFilesGlob = [
-        "memos-*-darwin-arm64.tar.gz",
-        "memos-*-darwin-x86_64.tar.gz",
-        "memos-*-linux-x86_64.tar.gz",
-        "memos-*-windows-x86_64.zip"
-    ];
+async function downloadMemos(downloadFilesGlob: string[]) {
+    const repoUrl = `https://api.github.com/repos/${release_repository}/releases/latest`;
 
     // Fetch data from GitHub API.
     const response = await fetch(repoUrl, {
         method: "GET",
-        redirect: "follow"
+        redirect: "follow",
+        headers: getDefaultRequestHeaders()
     });
     if (!response.ok) {
         throw new Error(`Failed to fetch GitHub release: ${response.statusText}`);
@@ -167,7 +261,9 @@ async function downloadMemos() {
         throw new Error("Failed to fetch assets");
     }
 
-    console.log(`\x1b[34mMatching GitHub assets from ${repo}:${ghRelease.tag_name}…\x1b[0m`);
+    console.log(
+        `\x1b[34mMatching GitHub assets from ${release_repository}:${ghRelease.tag_name}…\x1b[0m`
+    );
 
     const sha256sums = releaseAssets.find((asset) => {
         return asset.name.endsWith("SHA256SUMS.txt");
@@ -296,13 +392,13 @@ async function main() {
         fs.mkdirSync(serverDistDir, { recursive: true, mode: 0o755 });
     }
 
-    const binaries = [
-        "memos-aarch64-apple-darwin",
-        "memos-x86_64-apple-darwin",
-        "memos-x86_64-pc-windows-msvc.exe",
-        "memos-x86_64-unknown-linux-gnu"
-    ];
+    const binaries = getDownloadFilesGlob().map((glob) => {
+        const exe = glob.includes("windows") ? ".exe" : "";
+        return `memos-${makeTripletFromFileName(glob)}${exe}`;
+    });
+
     const foundRecent = binaries.every((bin) => {
+        console.log(`Checking if ${bin} exists...`);
         if (!fs.existsSync(`${serverDistDir}/${bin}`)) {
             return false;
         }
@@ -323,7 +419,12 @@ async function main() {
         fs.rmSync(distDir, { force: true, recursive: true });
     }
 
-    await downloadMemos();
+    if (process.env.GITHUB_TOKEN) {
+        console.log("\x1b[32mFound GitHub token. Will use it for authentication.\x1b[0m");
+    }
+
+    const downloadFilesGlob = getDownloadFilesGlob();
+    await downloadMemos(downloadFilesGlob);
 
     const endTime = performance.now();
     const timeElapsed = endTime - startTime;

@@ -53,25 +53,11 @@ jobs:
         shell: bash
         run: |
           echo CACHE_KEY=$(date +'%Y%m%d') >> $GITHUB_ENV
-          latest_memos_version=$(curl -s "https://api.github.com/repos/memospot/memos-builds/releases/latest" | jq -r '.tag_name' || echo "NOT_SET")
-          echo "LATEST_MEMOS_VERSION=$latest_memos_version" >> $GITHUB_ENV
-          case "${RUNNER_OS}" in
-            Linux)
-              NPROC=$(nproc)
-              ;;
-            macOS)
-              NPROC=$(sysctl -n hw.ncpu)
-              ;;
-            Windows)
-              NPROC=$NUMBER_OF_PROCESSORS
-              ;;
-            *)
-              NPROC=2
-              ;;
-          esac
-          if echo "${RUST_TOOLCHAIN}" | grep -q "^nightly"; then
-            echo "RUSTFLAGS=${RUSTFLAGS} -Zthreads=${NPROC}" >> $GITHUB_ENV
+          latest_memos_version=$(curl -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -H 'X-GitHub-Api-Version: 2022-11-28' -s --url "https://api.github.com/repos/memospot/memos-builds/releases/latest" | jq -r '.tag_name')
+          if [ -z "$latest_memos_version" ] || [ "$latest_memos_version" = "null" ]; then
+            latest_memos_version="NOT_SET"
           fi
+          echo "LATEST_MEMOS_VERSION=$latest_memos_version" >> $GITHUB_ENV
 
       - if: ${{ runner.os == 'Linux' }}
         name: "[Linux] Disable initramfs and man-db update"
@@ -139,9 +125,8 @@ jobs:
       - name: Cache Memos builds
         uses: actions/cache@v4
         with:
-          key: memosbuilds-cross-${{ env.LATEST_MEMOS_VERSION }}-${{ env.CACHE_KEY }}
-          restore-keys: memosbuilds-cross
-          enableCrossOsArchive: true
+          key: memosbuilds-${{ runner.os }}-${{ env.LATEST_MEMOS_VERSION }}-${{ env.CACHE_KEY }}
+          restore-keys: memosbuilds-${{ runner.os }}-${{ env.LATEST_MEMOS_VERSION }}
           path: ./server-dist
 
       - name: Build Tauri App

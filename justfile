@@ -432,6 +432,9 @@ fix-ts:
 fmt:
     dprint fmt --diff
 
+[doc('Run all recommended pre-commit checks')]
+pre-commit: fmt lint test
+
 [group('maintainer')]
 [doc('Delete all GitHub build cache')]
 gh-clean-cache:
