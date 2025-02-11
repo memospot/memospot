@@ -10,7 +10,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
 env:
-  CACHE_KEY: ${{ github.run_id }}-${{ github.run_number }}
+  CACHE_KEY: NOT_SET
   CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -52,7 +52,7 @@ jobs:
       - name: "Set env vars"
         shell: bash
         run: |
-          echo CACHE_KEY=$(date +'%Y%m%d') >> $GITHUB_ENV
+          echo "CACHE_KEY=$(date +'%Y%m%d')" >> $GITHUB_ENV
           latest_memos_version=$(curl -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -H 'X-GitHub-Api-Version: 2022-11-28' -s --url "https://api.github.com/repos/memospot/memos-builds/releases/latest" | jq -r '.tag_name')
           if [ -z "$latest_memos_version" ] || [ "$latest_memos_version" = "null" ]; then
             latest_memos_version="NOT_SET"
@@ -95,6 +95,8 @@ jobs:
 
       - name: Setup Cargo cache
         uses: swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3
+        with:
+          prefix-key: "cargo-${{ matrix.platform.rust_target }}-${{ env.CACHE_KEY }}"
       # /Rust
 
       # Bun

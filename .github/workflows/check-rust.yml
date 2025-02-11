@@ -22,7 +22,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
 env:
-  CACHE_KEY: ${{ github.run_id }}-${{ github.run_number }}
+  CACHE_KEY: NOT_SET
   CARGO_INCREMENTAL: 1
   CARGO_TERM_COLOR: always
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -97,24 +97,7 @@ jobs:
       - name: "Set env vars"
         shell: bash
         run: |
-          echo CACHE_KEY=$(date +'%Y%m%d') >> $GITHUB_ENV
-          case "${RUNNER_OS}" in
-            Linux)
-              NPROC=$(nproc)
-              ;;
-            macOS)
-              NPROC=$(sysctl -n hw.ncpu)
-              ;;
-            Windows)
-              NPROC=$NUMBER_OF_PROCESSORS
-              ;;
-            *)
-              NPROC=2
-              ;;
-          esac
-          if echo "${RUST_TOOLCHAIN}" | grep -q "^nightly"; then
-            echo "RUSTFLAGS=${RUSTFLAGS} -Zthreads=${NPROC}" >> $GITHUB_ENV
-          fi
+          echo "CACHE_KEY=$(date +'%Y%m%d')" >> $GITHUB_ENV
 
       - if: ${{ runner.os == 'Linux' }}
         name: "[Linux] Disable initramfs and man-db update"
@@ -145,6 +128,8 @@ jobs:
 
       - name: Setup Cargo cache
         uses: swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3
+        with:
+          prefix-key: "cargo-${{ matrix.platform.rust_target }}-${{ env.CACHE_KEY }}"
       # /Rust
 
       # Clippy with SARIF output
