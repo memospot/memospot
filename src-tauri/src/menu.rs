@@ -142,6 +142,11 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
             .accelerator("CmdOrCtrl+D")
             .build(handle)?;
 
+    let quit =
+        MenuItemBuilder::with_id(MainMenu::AppQuit.index(), fl(MainMenu::AppQuit.as_ref()))
+            .accelerator("CmdOrCtrl+W")
+            .build(handle)?;
+
     #[cfg(target_os = "macos")]
     let app_name = handle.config().product_name.clone().unwrap_or_default();
 
@@ -159,7 +164,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
         .hide_others()
         .show_all()
         .separator()
-        .quit()
+        .item(&quit)
         .build()?;
 
     #[cfg(not(target_os = "macos"))]
@@ -169,12 +174,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
             &browse_data_directory,
             &check_for_updates,
             &PredefinedMenuItem::separator(handle)?,
-            &MenuItemBuilder::with_id(
-                MainMenu::AppQuit.index(),
-                fl(MainMenu::AppQuit.as_ref()),
-            )
-            .accelerator("CmdOrCtrl+W")
-            .build(handle)?,
+            &quit,
         ])
         .build()?;
 
