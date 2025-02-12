@@ -10,4 +10,4 @@ description = "Memospot platform-agnostic dialog utilities"
 
 [dependencies]
 log = "0.4"
-native-dialog = "0.7"
+native-dialog = "0.6.4"

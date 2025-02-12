@@ -61,9 +61,6 @@ languages = [
 ]
 template = "../installer/nsis.nsi"
 
-[bundle.macOS]
-exceptionDomain = "localhost"
-
 [bundle.linux.appimage]
 bundleMediaFramework = true
 

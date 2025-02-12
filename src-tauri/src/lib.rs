@@ -149,6 +149,21 @@ pub fn run() {
         });
     }
 
+    // Allowing plain `http` for remote URLs is not desirable, but only macOS restricts it.
+    // This is used to keep the behavior consistent across platforms.
+    #[cfg(target_os = "macos")]
+    {
+        let invalid_url_error = fl!("error-invalid-server-url", url = config.memos_url.clone());
+        let parsed_url = url::Url::parse(&config.memos_url).dialog_expect(&invalid_url_error);
+        let domain = parsed_url
+            .host()
+            .dialog_expect(invalid_url_error)
+            .to_string();
+
+        debug!("macOS exception domain: {}", domain);
+        tauri_ctx.config_mut().bundle.macos.exception_domain = Some(domain);
+    }
+
     let config_ = config.clone();
     let Ok(tauri_app) = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())

@@ -38,7 +38,7 @@
   "settingsMemospotRemoteServer": "Servidor remoto",
   "settingsMemospotRemoteServerDescription": "Use um servidor Memos remoto ao invés do integrado.",
   "settingsMemospotRemoteServerURL": "URL do servidor",
-  "settingsMemospotRemoteServerURLDescription": "Insira uma URL que aponte para um servidor Memos.",
+  "settingsMemospotRemoteServerURLDescription": "Insira uma URL que aponte para um servidor Memos. Prefira sempre HTTPS.",
   "settingsMemospotErrInvalidServer": "Nenhum servidor Memos encontrado na URL fornecida.",
   "settingsMemospotUserAgent": "Agente do usuário",
   "settingsMemospotUserAgentDescription": "String do agente de usuário do navegador para usar no WebView. Pode ser útil para servidores de proxy com segurança reforçada. Deixe em branco para o padrão.",

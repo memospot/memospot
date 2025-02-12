@@ -53,6 +53,7 @@ pub struct RuntimeConfig {
     pub user_agent: String,
 
     /// Whether Memospot is managing a local Memos server.
+    /// If false, Memospot is using a remote server.
     pub is_managed_server: bool,
 
     /// Store current YAML config. May be modified during app runtime.

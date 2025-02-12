@@ -37,7 +37,7 @@
   "settingsMemospotRemoteServer": "Remote server",
   "settingsMemospotRemoteServerDescription": "Use a remote Memos server instead of the bundled one.",
   "settingsMemospotRemoteServerURL": "Server URL",
-  "settingsMemospotRemoteServerURLDescription": "Insert a URL pointing to a Memos server.",
+  "settingsMemospotRemoteServerURLDescription": "Insert a URL pointing to a Memos server. Always prefer HTTPS.",
   "settingsMemospotErrInvalidServer": "No Memos server found on the provided URL.",
   "settingsMemospotUserAgent": "User agent",
   "settingsMemospotUserAgentDescription": "Browser user agent string for the WebView. May be useful for hardened proxy servers. Leave blank for default.",
