@@ -6,7 +6,7 @@ import {
     SelectTrigger,
     SelectValue
 } from "$lib/components/ui/select";
-import { Setting } from "$lib/components/ui/setting/index";
+import { Setting, SettingToggle } from "$lib/components/ui/setting/index";
 import { debouncePromise } from "$lib/debounce";
 import { envFromKV, envToKV } from "$lib/environmentVariables";
 import { m } from "$lib/i18n";
@@ -31,6 +31,7 @@ let input = $state({
     dataDir: "",
     bindAddr: "",
     bindPort: 0,
+    envVarsEnabled: false,
     envVars: ""
 });
 
@@ -60,7 +61,8 @@ async function setPageToInitialConfig() {
         dataDir: (initialConfig.memos.data as string) || "",
         bindAddr: (initialConfig.memos.addr as string) || "",
         bindPort: (initialConfig.memos.port as number) || 0,
-        envVars: envFromKV((initialConfig.memos.env as Record<string, string>) || {})
+        envVarsEnabled: (initialConfig.memos.env.enabled as boolean) || false,
+        envVars: envFromKV((initialConfig.memos.env.vars as Record<string, string>) || {})
     };
 
     currentConfig.memos = jsonpatch.deepClone(initialConfig.memos);
@@ -75,7 +77,8 @@ async function setPageToDefaultConfig() {
         dataDir: (defaultJSON.memos.data as string) || "",
         bindAddr: (defaultJSON.memos.addr as string) || "",
         bindPort: (defaultJSON.memos.port as number) || 0,
-        envVars: envFromKV((defaultJSON.memos.env as Record<string, string>) || {})
+        envVarsEnabled: (defaultJSON.memos.env.enabled as boolean) || false,
+        envVars: envFromKV((defaultJSON.memos.env.vars as Record<string, string>) || {})
     };
 
     currentConfig.memos = jsonpatch.deepClone(defaultJSON.memos);
@@ -135,9 +138,9 @@ async function validatePath(e: Event) {
     return Promise.reject();
 }
 
-async function setMemosEnvVars(_: Event) {
+async function updateEnvVars(_: Event) {
     const kv = envToKV(input.envVars);
-    currentConfig.memos.env = kv;
+    currentConfig.memos.env.vars = kv;
     input.envVars = envFromKV(kv);
 }
 
@@ -263,20 +266,25 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
     />
   </Setting>
 
-  <Setting
+  <SettingToggle
     name={m.settingsMemosEnvironmentVariables()}
     desc={m.settingsMemosEnvironmentVariablesDescription()}
+    bind:state={input.envVarsEnabled}
+    onclick={() => {
+      currentConfig.memos.env.enabled = input.envVarsEnabled;
+    }}
   >
     <textarea
       id="env"
-      rows="3"
-      class="p-2 rounded-md border bg-background min-w-max md:w-96"
+      rows="5"
+      class="p-2 rounded-md border bg-background min-w-max w-full leading-tight"
       bind:value={input.envVars}
-      onfocusout={setMemosEnvVars}
-      onkeypress={async (e) => e.key === "Enter" && (await setMemosEnvVars(e))}
+      onfocusout={updateEnvVars}
+      onkeypress={async (e) => e.key === "Enter" && (await updateEnvVars(e))}
+      disabled={!input.envVarsEnabled}
     >
     </textarea>
-  </Setting>
+  </SettingToggle>
 
   <div class="flex flex-row space-x-1 justify-end">
     <button

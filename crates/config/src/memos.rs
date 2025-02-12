@@ -4,6 +4,20 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use ts_rs::TS;
 
+#[derive(TS, Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub struct EnvironmentVariables {
+    pub enabled: Option<bool>,
+    pub vars: Option<HashMap<String, String>>,
+}
+impl Default for EnvironmentVariables {
+    fn default() -> Self {
+        Self {
+            enabled: Some(false),
+            vars: None,
+        }
+    }
+}
+
 /// Memos configuration.
 #[derive(TS, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Memos {
@@ -33,7 +47,7 @@ pub struct Memos {
     pub port: Option<u16>,
 
     /// Custom environment variables to pass to Memos.
-    pub env: Option<HashMap<String, String>>,
+    pub env: EnvironmentVariables,
     // Memos server log settings.
     // pub log: Log,
 }
@@ -46,7 +60,7 @@ impl Default for Memos {
             mode: Some("prod".to_string()),
             addr: Some("127.0.0.1".to_string()),
             port: Some(0),
-            env: None,
+            env: EnvironmentVariables::default(),
         }
     }
 }
