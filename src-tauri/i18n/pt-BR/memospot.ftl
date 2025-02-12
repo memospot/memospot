@@ -20,7 +20,7 @@ helpmenu = A&juda
 helpmenu-memos-version = &Versão do Memos
 helpmenu-memospot-version = &Versão do Memospot
 helpmenu-documentation = &Documentação
-helpmenu-release-notes = &Notas de lancamento
+helpmenu-release-notes = &Notas de lançamento
 helpmenu-report-issue = &Reportar um problema…
 
 # Dialogs
