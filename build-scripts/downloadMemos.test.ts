@@ -1,8 +1,8 @@
-import { expect, mock, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import * as crypto from "node:crypto";
-import { getDownloadFilesGlob, makeTripletFromFileName } from "./downloadMemos";
+import { getDownloadFilesGlob, makeTripletFromFileName, rustToGoMap } from "./downloadMemos";
 
-test("makeTripletFromFileName()", () => {
+test("extensively test makeTripletFromFileName output", () => {
     const goToRustMap: Record<string, string> = {
         "darwin-arm64": "aarch64-apple-darwin",
         "darwin-x86_64": "x86_64-apple-darwin",
@@ -31,116 +31,138 @@ test("makeTripletFromFileName()", () => {
     }
 });
 
-test("CI=false match assets for current platform", () => {
-    process.env.CI = "";
+describe("match assets according to environment", async () => {
+    test("dev machine", () => {
+        process.env.CI = "";
 
-    const mock_architectures = ["arm64", "x64"];
-    const mock_platforms = ["darwin", "win32", "linux"];
-    for (const arch of mock_architectures) {
-        for (const platform of mock_platforms) {
-            Object.defineProperty(process, "arch", {
-                value: arch
-            });
-            Object.defineProperty(process, "platform", {
-                value: platform
-            });
+        const mockArchitectures = ["arm64", "x64"];
+        const mockPlatforms = ["darwin", "win32", "linux"];
+        for (const arch of mockArchitectures) {
+            for (const platform of mockPlatforms) {
+                Object.defineProperty(process, "arch", {
+                    value: arch
+                });
+                Object.defineProperty(process, "platform", {
+                    value: platform
+                });
+
+                const downloadFilesGlob = getDownloadFilesGlob();
+                let expected: string[] = [];
+                switch (arch) {
+                    case "arm64":
+                        switch (platform) {
+                            case "darwin":
+                                expected = [
+                                    "memos-*-darwin-arm64.tar.gz",
+                                    "memos-*-darwin-x86_64.tar.gz",
+                                    "memos-*-windows-x86_64.zip"
+                                ];
+                                break;
+                            case "win32":
+                                expected = ["memos-*-windows-x86_64.zip"];
+                                break;
+                            case "linux":
+                                expected = [
+                                    "memos-*-linux-x86_64.tar.gz",
+                                    "memos-*-windows-x86_64.zip"
+                                ];
+                                break;
+                        }
+                        break;
+                    case "x64":
+                        switch (platform) {
+                            case "darwin":
+                                expected = [
+                                    "memos-*-darwin-arm64.tar.gz",
+                                    "memos-*-darwin-x86_64.tar.gz",
+                                    "memos-*-windows-x86_64.zip"
+                                ];
+                                break;
+                            case "win32":
+                                expected = ["memos-*-windows-x86_64.zip"];
+                                break;
+                            case "linux":
+                                expected = [
+                                    "memos-*-linux-x86_64.tar.gz",
+                                    "memos-*-windows-x86_64.zip"
+                                ];
+                                break;
+                        }
+                        break;
+                }
+                console.log(
+                    `\x1b[32mExpected: ${expected.toSorted()}, \nActual:   ${downloadFilesGlob.toSorted()}.\x1b[0m`
+                );
+                expect(downloadFilesGlob).toEqual(expected);
+            }
+        }
+    });
+
+    test("CI=true", () => {
+        process.env.CI = "true";
+
+        const mockArchitectures = ["arm64", "x64"];
+        const mockPlatforms = ["darwin", "win32", "linux"];
+        for (const arch of mockArchitectures) {
+            for (const platform of mockPlatforms) {
+                Object.defineProperty(process, "arch", {
+                    value: arch
+                });
+                Object.defineProperty(process, "platform", {
+                    value: platform
+                });
+
+                const downloadFilesGlob = getDownloadFilesGlob();
+                let expected: string[] = [];
+                switch (arch) {
+                    case "arm64":
+                        switch (platform) {
+                            case "darwin":
+                                expected = [
+                                    "memos-*-darwin-arm64.tar.gz",
+                                    "memos-*-darwin-x86_64.tar.gz"
+                                ];
+                                break;
+                            case "win32":
+                                expected = [];
+                                break;
+                            case "linux":
+                                expected = [];
+                                break;
+                        }
+                        break;
+                    case "x64":
+                        switch (platform) {
+                            case "darwin":
+                                expected = [
+                                    "memos-*-darwin-arm64.tar.gz",
+                                    "memos-*-darwin-x86_64.tar.gz"
+                                ];
+                                break;
+                            case "win32":
+                                expected = ["memos-*-windows-x86_64.zip"];
+                                break;
+                            case "linux":
+                                expected = ["memos-*-linux-x86_64.tar.gz"];
+                                break;
+                        }
+                }
+                expect(downloadFilesGlob).toEqual(expected);
+            }
+        }
+    });
+
+    test("CI=true with RUST_TARGET env", () => {
+        process.env.CI = "true";
+
+        const rust_targets = Object.keys(rustToGoMap);
+        for (const target of rust_targets) {
+            process.env.RUST_TARGET = target;
 
             const downloadFilesGlob = getDownloadFilesGlob();
-            let expected: string[] = [];
-            switch (arch) {
-                case "arm64":
-                    switch (platform) {
-                        case "darwin":
-                            expected = [
-                                "memos-*-darwin-arm64.tar.gz",
-                                "memos-*-darwin-x86_64.tar.gz",
-                                "memos-*-windows-x86_64.zip"
-                            ];
-                            break;
-                        case "win32":
-                            expected = ["memos-*-windows-x86_64.zip"];
-                            break;
-                        case "linux":
-                            expected = [
-                                "memos-*-linux-x86_64.tar.gz",
-                                "memos-*-windows-x86_64.zip"
-                            ];
-                            break;
-                    }
-                    break;
-                case "x64":
-                    switch (platform) {
-                        case "darwin":
-                            expected = [
-                                "memos-*-darwin-arm64.tar.gz",
-                                "memos-*-darwin-x86_64.tar.gz",
-                                "memos-*-windows-x86_64.zip"
-                            ];
-                            break;
-                        case "win32":
-                            expected = ["memos-*-windows-x86_64.zip"];
-                            break;
-                        case "linux":
-                            expected = [
-                                "memos-*-linux-x86_64.tar.gz",
-                                "memos-*-windows-x86_64.zip"
-                            ];
-                            break;
-                    }
-                    break;
-            }
-            console.log(
-                `\x1b[32mExpected: ${expected.toSorted()}, \nActual:   ${downloadFilesGlob.toSorted()}.\x1b[0m`
-            );
+            const expected = [rustToGoMap[target]];
+
             expect(downloadFilesGlob).toEqual(expected);
         }
-    }
-});
-
-test("CI=true match assets", () => {
-    process.env.CI = "true";
-
-    const mock_architectures = ["arm64", "x64"];
-    const mock_platforms = ["darwin", "win32", "linux"];
-    for (const arch of mock_architectures) {
-        for (const platform of mock_platforms) {
-            Object.defineProperty(process, "arch", {
-                value: arch
-            });
-            Object.defineProperty(process, "platform", {
-                value: platform
-            });
-
-            const downloadFilesGlob = getDownloadFilesGlob();
-            let expected: string[] = [];
-            switch (arch) {
-                case "arm64":
-                    switch (platform) {
-                        case "darwin":
-                            expected = ["memos-*-darwin-arm64.tar.gz"];
-                            break;
-                        case "win32":
-                            expected = [];
-                            break;
-                        case "linux":
-                            expected = [];
-                            break;
-                    }
-                    break;
-                case "x64":
-                    switch (platform) {
-                        case "darwin":
-                            expected = ["memos-*-darwin-x86_64.tar.gz"];
-                            break;
-                        case "win32":
-                            expected = ["memos-*-windows-x86_64.zip"];
-                            break;
-                        case "linux":
-                            expected = ["memos-*-linux-x86_64.tar.gz"];
-                            break;
-                    }
-            }
-            expect(downloadFilesGlob).toEqual(expected);
-        }
-    }
+    });
 });

@@ -18,7 +18,8 @@ import * as async from "async";
 import * as Bun from "bun";
 import decompress from "decompress";
 import { minimatch } from "minimatch";
-import { findRepositoryRoot } from "./common";
+import { BG_WHITE, BLACK, BLUE, RED, YELLOW, findRepositoryRoot } from "./common";
+import { CYAN, GREEN, RESET } from "./common";
 import type { GitHubAsset, GitHubRelease } from "./types/download_memos";
 
 const release_repository = "memospot/memos-builds" as const;
@@ -26,12 +27,13 @@ const release_repository = "memospot/memos-builds" as const;
 /**
  * Globs to match Memos binaries for platforms supported by Memospot.
  */
-export const supportedPlatforms = [
-    "memos-*-darwin-arm64.tar.gz",
-    "memos-*-darwin-x86_64.tar.gz",
-    "memos-*-linux-x86_64.tar.gz",
-    "memos-*-windows-x86_64.zip"
-] as const;
+export const rustToGoMap = {
+    "aarch64-apple-darwin": "memos-*-darwin-arm64.tar.gz",
+    "x86_64-apple-darwin": "memos-*-darwin-x86_64.tar.gz",
+    "x86_64-unknown-linux-gnu": "memos-*-linux-x86_64.tar.gz",
+    "x86_64-pc-windows-msvc": "memos-*-windows-x86_64.zip"
+} as const;
+export const supportedPlatforms = Object.values(rustToGoMap);
 
 export function getDownloadFilesGlob(): string[] {
     if (process.argv.includes("--all")) {
@@ -41,23 +43,37 @@ export function getDownloadFilesGlob(): string[] {
     const platform = process.platform.replace("win32", "windows");
     const arch = process.arch.replaceAll("x64", "x86_64");
 
+    const rust_target = process.env.RUST_TARGET;
     if (import.meta.env.CI === "true") {
+        if (rust_target && rust_target in rustToGoMap) {
+            console.log(
+                `${CYAN}CI environment detected, matching assets for ${rust_target}${RESET}`
+            );
+            return [rustToGoMap[rust_target]];
+        }
+
         console.log(
-            `\x1b[32mCI environment detected, matching assets only for ${platform}/${arch}.\x1b[0m`
+            `${CYAN}CI environment detected, matching assets for ${platform}/${arch}${RESET}`
         );
+
+        // GitHub macOS runners are x86_64 only. The arm64 builds are achieved by cross-compiling.
+        if (platform === "darwin") {
+            return supportedPlatforms.filter((p) => p.includes(platform));
+        }
+
         return supportedPlatforms.filter((p) => p.includes(platform) && p.includes(arch));
     }
 
     console.log(
-        `\x1b[32mnon-CI environment detected, matching assets for ${platform}/${arch}.\x1b[0m`
+        `${CYAN}non-CI environment detected, matching assets for ${platform}/${arch}${RESET}`
     );
 
     if (platform === "windows") {
         return supportedPlatforms.filter((p) => p.includes(platform));
     }
 
+    // Linux and macOS can cross-compile to Windows with cargo-xwin.
     if (["linux", "darwin"].includes(platform)) {
-        // Linux and macOS can cross-compile to Windows with cargo-xwin.
         return supportedPlatforms.filter((p) => p.includes(platform) || p.includes("windows"));
     }
 
@@ -177,7 +193,9 @@ export async function parseSha256Sums(source: string): Promise<Record<string, st
         ) {
             const resetTime = response.headers.get("X-RateLimit-Reset");
             const waitTime = Number(resetTime) * 1000 - Date.now();
-            console.log(`Rate limit exceeded, waiting for ${waitTime / 1000} seconds`);
+            console.log(
+                `${YELLOW}Rate limit exceeded, waiting for ${waitTime / 1000} seconds${RESET}`
+            );
             await new Promise((resolve) => setTimeout(resolve, waitTime));
             return parseSha256Sums(source);
         } else {
@@ -218,7 +236,9 @@ export async function downloadFile(srcURL: string, dstFile: string) {
             ) {
                 const resetTime = response.headers.get("X-RateLimit-Reset");
                 const waitTime = Number(resetTime) * 1000 - Date.now();
-                console.log(`Rate limit exceeded, waiting for ${waitTime / 1000} seconds`);
+                console.log(
+                    `${YELLOW}Rate limit exceeded, waiting for ${waitTime / 1000} seconds${RESET}`
+                );
                 await new Promise((resolve) => setTimeout(resolve, waitTime));
                 return downloadFile(srcURL, dstFile);
             }
@@ -236,7 +256,7 @@ export async function downloadFile(srcURL: string, dstFile: string) {
             }
         },
         () => {
-            console.log(`Unable to download ${srcURL}.`);
+            throw new Error(`Unable to download ${srcURL}.`);
         }
     );
     writer.end();
@@ -295,10 +315,10 @@ async function downloadMemos(downloadFilesGlob: string[]) {
             process.stdout.write(`${ghAsset.browser_download_url}\n`);
             await downloadFile(ghAsset.browser_download_url, dstPath)
                 .then(() => {
-                    console.log(`\x1b[32m[OK]\x1b[0m Downloaded \x1b[36m${fileName}\x1b[0m`);
+                    console.log(`${GREEN}[OK]${RESET} Downloaded ${CYAN}${fileName}${RESET}`);
                 })
                 .catch((error) => {
-                    console.log(`\x1b[31m[ERROR] ${fileName}\x1b[0m: ${error}`);
+                    console.log(`${RED}[ERROR] ${fileName}${RESET}: ${error}`);
                     throw error;
                 });
         })
@@ -317,19 +337,19 @@ async function downloadMemos(downloadFilesGlob: string[]) {
             const fileHash = await sha256File(filePath);
 
             if (fileHash !== fileHashes[fileName]) {
-                console.log(`\x1b[31m[ERROR]\x1b[0m ${fileName} \x1b[36m${fileHash}\x1b[0m`);
+                console.log(`${RED}[ERROR]${RESET} ${fileName} ${CYAN}${fileHash}${RESET}`);
                 throw new Error(
                     `Hash mismatch for ${fileName}. Expected: ${fileHashes[fileName]}, got: ${fileHash}`
                 );
             }
-            console.log(`\x1b[32m[OK]\x1b[0m ${fileName} \x1b[36m${fileHash}\x1b[0m`);
+            console.log(`${GREEN}[OK]${RESET} ${fileName} ${CYAN}${fileHash}${RESET}`);
         })
         .catch((error) => {
             throw error;
         });
 
     // Extract files in parallel.
-    console.log("\x1b[34mExtracting downloaded files…\x1b[0m");
+    console.log(`${BLUE}Extracting downloaded files…${RESET}`);
     await async.eachLimit(selectedFiles, 2, async (file: GitHubAsset) => {
         const uuid = crypto.randomUUID();
         const extractDir = `./server-dist/${uuid}`;
@@ -383,7 +403,7 @@ async function main() {
     const repoRoot = findRepositoryRoot();
     console.log(`Repository root is \`${repoRoot}\``);
     process.chdir(repoRoot);
-    console.log("\x1b[30m\x1b[47m|> Running script `Download Memos Builds…` <|\x1b[0m");
+    console.log(`${BLACK}${BG_WHITE}|> Running script "Download Memos Builds…" <|${RESET}`);
 
     const serverDistDir = "./server-dist";
     const serverDistDirExists =
@@ -420,7 +440,7 @@ async function main() {
     }
 
     if (process.env.GITHUB_TOKEN) {
-        console.log("\x1b[32mFound GitHub token. Will use it for authentication.\x1b[0m");
+        console.log(`${GREEN}Found GitHub token. Will use it for authentication.${RESET}`);
     }
 
     const downloadFilesGlob = getDownloadFilesGlob();
@@ -432,9 +452,11 @@ async function main() {
 }
 
 if (import.meta.main) {
-    // This script will download about 52 MB of data for the main supported platforms
+    // This script can download (with --all) about 52 MB of data for the main supported platforms
     // (aarch64-apple-darwin, x86_64-apple-darwin, x86_64-pc-windows-msvc and x86_64-unknown-linux-gnu).
     // It will take around 7 minutes on a slow 1 Mbps connection.
+    //
+    // The timeout prevents the script from running forever if something goes wrong on the CI.
     const timeoutMinutes = 10;
     const wrapped = async.timeout(main, timeoutMinutes * 60 * 1000, "Script timed out.");
     wrapped((err?: Error | null, _data?: any) => {

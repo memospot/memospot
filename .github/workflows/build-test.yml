@@ -31,6 +31,7 @@ env:
   CARGO_TERM_COLOR: always
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   LATEST_MEMOS_VERSION: NOT_SET
+  RUST_TARGET: NOT_SET
   RUST_BACKTRACE: full
   RUST_TOOLCHAIN: stable
   RUSTFLAGS: -Copt-level=1 -Cstrip=symbols -Ccodegen-units=16
@@ -68,6 +69,7 @@ jobs:
       - name: "Set env vars"
         shell: bash
         run: |
+          echo "RUST_TARGET=${{ matrix.platform.rust_target }}" >> $GITHUB_ENV
           echo "CACHE_KEY=$(date +'%Y%m%d')" >> $GITHUB_ENV
           latest_memos_version=$(curl -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -H 'X-GitHub-Api-Version: 2022-11-28' -s --url "https://api.github.com/repos/memospot/memos-builds/releases/latest" | jq -r '.tag_name')
           if [ -z "$latest_memos_version" ] || [ "$latest_memos_version" = "null" ]; then
