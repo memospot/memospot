@@ -149,10 +149,10 @@ pub fn run() {
     #[cfg(target_os = "macos")]
     {
         let invalid_url_error = fl!("error-invalid-server-url", url = config.memos_url.clone());
-        let parsed_url = url::Url::parse(&config.memos_url).dialog_expect(&invalid_url_error);
+        let parsed_url = url::Url::parse(&config.memos_url).expect_dialog(&invalid_url_error);
         let domain = parsed_url
             .host()
-            .dialog_expect(invalid_url_error)
+            .expect_dialog(invalid_url_error)
             .to_string();
 
         debug!("macOS exception domain: {}", domain);

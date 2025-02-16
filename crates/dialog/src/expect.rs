@@ -2,7 +2,7 @@ use crate::dialog::panic_dialog;
 use crate::limit_width::LimitWidthExt;
 
 /// Port of https://crates.io/crates/dialog-expect.
-/// A trait with 1 function, `dialog_expect`,
+/// A trait with 1 function, `expect_dialog`,
 /// which is implemented for [`std::option::Option<T>`] and [`std::result::Result<T, E>`].
 pub trait ExpectDialogExt<T> {
     fn expect_dialog<M: std::fmt::Display>(self, msg: M) -> T;
