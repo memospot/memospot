@@ -10,4 +10,10 @@ description = "Memospot platform-agnostic dialog utilities"
 
 [dependencies]
 log = "0.4"
-native-dialog = "0.6.4"
+
+[target.'cfg(windows)'.dependencies.native-dialog]
+version = "0.6.4"
+features = ["windows_dpi_awareness", "windows_visual_styles"]
+
+[target.'cfg(not(target_os = "windows"))'.dependencies.native-dialog]
+version = "0.6.4"

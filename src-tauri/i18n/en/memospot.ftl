@@ -30,13 +30,10 @@ dialog-update-message =
     Version { $version } is available for download.
 
     Do you want to download it?
-panic-failed-to-spawn-memos =
-    Failed to spawn Memos:
-    {$error}
+panic-failed-to-spawn-memos = Failed to spawn Memos
 panic-failed-to-create-data-directory =
     Failed to create data directory!
     {$dir}
-    {$error}
 panic-data-directory-is-not-writable =
     Data directory is not writable!
     {$dir}
@@ -49,7 +46,6 @@ panic-unable-to-resolve-custom-data-directory =
 panic-unable-to-create-backup-directory =
     Unable to create backup directory!
     {$dir}
-    {$error}
 panic-backup-directory-is-a-file =
     Backup directory exists as a file!
     {$dir}
@@ -59,15 +55,11 @@ panic-backup-directory-is-not-writable =
 panic-database-file-is-not-writable =
     Database file is not writable!
     {$file}
-panic-failed-to-connect-to-database =
-    Failed to connect to the database:
-    {$error}
+panic-failed-to-connect-to-database = Failed to connect to the database
 panic-failed-to-run-database-migrations =
     Failed to run database migrations:
     {$error}
-panic-failed-to-close-database-connection =
-    Failed to close database connection:
-    {$error}
+panic-failed-to-close-database-connection = Failed to close database connection
 warn-failed-to-backup-database =
     Failed to backup database:
     {$error}
@@ -81,10 +73,7 @@ error-failed-to-install-webview =
     Failed to install WebView:
     {$error}
     Please install it manually.
-panic-config-unable-to-create =
-    Unable to create configuration file!
-    {$file}
-    {$error}
+panic-config-unable-to-create = Unable to create configuration file
 panic-config-is-not-a-file =
     Provided configuration path is a directory.
     It must be a file!
@@ -101,19 +90,10 @@ prompt-config-error-message =
 panic-config-error =
     Please, fix the configuration file
     manually and restart the application.
-panic-config-unable-to-backup =
-    Failed to backup the current configuration file!
-
-    {$error}
-panic-config-unable-to-reset =
-    Unable to reset the configuration file!
-
-    {$error}
-panic-config-parse-error =
-    Error while parsing the configuration file:
-    {$error}
-panic-portpicker-error =
-    Failed to find a free port to bind Memos to!
+panic-config-unable-to-backup = Failed to backup the current configuration file
+panic-config-unable-to-reset =  Unable to reset the configuration file
+panic-config-parse-error = Fatal error while parsing the configuration file
+panic-portpicker-error = Failed to find a free port to bind Memos to!
 error-invalid-server-url =
     Invalid remote server URL:
     {$url}
@@ -123,7 +103,6 @@ panic-unable-to-find-memos-binary = Unable to find Memos server binary!
 panic-log-config-write-error =
     Failed to write log configuration file:
     {$file}
-    {$error}
 panic-log-config-reset-error =
     Failed to reset the log configuration file:
     {$file}

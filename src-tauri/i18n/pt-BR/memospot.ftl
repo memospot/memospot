@@ -30,13 +30,10 @@ dialog-update-message =
     A versão { $version } está disponível para download.
 
     Deseja baixá-la?
-panic-failed-to-spawn-memos =
-    Não foi possível iniciar o Memos:
-    {$error}
+panic-failed-to-spawn-memos = Não foi possível iniciar o Memos
 panic-failed-to-create-data-directory =
     Não foi possível criar o diretório de dados!
     {$dir}
-    {$error}
 panic-data-directory-is-not-writable =
     O diretório de dados não é gravável!
     {$dir}
@@ -49,7 +46,6 @@ panic-unable-to-resolve-custom-data-directory =
 panic-unable-to-create-backup-directory =
     Não foi possível criar o diretório de backup!
     {$dir}
-    {$error}
 panic-backup-directory-is-a-file =
     O diretório de backup existe como um arquivo!
     {$dir}
@@ -59,15 +55,11 @@ panic-backup-directory-is-not-writable =
 panic-database-file-is-not-writable =
     O arquivo de banco de dados não é gravável!
     {$file}
-panic-failed-to-connect-to-database =
-    Falha ao conectar ao banco de dados:
-    {$error}
+panic-failed-to-connect-to-database = Falha ao conectar ao banco de dados
 panic-failed-to-run-database-migrations =
     Falha ao executar migrações do banco de dados:
     {$error}
-panic-failed-to-close-database-connection =
-    Falha ao fechar a conexão com o banco de dados:
-    {$error}
+panic-failed-to-close-database-connection = Falha ao fechar a conexão com o banco de dados
 warn-failed-to-backup-database =
     Falha ao fazer backup do banco de dados:
     {$error}
@@ -82,10 +74,7 @@ error-failed-to-install-webview =
     {$error}
 
     Por favor, instale-o manualmente.
-panic-config-unable-to-create =
-    Não foi possível criar o arquivo de configuração!
-    {$file}
-    {$error}
+panic-config-unable-to-create = Não foi possível criar o arquivo de configuração
 panic-config-is-not-a-file =
     O caminho fornecido para a configuração é um diretório.
     Deve ser um arquivo!
@@ -102,19 +91,10 @@ prompt-config-error-message =
 panic-config-error =
     Por favor, corrija o arquivo de configuração
     manualmente e reinicie o aplicativo.
-panic-config-unable-to-backup =
-    Falha ao fazer backup do arquivo de configuração atual!
-
-    {$error}
-panic-config-unable-to-reset =
-    Não foi possível redefinir o arquivo de configuração!
-
-    {$error}
-panic-config-parse-error =
-    Erro ao ler o arquivo de configuração:
-    {$error}
-panic-portpicker-error =
-    Falha ao encontrar uma porta livre para o Memos escutar!
+panic-config-unable-to-backup = Falha ao fazer backup do arquivo de configuração atual   
+panic-config-unable-to-reset = Não foi possível redefinir o arquivo de configuração
+panic-config-parse-error = Erro fatal ao ler o arquivo de configuração
+panic-portpicker-error = Falha ao encontrar uma porta livre para o Memos escutar!
 error-invalid-server-url =
     URL do servidor inválida:
     {$url}
@@ -125,7 +105,6 @@ panic-unable-to-find-memos-binary = Não foi possível encontrar o binário do s
 panic-log-config-write-error =
     Falha ao gravar o arquivo de configuração de log:
     {$file}
-    {$error}
 panic-log-config-reset-error =
         Falha ao redefinir o arquivo de configuração de log:
         {$file}

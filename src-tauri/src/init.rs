@@ -1,7 +1,6 @@
 /// Runtime checks and initialization code.
 ///
 /// Functions in this module panics with native dialogs instead of returning errors.
-/// Main purpose is to unclutter `main.rs`.
 use crate::fl;
 use crate::runtime_config::RuntimeConfig;
 use crate::sqlite;
@@ -27,26 +26,17 @@ use writable::PathExt;
 pub fn data_path(app_name: &str) -> PathBuf {
     let data_path = get_app_data_path(app_name);
     if !data_path.exists() {
-        if let Err(e) = fs::create_dir_all(&data_path) {
-            panic_dialog!(
-                "{}",
-                fl!(
-                    "panic-failed-to-create-data-directory",
-                    dir = data_path.to_string_lossy(),
-                    error = e.to_string()
-                ),
-            );
-        }
+        fs::create_dir_all(&data_path).expect_dialog(fl!(
+            "panic-failed-to-create-data-directory",
+            dir = data_path.to_string_lossy()
+        ));
     }
 
     if !&data_path.is_writable() {
-        panic_dialog!(
-            "{}",
-            fl!(
-                "panic-data-directory-is-not-writable",
-                dir = data_path.to_string_lossy()
-            )
-        );
+        panic_dialog!(fl!(
+            "panic-data-directory-is-not-writable",
+            dir = data_path.to_string_lossy()
+        ));
     }
     data_path
 }
@@ -78,13 +68,10 @@ pub fn memos_data(rtcfg: &RuntimeConfig) -> PathBuf {
         return path;
     }
 
-    panic_dialog!(
-        "{}",
-        fl!(
-            "panic-unable-to-resolve-custom-data-directory",
-            dir = path.to_string_lossy()
-        )
-    );
+    panic_dialog!(fl!(
+        "panic-unable-to-resolve-custom-data-directory",
+        dir = path.to_string_lossy()
+    ));
 }
 
 /// Ensure that backup directory exists and is writable.
@@ -115,36 +102,24 @@ pub fn ensure_backup_directory(rtcfg: &RuntimeConfig) -> PathBuf {
     };
 
     if !path.exists() {
-        if let Err(e) = std::fs::create_dir_all(&path) {
-            panic_dialog!(
-                "{}",
-                fl!(
-                    "panic-unable-to-create-backup-directory",
-                    dir = path.to_string_lossy(),
-                    error = e.to_string()
-                )
-            );
-        }
+        std::fs::create_dir_all(&path).expect_dialog(fl!(
+            "panic-unable-to-create-backup-directory",
+            dir = path.to_string_lossy()
+        ));
     }
 
     if path.is_file() {
-        panic_dialog!(
-            "{}",
-            fl!(
-                "panic-backup-directory-is-a-file",
-                dir = path.to_string_lossy()
-            )
-        );
+        panic_dialog!(fl!(
+            "panic-backup-directory-is-a-file",
+            dir = path.to_string_lossy()
+        ));
     }
 
     if !&path.is_writable() {
-        panic_dialog!(
-            "{}",
-            fl!(
-                "panic-backup-directory-is-not-writable",
-                dir = path.to_string_lossy()
-            )
-        );
+        panic_dialog!(fl!(
+            "panic-backup-directory-is-not-writable",
+            dir = path.to_string_lossy()
+        ));
     }
 
     path
@@ -179,13 +154,10 @@ pub fn database(rtcfg: &RuntimeConfig) -> PathBuf {
             continue;
         }
         if !&file.is_writable() {
-            panic_dialog!(
-                "{}",
-                fl!(
-                    "panic-database-file-is-not-writable",
-                    file = file.to_string_lossy()
-                )
-            );
+            panic_dialog!(fl!(
+                "panic-database-file-is-not-writable",
+                file = file.to_string_lossy()
+            ));
         }
     }
     db_path
@@ -204,12 +176,8 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
     let db_file = rtcfg.paths.memos_db_file.clone();
     let db_conn = sqlite::get_database_connection(&db_file)
         .await
-        .unwrap_or_else(|e| {
-            panic_dialog!(
-                "{}",
-                fl!("panic-failed-to-connect-to-database", error = e.to_string())
-            );
-        });
+        .expect_dialog(fl!("panic-failed-to-connect-to-database"));
+
     let migration_amount = Migrator::get_pending_migrations(&db_conn)
         .await
         .unwrap_or_default()
@@ -240,10 +208,7 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
                 );
             }
             Err(e) => {
-                warn_dialog!(
-                    "{}",
-                    fl!("warn-failed-to-backup-database", error = e.to_string())
-                );
+                warn_dialog!(fl!("warn-failed-to-backup-database", error = e.to_string()));
             }
         }
     }
@@ -252,30 +217,18 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
     let db_file = rtcfg.paths.memos_db_file.clone();
     let db_conn = sqlite::get_database_connection(&db_file)
         .await
-        .unwrap_or_else(|e| {
-            panic_dialog!(
-                "{}",
-                fl!("panic-failed-to-connect-to-database", error = e.to_string())
-            );
-        });
+        .expect_dialog(fl!("panic-failed-to-connect-to-database"));
+
     if let Err(e) = Migrator::up(&db_conn, None).await {
-        warn_dialog!(
-            "{}",
-            fl!(
-                "panic-failed-to-run-database-migrations",
-                error = e.to_string()
-            )
-        );
+        warn_dialog!(fl!(
+            "panic-failed-to-run-database-migrations",
+            error = e.to_string()
+        ));
     }
-    db_conn.close().await.unwrap_or_else(|e| {
-        panic_dialog!(
-            "{}",
-            fl!(
-                "panic-failed-to-close-database-connection",
-                error = e.to_string()
-            )
-        );
-    });
+    db_conn
+        .close()
+        .await
+        .expect_dialog(fl!("panic-failed-to-close-database-connection"));
 
     info!(
         "Database migrations took {:?}. Ran {} migrations.",
@@ -302,10 +255,10 @@ pub fn ensure_webview() {
 
     tauri::async_runtime::block_on(async move {
         if let Err(e) = webview::install().await {
-            error_dialog!(
-                "{}",
-                fl!("error-failed-to-install-webview", error = e.to_string())
-            );
+            error_dialog!(fl!(
+                "error-failed-to-install-webview",
+                error = e.to_string()
+            ));
 
             if let Err(e) = webview::open_install_website() {
                 warn!("Failed to launch WebView download website:\n{}", e);
@@ -315,7 +268,7 @@ pub fn ensure_webview() {
     });
 
     if !webview::is_available() {
-        panic_dialog!("{}", fl!("error-failed-to-install-webview", error = ""));
+        panic_dialog!(fl!("error-failed-to-install-webview", error = ""));
     }
 }
 
@@ -325,73 +278,49 @@ pub fn ensure_webview() {
 /// - If configuration file is missing or malformed, optionally reset it to defaults.
 pub fn config(config_path: &PathBuf) -> Config {
     if !config_path.exists() {
-        if let Err(e) = Config::reset_file_blocking(config_path) {
-            panic_dialog!(
-                "{}",
-                fl!(
-                    "panic-config-unable-to-create",
-                    file = config_path.to_string_lossy(),
-                    error = e.to_string()
-                )
-            );
-        }
+        Config::reset_file_blocking(config_path)
+            .expect_dialog(fl!("panic-config-unable-to-create"));
     }
 
     if config_path.is_dir() {
-        panic_dialog!(
-            "{}",
-            fl!(
-                "panic-config-is-not-a-file",
-                path = config_path.to_string_lossy()
-            )
-        );
+        panic_dialog!(fl!(
+            "panic-config-is-not-a-file",
+            path = config_path.to_string_lossy()
+        ));
     }
 
     if !config_path.is_writable() {
-        panic_dialog!(
-            "{}",
-            fl!(
-                "panic-config-is-not-writable",
-                file = config_path.to_string_lossy()
-            )
-        );
+        panic_dialog!(fl!(
+            "panic-config-is-not-writable",
+            file = config_path.to_string_lossy()
+        ));
     }
 
     let mut cfg_reader = Config::init(config_path);
     if let Err(e) = cfg_reader {
         let user_confirmed = confirm_dialog(
             fl!("prompt-config-error-title").as_str(),
-            fl!("prompt-config-error-message", error = e.to_string()).as_str(),
+            fl!("prompt-config-error-message", error = e.limit_width()).as_str(),
             MessageType::Warning,
         );
 
         if !user_confirmed {
-            panic_dialog!("{}", fl!("panic-config-error"));
+            panic_dialog!(fl!("panic-config-error"));
         }
 
         let now = chrono::Local::now().format("%Y%m%d-%H%M%S").to_string();
-        if let Err(e) = fs::copy(
+        fs::copy(
             config_path,
             config_path.with_extension(format!("{}.yaml", now)),
-        ) {
-            panic_dialog!(
-                "{}",
-                fl!("panic-config-unable-to-backup", error = e.to_string())
-            );
-        }
+        )
+        .expect_dialog(fl!("panic-config-unable-to-backup"));
 
-        if let Err(e) = Config::reset_file_blocking(config_path) {
-            panic_dialog!(
-                "{}",
-                fl!("panic-config-unable-to-reset", error = e.to_string())
-            );
-        }
+        Config::reset_file_blocking(config_path)
+            .expect_dialog(fl!("panic-config-unable-to-reset"));
+
         cfg_reader = Ok(Config::default());
     }
-
-    cfg_reader.unwrap_or_else(|e| {
-        panic_dialog!("{}", fl!("panic-config-parse-error", error = e.to_string()));
-    })
+    cfg_reader.expect_dialog(fl!("panic-config-parse-error"))
 }
 
 /// Ensure that Memos port is available.
@@ -404,7 +333,7 @@ pub fn memos_port(rtcfg: &RuntimeConfig) -> u16 {
         return free_port;
     }
 
-    panic_dialog!("{}", fl!("panic-portpicker-error"));
+    panic_dialog!(fl!("panic-portpicker-error"));
 }
 
 /// Memos URL.
@@ -425,7 +354,7 @@ pub fn memos_url(rtcfg: &RuntimeConfig) -> String {
 
     let url = rtcfg.yaml.memospot.remote.url.as_deref().unwrap();
     if url.is_empty() || !url.starts_with("http") {
-        error_dialog!("{}", fl!("error-invalid-server-url", url = url));
+        error_dialog!(fl!("error-invalid-server-url", url = url));
     }
 
     url.trim_end_matches('/').to_string() + "/"
@@ -483,7 +412,7 @@ pub fn find_memos(rtcfg: &RuntimeConfig) -> PathBuf {
         }
     }
 
-    panic_dialog!("{}", fl!("panic-unable-to-find-memos-binary"));
+    panic_dialog!(fl!("panic-unable-to-find-memos-binary"));
 }
 
 static LOGGING_CONFIG_YAML: &str = r#"
@@ -543,31 +472,20 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
     // Logging is enabled, but config is bad.
     if let Ok(mut file) = File::create(&log_config) {
         let config_template = LOGGING_CONFIG_YAML.replace("    ", "  ");
-        if let Err(e) = file.write_all(config_template.as_bytes()) {
-            panic_dialog!(
-                "{}",
-                fl!(
-                    "panic-log-config-write-error",
-                    file = log_config.to_string_lossy(),
-                    error = e.to_string()
-                )
-            );
-        }
-        if let Err(e) = file.flush() {
-            panic_dialog!(
-                "Failed to flush `{}` to disk:\n{}",
-                log_config.to_string_lossy(),
-                &e
-            );
-        }
-    } else {
-        panic_dialog!(
-            "{}",
-            fl!(
-                "panic-log-config-reset-error",
+        file.write_all(config_template.as_bytes())
+            .expect_dialog(fl!(
+                "panic-log-config-write-error",
                 file = log_config.to_string_lossy()
-            )
-        );
+            ));
+        file.flush().expect_dialog(fl!(
+            "panic-log-config-write-error",
+            file = log_config.to_string_lossy()
+        ));
+    } else {
+        panic_dialog!(fl!(
+            "panic-log-config-reset-error",
+            file = log_config.to_string_lossy()
+        ));
     }
 
     if log4rs::init_file(&log_config, Default::default()).is_ok() {
@@ -575,10 +493,10 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
         return true;
     }
 
-    panic_dialog!(
-        "{}",
-        fl!("panic-log-setup-error", file = log_config.to_string_lossy())
-    );
+    panic_dialog!(fl!(
+        "panic-log-setup-error",
+        file = log_config.to_string_lossy()
+    ));
 }
 
 #[cfg(target_os = "linux")]

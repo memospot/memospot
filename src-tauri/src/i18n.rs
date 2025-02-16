@@ -1,3 +1,4 @@
+use dialog::*;
 use i18n_embed::{
     fluent::{fluent_language_loader, FluentLanguageLoader},
     DefaultLocalizer, LanguageLoader, Localizer,
@@ -15,7 +16,7 @@ pub static LOCALE_LOADER: LazyLock<FluentLanguageLoader> = LazyLock::new(|| {
 
     loader
         .load_fallback_language(&Localizations)
-        .expect("Error while loading fallback locale");
+        .expect_dialog("error while loading fallback locale");
 
     loader
 });
@@ -61,9 +62,9 @@ pub fn localize() {
         }
     }
 
-    if let Err(error) = localizer.select(&requested_locales) {
-        eprintln!("Error while loading locale: {}", error);
-    }
+    localizer
+        .select(&requested_locales)
+        .expect_dialog("error while loading locale");
 }
 
 /// Reload the localization with the user-preferred locale, if possible.

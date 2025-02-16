@@ -140,12 +140,7 @@ pub fn run() {
         let config_ = config.clone();
         tauri::async_runtime::spawn(async move {
             init::migrate_database(&config_).await;
-            memos::spawn(&config_).unwrap_or_else(|e| {
-                panic_dialog!(
-                    "{}",
-                    fl!("panic-failed-to-spawn-memos", error = e.to_string())
-                );
-            });
+            memos::spawn(&config_).expect_dialog(fl!("panic-failed-to-spawn-memos"));
         });
     }
 
