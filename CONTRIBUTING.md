@@ -35,7 +35,7 @@ earthly ls
 - A package manager: [Homebrew](https://brew.sh/) or [winget](https://apps.microsoft.com/detail/9NBLGGH4NNS1).
 - A system WebView (Edge [WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703), Safari, or WebkitGTK), for Tauri to work.
 - A modern computer, with at least 8 GB of RAM and a decent CPU. Rust compilation is very CPU-intensive. Also, `rust-analyzer` (language server) utilizes circa 2GB of RAM.
-- 20 GB of free disk space on the repository drive, for Rust artifacts.
+- 20 GB of free disk space, for Rust artifacts.
 
 > [!IMPORTANT]
 > After installing a tool, make sure it is available in your system PATH environment variable.
@@ -76,7 +76,8 @@ sudo apt install --no-install-recommends -qq \
 ```
 
 > [!NOTE]
-> Should you experience an error regarding `soup3-sys`, you may need to manually set `PKG_CONFIG_PATH` with `export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig/:/usr/share/pkgconfig"`.
+> Should you experience an error regarding `soup3-sys`, try manually setting
+> `PKG_CONFIG_PATH` with `export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig/:/usr/share/pkgconfig"`.
 > You can make this permanent by adding the line to your `.bashrc` or `.bash_profile` file.
 
 </details>
@@ -160,10 +161,9 @@ Node is a JavaScript runtime built on Chrome's V8 JavaScript engine.
 [UPX](https://upx.github.io/) is a packer for executable files.
 
 > [!NOTE]
-> UPX is not required to build the app, but it is recommended to reduce its size.
-
-> [!IMPORTANT]
-> UPX is disabled on Windows, as it may cause false-positive AV detections.
+>
+> - Not required to build the app, but it's recommended to reduce its size.
+> - Disabled on Windows, as it may cause false-positive AV detections.
 
 - Homebrew
 
@@ -252,10 +252,6 @@ cargo binstall \
 > ```
 
 ##### Powershell
-
-<!-- adapt $(rustc -vV | sed -n 's|host: ||p') to powershell -->
-
-$host = $(rustc -vV
 
 ```powershell
 cargo binstall `
