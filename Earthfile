@@ -18,7 +18,7 @@ IMPORT github.com/earthly/lib/rust:3.0.3 AS rust
 
 ARG --global BASE_IMAGE="ubuntu:22.04"
 ARG --global RUST_TOOLCHAIN="stable"
-ARG --global BUN_VERSION="1.2.0"
+ARG --global BUN_VERSION="1.2.2"
 ARG --global UPX_VERSION="4.2.4"
 
 FROM $BASE_IMAGE
@@ -35,13 +35,15 @@ RUN echo "\033[0;36mRUSTFLAGS=${RUSTFLAGS}\033[0m"
 
 BINSTALL:
   FUNCTION
-  RUN cargo binstall --disable-telemetry \
+  RUN cargo binstall \
+    --disable-telemetry \
+    --target=$(rustc -vV | sed -n 's|host: ||p') \
     cargo-sweep@0.7.0 \
-    cargo-edit@0.13.0 \
-    dprint@0.47.5 \
-    tauri-cli@2.0.4 \
-    cargo-xwin@0.17.3 \
-    just@1.36.0 \
+    cargo-edit@0.13.1 \
+    cargo-xwin@0.18.4 \
+    dprint@0.49.0 \
+    just@1.39.0 \
+    tauri-cli@2.2.7 \
     -y
 
 SETUP_BASE_IMAGE:

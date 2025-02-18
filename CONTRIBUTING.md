@@ -22,7 +22,7 @@ earthly +build --target=x86_64-pc-windows-msvc --nosign=1
 earthly +build --target=x86_64-unknown-linux-gnu --nosign=1
 ```
 
-> The `--nosign=1` flag is used to skip signing the updater.
+> The `--nosign=1` flag is used to skip signing the updater, which only the repository owner can do.
 
 Listing the additional recipes available in the [Earthfile](./Earthfile):
 
@@ -155,6 +155,22 @@ Node is a JavaScript runtime built on Chrome's V8 JavaScript engine.
   winget install --id OpenJS.NodeJS.LTS
   ```
 
+### UPX (optional; Linux-only)
+
+[UPX](https://upx.github.io/) is a packer for executable files.
+
+> [!NOTE]
+> UPX is not required to build the app, but it is recommended to reduce its size.
+
+> [!IMPORTANT]
+> UPX is disabled on Windows, as it may cause false-positive AV detections.
+
+- Homebrew
+
+  ```bash
+  brew install upx
+  ```
+
 ### Rust
 
 [Rustup](https://rustup.rs/) | [Official Website](https://www.rust-lang.org/tools/install)
@@ -216,13 +232,15 @@ cargo install cargo-binstall --locked
 ##### Bash
 
 ```bash
-cargo binstall --disable-telemetry \
+cargo binstall \
+    --disable-telemetry \
+    --target=$(rustc -vV | sed -n 's|host: ||p') \
     cargo-cache@0.8.3 \
-    cargo-edit@0.13.0 \
-    cargo-xwin@0.17.3 \
-    dprint@0.47.5 \
-    just@1.36.0 \
-    tauri-cli@2.0.4 \
+    cargo-edit@0.13.1 \
+    cargo-xwin@0.18.4 \
+    dprint@0.49.0 \
+    just@1.39.0 \
+    tauri-cli@2.2.7 \
     -y
 ```
 
@@ -235,17 +253,25 @@ cargo binstall --disable-telemetry \
 
 ##### Powershell
 
+<!-- adapt $(rustc -vV | sed -n 's|host: ||p') to powershell -->
+
+$host = $(rustc -vV
+
 ```powershell
-cargo binstall --disable-telemetry `
+cargo binstall `
+    --disable-telemetry `
+    --target=$(& rustc -vV | Select-String -Pattern "^host:" | ForEach-Object {$_.Line.Split(':')[1].Trim()}) `
     cargo-cache@0.8.3 `
-    cargo-edit@0.13.0 `
-    dprint@0.47.5 `
-    just@1.36.0 `
-    tauri-cli@2.0.4 `
+    cargo-edit@0.13.1 `
+    dprint@0.49.0 `
+    just@1.39.0 `
+    tauri-cli@2.2.7 `
     -y
 ```
 
-> [!TIP] > `cargo binstall` outputs the tools to `$HOME/.cargo/bin` which already should be in your PATH.
+> [!TIP]
+>
+> `cargo binstall` outputs the installed tools to `$HOME/.cargo/bin` which already should be in your PATH.
 
 ## Memos server build
 
@@ -266,7 +292,7 @@ Sample valid server binary names:
 - macOS: `memos-x86_64-apple-darwin` / `memos-aarch64-apple-darwin`
 
 > [!TIP]
-> You can check your current system target triplet with the command `rustc -vV`.
+> You can check your current system target triple with the command `rustc -vV`.
 
 ## Cloning the repository
 
@@ -308,7 +334,8 @@ just --list
 
 ## Coding style
 
-Use a consistent coding style. Run `just lint`, `just fmt` and `just test` on the repository before submitting a pull request.
+- Try your best match the existing code style.
+- Run `just pre-commit` on the repository before submitting a pull request. This will run all the code formatters, linters and tests.
 
 ## License
 
