@@ -1,4 +1,6 @@
 #[cfg(test)]
+use anyhow::bail;
+#[cfg(test)]
 use {crate::Config, std::fs};
 
 /// Test that provided config is merged with
@@ -28,9 +30,9 @@ memospot:
 }
 
 #[test]
-fn test_malformed() {
+fn test_malformed() -> Result<(), anyhow::Error> {
     static MALFORMED_YAML: &str = r#"
-memos:
+memospot:
 mode: prod
 "#;
 
@@ -39,12 +41,30 @@ mode: prod
     fs::write(&partial_yaml_path, MALFORMED_YAML).unwrap();
 
     let Err(e) = Config::init(&partial_yaml_path) else {
-        todo!()
+        bail!("init must fail with malformed YAML");
     };
 
     assert!(e
         .to_string()
-        .contains("invalid type: found unit, expected struct Memos for key"));
+        .contains("invalid type: found unit, expected struct Memospot for key"));
+    Ok(())
+}
+
+#[test]
+fn test_gibberish() -> Result<(), anyhow::Error> {
+    static INVALID_YAML: &str = r#"
+\0\xqwefdklsaj
+"#;
+
+    let tmp_dir = tempfile::tempdir().unwrap();
+    let partial_yaml_path = tmp_dir.path().join("memospot_gibberish.yaml");
+    fs::write(&partial_yaml_path, INVALID_YAML).unwrap();
+
+    let Err(_) = Config::init(&partial_yaml_path) else {
+        bail!("init must fail with invalid YAML");
+    };
+
+    Ok(())
 }
 
 #[tokio::test]

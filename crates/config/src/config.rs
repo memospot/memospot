@@ -40,19 +40,21 @@ impl Config {
         Ok(serde_yaml::to_string(&self)?)
     }
 
+    /// Initialize configuration from a file.
     pub fn init(cfg_path: &Path) -> Result<Config, Error> {
         let default_config = Config::default();
 
         let figment = Figment::new()
             .merge(Yaml::file(cfg_path))
             .merge(Env::prefixed("MEMOSPOT_"))
-            .select(Profile::from_env_or("MEMOSPOT_PROFILE", CONFIG_PROFILE))
             .migrate()
+            .select(Profile::from_env_or("MEMOSPOT_PROFILE", CONFIG_PROFILE))
             .join(Serialized::defaults(default_config));
 
         Ok(figment.extract::<Config>()?)
     }
 
+    /// Load configuration from a JSON string.
     pub fn from_json(json: &str) -> Result<Config, Error> {
         let default_config = Config::default();
 

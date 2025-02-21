@@ -22,11 +22,13 @@ impl MigrationExt for figment::Figment {
         if let Ok(previous_vars) = self.extract_inner::<HashMap<String, String>>("memos.env") {
             let memos_env_enabled = map!["memos"  => map!["env" => map!["enabled" => true]]];
             let memos_env_vars = map!["memos"  => map!["env" => map!["vars" => previous_vars]]];
-            self.merge(Serialized::from(memos_env_enabled, CONFIG_PROFILE))
-                .merge(Serialized::from(memos_env_vars, CONFIG_PROFILE))
-        } else {
-            let memos_env_enabled = map!["memos"  => map!["env" => map!["enabled" => false]]];
-            self.merge(Serialized::from(memos_env_enabled, CONFIG_PROFILE))
+            if !memos_env_vars.is_empty() {
+                return self
+                    .merge(Serialized::from(memos_env_enabled, CONFIG_PROFILE))
+                    .merge(Serialized::from(memos_env_vars, CONFIG_PROFILE));
+            }
         }
+        let memos_env_enabled = map!["memos"  => map!["env" => map!["enabled" => false]]];
+        self.merge(Serialized::from(memos_env_enabled, CONFIG_PROFILE))
     }
 }
