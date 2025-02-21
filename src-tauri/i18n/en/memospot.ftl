@@ -62,6 +62,7 @@ panic-failed-to-run-database-migrations =
 panic-failed-to-close-database-connection = Failed to close database connection
 warn-failed-to-backup-database =
     Failed to backup database:
+
     {$error}
 prompt-install-webview-title = WebView Error
 prompt-install-webview-message =
@@ -71,7 +72,9 @@ prompt-install-webview-message =
     Do you want to install it?
 error-failed-to-install-webview =
     Failed to install WebView:
+
     {$error}
+
     Please install it manually.
 panic-config-unable-to-create = Unable to create configuration file
 panic-config-is-not-a-file =
@@ -84,9 +87,11 @@ panic-config-is-not-writable =
 prompt-config-error-title = Configuration Error
 prompt-config-error-message =
     Failed to parse configuration file:
+
     {$error}
 
     Reset the configuration file?
+    (A backup will be created.)
 panic-config-error =
     Please, fix the configuration file
     manually and restart the application.
@@ -99,6 +104,7 @@ error-invalid-server-url =
     {$url}
 
     URL must start with "http".
+    Check the settings.
 panic-unable-to-find-memos-binary = Unable to find Memos server binary!
 panic-log-config-write-error =
     Failed to write log configuration file:

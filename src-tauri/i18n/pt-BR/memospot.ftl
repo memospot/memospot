@@ -62,6 +62,7 @@ panic-failed-to-run-database-migrations =
 panic-failed-to-close-database-connection = Falha ao fechar a conexão com o banco de dados
 warn-failed-to-backup-database =
     Falha ao fazer backup do banco de dados:
+
     {$error}
 prompt-install-webview-title = Erro no WebView
 prompt-install-webview-message =
@@ -71,6 +72,7 @@ prompt-install-webview-message =
     Deseja instalá-lo?
 error-failed-to-install-webview =
     Falha ao instalar o WebView:
+
     {$error}
 
     Por favor, instale-o manualmente.
@@ -85,13 +87,15 @@ panic-config-is-not-writable =
 prompt-config-error-title = Erro na configuração
 prompt-config-error-message =
     Erro ao ler o arquivo de configuração:
+
     {$error}
 
     Redefinir o arquivo de configuração?
+    (Será criado um backup.)
 panic-config-error =
     Por favor, corrija o arquivo de configuração
     manualmente e reinicie o aplicativo.
-panic-config-unable-to-backup = Falha ao fazer backup do arquivo de configuração atual   
+panic-config-unable-to-backup = Falha ao fazer backup do arquivo de configuração atual
 panic-config-unable-to-reset = Não foi possível redefinir o arquivo de configuração
 panic-config-parse-error = Erro fatal ao ler o arquivo de configuração
 panic-portpicker-error = Falha ao encontrar uma porta livre para o Memos escutar!
@@ -106,9 +110,9 @@ panic-log-config-write-error =
     Falha ao gravar o arquivo de configuração de log:
     {$file}
 panic-log-config-reset-error =
-        Falha ao redefinir o arquivo de configuração de log:
-        {$file}
-        Por favor, exclua este arquivo e reinicie o aplicativo.
+    Falha ao redefinir o arquivo de configuração de log:
+    {$file}
+    Por favor, exclua este arquivo e reinicie o aplicativo.
 panic-log-setup-error =
     Falha ao configurar o log!
     Por favor, exclua este arquivo e reinicie o aplicativo:
