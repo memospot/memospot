@@ -20,16 +20,11 @@ ARG --global BASE_IMAGE="ubuntu:22.04"
 ARG --global RUST_TOOLCHAIN="stable"
 ARG --global BUN_VERSION="1.2.2"
 ARG --global UPX_VERSION="4.2.4"
+ARG --global RUSTFLAGS
 
 FROM $BASE_IMAGE
 WORKDIR /builder
 
-IF echo "${RUST_TOOLCHAIN}" | grep -q "^nightly"
-  LET NUM_CPUS=$(nproc)
-  ARG --global RUSTFLAGS="-Z threads=${NUM_CPUS}"
-ELSE
-  ARG --global RUSTFLAGS
-END
 RUN echo "\033[0;31mRUST_TOOLCHAIN=${RUST_TOOLCHAIN}\033[0m"
 RUN echo "\033[0;36mRUSTFLAGS=${RUSTFLAGS}\033[0m"
 
@@ -86,7 +81,7 @@ SETUP_BASE_IMAGE:
 SETUP_RUST:
   FUNCTION
   ENV PATH="${HOME}/.cargo/bin:${PATH}"
-  RUN curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- --profile default --default-toolchain $RUST_TOOLCHAIN -y
+  RUN curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | bash -s -- --profile default --default-toolchain $RUST_TOOLCHAIN -y
   RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 
 SETUP_BUN:
