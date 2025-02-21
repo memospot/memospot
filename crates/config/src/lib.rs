@@ -6,6 +6,7 @@ mod config;
 mod log;
 mod memos;
 mod memospot;
+mod migration;
 
 pub use config::Config;
 pub use log::Log;

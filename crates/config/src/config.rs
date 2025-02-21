@@ -1,5 +1,6 @@
 use crate::memos::Memos;
 use crate::memospot::Memospot;
+use crate::migration::MigrationExt;
 
 use anyhow::{bail, Error, Result};
 use figment::providers::{Env, Format, Json, Serialized, Yaml};
@@ -17,9 +18,9 @@ pub struct Config {
 }
 
 #[cfg(debug_assertions)]
-const CONFIG_PROFILE: &str = "debug";
+pub const CONFIG_PROFILE: &str = "debug";
 #[cfg(not(debug_assertions))]
-const CONFIG_PROFILE: &str = "release";
+pub const CONFIG_PROFILE: &str = "release";
 
 impl Config {
     const CONFIG_HEADER: &'static str = r#"#
@@ -46,6 +47,7 @@ impl Config {
             .merge(Yaml::file(cfg_path))
             .merge(Env::prefixed("MEMOSPOT_"))
             .select(Profile::from_env_or("MEMOSPOT_PROFILE", CONFIG_PROFILE))
+            .migrate()
             .join(Serialized::defaults(default_config));
 
         Ok(figment.extract::<Config>()?)
