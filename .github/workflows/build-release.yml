@@ -14,6 +14,7 @@ env:
   CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GLIBC_VERSION: NOT_SET
   LATEST_MEMOS_VERSION: NOT_SET
   RUST_TARGET: NOT_SET
   RUST_BACKTRACE: short
@@ -55,6 +56,7 @@ jobs:
         run: |
           echo "RUST_TARGET=${{ matrix.platform.rust_target }}" >> $GITHUB_ENV
           echo "CACHE_KEY=$(date +'%Y%m%d')" >> $GITHUB_ENV
+          echo "GLIBC_VERSION=$(ldd --version | head -n 1 | awk '{print $NF}')" >> $GITHUB_ENV
           latest_memos_version=$(curl -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -H 'X-GitHub-Api-Version: 2022-11-28' -s --url "https://api.github.com/repos/memospot/memos-builds/releases/latest" | jq -r '.tag_name')
           if [ -z "$latest_memos_version" ] || [ "$latest_memos_version" = "null" ]; then
             latest_memos_version="NOT_SET"
@@ -96,7 +98,10 @@ jobs:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
 
       - name: Setup Cargo cache
-        uses: swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3
+        uses: swatinem/rust-cache@27b8ea9368cf428f0bfe41b0876b1a7e809d9844
+        with:
+          prefix-key: cargo
+          key: ${{ env.GLIBC_VERSION }}
       # /Rust
 
       # Bun

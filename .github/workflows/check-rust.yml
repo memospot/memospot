@@ -26,6 +26,7 @@ env:
   CARGO_INCREMENTAL: 1
   CARGO_TERM_COLOR: always
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GLIBC_VERSION: NOT_SET
   RUST_BACKTRACE: full
   RUST_TOOLCHAIN: stable
   RUSTFLAGS: -Copt-level=1 -Cstrip=symbols -Ccodegen-units=256
@@ -98,6 +99,7 @@ jobs:
         shell: bash
         run: |
           echo "CACHE_KEY=$(date +'%Y%m%d')" >> $GITHUB_ENV
+          echo "GLIBC_VERSION=$(ldd --version | head -n 1 | awk '{print $NF}')" >> $GITHUB_ENV
 
       - if: ${{ runner.os == 'Linux' }}
         name: "[Linux] Disable initramfs and man-db update"
@@ -127,7 +129,10 @@ jobs:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
 
       - name: Setup Cargo cache
-        uses: swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3
+        uses: swatinem/rust-cache@27b8ea9368cf428f0bfe41b0876b1a7e809d9844
+        with:
+          prefix-key: cargo
+          key: ${{ env.GLIBC_VERSION }}
       # /Rust
 
       # Clippy with SARIF output
