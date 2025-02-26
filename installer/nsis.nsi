@@ -25,6 +25,38 @@ ManifestDPIAwareness PerMonitorV2
 ${StrCase}
 ${StrLoc}
 
+; Prompts to kill app_exe, if it is running.
+!macro KillIfRunning app_exe
+  nsis_tauri_utils::FindProcess "${app_exe}"
+  Pop $R0
+  ${If} $R0 = 0
+      IfSilent kill_${app_exe} 0
+      ${IfThen} $PassiveMode != 1 ${|} MessageBox MB_OKCANCEL "$(appRunningOkKill)" IDOK kill_${app_exe} IDCANCEL cancel_${app_exe} ${|}
+      kill_${app_exe}:
+        nsis_tauri_utils::KillProcess "${app_exe}"
+        Pop $R0
+        Sleep 500
+        ${If} $R0 = 0
+          Goto app_check_done_${app_exe}
+        ${Else}
+          IfSilent silent_${app_exe} ui_${app_exe}
+          silent_${app_exe}:
+            System::Call 'kernel32::AttachConsole(i -1)i.r0'
+            ${If} $0 != 0
+              System::Call 'kernel32::GetStdHandle(i -11)i.r0'
+              System::call 'kernel32::SetConsoleTextAttribute(i r0, i 0x0004)' ; set red color
+              FileWrite $0 "$(appRunning)$\n"
+            ${EndIf}
+            Abort
+          ui_${app_exe}:
+            Abort "$(failedToKillApp)"
+        ${EndIf}
+      cancel_${app_exe}:
+        Abort "$(appRunning)"
+  ${EndIf}
+  app_check_done_${app_exe}:
+!macroend
+
 {{#if installer_hooks}}
 !include "{{installer_hooks}}"
 {{/if}}
@@ -619,7 +651,8 @@ Section Install
     !insertmacro NSIS_HOOK_PREINSTALL
   !endif
 
-  !insertmacro CheckIfAppIsRunning
+  !insertmacro KillIfRunning "${MAINBINARYNAME}.exe"
+  !insertmacro KillIfRunning "memos.exe"
 
   ; Copy main executable
   File "${MAINBINARYSRCPATH}"
@@ -756,7 +789,8 @@ Section Uninstall
     !insertmacro NSIS_HOOK_PREUNINSTALL
   !endif
 
-  !insertmacro CheckIfAppIsRunning
+  !insertmacro KillIfRunning "${MAINBINARYNAME}.exe"
+  !insertmacro KillIfRunning "memos.exe"
 
   ; Delete the app directory and its content from disk
   ; Copy main executable
