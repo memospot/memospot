@@ -145,16 +145,17 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: "v__VERSION__"
+          # This will also show on the updater notes.
           releaseBody: |
-            > [!TIP]
-            > Bundled Memos version: **${{ env.LATEST_MEMOS_VERSION }}**
+            Bundled Memos version: **${{ env.LATEST_MEMOS_VERSION }}**
+            Updating from previous versions is transparent.
 
-            See the assets section below to download the app.
-
-            - Windows `exe`: per-user install (recommended).
-            - Windows `msi`: per-machine install.
+            Note for Windows users:
+            The auto-updater will use the `exe` installer (per-user install).
+            For the MSI package, check the GitHub releases page.
           releaseDraft: true
           prerelease: false
           args: --target ${{ matrix.platform.rust_target }}
           includeUpdaterJson: true
           updaterJsonPreferNsis: true
+          retryAttempts: 2
