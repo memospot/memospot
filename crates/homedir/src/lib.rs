@@ -118,7 +118,7 @@ where
 }
 
 pub(crate) fn getenv() -> Option<PathBuf> {
-    home_dir().map(Into::into)
+    home_dir()
 }
 
 #[cfg(not(target_os = "windows"))]
