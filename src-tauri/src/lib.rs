@@ -6,6 +6,7 @@ mod menu;
 mod process;
 mod runtime_config;
 mod sqlite;
+mod updater;
 mod utils;
 mod webview;
 mod window;
@@ -185,19 +186,24 @@ pub fn run() {
         ])
         .setup(move |app| {
             let app_handle = app.handle();
+            // Remove the plugin to use custom logic.
+            app_handle.remove_plugin("tauri-plugin-updater");
 
             // Menu must be set at the application level to also work in macOS.
             app.set_menu(menu::build(app_handle)?)?;
-
             menu::update_with_memos_version(app_handle);
 
-            if config_.yaml.memospot.updater.enabled.is_some_and(|e| !e) {
-                warn!("Disabling updater plugin by user config.");
-                app_handle.remove_plugin("tauri-plugin-updater");
-            }
-            if env::var("FLATPAK_ID").is_ok_and(|id| !id.is_empty()) {
-                debug!("Running in Flatpak. Disabling updater plugin.");
-                app_handle.remove_plugin("tauri-plugin-updater");
+            let is_flatpak = env::var("FLATPAK_ID").is_ok_and(|v| !v.is_empty());
+            let updater_enabled = config_
+                .yaml
+                .memospot
+                .updater
+                .enabled
+                .is_some_and(|enabled| enabled && !is_flatpak);
+            if updater_enabled {
+                updater::spawn(app_handle);
+            } else {
+                warn!("updater: updater is disabled");
             }
 
             if !config_.is_managed_server {
@@ -275,14 +281,7 @@ pub fn run() {
                     })
                 }
 
-                debug!("Shutting down Memos server…");
-                process::kill_children();
-                {
-                    let db_file = final_config.paths.memos_db_file.clone();
-                    tauri::async_runtime::block_on(async move {
-                        sqlite::wait_checkpoint(&db_file, 100, 15000).await;
-                    });
-                }
+                memos::shutdown();
                 info!("Memospot closed.");
                 app_handle.cleanup_before_exit();
                 std::process::exit(0);

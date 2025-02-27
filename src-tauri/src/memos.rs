@@ -1,5 +1,5 @@
 use crate::utils::absolute_path;
-use crate::{process, RuntimeConfig};
+use crate::{process, sqlite, RuntimeConfig};
 use anyhow::{anyhow, Result};
 use homedir::HomeDirExt;
 use log::{debug, info, warn};
@@ -63,6 +63,21 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
     }
 
     Ok(())
+}
+
+/// Shutdown the Memos server and checkpoint the database.
+pub fn shutdown() {
+    let config = RuntimeConfig::from_global_store();
+
+    debug!("memos: shutting down server…");
+    process::kill_children();
+
+    let db_file = config.paths.memos_db_file.clone();
+    tauri::async_runtime::block_on(async move {
+        sqlite::wait_checkpoint(&db_file, 100, 15000).await;
+    });
+
+    debug!("memos: server shutdown");
 }
 
 /// Decide which working directory use for Memos server.
