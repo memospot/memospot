@@ -22,6 +22,8 @@
   "settingsViewDescription": "Appearance and window settings",
   "settingsViewTheme": "Theme",
   "settingsViewThemeDescription": "Memospot theme.",
+  "settingsViewReduceAnimation": "Reduce animations",
+  "settingsViewReduceAnimationDescription": "Reduce animations in the interface.",
   "settingsViewLocale": "Locale",
   "settingsViewLocaleDescription": "Memospot language.",
   "settingsViewCentered": "Center",

@@ -34,6 +34,17 @@ pub async fn get_theme() -> Result<String, String> {
     Ok(config.yaml.memospot.window.theme.unwrap_or_default())
 }
 
+#[command]
+pub async fn get_reduce_animation_status() -> Result<bool, String> {
+    let config = RuntimeConfig::from_global_store();
+    Ok(config
+        .yaml
+        .memospot
+        .window
+        .reduce_animation
+        .unwrap_or_default())
+}
+
 pub struct Locale(pub Mutex<String>);
 impl Locale {
     pub fn manage(locale: String) -> Self {

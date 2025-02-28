@@ -98,6 +98,8 @@ pub struct Window {
     pub hide_menu_bar: Option<bool>,
     /// Theme.
     pub theme: Option<String>,
+    /// Reduce animations in the interface.
+    pub reduce_animation: Option<bool>,
     /// Locale.
     pub locale: Option<String>,
 }
@@ -114,6 +116,7 @@ impl Default for Window {
             y: Some(0),
             hide_menu_bar: Some(false),
             theme: None,
+            reduce_animation: Some(false),
             locale: None,
         }
     }

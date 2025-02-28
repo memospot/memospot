@@ -55,14 +55,14 @@ onMount(async () => {
 
 async function setPageToInitialConfig() {
     input = {
-        mode: (initialConfig.memos.mode as string) || "prod",
-        binaryPath: (initialConfig.memos.binary_path as string) || "",
-        workingDir: (initialConfig.memos.working_dir as string) || "",
-        dataDir: (initialConfig.memos.data as string) || "",
-        bindAddr: (initialConfig.memos.addr as string) || "",
-        bindPort: (initialConfig.memos.port as number) || 0,
-        envVarsEnabled: (initialConfig.memos.env.enabled as boolean) || false,
-        envVars: envFromKV((initialConfig.memos.env.vars as Record<string, string>) || {})
+        mode: initialConfig.memos.mode ?? "prod",
+        binaryPath: initialConfig.memos.binary_path ?? "",
+        workingDir: initialConfig.memos.working_dir ?? "",
+        dataDir: initialConfig.memos.data ?? "",
+        bindAddr: initialConfig.memos.addr ?? "",
+        bindPort: initialConfig.memos.port ?? 0,
+        envVarsEnabled: initialConfig.memos.env.enabled ?? false,
+        envVars: envFromKV((initialConfig.memos.env.vars ?? {}) as Record<string, string>)
     };
 
     currentConfig.memos = jsonpatch.deepClone(initialConfig.memos);
@@ -71,14 +71,14 @@ async function setPageToInitialConfig() {
 async function setPageToDefaultConfig() {
     const defaultJSON = JSON.parse(await getDefaultAppConfig()) as Config;
     input = {
-        mode: (defaultJSON.memos.mode as string) || "prod",
-        binaryPath: (defaultJSON.memos.binary_path as string) || "",
-        workingDir: (defaultJSON.memos.working_dir as string) || "",
-        dataDir: (defaultJSON.memos.data as string) || "",
-        bindAddr: (defaultJSON.memos.addr as string) || "",
-        bindPort: (defaultJSON.memos.port as number) || 0,
-        envVarsEnabled: (defaultJSON.memos.env.enabled as boolean) || false,
-        envVars: envFromKV((defaultJSON.memos.env.vars as Record<string, string>) || {})
+        mode: defaultJSON.memos.mode ?? "prod",
+        binaryPath: defaultJSON.memos.binary_path ?? "",
+        workingDir: defaultJSON.memos.working_dir ?? "",
+        dataDir: defaultJSON.memos.data ?? "",
+        bindAddr: defaultJSON.memos.addr ?? "",
+        bindPort: defaultJSON.memos.port ?? 0,
+        envVarsEnabled: defaultJSON.memos.env.enabled ?? false,
+        envVars: envFromKV((defaultJSON.memos.env.vars ?? {}) as Record<string, string>)
     };
 
     currentConfig.memos = jsonpatch.deepClone(defaultJSON.memos);

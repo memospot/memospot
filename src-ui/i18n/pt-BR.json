@@ -23,6 +23,8 @@
   "settingsViewDescription": "Aparência e configurações da janela",
   "settingsViewTheme": "Tema",
   "settingsViewThemeDescription": "Tema do Memospot.",
+  "settingsViewReduceAnimation": "Reduzir animações",
+  "settingsViewReduceAnimationDescription": "Reduzir animações na interface.",
   "settingsViewLocale": "Localidade",
   "settingsViewLocaleDescription": "Idioma do Memospot.",
   "settingsViewCentered": "Centralizar",

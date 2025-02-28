@@ -28,6 +28,8 @@ $effect(() => {
     document.documentElement.setAttribute("data-theme", theme);
 });
 
+const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "false");
+
 let redirectDetails = $state({
     isError: false,
     isLocalhost: false,
@@ -88,7 +90,10 @@ onMount(async () => {
 </script>
 
 <main
-  class="absolute h-full w-full flex flex-col items-center justify-center text-zinc-700 dark:text-zinc-300 motion-preset-fade"
+  class={cn(
+    "absolute h-full w-full flex flex-col items-center justify-center text-zinc-700 dark:text-zinc-300",
+    reduceAnimation ? "" : "motion-preset-fade",
+  )}
 >
   <div>
     <h1 id="status" class="text-xl">
@@ -108,7 +113,11 @@ onMount(async () => {
     >
       <img
         src="powered_by_memos{theme === 'dark' ? '_dark' : ''}.webp"
-        class="!h-60 p-6 logo logo-glow {redirectDetails.isError ? 'error' : ''}"
+        class={cn(
+          "!h-60 p-6 logo",
+          reduceAnimation ? "logo-glow-static" : "logo-glow",
+          redirectDetails.isError ? "error" : "",
+        )}
         alt="Memos"
       />
     </a>
@@ -138,7 +147,12 @@ onMount(async () => {
           onclick={() => window.location.replace(window.location.href)}
         >
           <Update
-            class="h-[1.2rem] w-[1.2rem] m-1 motion-safe:animate-pulse hover:animate-none"
+            class={cn(
+              "h-[1.2rem] w-[1.2rem] m-1",
+              reduceAnimation
+                ? ""
+                : "motion-safe:animate-pulse hover:animate-none",
+            )}
           />
         </button>
       </div>
@@ -172,6 +186,17 @@ img {
         filter: none;
     }
 }
+.logo-glow-static {
+    padding: 3.5em; /* Prevent square box on webkit */
+    filter: drop-shadow(0 0 2vh var(--glow));
+}
+.logo-glow-static.error {
+    filter: drop-shadow(0 0 4vh var(--glow-error));
+}
+.logo-glow-static:hover,
+.logo-glow:hover {
+    transform: scale(1.02);
+}
 .logo-glow {
     padding: 3.5em; /* Prevent square box on webkit */
     animation: glow 2s ease-in-out infinite;
@@ -183,8 +208,5 @@ img {
 .logo-glow.error {
     animation: 0.5s ease-in-out;
     filter: drop-shadow(0 0 4vh var(--glow-error));
-}
-.logo-glow:hover {
-    transform: scale(1.02);
 }
 </style>

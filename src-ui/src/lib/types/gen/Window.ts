@@ -42,6 +42,10 @@ hide_menu_bar: boolean | null,
  */
 theme: string | null, 
 /**
+ * Reduce animations in the interface.
+ */
+reduce_animation: boolean | null, 
+/**
  * Locale.
  */
 locale: string | null, };

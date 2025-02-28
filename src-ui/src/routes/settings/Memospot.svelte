@@ -34,15 +34,15 @@ onMount(async () => {
 
 async function setPageToInitialConfig() {
     input = {
-        remoteEnabled: (initialConfig.memospot.remote.enabled as boolean) || false,
-        remoteURL: (initialConfig.memospot.remote.url as string) || "",
-        remoteUserAgent: (initialConfig.memospot.remote.user_agent as string) || "",
-        updaterEnabled: (initialConfig.memospot.updater.enabled as boolean) || false,
-        migrationsEnabled: (initialConfig.memospot.migrations.enabled as boolean) || false,
-        backupsEnabled: (initialConfig.memospot.backups.enabled as boolean) || false,
-        loggingEnabled: (initialConfig.memospot.log.enabled as boolean) || false,
-        envVarsEnabled: (initialConfig.memospot.env.enabled as boolean) || false,
-        envVars: envFromKV((initialConfig.memospot.env.vars as Record<string, string>) || {})
+        remoteEnabled: initialConfig.memospot.remote.enabled ?? false,
+        remoteURL: initialConfig.memospot.remote.url ?? "",
+        remoteUserAgent: initialConfig.memospot.remote.user_agent ?? "",
+        updaterEnabled: initialConfig.memospot.updater.enabled ?? false,
+        migrationsEnabled: initialConfig.memospot.migrations.enabled ?? false,
+        backupsEnabled: initialConfig.memospot.backups.enabled ?? false,
+        loggingEnabled: initialConfig.memospot.log.enabled ?? false,
+        envVarsEnabled: initialConfig.memospot.env.enabled ?? false,
+        envVars: envFromKV((initialConfig.memospot.env.vars ?? {}) as Record<string, string>)
     };
 
     currentConfig.memospot = jsonpatch.deepClone(initialConfig.memospot);
@@ -51,15 +51,15 @@ async function setPageToInitialConfig() {
 async function setPageToDefaultConfig() {
     const defaultJSON = JSON.parse(await getDefaultAppConfig()) as Config;
     input = {
-        remoteEnabled: (defaultJSON.memospot.remote.enabled as boolean) || false,
-        remoteURL: (defaultJSON.memospot.remote.url as string) || "",
-        remoteUserAgent: (defaultJSON.memospot.remote.user_agent as string) || "",
-        updaterEnabled: (defaultJSON.memospot.updater.enabled as boolean) || false,
-        migrationsEnabled: (defaultJSON.memospot.migrations.enabled as boolean) || false,
-        backupsEnabled: (defaultJSON.memospot.backups.enabled as boolean) || false,
-        loggingEnabled: (defaultJSON.memospot.log.enabled as boolean) || false,
-        envVarsEnabled: (defaultJSON.memospot.env.enabled as boolean) || false,
-        envVars: envFromKV((defaultJSON.memospot.env.vars as Record<string, string>) || {})
+        remoteEnabled: defaultJSON.memospot.remote.enabled ?? false,
+        remoteURL: defaultJSON.memospot.remote.url ?? "",
+        remoteUserAgent: defaultJSON.memospot.remote.user_agent ?? "",
+        updaterEnabled: defaultJSON.memospot.updater.enabled ?? false,
+        migrationsEnabled: defaultJSON.memospot.migrations.enabled ?? false,
+        backupsEnabled: defaultJSON.memospot.backups.enabled ?? false,
+        loggingEnabled: defaultJSON.memospot.log.enabled ?? false,
+        envVarsEnabled: defaultJSON.memospot.env.enabled ?? false,
+        envVars: envFromKV((defaultJSON.memospot.env.vars ?? {}) as Record<string, string>)
     };
 
     currentConfig.memospot = jsonpatch.deepClone(defaultJSON.memospot);
@@ -96,7 +96,7 @@ async function updateRemoteServerUrl(_: Event) {
             toast.error(m.settingsMemospotErrInvalidServer(), {
                 duration: 5000
             });
-            input.remoteURL = initialConfig.memospot.remote.url || "";
+            input.remoteURL = initialConfig.memospot.remote.url ?? "";
             return;
         }
     }
@@ -107,7 +107,7 @@ async function updateRemoteServerUrl(_: Event) {
             toast.error(m.settingsMemospotErrInvalidServer(), {
                 duration: 5000
             });
-            input.remoteURL = initialConfig.memospot.remote.url || "";
+            input.remoteURL = initialConfig.memospot.remote.url ?? "";
             return;
         }
 

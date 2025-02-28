@@ -31,6 +31,7 @@ let input = $state({
     fullscreen: false,
     centered: false,
     locale: "system" as Locale,
+    reduce_animation: false,
     theme: "system" as Theme
 });
 
@@ -47,7 +48,9 @@ let selectedTheme = $derived({
 
 let localeDisplayNames: Record<string, string> = {};
 for (const locale of locales.toSorted()) {
-    const displayName = new Intl.DisplayNames([locale], { type: "language" }).of(locale);
+    const displayName = new Intl.DisplayNames([locale], {
+        type: "language"
+    }).of(locale);
     if (!displayName) {
         const error = new Error(`Locale "${locale}" is not recognized by the browser.`);
         console.error(error);
@@ -76,13 +79,14 @@ onMount(async () => {
 
 async function setPageToInitialConfig() {
     input = {
-        resizable: (initialConfig.memospot.window.resizable as boolean) || false,
-        maximized: (initialConfig.memospot.window.maximized as boolean) || false,
-        fullscreen: (initialConfig.memospot.window.fullscreen as boolean) || false,
-        centered: (initialConfig.memospot.window.center as boolean) || false,
-        locale: (initialConfig.memospot.window.locale || "system") as Locale,
-        theme: (initialConfig.memospot.window.theme ||
-            localStorage.getItem("mode-watcher-mode") ||
+        resizable: initialConfig.memospot.window.resizable ?? false,
+        maximized: initialConfig.memospot.window.maximized ?? false,
+        fullscreen: initialConfig.memospot.window.fullscreen ?? false,
+        centered: initialConfig.memospot.window.center ?? false,
+        locale: (initialConfig.memospot.window.locale ?? "system") as Locale,
+        reduce_animation: initialConfig.memospot.window.reduce_animation ?? false,
+        theme: (initialConfig.memospot.window.theme ??
+            localStorage.getItem("mode-watcher-mode") ??
             "system") as Theme
     };
 
@@ -92,24 +96,25 @@ async function setPageToInitialConfig() {
 async function setPageToDefaultConfig() {
     const defaultJSON = JSON.parse(await getDefaultAppConfig()) as Config;
     input = {
-        resizable: (defaultJSON.memospot.window.resizable as boolean) || false,
-        maximized: (defaultJSON.memospot.window.maximized as boolean) || false,
-        fullscreen: (defaultJSON.memospot.window.fullscreen as boolean) || false,
-        centered: (defaultJSON.memospot.window.center as boolean) || false,
-        locale: (defaultJSON.memospot.window.locale || "system") as Locale,
-        theme: (defaultJSON.memospot.window.theme || "system") as Theme
+        resizable: defaultJSON.memospot.window.resizable ?? false,
+        maximized: defaultJSON.memospot.window.maximized ?? false,
+        fullscreen: defaultJSON.memospot.window.fullscreen ?? false,
+        centered: defaultJSON.memospot.window.center ?? false,
+        locale: (defaultJSON.memospot.window.locale ?? "system") as Locale,
+        reduce_animation: defaultJSON.memospot.window.reduce_animation ?? false,
+        theme: (defaultJSON.memospot.window.theme ?? "system") as Theme
     };
 
     currentConfig.memospot.window = jsonpatch.deepClone(defaultJSON.memospot.window);
 }
 
 async function updateTheme(s: Selected<string> | undefined) {
-    input.theme = (s?.value || "system") as Theme;
+    input.theme = (s?.value ?? "system") as Theme;
     currentConfig.memospot.window.theme = input.theme;
 }
 
 async function updateLocale(s: Selected<string> | undefined) {
-    input.locale = (s?.value || "system") as Locale;
+    input.locale = (s?.value ?? "system") as Locale;
     currentConfig.memospot.window.locale = input.locale;
 
     if (input.locale === ("system" as Locale)) {
@@ -122,6 +127,13 @@ async function updateLocale(s: Selected<string> | undefined) {
 }
 
 async function updateSetting(updateFn?: () => void): Promise<void> {
+    const reduceAnimationChanged =
+        initialConfig.memospot.window.reduce_animation !==
+        currentConfig.memospot.window.reduce_animation;
+    if (reduceAnimationChanged) {
+        localStorage.setItem("reduce-animation", JSON.stringify(input.reduce_animation));
+    }
+
     const localeChanged =
         initialConfig.memospot.window.locale !== currentConfig.memospot.window.locale;
 
@@ -175,6 +187,18 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
         </SelectItem>
       </SelectContent>
     </Select>
+  </Setting>
+
+  <Setting
+    name={m.settingsViewReduceAnimation()}
+    desc={m.settingsViewReduceAnimationDescription()}
+  >
+    <Switch
+      bind:checked={input.reduce_animation}
+      onclick={() => {
+        currentConfig.memospot.window.reduce_animation = input.reduce_animation;
+      }}
+    />
   </Setting>
 
   <Setting

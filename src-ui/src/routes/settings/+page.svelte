@@ -1,6 +1,7 @@
 <script lang="ts">
 import { Toaster } from "$lib/components/ui/sonner";
 import { m } from "$lib/i18n";
+import { cn } from "$lib/utils";
 import EyeOpen from "svelte-radix/EyeOpen.svelte";
 import Gear from "svelte-radix/Gear.svelte";
 import Pencil2 from "svelte-radix/Pencil2.svelte";
@@ -22,8 +23,10 @@ const sections: Section[] = [
 ];
 
 let activeSection: string = $state(
-    sections.find((s) => s.id === window.location.hash.slice(1))?.id || sections[0].id
+    sections.find((s) => s.id === window.location.hash.slice(1))?.id ?? sections[0].id
 );
+
+const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "false");
 
 async function animateSectionTransition() {
     const sectionAnimation = "motion-preset-fade";
@@ -40,11 +43,16 @@ async function animateSectionTransition() {
 async function updateSection(sectionId: string) {
     activeSection = sectionId;
     window.location.hash = `#${sectionId}`;
-    await animateSectionTransition();
+    if (!reduceAnimation) await animateSectionTransition();
 }
 </script>
 
-<div class="container p-4 min-w-screen motion-preset-fade">
+<div
+  class={cn(
+    "container p-4 min-w-screen",
+    reduceAnimation ? "" : "motion-preset-fade",
+  )}
+>
   <div class="flex flex-col gap-4">
     <Navbar
       {sections}
@@ -66,7 +74,7 @@ async function updateSection(sectionId: string) {
   visibleToasts={1}
   position="bottom-left"
   toastOptions={{
-  class: "[text-shadow:_1px_1px_1px_rgb(0_0_0_/_60%)] text-zinc-50",
+    class: "[text-shadow:_1px_1px_1px_rgb(0_0_0_/_60%)] text-zinc-50",
     classes: {
       error: "bg-destructive",
       success: "bg-primary",

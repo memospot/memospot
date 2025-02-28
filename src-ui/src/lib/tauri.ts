@@ -47,6 +47,10 @@ export async function getAppTheme(): Promise<string> {
     return (await invoke("get_theme")) as string;
 }
 
+export async function getReduceAnimationStatus(): Promise<boolean> {
+    return (await invoke("get_reduce_animation_status")) as boolean;
+}
+
 /**
  * Get the current application locale.
  * @returns the current locale

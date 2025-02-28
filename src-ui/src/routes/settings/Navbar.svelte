@@ -18,10 +18,15 @@ let {
     activeSection: string;
     onSectionChange: (sectionId: string) => void;
 } = $props();
+
+const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "false");
 </script>
 
 <nav
-  class="m-auto flex flex-col space-y-1 md:flex-row md:space-x-1 md:space-y-0 motion-preset-fade"
+  class={cn(
+    "m-auto flex flex-col space-y-1 md:flex-row md:space-x-1 md:space-y-0",
+    reduceAnimation ? "" : "motion-preset-fade",
+  )}
 >
   {#each sections as section}
     <div
@@ -39,7 +44,12 @@ let {
     >
       <div class="flex flex-row items-start">
         {#if section.icon}
-          <section.icon class="self-center w-6 mr-4 opacity-70 shrink-0 motion-preset-pop" />
+          <section.icon
+            class={cn(
+              "self-center w-6 mr-4 opacity-70 shrink-0",
+              reduceAnimation ? "" : "motion-preset-pop",
+            )}
+          />
         {/if}
         {section.label}
       </div>
