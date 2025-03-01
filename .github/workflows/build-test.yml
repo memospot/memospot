@@ -101,7 +101,7 @@ jobs:
           echo -e "\032[0;34m Dependencies installed!\033[0m"
       - if: ${{ !env.ACT && runner.os == 'Linux'  }}
         name: "[Linux] Install platform dependencies"
-        uses: awalsh128/cache-apt-pkgs-action@d1a184e480e6f3932a3ee7b250d5582d284d46ce
+        uses: awalsh128/cache-apt-pkgs-action@13d2226e13bbd0d19a430f1c72277b2b28268290
         with: { packages: "${{env.APT_DEPS}}" }
       - if: ${{ runner.os == 'macOS' }}
         name: "[macOS] Install platform dependencies"
