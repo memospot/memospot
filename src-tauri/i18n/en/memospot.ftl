@@ -98,6 +98,10 @@ panic-config-error =
 panic-config-unable-to-backup = Failed to backup the current configuration file
 panic-config-unable-to-reset =  Unable to reset the configuration file
 panic-config-parse-error = Fatal error while parsing the configuration file
+error-config-write-error =
+    Failed to write configuration file:
+
+    {$error}
 panic-portpicker-error = Failed to find a free port to bind Memos to!
 error-invalid-server-url =
     Invalid remote server URL:
@@ -113,7 +117,3 @@ panic-log-config-reset-error =
     Failed to reset the log configuration file:
     {$file}
     Please delete it and restart the application.
-panic-log-setup-error =
-    Failed to setup logging!
-    Please delete this file and restart the application:
-    {$file}

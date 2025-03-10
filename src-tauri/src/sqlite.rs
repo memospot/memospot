@@ -49,18 +49,20 @@ pub async fn checkpoint(db: &Path) -> Result<(), anyhow::Error> {
 /// Wait for database checkpoint.
 ///
 /// This is a blocking function.
-pub async fn wait_checkpoint(db_file: &Path, interval_millis: u64, timeout_millis: u128) {
-    debug!("Checkpointing database WAL…");
+pub async fn wait_checkpoint(db_file: &Path) {
+    const INTERVAL_MS: u64 = 100;
+    const TIMEOUT_MS: u128 = 15_000;
+
+    debug!("database: checkpointing WAL…");
     let time_start = tokio::time::Instant::now();
 
     let mut last_error: Option<anyhow::Error> = None;
-    let mut interval =
-        tokio::time::interval(tokio::time::Duration::from_millis(interval_millis));
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(INTERVAL_MS));
 
     let wal = &db_file.with_extension("db-wal");
     while wal.exists() {
-        if time_start.elapsed().as_millis() > timeout_millis {
-            last_error = anyhow!("operation timed out").into();
+        if time_start.elapsed().as_millis() > TIMEOUT_MS {
+            last_error = anyhow!("database: operation timed out").into();
             break;
         }
         interval.tick().await;
@@ -72,14 +74,14 @@ pub async fn wait_checkpoint(db_file: &Path, interval_millis: u64, timeout_milli
     match last_error {
         Some(e) => {
             warn!(
-                "Failed to checkpoint database WAL: {}. Giving up after {} ms.",
+                "database: failed to checkpoint WAL: {}. Giving up after {} ms.",
                 e.to_string(),
-                timeout_millis
+                TIMEOUT_MS
             );
         }
         None => {
             debug!(
-                "Database checkpoint took <{} ms. Database closed.",
+                "database: checkpoint took <{} ms. Database closed.",
                 time_start.elapsed().as_millis()
             );
         }

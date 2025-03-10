@@ -19,11 +19,11 @@ pub async fn related_files(
     output_zip: &Path,
 ) -> Result<()> {
     debug!(
-        "Creating zip file with main file: {}",
+        "zip: creating file from main file: {}",
         input_file.to_string_lossy()
     );
-    debug!("Output zip file: {}", output_zip.to_string_lossy());
-    debug!("Related extensions: {:?}", related_extensions);
+    debug!("zip: output file: {}", output_zip.to_string_lossy());
+    debug!("zip: related extensions: {:?}", related_extensions);
 
     let file = File::create(output_zip).await?;
     let mut writer: TokioZipFileWriter<File> = ZipFileWriter::with_tokio(file);
@@ -37,7 +37,7 @@ pub async fn related_files(
             }
         }
     }
-    debug!("Related files: {:?}", related_files);
+    debug!("zip: related files: {:?}", related_files);
 
     for rf in &related_files {
         write_entry(rf, &mut writer).await?;
@@ -58,7 +58,7 @@ async fn write_entry(input_path: &Path, writer: &mut TokioZipFileWriter<File>) -
         .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "Invalid filename"))?
         .to_string_lossy()
         .to_string();
-    debug!("Adding file to zip: {}", filename);
+    debug!("zip: adding file '{}'", filename);
 
     let mut buffer = Vec::with_capacity(input_file_size);
     input_file.read_to_end(&mut buffer).await?;

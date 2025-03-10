@@ -103,7 +103,7 @@ pub fn run() {
     {
         let url = config.memos_url.clone();
         tauri::async_runtime::spawn(async move {
-            memos::wait_api_ready(&url, 100, 15000).await;
+            memos::wait_api_ready(&url).await;
         });
     }
 

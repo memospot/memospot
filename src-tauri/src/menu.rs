@@ -73,61 +73,12 @@ impl MainMenu {
     }
 }
 
-/// Update menu after Memos version is known.
-///
-/// Display current Memos version in the help menu.
-///
-/// * This function must never interrupt the program flow.
-pub fn update_with_memos_version<R: Runtime>(handle: &AppHandle<R>) {
-    const INTERVAL_MS: u64 = 100;
-    const TIMEOUT_MS: u128 = 15_000;
-
-    let handle_ = handle.clone();
-    async_runtime::spawn(async move {
-        let mut interval = time::interval(Duration::from_millis(INTERVAL_MS));
-        let time_start = Instant::now();
-
-        loop {
-            interval.tick().await;
-            if time_start.elapsed().as_millis() > TIMEOUT_MS {
-                debug!(
-                    "Unable to set Memos version in Help menu. Timed out ({}ms).",
-                    TIMEOUT_MS
-                );
-                break;
-            }
-            if !memos::get_version().is_empty() {
-                break;
-            }
-        }
-
-        let Some(main_window) = handle_.get_webview_window("main") else {
-            error!("Unable to set Memos version in menu. Main window not found.");
-            return;
-        };
-        let Some(menu) = main_window.menu() else {
-            return;
-        };
-
-        // Find and update the Memos version entry in the Help menu.
-        let version_text = format!("Memos v{}", memos::get_version());
-        menu.items()
-            .iter()
-            .flat_map(|item| item.iter())
-            .filter_map(|menu| menu.as_submenu())
-            .find_map(|submenu| {
-                submenu
-                    .get(&MainMenu::HelpMemosVersion.id())
-                    .and_then(|entry| entry.as_menuitem().cloned())
-            })
-            .map(|menuitem| menuitem.set_text(version_text));
-    });
-}
-
+/// Build an empty menu.
 pub fn build_empty<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Menu<R>> {
     Menu::with_items(handle, &[])
 }
 
+/// Build the main menu.
 pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Menu<R>> {
     let config = RuntimeConfig::from_global_store();
     if config.yaml.memospot.window.hide_menu_bar == Some(true) {
@@ -246,7 +197,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
             &PredefinedMenuItem::separator(handle)?,
             &MenuItemBuilder::with_id(
                 MainMenu::HelpMemosVersion.id(),
-                format!("Memos v{}", memos::get_version()),
+                format!("Memos v{}", memos::VersionStore::get()),
             )
             .enabled(false)
             .build(handle)?,
@@ -282,13 +233,13 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
 
     let mut webview = handle
         .get_webview_window("main")
-        .expect("failed to get webview window");
+        .expect("menu: failed to get webview window");
     let open_link = |url| {
         handle.opener().open_url(url, None::<&str>).ok();
     };
 
     let Some(action) = MainMenu::from_repr(event_id) else {
-        error!("received bad menu event id");
+        error!("menu: received bad event id");
         return;
     };
 
@@ -408,12 +359,63 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
         MainMenu::HelpMemosReleaseNotes => {
             let url = format!(
                 "https://www.usememos.com/changelog/{}",
-                memos::get_version().replace(".", "-")
+                memos::VersionStore::get().replace(".", "-")
             );
             open_link(url.as_str());
         }
         _ => {
-            error!("unhandled menu event: {}", event.id().0)
+            error!("menu: unhandled event: {}", event.id().0)
         }
     }
+}
+
+/// Update menu after Memos version is known.
+///
+/// Display current Memos version in the help menu.
+///
+/// * This function must never interrupt the program flow.
+pub fn update_with_memos_version<R: Runtime>(handle: &AppHandle<R>) {
+    const INTERVAL_MS: u64 = 100;
+    const TIMEOUT_MS: u128 = 15_000;
+
+    let handle_ = handle.clone();
+    async_runtime::spawn(async move {
+        let mut interval = time::interval(Duration::from_millis(INTERVAL_MS));
+        let time_start = Instant::now();
+
+        loop {
+            interval.tick().await;
+            if time_start.elapsed().as_millis() > TIMEOUT_MS {
+                debug!(
+                    "menu: unable to set Memos version in Help menu. Timed out after {}ms.",
+                    TIMEOUT_MS
+                );
+                break;
+            }
+            if !memos::VersionStore::get().is_empty() {
+                break;
+            }
+        }
+
+        let Some(main_window) = handle_.get_webview_window("main") else {
+            error!("menu: unable to set Memos version in Help menu. Main window not found.");
+            return;
+        };
+        let Some(menu) = main_window.menu() else {
+            return;
+        };
+
+        // Find and update the Memos version entry in the Help menu.
+        let version_text = format!("Memos v{}", memos::VersionStore::get());
+        menu.items()
+            .iter()
+            .flat_map(|item| item.iter())
+            .filter_map(|menu| menu.as_submenu())
+            .find_map(|submenu| {
+                submenu
+                    .get(&MainMenu::HelpMemosVersion.id())
+                    .and_then(|entry| entry.as_menuitem().cloned())
+            })
+            .map(|menuitem| menuitem.set_text(version_text));
+    });
 }

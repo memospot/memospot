@@ -98,6 +98,10 @@ panic-config-error =
 panic-config-unable-to-backup = Falha ao fazer backup do arquivo de configuração atual
 panic-config-unable-to-reset = Não foi possível redefinir o arquivo de configuração
 panic-config-parse-error = Erro fatal ao ler o arquivo de configuração
+error-config-write-error =
+    Falha ao gravar o arquivo de configuração:
+
+    {$error}
 panic-portpicker-error = Falha ao encontrar uma porta livre para o Memos escutar!
 error-invalid-server-url =
     URL do servidor inválida:
@@ -113,7 +117,3 @@ panic-log-config-reset-error =
     Falha ao redefinir o arquivo de configuração de log:
     {$file}
     Por favor, exclua este arquivo e reinicie o aplicativo.
-panic-log-setup-error =
-    Falha ao configurar o log!
-    Por favor, exclua este arquivo e reinicie o aplicativo:
-    {$file}

@@ -85,9 +85,9 @@ pub fn reload(preferred_locale: &str) {
         .find(|l| l.language.as_str() == preferred_locale)
     {
         if let Err(error) = localizer.select(&[locale.clone()]) {
-            error!("Error while loading locale: {}", error);
+            error!("i18n: failed to load locale: {}", error);
             return;
         }
-        debug!("Locale overridden to {}", preferred_locale);
+        debug!("i18n: locale overridden to {}", preferred_locale);
     }
 }

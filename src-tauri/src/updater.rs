@@ -13,6 +13,7 @@ pub fn spawn(app: &tauri::AppHandle) {
     });
 }
 
+/// Check for updates and prompt the user to install them.
 async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
     let updater = app
         .updater_builder()

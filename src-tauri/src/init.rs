@@ -166,7 +166,7 @@ pub fn database(rtcfg: &RuntimeConfig) -> PathBuf {
 /// Run database migrations.
 pub async fn migrate_database(rtcfg: &RuntimeConfig) {
     if !rtcfg.yaml.memospot.migrations.enabled.unwrap_or_default() {
-        warn!("Database migrations were disabled via configuration.");
+        warn!("database migration: disabled via configuration");
         return;
     }
     if !rtcfg.paths.memos_db_file.exists() {
@@ -184,7 +184,7 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
         .len();
     let _ = db_conn.close().await;
     if migration_amount == 0 {
-        debug!("No pending migrations found.");
+        debug!("database migration: no pending migrations found");
         return;
     }
 
@@ -202,7 +202,7 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
         match backup.await {
             Ok(_) => {
                 info!(
-                    "Database backup completed successfully! Operation took {:?}. Backup file: {}",
+                    "database migration: backup completed. Operation took {:?}. Backup file: {}.",
                     start_time.elapsed(),
                     backup_path.to_string_lossy()
                 );
@@ -231,9 +231,9 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
         .expect_dialog(fl!("panic-failed-to-close-database-connection"));
 
     info!(
-        "Database migrations took {:?}. Ran {} migrations.",
-        start_time.elapsed(),
+        "database migration: Ran {} migrations in {:?}.",
         migration_amount,
+        start_time.elapsed(),
     );
 }
 
@@ -249,7 +249,7 @@ pub fn ensure_webview() {
         MessageType::Error,
     );
     if !user_confirmed {
-        warn!("User declined to setup WebView.");
+        warn!("webview setup: user declined to setup.");
         exit(1);
     }
 
@@ -261,7 +261,7 @@ pub fn ensure_webview() {
             ));
 
             if let Err(e) = webview::open_install_website() {
-                warn!("Failed to launch WebView download website:\n{}", e);
+                warn!("webview setup: unable to open website: {}", e);
             }
             exit(1)
         }
@@ -366,8 +366,9 @@ pub fn memos_url(rtcfg: &RuntimeConfig) -> String {
 /// 1. Provided Memos binary path from the configuration file.
 /// 2. Memospot current working directory.
 /// 3. Memospot data directory.
-/// 4. ProgramData/memos (Windows only).
-/// 5. /usr/local/bin, /var/opt/memos, /usr/local/memos (POSIX only).
+/// 4. ProgramData/memos (Windows).
+/// 5. /Applications/Memospot.app/Contents/MacOS/memos (macOS)
+/// 6. /usr/local/bin, /var/opt/memos, /usr/local/memos (Linux).
 pub fn find_memos(rtcfg: &RuntimeConfig) -> PathBuf {
     // Prefer path from the configuration file if it's valid.
     if let Some(binary_path) = &rtcfg.yaml.memos.binary_path {
@@ -381,27 +382,40 @@ pub fn find_memos(rtcfg: &RuntimeConfig) -> PathBuf {
         }
     }
 
-    let binary_name = match OS {
-        "windows" => "memos.exe",
-        _ => "memos",
-    };
-
     let mut search_paths: Vec<PathBuf> = Vec::from([
         rtcfg.paths.memospot_cwd.clone(),
         rtcfg.paths.memospot_data.clone(),
     ]);
 
-    // Windows fall back.
-    if OS == "windows" {
-        if let Ok(program_data) = env::var("PROGRAMDATA") {
-            search_paths.push(PathBuf::from(program_data).join("memos"));
+    // Fall backs.
+    match OS {
+        "windows" => {
+            if let Ok(program_files) = env::var("PROGRAMFILES") {
+                search_paths.push(PathBuf::from(program_files).join("Memospot"));
+            }
+            if let Ok(program_data) = env::var("PROGRAMDATA") {
+                search_paths.push(PathBuf::from(program_data).join("memos"));
+            }
         }
-    } else {
-        // POSIX fall back.
-        search_paths.push(PathBuf::from("/usr/local/bin"));
-        search_paths.push(PathBuf::from("/var/opt/memos"));
-        search_paths.push(PathBuf::from("/usr/local/memos"));
-    }
+        "macos" => {
+            search_paths.push(PathBuf::from("/Applications/Memospot.app/Contents/MacOS"));
+        }
+        "linux" => {
+            search_paths.push(PathBuf::from("/usr/bin"));
+            search_paths.push(PathBuf::from("/usr/local/bin"));
+            search_paths.push(
+                PathBuf::from("~/.local/bin")
+                    .expand_home()
+                    .unwrap_or_default(),
+            );
+        }
+        _ => {}
+    };
+
+    let binary_name = match OS {
+        "windows" => "memos.exe",
+        _ => "memos",
+    };
 
     debug!("Looking for Memos server at: {:?}", search_paths);
     for path in search_paths {
@@ -452,11 +466,11 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
     if !rtcfg.yaml.memospot.log.enabled.unwrap_or_default() {
         return false;
     }
+
     let log_config: PathBuf = rtcfg.paths.memospot_data.join("logging_config.yaml");
 
-    // SAFETY: We're setting an environment variable, which is generally safe.
-    // The unsafe block is required due to the potential for race conditions in
-    // a multithreaded context.
+    // SAFETY: There's potential for race conditions when setting environment
+    // variables in a multi-threaded context. Shouldn't be an issue here.
     unsafe {
         // Allows using $ENV{MEMOSPOT_DATA} in log4rs config.
         env::set_var(
@@ -464,37 +478,35 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
             rtcfg.paths.memospot_data.to_string_lossy().to_string(),
         );
     }
+
     if log4rs::init_file(&log_config, Default::default()).is_ok() {
-        // logging is enabled and config is ok
         return true;
     }
 
-    // Logging is enabled, but config is bad.
-    if let Ok(mut file) = File::create(&log_config) {
-        let config_template = LOGGING_CONFIG_YAML.replace("    ", "  ");
-        file.write_all(config_template.as_bytes())
-            .expect_dialog(fl!(
-                "panic-log-config-write-error",
-                file = log_config.to_string_lossy()
-            ));
-        file.flush().expect_dialog(fl!(
+    // Logging is enabled, but config is bad. Try to reset it.
+
+    let mut file = File::create(&log_config).expect_dialog(fl!(
+        "panic-log-config-write-error",
+        file = log_config.to_string_lossy()
+    ));
+
+    let config_template = LOGGING_CONFIG_YAML.replace("    ", "  ");
+    file.write_all(config_template.as_bytes())
+        .expect_dialog(fl!(
             "panic-log-config-write-error",
             file = log_config.to_string_lossy()
         ));
-    } else {
-        panic_dialog!(fl!(
-            "panic-log-config-reset-error",
-            file = log_config.to_string_lossy()
-        ));
-    }
+    file.flush().expect_dialog(fl!(
+        "panic-log-config-write-error",
+        file = log_config.to_string_lossy()
+    ));
 
     if log4rs::init_file(&log_config, Default::default()).is_ok() {
-        // Logging is enabled and config was reset.
         return true;
     }
 
     panic_dialog!(fl!(
-        "panic-log-setup-error",
+        "panic-log-config-reset-error",
         file = log_config.to_string_lossy()
     ));
 }
@@ -514,17 +526,17 @@ pub fn hw_acceleration() {
     use std::process::{Command, Stdio};
 
     let disable_compositing = || {
-        warn!("Forcing software rendering preemptively with 'WEBKIT_DISABLE_COMPOSITING_MODE=1'. Should this cause you issues, override this heuristic by setting 'memospot.env.WEBKIT_DISABLE_COMPOSITING_MODE'='0' on `memospot.yaml`.");
-        // SAFETY: There's potential for race conditions in a multi-threaded context.
-        // Shouldn't be an issue here.
+        warn!("Forcing software rendering preemptively with 'WEBKIT_DISABLE_COMPOSITING_MODE=1'. Should this cause you issues, override this heuristic by setting 'memospot.env.vars.WEBKIT_DISABLE_COMPOSITING_MODE'='0' on `memospot.yaml`.");
+        // SAFETY: There's potential for race conditions when setting environment
+        // variables in a multi-threaded context. Shouldn't be an issue here.
         unsafe {
             env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
         }
     };
     let disable_dmabuf_renderer = || {
-        warn!("Disabling DMABuf rendering preemptively with 'WEBKIT_DISABLE_DMABUF_RENDERER=1'. Should this cause you issues, override this heuristic by setting 'memospot.env.WEBKIT_DISABLE_DMABUF_RENDERER'='0' on `memospot.yaml`.");
-        // SAFETY: There's potential for race conditions in a multi-threaded context.
-        // Shouldn't be an issue here.
+        warn!("Disabling DMABuf rendering preemptively with 'WEBKIT_DISABLE_DMABUF_RENDERER=1'. Should this cause you issues, override this heuristic by setting 'memospot.env.vars.WEBKIT_DISABLE_DMABUF_RENDERER'='0' on `memospot.yaml`.");
+        // SAFETY: There's potential for race conditions when setting environment
+        // variables in a multi-threaded context. Shouldn't be an issue here.
         unsafe {
             env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
         }
@@ -582,8 +594,8 @@ pub fn set_env_vars(rtcfg: &RuntimeConfig) {
 
     if let Some(memospot_env) = &rtcfg.yaml.memospot.env.vars {
         for (key, value) in memospot_env {
-            // SAFETY: The unsafe block is required due to the potential for race conditions in a multithreaded context.
-            // Shouldn't be an issue here.
+            // SAFETY: There's potential for race conditions when setting environment
+            // variables in a multi-threaded context. Shouldn't be an issue here.
             unsafe {
                 env::set_var(key, value);
             }

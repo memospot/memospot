@@ -1,6 +1,7 @@
 use crate::utils::absolute_path;
 use crate::{process, sqlite, RuntimeConfig};
 use anyhow::{anyhow, Result};
+use dialog::ExpectDialogExt;
 use homedir::HomeDirExt;
 use log::{debug, info, warn};
 use std::collections::HashMap;
@@ -13,19 +14,31 @@ use tauri::utils::platform::resource_dir as tauri_resource_dir;
 use tauri_plugin_http::reqwest;
 use tauri_utils::PackageInfo;
 
-type VersionStore = Arc<Mutex<String>>;
-fn version_store() -> &'static VersionStore {
-    static VERSION_STORE: LazyLock<VersionStore> = LazyLock::new(Default::default);
-    &VERSION_STORE
+#[derive(Clone, Debug, Default)]
+pub struct VersionStore {
+    version: Arc<Mutex<String>>,
 }
-/// Get Memos version previously stored by [`memos::wait_api_ready()`].
-pub fn get_version() -> String {
-    version_store().lock().unwrap().clone()
-}
-/// Set Memos version on the store.
-pub fn set_version(version: String) {
-    let mut store = version_store().lock().unwrap();
-    *store = version;
+impl VersionStore {
+    /// Returns a reference to the global singleton instance of `VersionStore`.
+    fn instance() -> &'static Self {
+        static INSTANCE: LazyLock<VersionStore> = LazyLock::new(Default::default);
+        &INSTANCE
+    }
+    /// Get version previously stored by [`memos::wait_api_ready()`].
+    pub fn get() -> String {
+        VersionStore::instance()
+            .version
+            .lock()
+            .expect_dialog("unable to lock version store")
+            .clone()
+    }
+    pub fn set(version: impl Into<String>) {
+        let mut store = VersionStore::instance()
+            .version
+            .lock()
+            .expect_dialog("unable to lock version store");
+        *store = version.into();
+    }
 }
 
 /// Spawn Memos server.
@@ -35,8 +48,8 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
     let env_vars: HashMap<String, String> = prepare_env(rtcfg);
     let command = rtcfg.paths.memos_bin.to_string_lossy().to_string();
     let cwd = get_cwd(rtcfg);
-    debug!("Memos environment: {:#?}", env_vars);
-    debug!("Memos working directory: {}", cwd.to_string_lossy());
+    debug!("memos: working directory: {}", cwd.to_string_lossy());
+    debug!("memos: environment: {:#?}", env_vars);
 
     let spawn_memos = || -> Result<(), anyhow::Error> {
         process::Command::new(&command)
@@ -46,17 +59,17 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
         Ok(())
     };
     if let Err(e) = spawn_memos() {
-        warn!("Failed to spawn Memos server: {}.", e);
+        warn!("memos: failed to spawn server: {}.", e);
 
         #[cfg(unix)]
         {
-            warn!("Attempting to add executable permissions to the binary…");
+            warn!("memos: attempting to add executable permissions to the binary…");
             let mut perms = fs::metadata(&command)?.permissions();
             perms.set_mode(0o755);
             fs::set_permissions(&command, perms)?;
 
             spawn_memos()?;
-            warn!("Success.");
+            warn!("memos: permissions added successfully");
         }
         #[cfg(not(unix))]
         return Err(e);
@@ -74,7 +87,7 @@ pub fn shutdown() {
 
     let db_file = config.paths.memos_db_file.clone();
     tauri::async_runtime::block_on(async move {
-        sqlite::wait_checkpoint(&db_file, 100, 15000).await;
+        sqlite::wait_checkpoint(&db_file).await;
     });
 
     debug!("memos: server shutdown");
@@ -128,7 +141,7 @@ pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
         rtcfg.paths.memospot_cwd.clone(),
     ]);
 
-    debug!("Looking for Memos `dist` folder at {:#?}", search_paths);
+    debug!("memos: looking for `dist` folder at {:#?}", search_paths);
     for path in search_paths {
         if path.as_os_str().is_empty() {
             continue;
@@ -191,18 +204,19 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
 ///
 /// Working with Memos v0.23.0+.
 pub async fn query_version(memos_url: &str) -> Result<String, anyhow::Error> {
+    const TIMEOUT_MS: u64 = 1_000;
     let endpoint = format!("{}api/v1/workspace/profile", memos_url);
     let url = match reqwest::Url::parse(&endpoint) {
         Ok(url) => url,
         Err(e) => {
-            return Err(anyhow!("Failed to parse Memos URL: {}", e));
+            return Err(anyhow!("memos: failed to parse server URL: {}", e));
         }
     };
     let client = reqwest::Client::new();
     let request = client
         .get(url)
         .header("User-Agent", "Memospot")
-        .timeout(std::time::Duration::from_secs(1))
+        .timeout(std::time::Duration::from_millis(TIMEOUT_MS))
         .send()
         .await;
 
@@ -210,7 +224,7 @@ pub async fn query_version(memos_url: &str) -> Result<String, anyhow::Error> {
         Ok(response) => {
             if !response.status().is_success() {
                 return Err(anyhow!(
-                    "server responded with status code: {}",
+                    "memos: server responded with status code {}",
                     response.status()
                 ));
             }
@@ -230,16 +244,18 @@ pub async fn query_version(memos_url: &str) -> Result<String, anyhow::Error> {
 
 /// Poll Memos server until the API responds.
 ///
-/// Server version is queried and stored in the global state, available via [`memos::get_version()`].
-pub async fn wait_api_ready(memos_url: &str, interval_millis: u64, timeout_millis: u128) {
+/// Server version is queried and stored in the global state, available via [`memos::VersionStore::get()`].
+pub async fn wait_api_ready(memos_url: &str) {
+    const INTERVAL_MS: u64 = 100;
+    const TIMEOUT_MS: u128 = 15_000;
+
     let mut version = String::new();
     let mut last_error = String::new();
-    let mut interval =
-        tokio::time::interval(tokio::time::Duration::from_millis(interval_millis));
-    let time_start = tokio::time::Instant::now();
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(INTERVAL_MS));
 
+    let time_start = tokio::time::Instant::now();
     loop {
-        if time_start.elapsed().as_millis() > timeout_millis {
+        if time_start.elapsed().as_millis() > TIMEOUT_MS {
             break;
         }
         interval.tick().await;
@@ -254,15 +270,73 @@ pub async fn wait_api_ready(memos_url: &str, interval_millis: u64, timeout_milli
 
     if version.is_empty() {
         warn!(
-            "Failed to query Memos version via API: {}. Giving up after {} ms.",
-            last_error, timeout_millis
+            "memos: failed to query server version via API: {}. Giving up after {} ms.",
+            last_error, TIMEOUT_MS
         );
         return;
     }
     info!(
-        "Memos version: {}. API ready in <{} ms.",
-        version,
-        time_start.elapsed().as_millis()
+        "memos: API ready in <{} ms. Version: {}.",
+        time_start.elapsed().as_millis(),
+        version
     );
-    set_version(version);
+    VersionStore::set(version);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_version_store() {
+        assert_eq!(VersionStore::get(), "");
+
+        // set version to 1.0.0 in the main thread
+        VersionStore::set("1.0.0");
+        assert_eq!(VersionStore::get(), "1.0.0");
+
+        std::thread::spawn(|| {
+            assert_eq!(VersionStore::get(), "1.0.0");
+        })
+        .join()
+        .unwrap();
+
+        tokio::spawn(async {
+            assert_eq!(VersionStore::get(), "1.0.0");
+        })
+        .await
+        .unwrap();
+
+        // set version to 1.0.1 in the async runtime
+        tokio::spawn(async {
+            VersionStore::set("1.0.1");
+            assert_eq!(VersionStore::get(), "1.0.1");
+        })
+        .await
+        .unwrap();
+
+        assert_eq!(VersionStore::get(), "1.0.1");
+
+        std::thread::spawn(|| {
+            assert_eq!(VersionStore::get(), "1.0.1");
+        })
+        .join()
+        .unwrap();
+
+        // set version to 1.0.2 in another thread
+        std::thread::spawn(|| {
+            VersionStore::set("1.0.2");
+            assert_eq!(VersionStore::get(), "1.0.2");
+        })
+        .join()
+        .unwrap();
+
+        assert_eq!(VersionStore::get(), "1.0.2");
+
+        tokio::spawn(async {
+            assert_eq!(VersionStore::get(), "1.0.2");
+        })
+        .await
+        .unwrap();
+    }
 }

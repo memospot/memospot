@@ -14,7 +14,7 @@ use tauri::{command, State};
 use tauri_plugin_http::reqwest;
 use tokio::sync::Mutex;
 
-use crate::runtime_config::RuntimeConfig;
+use crate::{fl, runtime_config::RuntimeConfig};
 
 pub struct MemosURL(pub Mutex<String>);
 impl MemosURL {
@@ -58,26 +58,22 @@ pub async fn get_locale(locale: State<'_, Locale>) -> Result<String, String> {
 
 #[command]
 pub async fn set_locale(new: String, locale: State<'_, Locale>) -> Result<bool, String> {
-    debug!("Setting locale to {}", new);
+    debug!("cmd: setting locale to {}", new);
     *locale.0.lock().await = new.clone();
 
     let mut config = RuntimeConfig::from_global_store();
     config.yaml.memospot.window.locale = Some(new.clone());
     RuntimeConfig::to_global_store(&config);
 
-    info!("Configuration updated by user. Saving…");
+    debug!("cmd: configuration updated by user. Saving…");
 
     let config_path = config.paths.memospot_config_file.clone();
     if let Err(e) = config.yaml.save_to_file(&config_path).await {
-        error_dialog!(
-            "Failed to save configuration file:\n`{}`\n\n{}",
-            &config_path.display(),
-            e
-        );
+        error_dialog!(fl!("error-config-write-error", error = e.to_string()));
     }
 
     let current_locale = locale.0.lock().await.clone();
-    debug!("Current locale is now {}", current_locale);
+    debug!("cmd: current locale set to {}", current_locale);
 
     Ok(true)
 }
@@ -124,7 +120,7 @@ pub async fn get_config() -> Result<String, String> {
     let serialized = match serde_json::to_string(&config.yaml) {
         Ok(s) => s,
         Err(e) => {
-            error!("Failed to serialize config: {}", e);
+            error!("cmd: failed to serialize config: {}", e);
             String::from("{}")
         }
     };
@@ -147,44 +143,44 @@ pub async fn get_default_config() -> Result<String, String> {
 /// Apply a configuration patch.
 #[command]
 pub async fn set_config(patch: String) -> Result<bool, String> {
-    debug!("Applying configuration patch: {:?}", patch);
+    debug!("cmd: applying configuration patch: {:?}", patch);
 
     let mut runtime_config = RuntimeConfig::from_global_store();
 
     let mut deserialized_config = serde_json::from_str(
         serde_json::to_string(&runtime_config.yaml)
             .unwrap_or_else(|e| {
-                error!("Failed to serialize config: {}", e);
+                error!("cmd: failed to serialize config: {}", e);
                 String::from("{}")
             })
             .as_str(),
     )
     .unwrap_or_else(|e| {
-        error!("Failed to parse configuration: {}", e);
+        error!("cmd: failed to deserialize configuration: {}", e);
         json!({})
     });
 
     let deserialized_patch: Patch = match serde_json::from_str(patch.as_str()) {
         Ok(p) => p,
         Err(e) => {
-            error!("Failed to parse configuration patch: {}", e);
+            error!("cmd: failed to deserialize configuration patch: {}", e);
             return Ok(false);
         }
     };
 
     if deserialized_patch.is_empty() {
-        error!("Received empty configuration patch. No changes applied.");
+        error!("cmd: received empty configuration patch. No changes applied.");
         return Ok(false);
     }
 
     json_patch::patch(&mut deserialized_config, &deserialized_patch).unwrap_or_else(|e| {
-        error!("Failed to apply configuration patch: {}", e);
+        error!("cmd: failed to apply configuration patch: {}", e);
     });
 
     let new_config: Config = match serde_json::from_value(deserialized_config) {
         Ok(c) => c,
         Err(e) => {
-            error!("Failed to deserialize configuration: {}", e);
+            error!("cmd: failed to deserialize configuration: {}", e);
             return Ok(false);
         }
     };
@@ -192,15 +188,11 @@ pub async fn set_config(patch: String) -> Result<bool, String> {
     runtime_config.yaml = new_config.clone();
     RuntimeConfig::to_global_store(&runtime_config);
 
-    info!("Configuration updated by user. Saving…");
+    info!("cmd: configuration updated by user. Saving…");
 
     let config_path = runtime_config.paths.memospot_config_file.clone();
     if let Err(e) = runtime_config.yaml.save_to_file(&config_path).await {
-        error_dialog!(
-            "Failed to save configuration file:\n`{}`\n\n{}",
-            &config_path.display(),
-            e
-        );
+        error_dialog!(fl!("error-config-write-error", error = e.to_string()));
     }
 
     Ok(true)
