@@ -5,8 +5,17 @@
 //!
 
 use anyhow::{format_err, Result};
+pub use encoding_rs::Encoding;
 use log::debug;
 use os_pipe::{pipe, PipeReader, PipeWriter};
+use serde::Serialize;
+#[cfg(unix)]
+use shared_child::unix::SharedChildExt;
+use shared_child::SharedChild;
+#[cfg(unix)]
+use std::os::unix::process::ExitStatusExt;
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 use std::{
     collections::HashMap,
     io::{BufReader, Write},
@@ -15,20 +24,11 @@ use std::{
     sync::{Arc, Mutex, RwLock},
     thread::spawn,
 };
+use tauri::async_runtime::{block_on as block_on_task, channel, Receiver, Sender};
 use tauri_utils::platform;
-
-#[cfg(unix)]
-use std::os::unix::process::ExitStatusExt;
-#[cfg(windows)]
-use std::os::windows::process::CommandExt;
 
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-
-pub use encoding_rs::Encoding;
-use serde::Serialize;
-use shared_child::{unix::SharedChildExt, SharedChild};
-use tauri::async_runtime::{block_on as block_on_task, channel, Receiver, Sender};
 
 type ChildStore = Arc<Mutex<HashMap<u32, Arc<SharedChild>>>>;
 
@@ -47,6 +47,8 @@ pub fn kill_children() {
     let commands = commands().lock().unwrap();
     let children = commands.values();
     for child in children {
+        debug!("sidecar: terminating pid {}", child.id());
+
         #[cfg(unix)]
         {
             const TIMEOUT_MS: u128 = 1_500;
