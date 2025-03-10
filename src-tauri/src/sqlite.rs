@@ -34,7 +34,7 @@ pub async fn get_database_connection(db: &Path) -> Result<DatabaseConnection, an
 
 /// Checkpoint database WAL.
 ///
-/// Memos' currently not being gracefully shutdown, so we're checkpointing the
+/// Memos' currently not being gracefully shutdown on Windows, so we're checkpointing the
 /// database WAL manually right before closing the app to ensure that all new
 /// data is commited to the main database and that it's properly closed.
 pub async fn checkpoint(db: &Path) -> Result<(), anyhow::Error> {
@@ -54,12 +54,15 @@ pub async fn wait_checkpoint(db_file: &Path) {
     const TIMEOUT_MS: u128 = 15_000;
 
     debug!("database: checkpointing WAL…");
-    let time_start = tokio::time::Instant::now();
+    let wal = &db_file.with_extension("db-wal");
+    if !wal.exists() {
+        debug!("database: checkpoint is not needed");
+        return;
+    }
 
+    let time_start = tokio::time::Instant::now();
     let mut last_error: Option<anyhow::Error> = None;
     let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(INTERVAL_MS));
-
-    let wal = &db_file.with_extension("db-wal");
     while wal.exists() {
         if time_start.elapsed().as_millis() > TIMEOUT_MS {
             last_error = anyhow!("database: operation timed out").into();

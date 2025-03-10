@@ -5,6 +5,7 @@
 //!
 
 use anyhow::{format_err, Result};
+use log::debug;
 use os_pipe::{pipe, PipeReader, PipeWriter};
 use std::{
     collections::HashMap,
@@ -26,7 +27,7 @@ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 pub use encoding_rs::Encoding;
 use serde::Serialize;
-use shared_child::SharedChild;
+use shared_child::{unix::SharedChildExt, SharedChild};
 use tauri::async_runtime::{block_on as block_on_task, channel, Receiver, Sender};
 
 type ChildStore = Arc<Mutex<HashMap<u32, Arc<SharedChild>>>>;
@@ -38,12 +39,45 @@ fn commands() -> &'static ChildStore {
 }
 
 /// Kills all child processes created with [`Command`].
+///
+/// Tries to send a SIGINT on UNIX systems.
+///
 /// By default, it's called before the [`crate::App`] exits.
 pub fn kill_children() {
     let commands = commands().lock().unwrap();
     let children = commands.values();
     for child in children {
-        let _ = child.kill();
+        #[cfg(unix)]
+        {
+            const TIMEOUT_MS: u128 = 1_500;
+            const SIGINT: i32 = 2;
+            child.send_signal(SIGINT).ok();
+
+            let time_start = std::time::Instant::now();
+            let mut timed_out = false;
+            while child.try_wait().is_ok_and(|x| x.is_none()) {
+                if time_start.elapsed().as_millis() > TIMEOUT_MS {
+                    timed_out = true;
+                    break;
+                };
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
+            if timed_out {
+                debug!(
+                    "sidecar: timed out ({} ms) waiting for pid {} to exit",
+                    TIMEOUT_MS,
+                    child.id()
+                );
+            } else {
+                debug!(
+                    "sidecar: pid {} exited gracefully in <{:?}ms",
+                    child.id(),
+                    time_start.elapsed().as_millis()
+                );
+            }
+        }
+
+        child.kill().ok();
     }
 }
 
