@@ -231,7 +231,7 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
         return;
     };
 
-    let mut webview = handle
+    let webview = handle
         .get_webview_window("main")
         .expect("menu: failed to get webview window");
     let open_link = |url| {
