@@ -7,9 +7,9 @@
     "lint": "bun x @biomejs/biome ci ."
   },
   "devDependencies": {
-    "@types/node": "^18.19.80",
+    "@types/node": "^18.19.86",
     "@types/async": "^3.2.24",
-    "@types/bun": "^1.2.5",
+    "@types/bun": "^1.2.8",
     "@types/decompress": "^4.2.7",
     "jsdoc": "^4.0.4"
   },
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "async": "^3.2.6",
-    "bun": "^1.2.5",
+    "bun": "^1.2.8",
     "crypto": "^1.0.1",
     "decompress": "^4.2.1",
     "fs": "^0.0.1-security",
