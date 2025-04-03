@@ -11,10 +11,9 @@ use json_patch::Patch;
 use log::{debug, error, info};
 use serde_json::json;
 use tauri::{command, State};
-use tauri_plugin_http::reqwest;
 use tokio::sync::Mutex;
 
-use crate::{fl, runtime_config::RuntimeConfig};
+use crate::{fl, memos, runtime_config::RuntimeConfig};
 
 pub struct MemosURL(pub Mutex<String>);
 impl MemosURL {
@@ -80,32 +79,7 @@ pub async fn set_locale(new: String, locale: State<'_, Locale>) -> Result<bool, 
 
 #[command]
 pub async fn ping_memos(memos_url: &str, timeout_millis: u64) -> Result<bool, String> {
-    let config = RuntimeConfig::from_global_store();
-    let url = memos_url.trim_end_matches('/').to_string() + "/";
-    let endpoint = format!("{}healthz", url);
-
-    let url = reqwest::Url::parse(&endpoint).unwrap();
-    let client = reqwest::Client::new();
-    if let Ok(response) = client
-        .get(url)
-        .header("User-Agent", &config.user_agent)
-        .timeout(std::time::Duration::from_millis(if timeout_millis < 100 {
-            1000
-        } else {
-            timeout_millis
-        }))
-        .send()
-        .await
-    {
-        if response.status().is_success() {
-            if let Ok(body) = response.text().await {
-                if body.starts_with("Service ready.") {
-                    return Ok(true);
-                }
-            }
-        }
-    }
-    Ok(false)
+    memos::ping_api(memos_url, timeout_millis).await
 }
 
 #[command]
@@ -198,6 +172,10 @@ pub async fn set_config(patch: String) -> Result<bool, String> {
     Ok(true)
 }
 
+/// Check if a path exists.
+///
+/// Tauri [implements](https://v2.tauri.app/plugin/file-system/#exists)
+/// something similar, but it's walled by the permission system.
 #[command]
 pub async fn path_exists(path: String) -> Result<bool, String> {
     Ok(std::path::Path::new(&path).exists())

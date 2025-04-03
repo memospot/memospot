@@ -283,6 +283,36 @@ pub async fn wait_api_ready(memos_url: &str) {
     VersionStore::set(version);
 }
 
+/// Ping the Memos API to check if it is ready.
+pub async fn ping_api(memos_url: &str, timeout_millis: u64) -> Result<bool, String> {
+    let config = RuntimeConfig::from_global_store();
+    let url = memos_url.trim_end_matches('/');
+    let endpoint = format!("{}/healthz", url);
+
+    let url = reqwest::Url::parse(&endpoint).unwrap();
+    let client = reqwest::Client::new();
+    if let Ok(response) = client
+        .get(url)
+        .header("User-Agent", &config.user_agent)
+        .timeout(std::time::Duration::from_millis(if timeout_millis < 100 {
+            1000
+        } else {
+            timeout_millis
+        }))
+        .send()
+        .await
+    {
+        if response.status().is_success() {
+            if let Ok(body) = response.text().await {
+                if body.starts_with("Service ready.") {
+                    return Ok(true);
+                }
+            }
+        }
+    }
+    Ok(false)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

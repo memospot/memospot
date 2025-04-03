@@ -242,7 +242,6 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
         error!("menu: received bad event id");
         return;
     };
-
     match action {
         MainMenu::AppQuit => {
             handle.exit(0);
@@ -304,7 +303,7 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
                             .open_url(update.download_url.as_str(), None::<&str>)
                             .ok();
                     } else {
-                        warn!("User declined update download.");
+                        warn!("updater: user declined update download.");
                     }
                 } else {
                     info_dialog(fl!("dialog-update-no-update"));
@@ -332,13 +331,12 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
             handle
                 .set_menu(build(handle).expect("failed to build menu"))
                 .ok();
-            let url = Url::parse(if cfg!(debug_assertions) {
-                "http://localhost:1420" // Same as build.devUrl in Tauri.toml.
-            } else {
-                "tauri://localhost"
-            })
-            .expect("failed to parse url");
-            webview.navigate(url).ok();
+            #[cfg(debug_assertions)]
+            const URL: &str = "http://localhost:1420"; // Same as build.devUrl in Tauri.toml.
+            #[cfg(not(debug_assertions))]
+            const URL: &str = "tauri://localhost";
+            let parsed_url = Url::parse(URL).expect("failed to parse url");
+            webview.navigate(parsed_url).ok();
         }
         MainMenu::HelpMemospotDocumentation => {
             open_link("https://memospot.github.io/");
