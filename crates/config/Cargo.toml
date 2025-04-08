@@ -13,7 +13,7 @@ anyhow = { workspace = true }
 figment = { version = "0.10", features = ["env", "json", "yaml"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9.34"
-tokio = { version = "1.42", features = ["fs", "io-std", "io-util", "macros", "rt", "rt-multi-thread", "time"] }
+tokio = { version = "1.44", features = ["fs", "io-std", "io-util", "macros", "rt", "rt-multi-thread", "time"] }
 ts-rs = "10.1"
 uuid = { version = "1.11", features = ["v4"] }
 
