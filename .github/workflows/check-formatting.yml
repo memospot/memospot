@@ -57,7 +57,7 @@ jobs:
           path: ~/.bun
 
       - name: Install dprint
-        uses: jaxxstorm/action-install-gh-release@4304621e8c48d66093a8a214af5d5b5bc3b3d943
+        uses: jaxxstorm/action-install-gh-release@6096f2a2bbfee498ced520b6922ac2c06e990ed2
         with:
           repo: dprint/dprint
           tag: 0.49.0
