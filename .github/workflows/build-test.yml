@@ -111,7 +111,7 @@ jobs:
 
       - if: ${{ runner.os == 'Linux' }}
         name: "[Linux] Install UPX"
-        uses: crazy-max/ghaction-upx@de21b8cbed76979407eeb6e41aa5e270afc3225c
+        uses: crazy-max/ghaction-upx@db8cc9515a4a7ea1b312cb82fbeae6d716daf777
         with: { install-only: true }
 
       - name: Install Just
