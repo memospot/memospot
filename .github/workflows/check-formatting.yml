@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup rustfmt
-        uses: dtolnay/rust-toolchain@c5a29ddb4d9d194e7c84ec8c3fba61b1c31fee8c
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b
         with: { toolchain: "${{ env.RUST_TOOLCHAIN }}", components: rustfmt }
 
       - name: Setup Bun
