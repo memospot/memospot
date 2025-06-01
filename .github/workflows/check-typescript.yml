@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Biome
-        uses: biomejs/setup-biome@f382a98e582959e6aaac8e5f8b17b31749018780
+        uses: biomejs/setup-biome@a9763ed3d2388f5746f9dc3e1a55df7f4609bc89
         with: { version: latest }
 
       - name: Lint code with Biome
