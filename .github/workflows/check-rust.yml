@@ -88,7 +88,7 @@ jobs:
           - { runner: macos-13, rust_target: aarch64-apple-darwin }
           - { runner: macos-13, rust_target: x86_64-apple-darwin }
           - { runner: ubuntu-22.04, rust_target: x86_64-unknown-linux-gnu }
-          - { runner: windows-2019, rust_target: x86_64-pc-windows-msvc }
+          - { runner: windows-2022, rust_target: x86_64-pc-windows-msvc }
 
     runs-on: ${{ matrix.platform.runner }}
     steps:
