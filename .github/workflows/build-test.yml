@@ -166,7 +166,7 @@ jobs:
           path: ./server-dist
 
       - name: Build Tauri App
-        uses: tauri-apps/tauri-action@42e9df6c59070d114bf90dcd3943a1b8f138b113
+        uses: tauri-apps/tauri-action@564aea5a8075c7a54c167bb0cf5b3255314a7f9d
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
