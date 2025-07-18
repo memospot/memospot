@@ -18,8 +18,17 @@ import * as async from "async";
 import * as Bun from "bun";
 import decompress from "decompress";
 import { minimatch } from "minimatch";
-import { BG_WHITE, BLACK, BLUE, RED, YELLOW, findRepositoryRoot } from "./common";
-import { CYAN, GREEN, RESET } from "./common";
+import {
+    BG_WHITE,
+    BLACK,
+    BLUE,
+    CYAN,
+    findRepositoryRoot,
+    GREEN,
+    RED,
+    RESET,
+    YELLOW
+} from "./common";
 import type { GitHubAsset, GitHubRelease } from "./types/download_memos";
 
 const release_repository = "memospot/memos-builds" as const;

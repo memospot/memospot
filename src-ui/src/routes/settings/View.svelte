@@ -9,7 +9,7 @@ import {
 import { Setting } from "$lib/components/ui/setting/index";
 import { Switch } from "$lib/components/ui/switch/index";
 import { debouncePromise } from "$lib/debounce";
-import { type Locale, detectLocale, locales, m, setLocale } from "$lib/i18n";
+import { detectLocale, type Locale, locales, m, setLocale } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
 import { getAppConfig, getDefaultAppConfig, setAppLocale } from "$lib/tauri";
 import type { Config } from "$lib/types/gen/Config";

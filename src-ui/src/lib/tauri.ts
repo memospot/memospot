@@ -4,7 +4,7 @@
  * The Rust back-end is in `src-tauri/src/cmd`.
  */
 
-import { invoke as TauriInvoke, isTauri } from "@tauri-apps/api/core";
+import { isTauri, invoke as TauriInvoke } from "@tauri-apps/api/core";
 import { open as TauriOpen } from "@tauri-apps/plugin-shell";
 
 const browserError = new Error("Not running in Tauri!");

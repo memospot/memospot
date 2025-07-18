@@ -5,10 +5,12 @@
     // Code formatting is handled by dprint.
     "enabled": false
   },
+  "files": {
+    "includes": ["**", "!**/gen/**", "!**/lib/paraglide/**", "!**/.svelte-kit/**"]
+  },
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
-    "includes": ["**", "!**/gen/**", "!**/lib/paraglide/**", "!**/.svelte-kit/**"],
     "rules": {
       // https://biomejs.dev/linter/rules/
       "recommended": true,

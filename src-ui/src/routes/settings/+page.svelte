@@ -7,8 +7,8 @@ import Gear from "svelte-radix/Gear.svelte";
 import Pencil2 from "svelte-radix/Pencil2.svelte";
 import Memos from "./Memos.svelte";
 import Memospot from "./Memospot.svelte";
-import Navbar from "./Navbar.svelte";
 import type { Section } from "./Navbar.svelte";
+import Navbar from "./Navbar.svelte";
 import View from "./View.svelte";
 
 const sections: Section[] = [
