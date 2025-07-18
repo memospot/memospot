@@ -15,7 +15,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "2.0.6",
     "@inlang/paraglide-js": "^1.11.8",
     "@inlang/paraglide-sveltekit": "^0.16.1",
     "@sveltejs/adapter-static": "^3.0.8",

@@ -7,10 +7,11 @@
     "lint": "bun x @biomejs/biome ci ."
   },
   "devDependencies": {
-    "@types/node": "^18.19.86",
+    "@biomejs/biome": "2.0.6",
     "@types/async": "^3.2.24",
     "@types/bun": "^1.2.8",
     "@types/decompress": "^4.2.7",
+    "@types/node": "^18.19.86",
     "jsdoc": "^4.0.4"
   },
   "peerDependencies": {

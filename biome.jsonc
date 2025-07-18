@@ -1,24 +1,14 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "root": true,
+  "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
   "formatter": {
     // Code formatting is handled by dprint.
     "enabled": false
   },
-  "organizeImports": {
-    "enabled": true,
-    "ignore": [
-      "**/gen/**",
-      "**/lib/paraglide/**", // Paraglide auto-generated files.
-      "**/.svelte-kit/**" // SvelteKit auto-generated files.
-    ]
-  },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
-    "ignore": [
-      "**/gen/**",
-      "**/lib/paraglide/**", // Paraglide auto-generated files.
-      "**/.svelte-kit/**" // SvelteKit auto-generated files.
-    ],
+    "includes": ["**", "!**/gen/**", "!**/lib/paraglide/**", "!**/.svelte-kit/**"],
     "rules": {
       // https://biomejs.dev/linter/rules/
       "recommended": true,
@@ -31,12 +21,24 @@
       "suspicious": {
         "noEmptyBlockStatements": "error",
         "noExplicitAny": "off"
+      },
+      "style": {
+        "noParameterAssign": "error",
+        "useAsConstAssertion": "error",
+        "useDefaultParameterLast": "error",
+        "useEnumInitializers": "error",
+        "useSelfClosingElements": "error",
+        "useSingleVarDeclarator": "error",
+        "noUnusedTemplateLiteral": "error",
+        "useNumberNamespace": "error",
+        "noInferrableTypes": "error",
+        "noUselessElse": "error"
       }
     }
   },
   "overrides": [
     {
-      "include": ["**/*.svelte"],
+      "includes": ["**/*.svelte"],
       "linter": {
         "rules": {
           "style": {
