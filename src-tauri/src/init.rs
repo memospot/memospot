@@ -191,7 +191,7 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
     if rtcfg.yaml.memospot.backups.enabled.unwrap_or_default() {
         let backup_path = ensure_backup_directory(rtcfg);
         let datetime = chrono::Local::now().format("%Y%m%d-%H%M%S").to_string();
-        let backup_name = format!("db-{}-pre-migration.zst.zip", datetime);
+        let backup_name = format!("db-{datetime}-pre-migration.zst.zip");
         let backup_path = backup_path.join(&backup_name);
         let start_time = Instant::now();
         let backup = zip::related_files(
@@ -261,7 +261,7 @@ pub fn ensure_webview() {
             ));
 
             if let Err(e) = webview::open_install_website() {
-                warn!("webview setup: unable to open website: {}", e);
+                warn!("webview setup: unable to open website: {e}");
             }
             exit(1)
         }
@@ -311,7 +311,7 @@ pub fn config(config_path: &PathBuf) -> Config {
         let now = chrono::Local::now().format("%Y%m%d-%H%M%S").to_string();
         fs::copy(
             config_path,
-            config_path.with_extension(format!("{}.yaml", now)),
+            config_path.with_extension(format!("{now}.yaml")),
         )
         .expect_dialog(fl!("panic-config-unable-to-backup"));
 
@@ -417,7 +417,7 @@ pub fn find_memos(rtcfg: &RuntimeConfig) -> PathBuf {
         _ => "memos",
     };
 
-    debug!("Looking for Memos server at: {:?}", search_paths);
+    debug!("Looking for Memos server at: {search_paths:?}");
     for path in search_paths {
         let memos_path = path.join(binary_name);
         if memos_path.exists() && memos_path.is_file() {

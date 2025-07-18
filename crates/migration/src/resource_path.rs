@@ -70,7 +70,7 @@ pub fn build_path_list() -> Vec<String> {
     ];
     if OS == "windows" {
         if let Ok(program_data) = std::env::var("PROGRAMDATA") {
-            paths.push(format!("{}\\memos\\", program_data));
+            paths.push(format!("{program_data}\\memos\\"));
         }
     }
     paths.into_iter().unique().collect()

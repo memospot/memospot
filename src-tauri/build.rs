@@ -31,7 +31,7 @@ fn ensure_deps() {
         "x86_64-pc-windows-msvc.exe",
     ];
     for target in TARGETS {
-        let target_bin = dist_path.join(format!("memos-{}", target));
+        let target_bin = dist_path.join(format!("memos-{target}"));
         if !target_bin.exists() {
             std::fs::File::create(&target_bin).expect("Failed to create dummy binary!");
         }

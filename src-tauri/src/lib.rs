@@ -219,7 +219,7 @@ pub fn run() {
                     .trim_end_matches("/");
                 if let Some(main_window) = app.get_webview_window("main") {
                     main_window
-                        .set_title(&format!("Memospot - {}", title_url))
+                        .set_title(&format!("Memospot - {title_url}"))
                         .unwrap_or_default();
                 }
             }

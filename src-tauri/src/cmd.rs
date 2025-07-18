@@ -57,7 +57,7 @@ pub async fn get_locale(locale: State<'_, Locale>) -> Result<String, String> {
 
 #[command]
 pub async fn set_locale(new: String, locale: State<'_, Locale>) -> Result<bool, String> {
-    debug!("cmd: setting locale to {}", new);
+    debug!("cmd: setting locale to {new}");
     *locale.0.lock().await = new.clone();
 
     let mut config = RuntimeConfig::from_global_store();
@@ -72,7 +72,7 @@ pub async fn set_locale(new: String, locale: State<'_, Locale>) -> Result<bool, 
     }
 
     let current_locale = locale.0.lock().await.clone();
-    debug!("cmd: current locale set to {}", current_locale);
+    debug!("cmd: current locale set to {current_locale}");
 
     Ok(true)
 }
@@ -94,7 +94,7 @@ pub async fn get_config() -> Result<String, String> {
     let serialized = match serde_json::to_string(&config.yaml) {
         Ok(s) => s,
         Err(e) => {
-            error!("cmd: failed to serialize config: {}", e);
+            error!("cmd: failed to serialize config: {e}");
             String::from("{}")
         }
     };
@@ -107,7 +107,7 @@ pub async fn get_default_config() -> Result<String, String> {
     let serialized = match serde_json::to_string(&RuntimeConfig::default().yaml) {
         Ok(s) => s,
         Err(e) => {
-            error!("Failed to serialize config: {}", e);
+            error!("Failed to serialize config: {e}");
             String::from("{}")
         }
     };
@@ -117,27 +117,27 @@ pub async fn get_default_config() -> Result<String, String> {
 /// Apply a configuration patch.
 #[command]
 pub async fn set_config(patch: String) -> Result<bool, String> {
-    debug!("cmd: applying configuration patch: {:?}", patch);
+    debug!("cmd: applying configuration patch: {patch:?}");
 
     let mut runtime_config = RuntimeConfig::from_global_store();
 
     let mut deserialized_config = serde_json::from_str(
         serde_json::to_string(&runtime_config.yaml)
             .unwrap_or_else(|e| {
-                error!("cmd: failed to serialize config: {}", e);
+                error!("cmd: failed to serialize config: {e}");
                 String::from("{}")
             })
             .as_str(),
     )
     .unwrap_or_else(|e| {
-        error!("cmd: failed to deserialize configuration: {}", e);
+        error!("cmd: failed to deserialize configuration: {e}");
         json!({})
     });
 
     let deserialized_patch: Patch = match serde_json::from_str(patch.as_str()) {
         Ok(p) => p,
         Err(e) => {
-            error!("cmd: failed to deserialize configuration patch: {}", e);
+            error!("cmd: failed to deserialize configuration patch: {e}");
             return Ok(false);
         }
     };
@@ -148,13 +148,13 @@ pub async fn set_config(patch: String) -> Result<bool, String> {
     }
 
     json_patch::patch(&mut deserialized_config, &deserialized_patch).unwrap_or_else(|e| {
-        error!("cmd: failed to apply configuration patch: {}", e);
+        error!("cmd: failed to apply configuration patch: {e}");
     });
 
     let new_config: Config = match serde_json::from_value(deserialized_config) {
         Ok(c) => c,
         Err(e) => {
-            error!("cmd: failed to deserialize configuration: {}", e);
+            error!("cmd: failed to deserialize configuration: {e}");
             return Ok(false);
         }
     };

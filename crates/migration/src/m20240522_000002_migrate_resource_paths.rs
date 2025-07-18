@@ -137,15 +137,12 @@ impl MigrationTrait for Migration {
             if migrated_count < 50 || migrated_count % log_interval == 0 {
                 match log::max_level() {
                     LevelFilter::Info => {
-                        info!(
-                            "[Running] Migrated {}/{} paths.",
-                            migrated_count, total_resources,
-                        );
+                        info!("[Running] Migrated {migrated_count}/{total_resources} paths.");
                     }
                     LevelFilter::Debug => {
                         debug!(
-                            "[Running] Migrated {}/{} paths.\nLast: {} => {}",
-                            migrated_count, total_resources, &resource.reference, new_path
+                            "[Running] Migrated {migrated_count}/{total_resources} paths.\nLast: {} => {}",
+                            &resource.reference, new_path
                         );
                     }
                     _ => {}

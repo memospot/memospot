@@ -21,7 +21,7 @@ use std::path::{Path, PathBuf};
 /// Home directory is determined by the [`home`](https://docs.rs/home) crate.
 pub fn get_app_data_path(app_name: &str) -> PathBuf {
     let home = home_dir().unwrap_or_default();
-    let fallback = home.join(format!(".{}", app_name));
+    let fallback = home.join(format!(".{app_name}"));
     let xdg_config_path = env::var("XDG_CONFIG_HOME")
         .map(PathBuf::from)
         .unwrap_or_else(|_| home.join(".config"))

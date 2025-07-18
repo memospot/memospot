@@ -76,11 +76,7 @@ pub async fn wait_checkpoint(db_file: &Path) {
 
     match last_error {
         Some(e) => {
-            warn!(
-                "database: failed to checkpoint WAL: {}. Giving up after {} ms.",
-                e.to_string(),
-                TIMEOUT_MS
-            );
+            warn!("database: failed to checkpoint WAL: {e}. Giving up after {TIMEOUT_MS} ms.");
         }
         None => {
             debug!(

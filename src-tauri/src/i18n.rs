@@ -56,9 +56,9 @@ pub fn localize() {
 
     #[cfg(debug_assertions)]
     {
-        println!("requested_locales: {:?}", requested_locales);
+        println!("requested_locales: {requested_locales:?}");
         for locale in requested_locales.iter() {
-            println!("Requested locale for localization: {}", locale);
+            println!("Requested locale for localization: {locale}");
         }
     }
 
@@ -85,9 +85,9 @@ pub fn reload(preferred_locale: &str) {
         .find(|l| l.language.as_str() == preferred_locale)
     {
         if let Err(error) = localizer.select(&[locale.clone()]) {
-            error!("i18n: failed to load locale: {}", error);
+            error!("i18n: failed to load locale: {error}");
             return;
         }
-        debug!("i18n: locale overridden to {}", preferred_locale);
+        debug!("i18n: locale overridden to {preferred_locale}");
     }
 }

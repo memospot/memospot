@@ -225,7 +225,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
 
 pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
     #[cfg(debug_assertions)]
-    debug!("menu event: {:?}", event);
+    debug!("menu event: {event:?}");
 
     let Ok(event_id) = event.id().0.parse::<usize>() else {
         return;
@@ -385,8 +385,7 @@ pub fn update_with_memos_version<R: Runtime>(handle: &AppHandle<R>) {
             interval.tick().await;
             if time_start.elapsed().as_millis() > TIMEOUT_MS {
                 debug!(
-                    "menu: unable to set Memos version in Help menu. Timed out after {}ms.",
-                    TIMEOUT_MS
+                    "menu: unable to set Memos version in Help menu. Timed out after {TIMEOUT_MS}ms."
                 );
                 break;
             }

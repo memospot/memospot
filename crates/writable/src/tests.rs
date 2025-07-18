@@ -38,7 +38,7 @@ fn test_file() -> Result<()> {
     if let Ok(mut file) = File::create(temp_file_path) {
         let uuid = Uuid::new_v4();
         let test_content: &str = &uuid.to_string();
-        println!("test_content: {}", test_content);
+        println!("test_content: {test_content}");
 
         file.write_all(test_content.as_bytes())?;
         file.flush()?;

@@ -1,5 +1,5 @@
 use std::env::consts;
-use std::io::{Error, ErrorKind, Result};
+use std::io::{Error, Result};
 use std::process::Command;
 
 #[cfg(windows)]
@@ -42,7 +42,7 @@ pub fn open_install_website() -> Result<()> {
             .args(["url.dll,FileProtocolHandler", WINDOWS_WEBVIEW_URL])
             .spawn(),
         "macos" => Command::new("open").arg(TAURI_WEBVIEW_REF).spawn(),
-        _ => Err(Error::new(ErrorKind::Other, "unsupported operating system")),
+        _ => Err(Error::other("unsupported operating system")),
     }
     .map(|_| ())
 }
@@ -56,27 +56,19 @@ pub async fn install() -> Result<()> {
         .user_agent("Tauri")
         .gzip(true)
         .build()
-        .map_err(|e| Error::new(ErrorKind::Other, e))?;
+        .map_err(|e| Error::other(e))?;
 
     let response = client
         .get(WEBVIEW2_BOOTSTRAPPER_URL)
         .send()
         .await
-        .map_err(|e| {
-            Error::new(
-                ErrorKind::Other,
-                format!("unable to download WebView2 installer:\n{}", e),
-            )
-        })?;
+        .map_err(|e| Error::other(format!("unable to download WebView2 installer:\n{e}")))?;
 
     if !response.status().is_success() {
-        return Err(Error::new(
-            ErrorKind::Other,
-            format!(
-                "unable to download WebView2 installer: server responded `{}`:\n",
-                response.status()
-            ),
-        ));
+        return Err(Error::other(format!(
+            "unable to download WebView2 installer: server responded `{}`:\n",
+            response.status()
+        )));
     }
 
     let mut filename = DEFAULT_FILENAME.to_owned();
@@ -106,12 +98,10 @@ pub async fn install() -> Result<()> {
     let tmp_dir = TempDir::with_prefix("WebView-setup-")?;
     let installer_path = tmp_dir.path().join(filename);
 
-    let mut content = Cursor::new(response.bytes().await.map_err(|e| {
-        Error::new(
-            ErrorKind::Other,
-            format!("unable to download WebView2 installer:\n{}", e),
-        )
-    })?);
+    let mut content =
+        Cursor::new(response.bytes().await.map_err(|e| {
+            Error::other(format!("unable to download WebView2 installer:\n{e}"))
+        })?);
 
     let file = std::fs::File::create(&installer_path)?;
     let mut writer = BufWriter::new(file);
@@ -125,10 +115,9 @@ pub async fn install() -> Result<()> {
 
     if let Some(code) = status.code() {
         if code != 0 {
-            return Err(Error::new(
-                ErrorKind::Other,
-                format!("installer exited with code `{}`.", code),
-            ));
+            return Err(Error::other(format!(
+                "installer exited with code `{code}`."
+            )));
         }
     }
 
@@ -137,8 +126,7 @@ pub async fn install() -> Result<()> {
 
 #[cfg(not(windows))]
 pub async fn install() -> Result<()> {
-    Err(Error::new(
-        ErrorKind::Other,
+    Err(Error::other(
         "unable to auto-install WebView on this system.",
     ))
 }

@@ -49,7 +49,7 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
     let command = rtcfg.paths.memos_bin.to_string_lossy().to_string();
     let cwd = get_cwd(rtcfg);
     debug!("memos: working directory: {}", cwd.to_string_lossy());
-    debug!("memos: environment: {:#?}", env_vars);
+    debug!("memos: environment: {env_vars:#?}");
 
     let spawn_memos = || -> Result<(), anyhow::Error> {
         process::Command::new(&command)
@@ -59,7 +59,7 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
         Ok(())
     };
     if let Err(e) = spawn_memos() {
-        warn!("memos: failed to spawn server: {}.", e);
+        warn!("memos: failed to spawn server: {e}.");
 
         #[cfg(unix)]
         {
@@ -141,7 +141,7 @@ pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
         rtcfg.paths.memospot_cwd.clone(),
     ]);
 
-    debug!("memos: looking for `dist` folder at {:#?}", search_paths);
+    debug!("memos: looking for `dist` folder at {search_paths:#?}");
     for path in search_paths {
         if path.as_os_str().is_empty() {
             continue;
@@ -160,7 +160,7 @@ fn make_env_key(key: &str) -> String {
     if uppercased_key.starts_with("MEMOS_") {
         return uppercased_key;
     }
-    format!("MEMOS_{}", uppercased_key)
+    format!("MEMOS_{uppercased_key}")
 }
 
 /// Prepare environment variables for Memos server.
@@ -205,7 +205,7 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
 /// Working with Memos v0.23.0+.
 pub async fn query_version(memos_url: &str) -> Result<String, anyhow::Error> {
     const TIMEOUT_MS: u64 = 1_000;
-    let endpoint = format!("{}api/v1/workspace/profile", memos_url);
+    let endpoint = format!("{memos_url}api/v1/workspace/profile");
     let url = match reqwest::Url::parse(&endpoint) {
         Ok(url) => url,
         Err(e) => {
@@ -270,8 +270,7 @@ pub async fn wait_api_ready(memos_url: &str) {
 
     if version.is_empty() {
         warn!(
-            "memos: failed to query server version via API: {}. Giving up after {} ms.",
-            last_error, TIMEOUT_MS
+            "memos: failed to query server version via API: {last_error}. Giving up after {TIMEOUT_MS} ms."
         );
         return;
     }
@@ -287,7 +286,7 @@ pub async fn wait_api_ready(memos_url: &str) {
 pub async fn ping_api(memos_url: &str, timeout_millis: u64) -> Result<bool, String> {
     let config = RuntimeConfig::from_global_store();
     let url = memos_url.trim_end_matches('/');
-    let endpoint = format!("{}/healthz", url);
+    let endpoint = format!("{url}/healthz");
 
     let url = reqwest::Url::parse(&endpoint).unwrap();
     let client = reqwest::Client::new();

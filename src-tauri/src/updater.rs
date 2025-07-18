@@ -8,7 +8,7 @@ pub fn spawn(app: &tauri::AppHandle) {
     let app_ = app.clone();
     tauri::async_runtime::spawn(async move {
         update(app_).await.unwrap_or_else(|e| {
-            error!("updater: failed with error {}", e);
+            error!("updater: failed with error {e}");
         });
     });
 }

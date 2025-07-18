@@ -117,5 +117,5 @@ async fn test_reset() {
 fn test_show() {
     let default_config = Config::default();
     let default_yaml = serde_yaml::to_string(&default_config).unwrap();
-    println!("{}", default_yaml);
+    println!("{default_yaml}");
 }

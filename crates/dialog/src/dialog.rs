@@ -16,17 +16,14 @@ pub fn confirm_dialog<T: std::fmt::Display>(title: T, msg: T, icon: MessageType)
     {
         Ok(v) => v,
         Err(e) => {
-            error!(
-                "Unable to get result from confirm_dialog(): {}. Defaulting to false.",
-                e
-            );
+            error!("Unable to get result from confirm_dialog(): {e}. Defaulting to false.");
             false
         }
     }
 }
 
 pub fn error_dialog<T: std::fmt::Display>(msg: T) {
-    error!("{}", msg);
+    error!("{msg}");
     MessageDialog::new()
         .set_type(MessageType::Error)
         .set_title("Error")
@@ -36,7 +33,7 @@ pub fn error_dialog<T: std::fmt::Display>(msg: T) {
 }
 
 pub fn info_dialog<T: std::fmt::Display>(msg: T) {
-    info!("{}", msg);
+    info!("{msg}");
     MessageDialog::new()
         .set_type(MessageType::Info)
         .set_title("Info")
@@ -53,12 +50,12 @@ pub fn panic_dialog<T: std::fmt::Display>(msg: T) -> ! {
         .set_text(&msg.to_string())
         .show_alert()
         .ok();
-    error!("{}: {}", FATAL_ERROR, msg);
-    panic!("{}: {}", FATAL_ERROR, msg);
+    error!("{FATAL_ERROR}: {msg}");
+    panic!("{FATAL_ERROR}: {msg}");
 }
 
 pub fn warn_dialog<T: std::fmt::Display>(msg: T) {
-    warn!("{}", msg);
+    warn!("{msg}");
     MessageDialog::new()
         .set_type(MessageType::Warning)
         .set_title("Warning")

@@ -98,7 +98,7 @@ impl Config {
             }
 
             let uuid = Uuid::new_v4();
-            let tmp_file = file_path.with_file_name(format!("{}.tmp", uuid));
+            let tmp_file = file_path.with_file_name(format!("{uuid}.tmp"));
 
             let mut file = match tokio::fs::File::create(&tmp_file).await {
                 Ok(f) => f,
