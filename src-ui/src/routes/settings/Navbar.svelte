@@ -1,6 +1,6 @@
 <script lang="ts">
-import { cn } from "$lib/utils";
 import type { Component } from "svelte";
+import { cn } from "$lib/utils";
 
 export type Section = {
     id: string;

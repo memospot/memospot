@@ -1,10 +1,10 @@
 <script lang="ts">
 import "../app.css";
-import { initI18n } from "$lib/i18n";
-import { getAppTheme, getReduceAnimationStatus } from "$lib/tauri";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { ModeWatcher, setMode } from "mode-watcher";
 import { onMount } from "svelte";
+import { initI18n } from "$lib/i18n";
+import { getAppTheme, getReduceAnimationStatus } from "$lib/tauri";
 
 type Theme = "system" | "light" | "dark";
 

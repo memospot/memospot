@@ -1,6 +1,6 @@
 <script lang="ts">
-import { cn } from "$lib/utils.js";
 import { Switch as SwitchPrimitive } from "bits-ui";
+import { cn } from "$lib/utils.js";
 
 interface Props extends SwitchPrimitive.Props {
     class?: string;

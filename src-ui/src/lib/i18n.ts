@@ -1,6 +1,6 @@
+import { createI18n } from "@inlang/paraglide-sveltekit";
 import * as messages from "$lib/paraglide/messages.js";
 import * as runtime from "$lib/paraglide/runtime.js";
-import { createI18n } from "@inlang/paraglide-sveltekit";
 import { getAppLocale } from "./tauri";
 
 // TODO: upgrade Paraglide to v2 when it's out of beta.

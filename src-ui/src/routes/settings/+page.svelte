@@ -1,10 +1,10 @@
 <script lang="ts">
-import { Toaster } from "$lib/components/ui/sonner";
-import { m } from "$lib/i18n";
-import { cn } from "$lib/utils";
 import EyeOpen from "svelte-radix/EyeOpen.svelte";
 import Gear from "svelte-radix/Gear.svelte";
 import Pencil2 from "svelte-radix/Pencil2.svelte";
+import { Toaster } from "$lib/components/ui/sonner";
+import { m } from "$lib/i18n";
+import { cn } from "$lib/utils";
 import Memos from "./Memos.svelte";
 import Memospot from "./Memospot.svelte";
 import type { Section } from "./Navbar.svelte";

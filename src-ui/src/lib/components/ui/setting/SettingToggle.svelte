@@ -1,8 +1,8 @@
 <script lang="ts">
-import { Switch } from "$lib/components/ui/switch/index";
-import { cn } from "$lib/utils.js";
 import type { Snippet } from "svelte";
 import type { HTMLAttributes } from "svelte/elements";
+import { Switch } from "$lib/components/ui/switch/index";
+import { cn } from "$lib/utils.js";
 
 export interface Props extends HTMLAttributes<HTMLDivElement> {
     name?: string;

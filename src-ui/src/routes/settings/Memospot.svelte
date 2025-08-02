@@ -1,4 +1,7 @@
 <script lang="ts">
+import * as jsonpatch from "fast-json-patch";
+import { onMount } from "svelte";
+import { toast } from "svelte-sonner";
 import { Setting, SettingToggle } from "$lib/components/ui/setting/index";
 import { Switch } from "$lib/components/ui/switch/index";
 import { debouncePromise } from "$lib/debounce";
@@ -7,9 +10,6 @@ import { m } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
 import { getAppConfig, getDefaultAppConfig, pingMemos } from "$lib/tauri";
 import type { Config } from "$lib/types/gen/Config";
-import * as jsonpatch from "fast-json-patch";
-import { onMount } from "svelte";
-import { toast } from "svelte-sonner";
 
 let initialConfig = $state({}) as Config;
 let currentConfig = $state({}) as Config;

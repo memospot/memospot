@@ -1,12 +1,12 @@
 <script lang="ts">
-import { m } from "$lib/i18n";
-import { getEnv, getMemosURL, pingMemos } from "$lib/tauri";
-import { cn } from "$lib/utils";
 import { isTauri } from "@tauri-apps/api/core";
 import { userPrefersMode } from "mode-watcher";
 import { onMount } from "svelte";
 import { MediaQuery } from "svelte/reactivity";
 import Update from "svelte-radix/Update.svelte";
+import { m } from "$lib/i18n";
+import { getEnv, getMemosURL, pingMemos } from "$lib/tauri";
+import { cn } from "$lib/utils";
 
 const CONFIG = {
     MAX_RETRIES: 10,

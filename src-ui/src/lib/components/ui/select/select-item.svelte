@@ -1,7 +1,7 @@
 <script lang="ts">
-import { cn } from "$lib/utils.js";
 import { Select as SelectPrimitive } from "bits-ui";
 import Check from "svelte-radix/Check.svelte";
+import { cn } from "$lib/utils.js";
 
 interface Props extends SelectPrimitive.ItemProps {
     [key: string]: any;

@@ -46,7 +46,7 @@
   "color-highlight.matchHslWithNoFunction": true,
   "color-highlight.languages": ["css", "svelte", "tailwindcss"],
   "editor.codeActionsOnSave": {
-    "source.organizeImports.biome": "explicit"
+    "source.fixAll.biome": "explicit"
   },
   "editor.defaultFormatter": "dprint.dprint",
   "editor.formatOnSave": true,

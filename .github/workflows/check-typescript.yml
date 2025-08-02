@@ -30,11 +30,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Biome
-        uses: biomejs/setup-biome@454fa0d884737805f48d7dc236c1761a0ac3cc13
-        with: { version: latest }
+        uses: biomejs/setup-biome@v2
 
       - name: Lint code with Biome
-        run: biome ci . || biome ci .
+        run: biome ci .
 
   test:
     name: TypeScript tests

@@ -1,4 +1,11 @@
 <script lang="ts">
+import type { Selected } from "bits-ui";
+import * as jsonpatch from "fast-json-patch";
+import { resetMode as resetTheme, setMode as setTheme } from "mode-watcher";
+import { onMount } from "svelte";
+import LightningBolt from "svelte-radix/LightningBolt.svelte";
+import Moon from "svelte-radix/Moon.svelte";
+import Sun from "svelte-radix/Sun.svelte";
 import {
     Select,
     SelectContent,
@@ -13,13 +20,6 @@ import { detectLocale, type Locale, locales, m, setLocale } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
 import { getAppConfig, getDefaultAppConfig, setAppLocale } from "$lib/tauri";
 import type { Config } from "$lib/types/gen/Config";
-import type { Selected } from "bits-ui";
-import * as jsonpatch from "fast-json-patch";
-import { resetMode as resetTheme, setMode as setTheme } from "mode-watcher";
-import { onMount } from "svelte";
-import LightningBolt from "svelte-radix/LightningBolt.svelte";
-import Moon from "svelte-radix/Moon.svelte";
-import Sun from "svelte-radix/Sun.svelte";
 
 type Theme = "system" | "light" | "dark";
 

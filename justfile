@@ -394,13 +394,7 @@ lint-rs:
 [group('lint')]
 [doc('Lint TypeScript code with BiomeJS')]
 lint-ts:
-    #!{{bash}}
-    for d in "./build-scripts" "./src-ui"; do
-        cd "$REPO_ROOT/$d"
-        if ls *.ts 1> /dev/null 2>&1; then
-            bun x @biomejs/biome ci .
-        fi
-    done
+    bun x @biomejs/biome ci .
 
 [group('fix')]
 [doc('Run all code fixes')]

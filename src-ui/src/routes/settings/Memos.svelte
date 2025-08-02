@@ -1,4 +1,12 @@
 <script lang="ts">
+import type { Selected } from "bits-ui";
+import * as jsonpatch from "fast-json-patch";
+import { onMount } from "svelte";
+import Code from "svelte-radix/Code.svelte";
+import ExternalLink from "svelte-radix/ExternalLink.svelte";
+import LightningBolt from "svelte-radix/LightningBolt.svelte";
+import LockClosed from "svelte-radix/LockClosed.svelte";
+import { toast } from "svelte-sonner";
 import {
     Select,
     SelectContent,
@@ -13,14 +21,6 @@ import { m } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
 import { getAppConfig, getDefaultAppConfig, pathExists } from "$lib/tauri";
 import type { Config } from "$lib/types/gen/Config";
-import type { Selected } from "bits-ui";
-import * as jsonpatch from "fast-json-patch";
-import { onMount } from "svelte";
-import Code from "svelte-radix/Code.svelte";
-import ExternalLink from "svelte-radix/ExternalLink.svelte";
-import LightningBolt from "svelte-radix/LightningBolt.svelte";
-import LockClosed from "svelte-radix/LockClosed.svelte";
-import { toast } from "svelte-sonner";
 
 let initialConfig = $state({}) as Config;
 let currentConfig = $state({}) as Config;

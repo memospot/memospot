@@ -1,12 +1,19 @@
 {
   "root": true,
-  "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
+  // "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
   "formatter": {
     // Code formatting is handled by dprint.
     "enabled": false
   },
   "files": {
-    "includes": ["**", "!**/gen/**", "!**/lib/paraglide/**", "!**/.svelte-kit/**"]
+    "ignoreUnknown": true,
+    "includes": [
+      "**",
+      "!**/build/**",
+      "!**/gen/**",
+      "!**/lib/paraglide/**",
+      "!**/.svelte-kit/**"
+    ]
   },
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
@@ -16,7 +23,7 @@
       "recommended": true,
       "correctness": {
         "noUndeclaredVariables": "error",
-        "noUnusedImports": "error",
+        "noUnusedImports": { "level": "error", "fix": "safe" },
         "noUnusedPrivateClassMembers": "error",
         "noUnusedVariables": "error"
       },
