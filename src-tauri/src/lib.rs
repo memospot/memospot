@@ -156,7 +156,7 @@ pub fn run() {
             .expect_dialog(invalid_url_error)
             .to_string();
 
-        debug!("macOS exception domain: {}", domain);
+        debug!("macOS exception domain: {domain}");
         tauri_ctx.config_mut().bundle.macos.exception_domain = Some(domain);
     }
 

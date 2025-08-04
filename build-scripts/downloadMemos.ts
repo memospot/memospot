@@ -67,7 +67,7 @@ export function getDownloadFilesGlob(): string[] {
             `${CYAN}CI environment detected, matching assets for ${platform}/${arch}${RESET}`
         );
 
-        // GitHub macOS runners are x86_64 only. The arm64 builds are achieved by cross-compiling.
+        // Default GitHub macOS runners are now arm64 only. The x64 builds are achieved by cross-compiling.
         if (platform === "darwin") {
             return supportedPlatforms.filter((p) => p.includes(platform));
         }
