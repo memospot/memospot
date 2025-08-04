@@ -46,7 +46,7 @@ export const supportedPlatforms = Object.values(rustToGoMap);
 
 export function getDownloadFilesGlob(): string[] {
     if (process.argv.includes("--all")) {
-        return supportedPlatforms.toSorted();
+        return supportedPlatforms.slice().sort();
     }
 
     const platform = process.platform.replace("win32", "windows");
@@ -86,7 +86,7 @@ export function getDownloadFilesGlob(): string[] {
         return supportedPlatforms.filter((p) => p.includes(platform) || p.includes("windows"));
     }
 
-    return supportedPlatforms.toSorted();
+    return supportedPlatforms.slice().sort();
 }
 
 /**

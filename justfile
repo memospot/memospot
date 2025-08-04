@@ -198,6 +198,14 @@ update-ts:
     pushd "./build-scripts"; bun update; popd
     just fmt
 
+[group('update')]
+[doc('Show outdated npm packages')]
+outdated-ts:
+    #!{{bash}}
+    pushd "./src-ui"; bun outdated; popd
+    pushd "./build-scripts"; bun outdated; popd
+    just fmt
+
 [group('upgrade')]
 [doc('Upgrade project toolchain')]
 upgrade: upgrade-rust upgrade-bun
