@@ -12,13 +12,12 @@ describe("runSync()", () => {
 });
 
 describe("findRepositoryRoot()", async () => {
+    const repoRoot = findRepositoryRoot();
     test("validate git repository root", () => {
-        const repoRoot = findRepositoryRoot();
         expect(repoRoot.endsWith("memospot")).toBeTrue();
     });
 
     test("validate absolute path", async () => {
-        const repoRoot = findRepositoryRoot();
         expect(path.isAbsolute(repoRoot)).toBeTrue();
     });
 
