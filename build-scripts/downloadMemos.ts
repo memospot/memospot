@@ -14,6 +14,7 @@
  */
 
 import fs from "node:fs";
+import { parseArgs } from "node:util";
 import * as async from "async";
 import * as Bun from "bun";
 import decompress from "decompress";
@@ -25,6 +26,7 @@ import {
     CYAN,
     findRepositoryRoot,
     GREEN,
+    MAGENTA,
     RED,
     RESET,
     YELLOW
@@ -271,8 +273,8 @@ export async function downloadFile(srcURL: string, dstFile: string) {
     writer.end();
 }
 
-async function downloadMemos(downloadFilesGlob: string[]) {
-    const repoUrl = `https://api.github.com/repos/${release_repository}/releases/latest`;
+async function downloadMemos(downloadFilesGlob: string[], tag: string) {
+    const repoUrl = `https://api.github.com/repos/${release_repository}/releases/tags/${tag}`;
 
     // Fetch data from GitHub API.
     const response = await fetch(repoUrl, {
@@ -281,7 +283,7 @@ async function downloadMemos(downloadFilesGlob: string[]) {
         headers: getDefaultRequestHeaders()
     });
     if (!response.ok) {
-        throw new Error(`Failed to fetch GitHub release: ${response.statusText}`);
+        throw new Error(`Failed to fetch GitHub release ${tag}: ${response.statusText}`);
     }
     const ghRelease = (await response.json()) as GitHubRelease;
     const releaseAssets = ghRelease.assets as GitHubAsset[];
@@ -404,6 +406,59 @@ async function downloadMemos(downloadFilesGlob: string[]) {
         fs.rmSync(extractDir, { recursive: true });
         fs.rmSync(filePath);
     });
+
+    // Save tag to `./server-dist/MEMOS_VERSION.txt`
+    const versionFilePath = "./server-dist/MEMOS_VERSION.txt";
+    if (fs.existsSync(versionFilePath)) {
+        fs.rmSync(versionFilePath);
+    }
+    fs.writeFileSync(versionFilePath, tag, { encoding: "utf8", mode: 0o644 });
+}
+
+/**
+ *  Get the requested tag from the command line argument `--tag` or from the environment variable `MEMOS_VERSION`.
+ *
+ * @returns The requested tag or null if not specified.
+ */
+export function getRequestedTag(): string | null {
+    const { values } = parseArgs({
+        args: Bun.argv,
+        options: {
+            tag: {
+                type: "string"
+            }
+        },
+        strict: true,
+        allowPositionals: true
+    });
+
+    const tag = values.tag ?? import.meta.env.MEMOS_VERSION ?? null;
+    if (tag && tag !== "latest") {
+        const version = tag.startsWith("v") ? tag.slice(1) : tag;
+        return `v${version}`;
+    }
+
+    return null;
+}
+
+/**
+ * Fetch the latest release tag from the GitHub repository.
+ * @returns The latest release tag or null if not found.
+ */
+export async function getLatestReleaseTag(): Promise<string | null> {
+    const response = await fetch(
+        `https://api.github.com/repos/${release_repository}/releases/latest`,
+        {
+            method: "GET",
+            redirect: "follow",
+            headers: getDefaultRequestHeaders()
+        }
+    );
+    if (!response.ok) {
+        throw new Error(`Failed to fetch latest release: ${response.statusText}`);
+    }
+    const ghRelease = (await response.json()) as GitHubRelease;
+    return ghRelease.tag_name || null;
 }
 
 async function main() {
@@ -412,7 +467,35 @@ async function main() {
     const repoRoot = findRepositoryRoot();
     console.log(`Repository root is \`${repoRoot}\``);
     process.chdir(repoRoot);
-    console.log(`${BLACK}${BG_WHITE}|> Running script "Download Memos Builds…" <|${RESET}`);
+
+    let requestedTag = getRequestedTag();
+    if (!requestedTag) {
+        console.log(
+            `${YELLOW}No tag specified, will use the latest release from ${release_repository}${RESET}`
+        );
+        requestedTag = await getLatestReleaseTag();
+        if (!requestedTag) {
+            throw new Error(
+                `Failed to fetch latest release tag from ${release_repository}. Please specify a tag with --tag or set MEMOS_VERSION environment variable.`
+            );
+        }
+        console.log(`${GREEN}Using latest release tag: ${requestedTag}${RESET}`);
+    }
+    console.log(
+        `${BLACK}${BG_WHITE}|> Running script "Download Memos Builds for tag ${requestedTag}…" <|${RESET}`
+    );
+
+    if (
+        import.meta.env.CI === "true" &&
+        import.meta.env.MEMOS_VERSION !== requestedTag &&
+        import.meta.env.GITHUB_ENV &&
+        fs.existsSync(import.meta.env.GITHUB_ENV)
+    ) {
+        console.log(
+            `${YELLOW}Running in CI environment, using GITHUB_ENV to set MEMOS_VERSION.${RESET}`
+        );
+        fs.appendFileSync(import.meta.env.GITHUB_ENV, `MEMOS_VERSION=${requestedTag}\n`);
+    }
 
     const serverDistDir = "./server-dist";
     const serverDistDirExists =
@@ -426,20 +509,26 @@ async function main() {
         return `memos-${makeTripletFromFileName(glob)}${exe}`;
     });
 
-    const foundRecent = binaries.every((bin) => {
-        console.log(`Checking if ${bin} exists...`);
-        if (!fs.existsSync(`${serverDistDir}/${bin}`)) {
-            return false;
-        }
-        const fstat = fs.statSync(`${serverDistDir}/${bin}`);
-        return (
-            fstat.size > 1024 * 1024 && fstat.ctimeMs >= Date.now() - 1000 * 60 * 60 * 24 * 7 // 7 days
-        );
+    // Check if the present binaries matches the requested tag.
+    const versionFilePath = `${serverDistDir}/MEMOS_VERSION.txt`;
+    const version = fs.existsSync(versionFilePath)
+        ? fs.readFileSync(versionFilePath, "utf8").trim()
+        : "";
+
+    const validBinaries = binaries.every((bin) => {
+        console.log(`Checking if ${MAGENTA}${bin}${RESET} already exists...`);
+        return fs.existsSync(`${serverDistDir}/${bin}`);
     });
-    if (foundRecent) {
-        console.log(`Found all required binaries: ${binaries}.`);
-        console.log("Skipping download.");
-        return;
+
+    if (validBinaries) {
+        if (version === requestedTag) {
+            console.log(`Found all required binaries for ${GREEN}${version}${RESET}.`);
+            console.log("Skipping download.");
+            return;
+        }
+        console.log(
+            `${YELLOW}Existing binaries for ${MAGENTA}${version}${YELLOW} do not match the requested tag ${MAGENTA}${requestedTag}${YELLOW}.${RESET}`
+        );
     }
 
     // Remove a previous dist folder (Memos v0.18.2 - v0.21.0), if it exists.
@@ -453,7 +542,7 @@ async function main() {
     }
 
     const downloadFilesGlob = getDownloadFilesGlob();
-    await downloadMemos(downloadFilesGlob);
+    await downloadMemos(downloadFilesGlob, requestedTag);
 
     const endTime = performance.now();
     const timeElapsed = endTime - startTime;

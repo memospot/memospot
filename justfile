@@ -90,7 +90,7 @@ dev-ui: deps-ts
     cd "src-ui"; bun x vite
 
 [private]
-download-memos-binaries: deps-ts
+download-memos: deps-ts
     bun run ./build-scripts/downloadMemos.ts
 
 [private]
@@ -100,13 +100,13 @@ upx:
 
 # Tauri hooks
 [private]
-tauri-before-build: download-memos-binaries gen-icons gen-bindings build-ui
+tauri-before-build: download-memos gen-icons gen-bindings build-ui
 
 [private]
 tauri-before-bundle: deps-ts upx
 
 [private]
-tauri-before-dev: download-memos-binaries gen-icons gen-bindings dev-ui
+tauri-before-dev: download-memos gen-icons gen-bindings dev-ui
 # /Tauri hooks
 
 [group('test')]

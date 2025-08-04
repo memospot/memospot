@@ -1,5 +1,6 @@
 import { describe, expect, mock, test } from "bun:test";
 import * as crypto from "node:crypto";
+import * as Bun from "bun";
 import { getDownloadFilesGlob, makeTripletFromFileName, rustToGoMap } from "./downloadMemos";
 
 test("extensively test makeTripletFromFileName output", () => {
@@ -91,7 +92,7 @@ describe("match assets according to environment", async () => {
                         break;
                 }
                 console.log(
-                    `\x1b[32mExpected: ${expected.toSorted()}, \nActual:   ${downloadFilesGlob.toSorted()}.\x1b[0m`
+                    `\x1b[32mExpected: ${expected.slice().sort()}, \nActual:   ${downloadFilesGlob.slice().sort()}.\x1b[0m`
                 );
                 expect(downloadFilesGlob).toEqual(expected);
             }
@@ -165,4 +166,76 @@ describe("match assets according to environment", async () => {
             expect(downloadFilesGlob).toEqual(expected);
         }
     });
+});
+
+describe("test getRequestedTag", async () => {
+    test("env prefixed", () => {
+        process.env.MEMOS_VERSION = "v1.2.3";
+        const { getRequestedTag } = require("./downloadMemos");
+        const tag = getRequestedTag();
+
+        expect(tag).toBe("v1.2.3");
+    });
+
+    test("env no prefix", () => {
+        process.env.MEMOS_VERSION = "1.2.3";
+        const { getRequestedTag } = require("./downloadMemos");
+        const tag = getRequestedTag();
+
+        expect(tag).toBe("v1.2.3");
+    });
+
+    test("env undefined", () => {
+        process.env.MEMOS_VERSION = undefined;
+        const { getRequestedTag } = require("./downloadMemos");
+        const tag = getRequestedTag();
+
+        expect(tag).toBe(null);
+    });
+
+    test("argv prefixed", () => {
+        const mockArgs = ["downloadMemos.js", "--tag=v1.2.3"];
+        Object.defineProperty(Bun, "argv", {
+            value: mockArgs
+        });
+
+        const { getRequestedTag } = require("./downloadMemos");
+        const tag = getRequestedTag();
+
+        expect(tag).toBe("v1.2.3");
+    });
+
+    test("argv no prefix", () => {
+        const mockArgs = ["downloadMemos.js", "--tag=1.2.3"];
+        Object.defineProperty(Bun, "argv", {
+            value: mockArgs
+        });
+
+        const { getRequestedTag } = require("./downloadMemos");
+        const tag = getRequestedTag();
+
+        expect(tag).toBe("v1.2.3");
+    });
+
+    test("argv undefined", () => {
+        const mockArgs = ["downloadMemos.js"];
+        Object.defineProperty(Bun, "argv", {
+            value: mockArgs
+        });
+
+        const { getRequestedTag } = require("./downloadMemos");
+        const tag = getRequestedTag();
+
+        expect(tag).toBe(null);
+    });
+});
+
+test("test getLatestReleaseTag", async () => {
+    const { getLatestReleaseTag } = require("./downloadMemos");
+    const tag = await getLatestReleaseTag();
+
+    console.error(`Latest release tag: ${tag}`);
+
+    expect(tag).toBeDefined();
+    expect(tag).toMatch(/^v\d+\.\d+\.\d+$/);
 });

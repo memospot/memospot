@@ -4,6 +4,11 @@ on:
     tags-ignore:
       - "v*.*.*-*"
   workflow_dispatch:
+    inputs:
+      memos-version:
+        description: Memos version to bundle.
+        required: false
+        type: string
 
 concurrency:
   cancel-in-progress: true
@@ -15,7 +20,7 @@ env:
   CARGO_TERM_COLOR: always
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   GLIBC_VERSION: NOT_SET
-  LATEST_MEMOS_VERSION: NOT_SET
+  MEMOS_VERSION: NOT_SET
   RUST_TARGET: NOT_SET
   RUST_BACKTRACE: short
   RUST_TOOLCHAIN: stable
@@ -57,11 +62,6 @@ jobs:
           echo "RUST_TARGET=${{ matrix.platform.rust_target }}" >> $GITHUB_ENV
           echo "CACHE_KEY=$(date +'%Y%m%d')" >> $GITHUB_ENV
           echo "GLIBC_VERSION=$(ldd --version | head -n 1 | awk '{print $NF}')" >> $GITHUB_ENV
-          latest_memos_version=$(curl -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -H 'X-GitHub-Api-Version: 2022-11-28' -s --url "https://api.github.com/repos/memospot/memos-builds/releases/latest" | jq -r '.tag_name')
-          if [ -z "$latest_memos_version" ] || [ "$latest_memos_version" = "null" ]; then
-            latest_memos_version="NOT_SET"
-          fi
-          echo "LATEST_MEMOS_VERSION=$latest_memos_version" >> $GITHUB_ENV
 
       - if: ${{ runner.os == 'Linux' }}
         name: "[Linux] Disable initramfs and man-db update"
@@ -125,17 +125,24 @@ jobs:
           key: bundeps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
           restore-keys: bundeps-${{ runner.os }}
           path: ~/.bun
-
-      - name: Install Bun dependencies
-        run: just deps-ts
       # /Bun
 
       - name: Cache Memos builds
         uses: actions/cache@v4
         with:
-          key: memosbuilds-${{ runner.os }}-${{ env.LATEST_MEMOS_VERSION }}-${{ env.CACHE_KEY }}
-          restore-keys: memosbuilds-${{ runner.os }}-${{ env.LATEST_MEMOS_VERSION }}
+          key: memosbuilds-${{ runner.os }}-${{ env.MEMOS_VERSION }}-${{ env.CACHE_KEY }}
+          restore-keys: memosbuilds-${{ runner.os }}-${{ env.MEMOS_VERSION }}
           path: ./server-dist
+
+      # Allows to bundle a specific Memos version when running the workflow manually.
+      - if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.memos-version != ''  }}
+        name: Set desired Memos version to ${{ inputs.memos-version }}
+        run: |
+          echo "MEMOS_VERSION=${{ inputs.memos-version }}" >> $GITHUB_ENV
+      # This is ran before building the Tauri app so that the MEMOS_VERSION
+      # is set by the downloadMemos script if it was not set via workflow inputs.
+      - name: Download Memos
+        run: just download-memos
 
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@564aea5a8075c7a54c167bb0cf5b3255314a7f9d
@@ -147,7 +154,7 @@ jobs:
           releaseName: "v__VERSION__"
           # This will also show on the updater notes.
           releaseBody: |
-            Bundled Memos version: **${{ env.LATEST_MEMOS_VERSION }}**
+            Bundled Memos version: **${{ env.MEMOS_VERSION }}**
             Updating from previous versions is transparent.
 
             Note for Windows users:
