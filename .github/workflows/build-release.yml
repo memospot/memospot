@@ -130,13 +130,14 @@ jobs:
       - name: Cache Memos builds
         uses: actions/cache@v4
         with:
-          key: memosbuilds-${{ runner.os }}-${{ env.MEMOS_VERSION }}-${{ env.CACHE_KEY }}
-          restore-keys: memosbuilds-${{ runner.os }}-${{ env.MEMOS_VERSION }}
+          key: memosbuilds-${{ runner.os }}-${{ env.CACHE_KEY }}
+          restore-keys: memosbuilds-${{ runner.os }}
           path: ./server-dist
 
       # Allows to bundle a specific Memos version when running the workflow manually.
       - if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.memos-version != ''  }}
         name: Set desired Memos version to ${{ inputs.memos-version }}
+        shell: bash
         run: |
           echo "MEMOS_VERSION=${{ inputs.memos-version }}" >> $GITHUB_ENV
       # This is ran before building the Tauri app so that the MEMOS_VERSION

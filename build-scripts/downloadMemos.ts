@@ -433,7 +433,7 @@ export function getRequestedTag(): string | null {
     });
 
     const tag = values.tag ?? import.meta.env.MEMOS_VERSION ?? null;
-    if (tag && tag !== "latest") {
+    if (tag?.match(/^v?\d+\.\d+\.\d+(-\S+)?$/)) {
         const version = tag.startsWith("v") ? tag.slice(1) : tag;
         return `v${version}`;
     }
