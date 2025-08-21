@@ -6,6 +6,7 @@ windows = ["*"]
 permissions = [
     "core:default",
     "core:webview:allow-print",
+    "core:webview:allow-set-webview-zoom",
     "core:window:allow-center",
     "core:window:allow-close",
     "core:window:allow-create",

@@ -133,6 +133,7 @@ pub fn run() {
             incognito: cfg!(debug_assertions),
             // Prevent theme flashing on release builds. The frontend code calls getCurrentWebviewWindow().show() immediately after configuring the theme.
             visible: cfg!(debug_assertions),
+            zoom_hotkeys_enabled: true,
             ..Default::default()
         }
         .restore_window_state();

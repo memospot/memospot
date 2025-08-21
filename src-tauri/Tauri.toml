@@ -79,6 +79,7 @@ withGlobalTauri = true
 
 [[app.windows]]
 dragDropEnabled = false
+zoomHotkeysEnabled = true
 
 [app.security.assetProtocol]
 scope = ["**"]
