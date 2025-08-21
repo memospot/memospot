@@ -27,6 +27,12 @@ targets = "all"
 externalBin = ["../server-dist/memos"]
 createUpdaterArtifacts = "v1Compatible"
 
+[bundle.linux.appimage]
+bundleMediaFramework = true
+
+[bundle.linux.deb]
+depends = ["libwebkit2gtk-4.1-0", "libgtk-3-0"]
+
 [bundle.windows]
 allowDowngrades = true
 digestAlgorithm = "sha256"
@@ -60,9 +66,6 @@ languages = [
     "Turkish",
 ]
 template = "../installer/nsis.nsi"
-
-[bundle.linux.appimage]
-bundleMediaFramework = true
 
 [plugins.updater]
 pubkey = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhENDYwRjkzNTkwQzY0NEEKUldSS1pBeFprdzlHalI3YVdINTZURFNUbHZIc3N0Rk40c2tvWDN3MWF2OWdnSHlRMnhjMFVlRGsK"
