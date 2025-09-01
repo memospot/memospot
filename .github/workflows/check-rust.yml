@@ -50,7 +50,7 @@ jobs:
     continue-on-error: true
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b
@@ -65,7 +65,7 @@ jobs:
     continue-on-error: true
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b
@@ -93,7 +93,7 @@ jobs:
     runs-on: ${{ matrix.platform.runner }}
     steps:
       - name: Checkout repository,
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: "Set env vars"
         shell: bash
