@@ -146,7 +146,7 @@ jobs:
         run: just download-memos
 
       - name: Build Tauri App
-        uses: tauri-apps/tauri-action@564aea5a8075c7a54c167bb0cf5b3255314a7f9d
+        uses: tauri-apps/tauri-action@e834788a94591d81e3ae0bd9ec06366f5afb8994
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
