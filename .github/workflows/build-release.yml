@@ -87,7 +87,7 @@ jobs:
         with: { install-only: true }
 
       - name: Install Just
-        uses: taiki-e/install-action@d31232495ad76f47aad66e3501e47780b49f0f3e
+        uses: taiki-e/install-action@c0dee14250395ae6b1754a99f67c1d693138b102
         with: { tool: just@1.39.0 }
 
       # Rust
