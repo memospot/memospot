@@ -1,4 +1,3 @@
-import { createI18n } from "@inlang/paraglide-sveltekit";
 import * as messages from "$lib/paraglide/messages.js";
 import * as runtime from "$lib/paraglide/runtime.js";
 import { getAppLocale } from "./tauri";
@@ -8,24 +7,17 @@ import { getAppLocale } from "./tauri";
 /**
  * The project's available locales.
  */
-export const locales = runtime.availableLanguageTags;
+export const locales = runtime.locales;
 /**
  * Check if a locale is available on the project.
  */
-export const isLocale = runtime.isAvailableLanguageTag;
+export const isLocale = runtime.isLocale;
 /**
  * Set the current locale.
  */
-export const setLocale = runtime.setLanguageTag;
+export const setLocale = runtime.setLocale;
 
 export type Locale = (typeof locales)[number];
-
-/**
- * Creates an i18n instance that manages internationalization.
- */
-export const i18n = createI18n(runtime, {
-    defaultLanguageTag: "en"
-});
 
 /**
  * Translated messages.

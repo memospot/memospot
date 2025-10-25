@@ -1,4 +1,4 @@
-import { paraglide } from "@inlang/paraglide-sveltekit/vite";
+import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 import { defineConfig } from "vite";
@@ -8,7 +8,11 @@ const host = process.env.TAURI_DEV_HOST;
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
     plugins: [
-        paraglide({ project: "./project.inlang", outdir: "./src/lib/paraglide" }),
+        paraglideVitePlugin({
+            project: "./project.inlang",
+            outdir: "./src/lib/paraglide",
+            strategy: ["cookie", "baseLocale"]
+        }),
         sveltekit()
     ],
     build: {
