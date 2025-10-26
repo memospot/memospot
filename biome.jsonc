@@ -1,6 +1,6 @@
 {
   "root": true,
-  // "$schema": "https://biomejs.dev/schemas/2.2.6/schema.json",
+  // "$schema": "https://biomejs.dev/schemas/2.3.0/schema.json",
   "formatter": {
     // Code formatting is handled by dprint.
     "enabled": false
@@ -24,7 +24,7 @@
       "suspicious": {
         "noEmptyBlockStatements": "error",
         "noExplicitAny": "off",
-        "noUnknownAtRules": "warn"
+        "noUnknownAtRules": "off"
       },
       "style": {
         "noParameterAssign": "error",
@@ -63,7 +63,7 @@
     }
   ],
   "css": {
-    "parser": { "cssModules": true }
+    "parser": { "cssModules": true, "tailwindDirectives": true }
   },
   "vcs": {
     "enabled": true,

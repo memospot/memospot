@@ -33,7 +33,7 @@ jobs:
         uses: biomejs/setup-biome@v2
 
       - name: Lint code with Biome
-        run: biome ci .
+        run: biome ci --css-parse-tailwind-directives=true .
 
   test:
     name: TypeScript tests

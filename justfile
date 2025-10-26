@@ -23,6 +23,7 @@ PATH := if os() == 'windows' {
 		env_var_or_default('PATH','')
 	}
 REPO_ROOT := justfile_directory()
+BIOME_CONFIG_PATH := absolute_path(join(REPO_ROOT,'biome.jsonc'))
 DPRINT_CACHE_DIR := absolute_path(join(REPO_ROOT,'.dprint'))
 RUST_BACKTRACE := 'full'
 RUST_TARGETS := if os() == 'windows' {
@@ -402,7 +403,7 @@ lint-rs:
 [group('lint')]
 [doc('Lint TypeScript code with BiomeJS')]
 lint-ts:
-    bun x @biomejs/biome ci .
+    bun x @biomejs/biome ci --css-parse-tailwind-directives=true .
 
 [group('fix')]
 [doc('Run all code fixes')]
