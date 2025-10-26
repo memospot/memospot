@@ -116,7 +116,7 @@ jobs:
 
       - name: Install Just
         uses: taiki-e/install-action@f13d8e15c52b25c79b608d399cc802adc73d83da
-        with: { tool: just@1.39.0 }
+        with: { tool: just@1.43.0 }
 
       # Rust
       - name: Setup Rust toolchain

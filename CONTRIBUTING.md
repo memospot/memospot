@@ -236,11 +236,11 @@ cargo binstall \
     --disable-telemetry \
     --target=$(rustc -vV | sed -n 's|host: ||p') \
     cargo-cache@0.8.3 \
-    cargo-edit@0.13.1 \
+    cargo-edit@0.13.7 \
     cargo-xwin@0.18.4 \
-    dprint@0.49.0 \
-    just@1.39.0 \
-    tauri-cli@2.2.7 \
+    dprint@0.50.2 \
+    just@1.43.0 \
+    tauri-cli@2.9.1 \
     -y
 ```
 
@@ -258,10 +258,10 @@ cargo binstall `
     --disable-telemetry `
     --target=$(& rustc -vV | Select-String -Pattern "^host:" | ForEach-Object {$_.Line.Split(':')[1].Trim()}) `
     cargo-cache@0.8.3 `
-    cargo-edit@0.13.1 `
-    dprint@0.49.0 `
-    just@1.39.0 `
-    tauri-cli@2.2.7 `
+    cargo-edit@0.13.7 `
+    dprint@0.50.2 `
+    just@1.43.0 `
+    tauri-cli@2.9.1 `
     -y
 ```
 
