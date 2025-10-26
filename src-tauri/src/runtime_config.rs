@@ -33,6 +33,7 @@ pub struct RuntimeConfigPaths {
     pub memospot_data: PathBuf,
 }
 
+#[allow(dead_code)]
 #[derive(TS, Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[ts(export)]
 enum ExportTSBindings {
