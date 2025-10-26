@@ -15,7 +15,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@biomejs/biome": "2.1.3",
+    "@biomejs/biome": "2.2.6",
     "@inlang/paraglide-js": "^2.4.0",
     "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/kit": "^2.47.3",
@@ -31,7 +31,7 @@
     "lucide-svelte": "^0.469.0",
     "mode-watcher": "^0.5.1",
     "postcss": "^8.5.6",
-    "svelte": "^5.42.1",
+    "svelte": "^5.42.2",
     "svelte-5-ui-lib": "^0.12.6",
     "svelte-check": "^4.3.3",
     "svelte-radix": "^2.0.2",

@@ -80,6 +80,8 @@ jobs:
 
       - name: Run Bun tests
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pushd ./build-scripts; bun test; popd
           pushd ./src-ui; bun test; popd

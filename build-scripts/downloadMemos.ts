@@ -240,19 +240,8 @@ export async function downloadFile(srcURL: string, dstFile: string) {
     console.log(`Downloading ${srcURL}…`);
 
     await fetch(srcURL, { redirect: "follow", headers: getDefaultRequestHeaders() }).then(
-        async (response) => {
-            if (
-                response.status === 403 &&
-                response.headers.get("X-RateLimit-Remaining") === "0"
-            ) {
-                const resetTime = response.headers.get("X-RateLimit-Reset");
-                const waitTime = Number(resetTime) * 1000 - Date.now();
-                console.log(
-                    `${YELLOW}Rate limit exceeded, waiting for ${waitTime / 1000} seconds${RESET}`
-                );
-                await new Promise((resolve) => setTimeout(resolve, waitTime));
-                return downloadFile(srcURL, dstFile);
-            }
+        async (r) => {
+            const response = await rateLimit(r, () => downloadFile(srcURL, dstFile));
 
             if (!response.ok) {
                 throw new Error(`Failed to download file: ${response.statusText}`);
@@ -442,18 +431,44 @@ export function getRequestedTag(): string | null {
 }
 
 /**
+ * Checks for rate limits to a fetch response.
+ *
+ * If the response status is 403 and the remaining rate limit is 0, waits for the reset time and retries.
+ *
+ * @param response The fetch response.
+ * @param retryFunc The function to retry if rate limit is exceeded.
+ * @returns The response.
+ */
+async function rateLimit(response: Response, retryFunc: () => Promise<any>): Promise<Response> {
+    if (response.status === 403 && response.headers.get("X-RateLimit-Remaining") === "0") {
+        const resetTime = response.headers.get("X-RateLimit-Reset");
+        const waitTime = Number(resetTime) * 1000 - Date.now();
+        console.log(
+            `${YELLOW}Rate limit exceeded, waiting for ${waitTime / 1000} seconds${RESET}`
+        );
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
+        return retryFunc();
+    }
+    return response;
+}
+
+/**
  * Fetch the latest release tag from the GitHub repository.
  * @returns The latest release tag or null if not found.
  */
 export async function getLatestReleaseTag(): Promise<string | null> {
-    const response = await fetch(
-        `https://api.github.com/repos/${release_repository}/releases/latest`,
-        {
-            method: "GET",
-            redirect: "follow",
-            headers: getDefaultRequestHeaders()
-        }
-    );
+    const latestUrl = `https://api.github.com/repos/${release_repository}/releases/latest`;
+
+    console.debug(`Fetching latest release tag from ${latestUrl}…`);
+
+    const response = await fetch(latestUrl, {
+        method: "GET",
+        redirect: "follow",
+        headers: getDefaultRequestHeaders()
+    }).then(async (r) => {
+        return await rateLimit(r, getLatestReleaseTag);
+    });
+
     if (!response.ok) {
         throw new Error(`Failed to fetch latest release: ${response.statusText}`);
     }

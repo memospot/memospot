@@ -234,7 +234,7 @@ test("test getLatestReleaseTag", async () => {
     const { getLatestReleaseTag } = require("./downloadMemos");
     const tag = await getLatestReleaseTag();
 
-    console.error(`Latest release tag: ${tag}`);
+    console.warn(`Latest release tag: ${tag}`);
 
     expect(tag).toBeDefined();
     expect(tag).toMatch(/^v\d+\.\d+\.\d+$/);
