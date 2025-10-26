@@ -6,6 +6,7 @@ import { onMount } from "svelte";
 import { page } from "$app/state";
 import { locales, localizeHref } from "$lib/paraglide/runtime";
 import { getAppTheme, getReduceAnimationStatus } from "$lib/tauri";
+import { initI18n } from "$lib/i18n";
 
 type Theme = "system" | "light" | "dark";
 
@@ -40,4 +41,6 @@ The "invisible" anchor tags allow SvelteKit to generate all pages during build t
   {/each}
 </div>
 
-{@render children?.()}
+{#await initI18n() then _}
+  {@render children?.()}
+{/await}

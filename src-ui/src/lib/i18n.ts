@@ -40,6 +40,15 @@ const fallbacks: Record<string, string> = {
     zh: "zh-Hans"
 };
 
+const rtlLocales = ["ar", "he", "ur"];
+
+/**
+ * Check whether a locale is right-to-left or left-to-right.
+ */
+export function getTextDirection(locale?: Locale): "rtl" | "ltr" {
+    return rtlLocales.includes(locale || "") ? "rtl" : "ltr";
+}
+
 /**
  * Detect the most appropriate translation to use based on the user's preference and current browser locale.
  *
