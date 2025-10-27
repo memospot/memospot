@@ -5,6 +5,7 @@ use i18n_embed::{
 };
 use log::{debug, error};
 use rust_embed::RustEmbed;
+use std::slice;
 use std::sync::LazyLock;
 
 #[derive(RustEmbed)]
@@ -84,7 +85,7 @@ pub fn reload(preferred_locale: &str) {
         .iter()
         .find(|l| l.language.as_str() == preferred_locale)
     {
-        if let Err(error) = localizer.select(&[locale.clone()]) {
+        if let Err(error) = localizer.select(slice::from_ref(locale)) {
             error!("i18n: failed to load locale: {error}");
             return;
         }
