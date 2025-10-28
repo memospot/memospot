@@ -4,9 +4,8 @@ import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { ModeWatcher, setMode } from "mode-watcher";
 import { onMount } from "svelte";
 import { page } from "$app/state";
-import { locales, localizeHref } from "$lib/paraglide/runtime";
+import { initI18n, locales, localizeHref } from "$lib/i18n";
 import { getAppTheme, getReduceAnimationStatus } from "$lib/tauri";
-import { initI18n } from "$lib/i18n";
 
 type Theme = "system" | "light" | "dark";
 
@@ -22,6 +21,8 @@ onMount(async () => {
     }
 
     localStorage.setItem("reduce-animation", JSON.stringify(await getReduceAnimationStatus()));
+
+    await initI18n();
 
     // All WebView windows are created in a hidden state to prevent flashing unstyled content.
     // This shows the window whenever the component is mounted.
@@ -41,6 +42,4 @@ The "invisible" anchor tags allow SvelteKit to generate all pages during build t
   {/each}
 </div>
 
-{#await initI18n() then _}
-  {@render children?.()}
-{/await}
+{@render children?.()}

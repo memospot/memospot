@@ -8,7 +8,7 @@
 > For now, it's best to use specific locale keys rather than generic ones.
 > Language fallbacks and overrides need work on the Rust side, as they don't work on all platforms.
 
-1. Add the new language to the `project.inlang/settings.json` file.
+1. Add the new language to the `i18n/settings.json` file, under `locales`.
 
 2. Add a new translation file for the new language at `i18n/{locale}.json`
 
@@ -19,6 +19,6 @@
 
 > [!NOTE]
 > Languages added here are only for the web front-end.
-> For the desktop side, see `src-tauri/i18n/`.
+> For the native desktop translations (error messages and native window menus), see `src-tauri/i18n/`.
 
-Front-end localization is handled with [Paraglide-SvelteKit](https://inlang.com/m/dxnzrydw/paraglide-sveltekit-i18n/getting-started).
+Front-end localization is handled with [@inlang/paraglide-js](https://inlang.com/m/gerre34r/library-inlang-paraglideJs/sveltekit).

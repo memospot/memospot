@@ -9,16 +9,24 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
     plugins: [
         paraglideVitePlugin({
-            project: "./project.inlang",
+            project: "./i18n",
             outdir: "./src/lib/paraglide",
-            strategy: ["cookie", "baseLocale"]
+            strategy: ["localStorage", "preferredLanguage", "baseLocale"]
         }),
         sveltekit()
     ],
     build: {
         emptyOutDir: true, // SvelteKit output is fixed at ./build
         target: ["es2021", "chrome97", "safari13"],
-        sourcemap: !!process.env.TAURI_ENV_DEBUG
+        sourcemap: !!process.env.TAURI_ENV_DEBUG,
+        rollupOptions: {
+            output: {
+                manualChunks() {
+                    // Lower the number of output files from ~30 to ~16.
+                    return "vendor";
+                }
+            }
+        }
     },
     preprocess: vitePreprocess(),
     // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`

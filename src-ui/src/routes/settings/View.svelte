@@ -117,12 +117,9 @@ async function updateLocale(s: Selected<string> | undefined) {
     input.locale = (s?.value ?? "system") as Locale;
     currentConfig.memospot.window.locale = input.locale;
 
-    if (input.locale === ("system" as Locale)) {
-        detectLocale(input.locale);
-    } else {
+    if (input.locale !== ("system" as Locale)) {
         setLocale(input.locale);
     }
-
     await setAppLocale(input.locale);
 }
 
