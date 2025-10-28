@@ -20,7 +20,12 @@ onMount(async () => {
         setMode(initialAppTheme as Theme);
     }
 
-    localStorage.setItem("reduce-animation", JSON.stringify(await getReduceAnimationStatus()));
+    await getReduceAnimationStatus().then(async (reduceAnimation) => {
+        const stored = localStorage.getItem("reduce-animation");
+        if (!stored || JSON.parse(stored) !== reduceAnimation) {
+            localStorage.setItem("reduce-animation", JSON.stringify(reduceAnimation));
+        }
+    });
 
     await initI18n();
 
