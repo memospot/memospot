@@ -11,11 +11,11 @@ description = "Memospot configuration file definitions"
 [dependencies]
 anyhow = { workspace = true }
 figment = { version = "0.10", features = ["env", "json", "yaml"] }
-serde = { version = "1.0", features = ["derive"] }
+serde = { workspace = true }
 serde_yaml = "0.9.34"
-tokio = { version = "1.44", features = ["fs", "io-std", "io-util", "macros", "rt", "rt-multi-thread", "time"] }
-ts-rs = "10.1"
-uuid = { version = "1.11", features = ["v4"] }
+tokio = { workspace = true, features = ["fs", "io-std", "io-util", "macros", "rt", "rt-multi-thread", "time"] }
+ts-rs = { workspace = true }
+uuid = { workspace = true }
 
 [dev-dependencies]
-tempfile = "3.14"
+tempfile = { workspace = true }

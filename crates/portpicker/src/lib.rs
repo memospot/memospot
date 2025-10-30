@@ -52,9 +52,9 @@ pub fn get_free_tcp() -> Option<Port> {
 #[cfg(feature = "rand")]
 /// Get a random port between specified range.
 pub fn get_random_free_port(range: Range<u16>, retries: u8) -> Option<Port> {
-    let mut rng = thread_rng();
+    let mut rng = rand::rng();
     for _ in 0..retries {
-        let port = rng.gen_range(range.clone());
+        let port = rng.random_range(range.clone());
         if port < UPPER_PORT && is_free_tcp(port) {
             return Some(port);
         }

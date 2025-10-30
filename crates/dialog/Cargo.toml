@@ -9,7 +9,7 @@ repository = "https://github.com/memospot/memospot/crates/dialog"
 description = "Memospot platform-agnostic dialog utilities"
 
 [dependencies]
-log = "0.4"
+log = { workspace = true }
 
 [target.'cfg(windows)'.dependencies.native-dialog]
 version = "0.6.4"
