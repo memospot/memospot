@@ -56,7 +56,7 @@ pub async fn install() -> Result<()> {
         .user_agent("Tauri")
         .gzip(true)
         .build()
-        .map_err(|e| Error::other(e))?;
+        .map_err(Error::other)?;
 
     let response = client
         .get(WEBVIEW2_BOOTSTRAPPER_URL)
@@ -87,7 +87,7 @@ pub async fn install() -> Result<()> {
         if let Some(name) = response
             .url()
             .path_segments()
-            .and_then(|segments| segments.last())
+            .and_then(|mut segments| segments.next_back())
         {
             if !name.is_empty() {
                 filename = name.to_string();
