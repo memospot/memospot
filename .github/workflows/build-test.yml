@@ -204,7 +204,7 @@ jobs:
           args: --verbose --target ${{ matrix.platform.rust_target }}
           includeUpdaterJson: false
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: memospot-${{ matrix.platform.rust_target }}
           path: |
