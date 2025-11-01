@@ -112,7 +112,7 @@ jobs:
       # Platform deps
       - if: ${{ runner.os == 'Linux'  }}
         name: "[Linux] Install platform dependencies"
-        uses: awalsh128/cache-apt-pkgs-action@2c09a5e66da6c8016428a2172bd76e5e4f14bb17
+        uses: awalsh128/cache-apt-pkgs-action@acb598e5ddbc6f68a970c5da0688d2f3a9f04d05
         with: { packages: "${{env.APT_DEPS}}" }
 
       - if: ${{ runner.os == 'macOS' }}
