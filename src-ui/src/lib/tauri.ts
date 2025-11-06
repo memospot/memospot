@@ -1,7 +1,7 @@
 /*
  * Tauri Handlers.
  *
- * The Rust back-end is in `src-tauri/src/cmd`.
+ * The Rust back-end is in `crates/memospot/src/cmd`.
  */
 
 import { isTauri, invoke as TauriInvoke } from "@tauri-apps/api/core";

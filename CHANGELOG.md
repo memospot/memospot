@@ -92,6 +92,7 @@ Security: in case of vulnerabilities.
 - (Linux) New RPM package.
 - Support external Memos server - ([c354557](https://github.com/memospot/memospot/commit/c354557192ad52ee400384f31a57cd6295e11783)):
   Sample `memospot.yaml` file:
+
   ```yaml
   remote:
     enabled: true

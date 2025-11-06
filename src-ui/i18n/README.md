@@ -19,6 +19,6 @@
 
 > [!NOTE]
 > Languages added here are only for the web front-end.
-> For the native desktop translations (error messages and native window menus), see `src-tauri/i18n/`.
+> For the native desktop translations (error messages and native window menus), see `crates/memospot/i18n/`.
 
 Front-end localization is handled with [@inlang/paraglide-js](https://inlang.com/m/gerre34r/library-inlang-paraglideJs/sveltekit).

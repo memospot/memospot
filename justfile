@@ -226,8 +226,8 @@ upgrade-bun:
 gen-icons-force:
     #!{{bash}}
     cargo tauri icon "assets/app-icon-lossless.webp"
-    cp -f "./src-tauri/icons/icon.ico" "./src-ui/static/favicon.ico"
-    git add "assets/app-icon-lossless.webp" "src-tauri/icons/*"
+    cp -f "./crates/memospot/icons/icon.ico" "./src-ui/static/favicon.ico"
+    git add "assets/app-icon-lossless.webp" "crates/memospot/icons/*"
     # git commit -m "chore: regenerate icons"
 
 [doc('Generate app icons, if needed')]
@@ -236,8 +236,8 @@ gen-icons:
     if [ "$CI" = "true" ]; then exit 0; fi
     check_files=(
         "assets/app-icon-lossless.webp"
-        "src-tauri/icons/**.png"
-        "src-tauri/icons/icon.ico"
+        "crates/memospot/icons/**.png"
+        "crates/memospot/icons/icon.ico"
         "src-ui/static/favicon.ico"
     )
     for file in "${check_files[@]}"; do
@@ -255,12 +255,12 @@ gen-bindings:
     # Files listed here may affect the frontend bindings.
     check_files=(
         "crates/config/**/*"
-        "src-tauri/src/runtime_config.rs"
+        "crates/memospot/src/runtime_config.rs"
     )
     for file in "${check_files[@]}"; do
         if ! git diff --quiet --exit-code HEAD -- "$file"; then
             echo -e "${YELLOW}${file} was modified since last commit, regenerating TypeScript bindings…${RESET}"
-            pushd src-tauri; cargo test export_bindings; popd
+            pushd crates/memospot; cargo test export_bindings; popd
             exit 0
         fi
     done
@@ -370,7 +370,6 @@ clean:
     cargo cache -a || true
     dirs=(
         "./.dprint"
-        "./.task"
         "./build"
         "./build-scripts/node_modules"
         "./node_modules"
@@ -463,14 +462,14 @@ repo-status:
     exit 1
 
 [group('maintainer')]
-[doc('Bump version in Cargo.toml and src-tauri/Cargo.toml')]
+[doc('Bump version in Cargo.toml and crates/memospot/Cargo.toml')]
 bumpversion VERSION:
     #!{{bash}}
     clean="{{trim_start_match(VERSION, "v")}}"
     cargo set-version --locked "$clean"
     cargo generate-lockfile
     just fmt
-    git add ./src-tauri/Cargo.toml ./src-tauri/Tauri.toml ./Cargo.lock ./Cargo.toml
+    git add ./crates/memospot/Cargo.toml ./crates/memospot/Tauri.toml ./Cargo.lock ./Cargo.toml
     git commit -m "chore: bump version to v$clean"
 
 [group('maintainer')]
