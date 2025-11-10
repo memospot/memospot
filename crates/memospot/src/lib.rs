@@ -3,7 +3,6 @@ mod i18n;
 mod init;
 mod memos;
 mod menu;
-mod process;
 mod runtime_config;
 mod sqlite;
 mod updater;

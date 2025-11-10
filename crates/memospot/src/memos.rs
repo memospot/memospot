@@ -1,5 +1,5 @@
 use crate::utils::absolute_path;
-use crate::{process, sqlite, RuntimeConfig};
+use crate::{sqlite, RuntimeConfig};
 use anyhow::{anyhow, Result};
 use dialog::ExpectDialogExt;
 use homedir::HomeDirExt;
@@ -52,7 +52,7 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
     debug!("memos: environment: {env_vars:#?}");
 
     let spawn_memos = || -> Result<(), anyhow::Error> {
-        process::Command::new(&command)
+        sidecar::Command::new(&command)
             .envs(env_vars.clone())
             .current_dir(cwd.clone())
             .spawn()?;
@@ -83,7 +83,7 @@ pub fn shutdown() {
     let config = RuntimeConfig::from_global_store();
 
     debug!("memos: shutting down server…");
-    process::kill_children();
+    sidecar::kill_children();
 
     let db_file = config.paths.memos_db_file.clone();
     tauri::async_runtime::block_on(async move {

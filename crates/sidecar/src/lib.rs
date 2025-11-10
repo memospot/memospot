@@ -4,6 +4,9 @@
 //! https://github.com/tauri-apps/tauri/blob/cc3d8e77313672f25520e278bbe8fae1b275a735/core/tauri/src/api/process/command.rs
 //!
 
+mod async_runtime;
+mod tests;
+
 use anyhow::{format_err, Result};
 pub use encoding_rs::Encoding;
 use log::debug;
@@ -24,8 +27,12 @@ use std::{
     sync::{Arc, Mutex, RwLock},
     thread::spawn,
 };
-use tauri::async_runtime::{block_on as block_on_task, channel, Receiver, Sender};
+
+use async_runtime::{block_on, channel, Receiver, Sender};
 use tauri_utils::platform;
+
+#[cfg(windows)]
+const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
 
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
@@ -44,39 +51,55 @@ fn commands() -> &'static ChildStore {
 ///
 /// By default, it's called before the [`crate::App`] exits.
 pub fn kill_children() {
-    let commands = commands().lock().unwrap();
+    const TIMEOUT_MS: u128 = 1_500;
+
+    let commands = commands().lock().expect("unable to acquire lock");
     let children = commands.values();
     for child in children {
-        debug!("sidecar: terminating pid {}", child.id());
+        let pid = child.id();
+        debug!("sidecar: terminating pid {}", pid);
 
         #[cfg(unix)]
         {
-            const TIMEOUT_MS: u128 = 1_500;
             const SIGINT: i32 = 2;
             child.send_signal(SIGINT).ok();
+        }
 
-            let time_start = std::time::Instant::now();
-            let mut timed_out = false;
-            while child.try_wait().is_ok_and(|x| x.is_none()) {
-                if time_start.elapsed().as_millis() > TIMEOUT_MS {
-                    timed_out = true;
-                    break;
-                };
-                std::thread::sleep(std::time::Duration::from_millis(100));
-            }
-            if timed_out {
-                debug!(
-                    "sidecar: timed out ({} ms) waiting for pid {} to exit",
-                    TIMEOUT_MS,
-                    child.id()
-                );
-            } else {
-                debug!(
-                    "sidecar: pid {} exited gracefully in <{:?}ms",
-                    child.id(),
-                    time_start.elapsed().as_millis()
-                );
-            }
+        #[cfg(windows)]
+        {
+            use windows_sys::Win32::System::Console::{
+                GenerateConsoleCtrlEvent, CTRL_BREAK_EVENT,
+            };
+            // NOTE:
+            // - This only works if the process is in a new process group.
+            // - May be CTRL_BREAK_EVENT or CTRL_C_EVENT.
+
+            // SAFETY: This is a standard Windows console function.
+            // Any number passed in is memory safe, even if it
+            // impacts a process the user hadn't intended.
+            unsafe { GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, pid) }
+        }
+
+        let time_start = std::time::Instant::now();
+        let mut timed_out = false;
+        while child.try_wait().is_ok_and(|x| x.is_none()) {
+            if time_start.elapsed().as_millis() > TIMEOUT_MS {
+                timed_out = true;
+                break;
+            };
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+        if timed_out {
+            debug!(
+                "sidecar: timed out ({} ms) waiting for pid {} to exit",
+                TIMEOUT_MS, pid
+            );
+        } else {
+            debug!(
+                "sidecar: pid {} exited gracefully in <{:?}ms",
+                pid,
+                time_start.elapsed().as_millis()
+            );
         }
 
         child.kill().ok();
@@ -127,13 +150,13 @@ pub struct CommandChild {
 
 impl CommandChild {
     /// Writes to process stdin.
-    pub fn write(&mut self, buf: &[u8]) -> tauri::Result<()> {
+    pub fn write(&mut self, buf: &[u8]) -> Result<()> {
         self.stdin_writer.write_all(buf)?;
         Ok(())
     }
 
     /// Sends a kill signal to the child.
-    pub fn kill(self) -> tauri::Result<()> {
+    pub fn kill(self) -> Result<()> {
         self.inner.kill()?;
         Ok(())
     }
@@ -175,10 +198,14 @@ pub struct Output {
 
 fn relative_command_path(command: String) -> Result<String> {
     match platform::current_exe()?.parent() {
-        #[cfg(windows)]
-        Some(exe_dir) => Ok(format!("{}\\{command}.exe", exe_dir.display())),
-        #[cfg(not(windows))]
-        Some(exe_dir) => Ok(format!("{}/{command}", exe_dir.display())),
+        Some(exe_dir) => {
+            #[cfg(windows)]
+            let path = format!("{}\\{command}.exe", exe_dir.display());
+            #[cfg(not(windows))]
+            let path = format!("{}/{command}", exe_dir.display());
+
+            Ok(path)
+        }
         None => Err(format_err!("Could not evaluate executable dir")),
     }
 }
@@ -197,6 +224,8 @@ impl From<Command> for StdCommand {
         if let Some(current_dir) = cmd.current_dir {
             command.current_dir(current_dir);
         }
+        #[cfg(windows)]
+        command.creation_flags(CREATE_NEW_PROCESS_GROUP);
         #[cfg(windows)]
         command.creation_flags(CREATE_NO_WINDOW);
         command
@@ -290,7 +319,7 @@ impl Command {
     ///   }
     /// });
     /// ```
-    pub fn spawn(self) -> tauri::Result<(Receiver<CommandEvent>, CommandChild)> {
+    pub fn spawn(self) -> Result<(Receiver<CommandEvent>, CommandChild)> {
         let encoding = self.encoding;
         let mut command: StdCommand = self.into();
         let (stdout_reader, stdout_writer) = pipe()?;
@@ -305,7 +334,10 @@ impl Command {
         let child_ = child.clone();
         let guard = Arc::new(RwLock::new(()));
 
-        commands().lock().unwrap().insert(child.id(), child.clone());
+        commands()
+            .lock()
+            .expect("unable to acquire lock")
+            .insert(child.id(), child.clone());
 
         let (tx, rx) = channel(1);
 
@@ -329,7 +361,7 @@ impl Command {
                 Ok(status) => {
                     let _l = guard.write().unwrap();
                     commands().lock().unwrap().remove(&child_.id());
-                    block_on_task(async move {
+                    block_on(async move {
                         tx.send(CommandEvent::Terminated(TerminatedPayload {
                             code: status.code(),
                             #[cfg(windows)]
@@ -342,9 +374,7 @@ impl Command {
                 }
                 Err(e) => {
                     let _l = guard.write().unwrap();
-                    block_on_task(
-                        async move { tx.send(CommandEvent::Error(e.to_string())).await },
-                    )
+                    block_on(async move { tx.send(CommandEvent::Error(e.to_string())).await })
                 }
             };
         });
@@ -367,9 +397,9 @@ impl Command {
     /// let status = Command::new("which").args(["ls"]).status().unwrap();
     /// println!("`which` finished with status: {:?}", status.code());
     /// ```
-    pub fn status(self) -> tauri::Result<ExitStatus> {
+    pub fn status(self) -> Result<ExitStatus> {
         let (mut rx, _child) = self.spawn()?;
-        let code = block_on_task(async move {
+        let code = block_on(async move {
             let mut code = None;
             #[allow(clippy::collapsible_match)]
             while let Some(event) = rx.recv().await {
@@ -393,10 +423,10 @@ impl Command {
     /// assert!(output.status.success());
     /// assert_eq!(output.stdout, "TAURI");
     /// ```
-    pub fn output(self) -> tauri::Result<Output> {
+    pub fn output(self) -> Result<Output> {
         let (mut rx, _child) = self.spawn()?;
 
-        let output = block_on_task(async move {
+        let output = block_on(async move {
             let mut code = None;
             let mut stdout = String::new();
             let mut stderr = String::new();
@@ -451,7 +481,7 @@ fn spawn_pipe_reader<F: Fn(String) -> CommandEvent + Send + Copy + 'static>(
                         Some(encoding) => Ok(encoding.decode_with_bom_removal(&buf).0.into()),
                         None => String::from_utf8(buf.clone()),
                     };
-                    block_on_task(async move {
+                    block_on(async move {
                         let _ = match line {
                             Ok(line) => tx_.send(wrapper(line)).await,
                             Err(e) => tx_.send(CommandEvent::Error(e.to_string())).await,
@@ -460,68 +490,13 @@ fn spawn_pipe_reader<F: Fn(String) -> CommandEvent + Send + Copy + 'static>(
                 }
                 Err(e) => {
                     let tx_ = tx.clone();
-                    let _ = block_on_task(async move {
-                        tx_.send(CommandEvent::Error(e.to_string())).await
-                    });
+                    let _ =
+                        block_on(
+                            async move { tx_.send(CommandEvent::Error(e.to_string())).await },
+                        );
                     break;
                 }
             }
         }
     });
-}
-
-// tests for the commands functions.
-#[cfg(test)]
-mod test {
-    #[cfg(not(windows))]
-    use super::*;
-
-    #[cfg(not(windows))]
-    #[test]
-    fn test_cmd_output() {
-        // create a command to run cat.
-        let cmd = Command::new("cat").args(["src/main.rs"]);
-        let (mut rx, _) = cmd.spawn().unwrap();
-
-        block_on_task(async move {
-            let mut matched = false;
-            while let Some(event) = rx.recv().await {
-                match event {
-                    CommandEvent::Terminated(payload) => {
-                        assert_eq!(payload.code, Some(0));
-                    }
-                    CommandEvent::Stdout(line) => {
-                        if !matched && line.contains(r#"#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]"#) {
-                            matched = true;
-                            break;
-                        }
-                    }
-                    _ => {}
-                }
-            }
-            assert!(matched);
-        });
-    }
-
-    #[cfg(not(windows))]
-    #[test]
-    // test the failure case
-    fn test_cmd_fail() {
-        let cmd = Command::new("cat").args(["src"]);
-        let (mut rx, _) = cmd.spawn().unwrap();
-
-        block_on_task(async move {
-            while let Some(event) = rx.recv().await {
-                match event {
-                    CommandEvent::Terminated(payload) => {
-                        assert_eq!(payload.code, Some(1));
-                    }
-                    CommandEvent::Stderr(line) => {
-                        assert!(line.contains("cat: src:"));
-                    }
-                    _ => {}
-                }
-            }
-        });
-    }
 }
