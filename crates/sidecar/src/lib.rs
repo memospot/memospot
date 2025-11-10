@@ -3,22 +3,19 @@
 //! Port of Tauri v1.8's `api::process::command`.
 //! https://github.com/tauri-apps/tauri/blob/cc3d8e77313672f25520e278bbe8fae1b275a735/core/tauri/src/api/process/command.rs
 //!
+//! Modified to send CTRL+BREAK to the console process group on Windows and to send SIGINT on UNIX systems.
+//!
 
 mod async_runtime;
 mod tests;
 
 use anyhow::{format_err, Result};
-pub use encoding_rs::Encoding;
+use async_runtime::{block_on, channel, Receiver, Sender};
+use encoding_rs::Encoding;
 use log::debug;
 use os_pipe::{pipe, PipeReader, PipeWriter};
 use serde::Serialize;
-#[cfg(unix)]
-use shared_child::unix::SharedChildExt;
 use shared_child::SharedChild;
-#[cfg(unix)]
-use std::os::unix::process::ExitStatusExt;
-#[cfg(windows)]
-use std::os::windows::process::CommandExt;
 use std::{
     collections::HashMap,
     io::{BufReader, Write},
@@ -27,15 +24,18 @@ use std::{
     sync::{Arc, Mutex, RwLock},
     thread::spawn,
 };
-
-use async_runtime::{block_on, channel, Receiver, Sender};
 use tauri_utils::platform;
 
-#[cfg(windows)]
-const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
+#[cfg(unix)]
+use shared_child::unix::SharedChildExt;
+#[cfg(unix)]
+use std::os::unix::process::ExitStatusExt;
 
 #[cfg(windows)]
-const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+mod windows;
+
+#[cfg(windows)]
+use crate::windows::CommandCreationFlagsExt;
 
 type ChildStore = Arc<Mutex<HashMap<u32, Arc<SharedChild>>>>;
 
@@ -48,6 +48,7 @@ fn commands() -> &'static ChildStore {
 /// Kills all child processes created with [`Command`].
 ///
 /// Tries to send a SIGINT on UNIX systems.
+/// On Windows, attempts to send CTRL+BREAK to the console process group.
 ///
 /// By default, it's called before the [`crate::App`] exits.
 pub fn kill_children() {
@@ -66,19 +67,7 @@ pub fn kill_children() {
         }
 
         #[cfg(windows)]
-        {
-            use windows_sys::Win32::System::Console::{
-                GenerateConsoleCtrlEvent, CTRL_BREAK_EVENT,
-            };
-            // NOTE:
-            // - This only works if the process is in a new process group.
-            // - May be CTRL_BREAK_EVENT or CTRL_C_EVENT.
-
-            // SAFETY: This is a standard Windows console function.
-            // Any number passed in is memory safe, even if it
-            // impacts a process the user hadn't intended.
-            unsafe { GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, pid) }
-        }
+        windows::send_ctrl_break(pid);
 
         let time_start = std::time::Instant::now();
         let mut timed_out = false;
@@ -225,9 +214,7 @@ impl From<Command> for StdCommand {
             command.current_dir(current_dir);
         }
         #[cfg(windows)]
-        command.creation_flags(CREATE_NEW_PROCESS_GROUP);
-        #[cfg(windows)]
-        command.creation_flags(CREATE_NO_WINDOW);
+        command.apply_creation_flags();
         command
     }
 }
@@ -299,8 +286,8 @@ impl Command {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use crate::memospot_lib::process::{Command, CommandEvent};
-    /// tauri::async_runtime::spawn(async move {
+    /// use sidecar::{Command, CommandEvent};
+    /// tokio::spawn(async move {
     ///   let (mut rx, mut child) = Command::new("cargo")
     ///     .args(["tauri", "dev"])
     ///     .spawn()
@@ -334,10 +321,13 @@ impl Command {
         let child_ = child.clone();
         let guard = Arc::new(RwLock::new(()));
 
+        let pid = child.id();
+        debug!("sidecar: spawned child process with pid: {} ", pid);
+
         commands()
             .lock()
             .expect("unable to acquire lock")
-            .insert(child.id(), child.clone());
+            .insert(pid, child.clone());
 
         let (tx, rx) = channel(1);
 
@@ -393,7 +383,7 @@ impl Command {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// use crate::memospot_lib::process::Command;
+    /// use sidecar::Command;
     /// let status = Command::new("which").args(["ls"]).status().unwrap();
     /// println!("`which` finished with status: {:?}", status.code());
     /// ```
@@ -418,7 +408,7 @@ impl Command {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use crate::memospot_lib::process::{Command, CommandEvent};
+    /// use sidecar::{Command, CommandEvent};
     /// let output = Command::new("echo").args(["TAURI"]).output().unwrap();
     /// assert!(output.status.success());
     /// assert_eq!(output.stdout, "TAURI");
