@@ -28,7 +28,7 @@ jobs:
 
       - name: "Install cargo-audit"
         uses: taiki-e/install-action@81ee1d48d9194cdcab880cbdc7d36e87d39874cb
-        with: { tool: "cargo-audit@0.21.1" }
+        with: { tool: "cargo-audit@0.22.0" }
 
       - name: Rust audit
         uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998

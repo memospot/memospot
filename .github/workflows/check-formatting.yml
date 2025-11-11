@@ -4,19 +4,17 @@ on:
   merge_group:
   pull_request:
     paths-ignore:
-      - "**/.idea/*"
       - "**/gen/schemas/*.json"
       - "**/*.{icns,ico,png,svg,webp}"
       - "**/*.{dll,nsi,nsh,wxs,xml}"
-      - "**/*.{lock,lock}"
+      - "**/*.lock"
       - "**/justfile"
   push:
     paths-ignore:
-      - "**/.idea/*"
       - "**/gen/schemas/*.json"
       - "**/*.{icns,ico,png,svg,webp}"
       - "**/*.{dll,nsi,nsh,wxs,xml}"
-      - "**/*.{lock,lock}"
+      - "**/*.lock"
       - "**/justfile"
   workflow_dispatch:
 

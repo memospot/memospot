@@ -237,10 +237,10 @@ cargo binstall \
     --target=$(rustc -vV | sed -n 's|host: ||p') \
     cargo-cache@0.8.3 \
     cargo-edit@0.13.7 \
-    cargo-xwin@0.18.4 \
+    cargo-xwin@0.20.2 \
     dprint@0.50.2 \
     just@1.43.0 \
-    tauri-cli@2.9.1 \
+    tauri-cli@2.9.4 \
     -y
 ```
 
@@ -261,7 +261,7 @@ cargo binstall `
     cargo-edit@0.13.7 `
     dprint@0.50.2 `
     just@1.43.0 `
-    tauri-cli@2.9.1 `
+    tauri-cli@2.9.4 `
     -y
 ```
 
