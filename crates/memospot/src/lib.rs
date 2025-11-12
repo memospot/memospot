@@ -251,6 +251,14 @@ pub fn run() {
                                 main_window.persist_window_state();
                             }
                         }
+                        tauri::WindowEvent::CloseRequested { .. } => {
+                            const WEBVIEW_WINDOWS: [&str; 2] = ["main", "settings"];
+                            for w in WEBVIEW_WINDOWS {
+                                if let Some(window) = app_handle.get_webview_window(w) {
+                                    window.close().ok();
+                                }
+                            }
+                        }
                         _ => {}
                     }
                 }

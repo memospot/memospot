@@ -31,21 +31,29 @@ mod test {
 
         block_on(async move {
             let mut matched = false;
+            let mut terminated = false;
             while let Some(event) = rx.recv().await {
                 match event {
                     CommandEvent::Terminated(payload) => {
                         assert_eq!(payload.code, Some(0));
+                        terminated = true;
+                        if matched {
+                            break;
+                        }
                     }
                     CommandEvent::Stdout(line) => {
                         if !matched && line.contains(r#"package"#) {
                             matched = true;
-                            break;
+                            if terminated {
+                                break;
+                            }
                         }
                     }
                     _ => {}
                 }
             }
-            assert!(matched);
+            assert!(matched, "expected stdout containing 'package'");
+            assert!(terminated, "expected Terminated event");
         });
     }
 
