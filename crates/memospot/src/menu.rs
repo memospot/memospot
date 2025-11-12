@@ -233,13 +233,13 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
 
     let webview = handle
         .get_webview_window("main")
-        .expect("menu: failed to get webview window");
+        .expect("failed to get webview window");
     let open_link = |url| {
         handle.opener().open_url(url, None::<&str>).ok();
     };
 
     let Some(action) = MainMenu::from_repr(event_id) else {
-        error!("menu: received bad event id");
+        error!("received bad event id");
         return;
     };
     match action {
@@ -304,7 +304,7 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
                             .open_url(update.download_url.as_str(), None::<&str>)
                             .ok();
                     } else {
-                        warn!("updater: user declined update download.");
+                        warn!("user declined update download.");
                     }
                 } else {
                     info_dialog(fl!("dialog-update-no-update"));
@@ -363,7 +363,7 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
             open_link(url.as_str());
         }
         _ => {
-            error!("menu: unhandled event: {}", event.id().0)
+            error!("unhandled event: {}", event.id().0)
         }
     }
 }
@@ -386,7 +386,7 @@ pub fn update_with_memos_version<R: Runtime>(handle: &AppHandle<R>) {
             interval.tick().await;
             if time_start.elapsed().as_millis() > TIMEOUT_MS {
                 debug!(
-                    "menu: unable to set Memos version in Help menu. Timed out after {TIMEOUT_MS}ms."
+                    "unable to set Memos version in Help menu. Timed out after {TIMEOUT_MS}ms."
                 );
                 break;
             }
@@ -396,7 +396,7 @@ pub fn update_with_memos_version<R: Runtime>(handle: &AppHandle<R>) {
         }
 
         let Some(main_window) = handle_.get_webview_window("main") else {
-            error!("menu: unable to set Memos version in Help menu. Main window not found.");
+            error!("unable to set Memos version in Help menu. Main window not found.");
             return;
         };
         let Some(menu) = main_window.menu() else {

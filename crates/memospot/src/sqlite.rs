@@ -53,10 +53,10 @@ pub async fn wait_checkpoint(db_file: &Path) {
     const INTERVAL_MS: u64 = 100;
     const TIMEOUT_MS: u128 = 15_000;
 
-    debug!("database: checkpointing WAL…");
+    debug!("checkpointing WAL…");
     let wal = &db_file.with_extension("db-wal");
     if !wal.exists() {
-        debug!("database: checkpoint is not needed");
+        debug!("checkpoint is not needed");
         return;
     }
 
@@ -65,7 +65,7 @@ pub async fn wait_checkpoint(db_file: &Path) {
     let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(INTERVAL_MS));
     while wal.exists() {
         if time_start.elapsed().as_millis() > TIMEOUT_MS {
-            last_error = anyhow!("database: operation timed out").into();
+            last_error = anyhow!("operation timed out").into();
             break;
         }
         interval.tick().await;
@@ -76,11 +76,11 @@ pub async fn wait_checkpoint(db_file: &Path) {
 
     match last_error {
         Some(e) => {
-            warn!("database: failed to checkpoint WAL: {e}. Giving up after {TIMEOUT_MS} ms.");
+            warn!("failed to checkpoint WAL: {e}. Giving up after {TIMEOUT_MS} ms.");
         }
         None => {
             debug!(
-                "database: checkpoint took <{} ms. Database closed.",
+                "checkpoint took <{} ms. Database closed.",
                 time_start.elapsed().as_millis()
             );
         }

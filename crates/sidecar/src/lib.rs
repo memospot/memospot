@@ -10,7 +10,8 @@ mod async_runtime;
 mod tests;
 
 use anyhow::{format_err, Result};
-use async_runtime::{block_on, channel, Receiver, Sender};
+use async_runtime::{block_on, channel};
+pub use async_runtime::{Receiver, Sender};
 use encoding_rs::Encoding;
 use log::debug;
 use os_pipe::{pipe, PipeReader, PipeWriter};

@@ -2,6 +2,7 @@ mod cmd;
 mod i18n;
 mod init;
 mod memos;
+mod memos_log;
 mod menu;
 mod runtime_config;
 mod sqlite;

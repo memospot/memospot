@@ -438,16 +438,30 @@ static LOGGING_CONFIG_YAML: &str = r#"
 appenders:
     file:
         encoder:
-            pattern: "{d(%Y-%m-%d %H:%M:%S)} - {h({l})}: {m}{n}"
+            pattern: "{d(%Y-%m-%d %H:%M:%S)} {h({l})} {module}: {m}{n}"
         path: $ENV{MEMOSPOT_DATA}/memospot.log
         kind: rolling_file
         policy:
             trigger:
                 kind: size
-                limit: 10 mb
+                limit: 5 mb
             roller:
                 kind: fixed_window
                 pattern: $ENV{MEMOSPOT_DATA}/memospot.log.{}.gz
+                count: 5
+                base: 1
+    memos:
+        path: $ENV{MEMOSPOT_DATA}/memos.log
+        encoder:
+            pattern: "{message}"
+        kind: rolling_file
+        policy:
+            trigger:
+                kind: size
+                limit: 5 mb
+            roller:
+                kind: fixed_window
+                pattern: $ENV{MEMOSPOT_DATA}/memos.log.{}.gz
                 count: 5
                 base: 1
 root:
@@ -455,6 +469,13 @@ root:
     level: info
     appenders:
         - file
+loggers:
+    memospot_lib::memos_log:
+        # info | warn | error | off
+        level: info
+        additive: false
+        appenders:
+            - memos
 "#;
 
 /// Setup logging if it's enabled.

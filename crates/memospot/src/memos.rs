@@ -1,3 +1,4 @@
+use crate::memos_log;
 use crate::utils::absolute_path;
 use crate::{sqlite, RuntimeConfig};
 use anyhow::{anyhow, Result};
@@ -41,6 +42,12 @@ impl VersionStore {
     }
 }
 
+type MemosLaunchRetries = Arc<Mutex<i32>>;
+fn memos_launch_retries() -> &'static MemosLaunchRetries {
+    static LAUNCH_RETRIES: LazyLock<MemosLaunchRetries> = LazyLock::new(Default::default);
+    &LAUNCH_RETRIES
+}
+
 /// Spawn Memos server.
 ///
 /// Spawns a managed child process with custom environment variables.
@@ -48,31 +55,48 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
     let env_vars: HashMap<String, String> = prepare_env(rtcfg);
     let command = rtcfg.paths.memos_bin.to_string_lossy().to_string();
     let cwd = get_cwd(rtcfg);
-    debug!("memos: working directory: {}", cwd.to_string_lossy());
-    debug!("memos: environment: {env_vars:#?}");
+    debug!("working directory: {}", cwd.to_string_lossy());
+    debug!("environment: {env_vars:#?}");
 
-    let spawn_memos = || -> Result<(), anyhow::Error> {
-        sidecar::Command::new(&command)
-            .envs(env_vars.clone())
-            .current_dir(cwd.clone())
-            .spawn()?;
-        Ok(())
-    };
-    if let Err(e) = spawn_memos() {
-        warn!("memos: failed to spawn server: {e}.");
+    let res = sidecar::Command::new(&command)
+        .envs(env_vars.clone())
+        .current_dir(cwd.clone())
+        .spawn();
 
-        #[cfg(unix)]
-        {
-            warn!("memos: attempting to add executable permissions to the binary…");
-            let mut perms = fs::metadata(&command)?.permissions();
-            perms.set_mode(0o755);
-            fs::set_permissions(&command, perms)?;
+    match res {
+        Err(e) => {
+            warn!("failed to spawn server: {e}.");
 
-            spawn_memos()?;
-            warn!("memos: permissions added successfully");
+            #[cfg(unix)]
+            {
+                warn!("attempting to add executable permissions to the binary…");
+                let mut perms = fs::metadata(&command)?.permissions();
+                perms.set_mode(0o755);
+                fs::set_permissions(&command, perms)?;
+
+                warn!("permissions added successfully. Attempting to relaunch.");
+
+                let mut attempts = memos_launch_retries()
+                    .lock()
+                    .expect_dialog("unable to acquire lock");
+
+                if *attempts >= 1 {
+                    warn!("exceeded launch retries limit ({attempts}/1). Giving up.");
+                    return Err(e);
+                }
+                *attempts += 1;
+
+                return spawn(rtcfg);
+            }
+            #[cfg(not(unix))]
+            return Err(e);
         }
-        #[cfg(not(unix))]
-        return Err(e);
+        Ok(receiver) => {
+            let (rx, _) = receiver;
+            tauri::async_runtime::spawn(async move {
+                memos_log::log_events(rx).await;
+            });
+        }
     }
 
     Ok(())
@@ -82,7 +106,7 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
 pub fn shutdown() {
     let config = RuntimeConfig::from_global_store();
 
-    debug!("memos: shutting down server…");
+    debug!("shutting down server…");
     sidecar::kill_children();
 
     let db_file = config.paths.memos_db_file.clone();
@@ -90,7 +114,7 @@ pub fn shutdown() {
         sqlite::wait_checkpoint(&db_file).await;
     });
 
-    debug!("memos: server shutdown");
+    debug!("server shutdown");
 }
 
 /// Decide which working directory use for Memos server.
@@ -141,7 +165,7 @@ pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
         rtcfg.paths.memospot_cwd.clone(),
     ]);
 
-    debug!("memos: looking for `dist` folder at {search_paths:#?}");
+    debug!("looking for `dist` folder at {search_paths:#?}");
     for path in search_paths {
         if path.as_os_str().is_empty() {
             continue;
@@ -209,7 +233,7 @@ pub async fn query_version(memos_url: &str) -> Result<String, anyhow::Error> {
     let url = match reqwest::Url::parse(&endpoint) {
         Ok(url) => url,
         Err(e) => {
-            return Err(anyhow!("memos: failed to parse server URL: {}", e));
+            return Err(anyhow!("failed to parse server URL: {}", e));
         }
     };
     let client = reqwest::Client::new();
@@ -224,7 +248,7 @@ pub async fn query_version(memos_url: &str) -> Result<String, anyhow::Error> {
         Ok(response) => {
             if !response.status().is_success() {
                 return Err(anyhow!(
-                    "memos: server responded with status code {}",
+                    "server responded with status code {}",
                     response.status()
                 ));
             }
@@ -270,12 +294,12 @@ pub async fn wait_api_ready(memos_url: &str) {
 
     if version.is_empty() {
         warn!(
-            "memos: failed to query server version via API: {last_error}. Giving up after {TIMEOUT_MS} ms."
+            "failed to query server version via API: {last_error}. Giving up after {TIMEOUT_MS} ms."
         );
         return;
     }
     info!(
-        "memos: API ready in <{} ms. Version: {}.",
+        "API ready in <{} ms. Version: {}.",
         time_start.elapsed().as_millis(),
         version
     );

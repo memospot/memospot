@@ -86,9 +86,9 @@ pub fn reload(preferred_locale: &str) {
         .find(|l| l.language.as_str() == preferred_locale)
     {
         if let Err(error) = localizer.select(slice::from_ref(locale)) {
-            error!("i18n: failed to load locale: {error}");
+            error!("failed to load locale: {error}");
             return;
         }
-        debug!("i18n: locale overridden to {preferred_locale}");
+        debug!("locale overridden to {preferred_locale}");
     }
 }
