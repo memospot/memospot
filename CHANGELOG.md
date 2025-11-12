@@ -37,6 +37,7 @@ Security: in case of vulnerabilities.
 - (Linux/macOS) Gracefully shut down Memos via SIGINT - ([b77000e](https://github.com/memospot/memospot/commit/b77000ee4f8ed6142a641960f322ba0b542dd544)).
 - (Windows) Gracefully shut down Memos via CTRL+BREAK - ([938be92](https://github.com/memospot/memospot/commit/938be92f6ca0e8cc744c2b95d408dc0bbd8c88c9)).
 - Improved logging. If enabled, Memos server output will be logged to `memos.log`. Delete any existing `logging_config.yaml` to get the new logger configuration.
+- Support for Memos v0.26.0+ API.
 
 ## [1.0.0] - 2025-02-21
 

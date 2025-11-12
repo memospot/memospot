@@ -226,44 +226,57 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
 
 /// Query Memos version via API.
 ///
-/// Working with Memos v0.23.0+.
+/// Supports:
+///     - v0.23.0+ (/api/v1/workspace)
+///     - v0.26.0+ (/api/v1/instance)
+///
+/// TODO: invert the endpoint priority when Memos v0.26.0 is out.
 pub async fn query_version(memos_url: &str) -> Result<String, anyhow::Error> {
     const TIMEOUT_MS: u64 = 1_000;
-    let endpoint = format!("{memos_url}api/v1/workspace/profile");
-    let url = match reqwest::Url::parse(&endpoint) {
-        Ok(url) => url,
-        Err(e) => {
-            return Err(anyhow!("failed to parse server URL: {}", e));
-        }
-    };
-    let client = reqwest::Client::new();
-    let request = client
-        .get(url)
-        .header("User-Agent", "Memospot")
-        .timeout(std::time::Duration::from_millis(TIMEOUT_MS))
-        .send()
-        .await;
+    const ENDPOINTS: [&str; 2] = ["api/v1/workspace/profile", "api/v1/instance/profile"];
 
-    match request {
-        Ok(response) => {
-            if !response.status().is_success() {
-                return Err(anyhow!(
-                    "server responded with status code {}",
-                    response.status()
-                ));
+    let mut last_error = anyhow!("failed to query server version via API");
+
+    for endpoint in ENDPOINTS {
+        let endpoint = format!("{memos_url}{endpoint}");
+        let url = match reqwest::Url::parse(&endpoint) {
+            Ok(url) => url,
+            Err(e) => {
+                return Err(anyhow!("failed to parse server URL: {}", e));
             }
-            let json = response
-                .json::<serde_json::Value>()
-                .await
-                .unwrap_or_default();
-            let version = json
-                .get("version")
-                .and_then(|v| v.as_str())
-                .unwrap_or_default();
-            Ok(version.to_string())
+        };
+        let client = reqwest::Client::new();
+        let request = client
+            .get(url)
+            .header("User-Agent", "Memospot")
+            .timeout(std::time::Duration::from_millis(TIMEOUT_MS))
+            .send()
+            .await;
+
+        match request {
+            Ok(response) => {
+                if !response.status().is_success() {
+                    last_error =
+                        anyhow!("server responded with status code {}", response.status());
+                    continue;
+                }
+                let json = response
+                    .json::<serde_json::Value>()
+                    .await
+                    .unwrap_or_default();
+                let version = json
+                    .get("version")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or_default();
+                return Ok(version.to_string());
+            }
+            Err(e) => {
+                last_error = e.into();
+                continue;
+            }
         }
-        Err(e) => Err(e.into()),
     }
+    Err(last_error)
 }
 
 /// Poll Memos server until the API responds.
