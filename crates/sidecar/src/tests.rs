@@ -57,17 +57,23 @@ mod test {
         let (mut rx, _) = cmd.spawn().unwrap();
 
         block_on(async move {
+            let mut terminated = false;
+            let mut stderr_received = false;
             while let Some(event) = rx.recv().await {
                 match event {
                     CommandEvent::Terminated(payload) => {
                         assert_eq!(payload.code, Some(1));
+                        terminated = true;
                     }
                     CommandEvent::Stderr(line) => {
                         assert!(line.contains("cat: __non_existent_file__:"));
+                        stderr_received = true;
                     }
                     _ => {}
                 }
             }
+            assert!(terminated, "expected Terminated event");
+            assert!(stderr_received, "expected Stderr event");
         });
     }
 
