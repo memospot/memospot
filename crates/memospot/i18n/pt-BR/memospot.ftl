@@ -3,10 +3,11 @@
 
 # Menu items
 appmenu = &Aplicação
-appmenu-quit = &Sair
 appmenu-browse-data-directory = &Explorar diretório de dados…
-appmenu-settings = &Configurações
 appmenu-check-for-updates = &Verificar atualizações…
+appmenu-open-in-browser = Abrir no &navegador…
+appmenu-quit = &Sair
+appmenu-settings = &Configurações
 
 viewmenu = &Exibição
 viewmenu-developer-tools = &Ferramentas do desenvolvedor…

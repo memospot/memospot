@@ -3,10 +3,11 @@
 
 # Menu items
 appmenu = &Application
-appmenu-quit = &Quit
 appmenu-browse-data-directory = &Browse data directory…
-appmenu-settings = &Settings
 appmenu-check-for-updates = &Check for updates…
+appmenu-open-in-browser = &Open in browser…
+appmenu-quit = &Quit
+appmenu-settings = &Settings
 
 viewmenu = &View
 viewmenu-developer-tools = &Developer Tools

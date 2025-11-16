@@ -38,6 +38,7 @@ Security: in case of vulnerabilities.
 - (Windows) Gracefully shut down Memos via CTRL+BREAK - ([938be92](https://github.com/memospot/memospot/commit/938be92f6ca0e8cc744c2b95d408dc0bbd8c88c9)).
 - Improved logging. If enabled, Memos server output will be logged to `memos.log`. Delete any existing `logging_config.yaml` to get the new logger configuration.
 - Support for Memos v0.26.0+ API.
+- "Open in browser" (CmdOrCtrl+B) menu item. It can be used to circumvent any issues with the WebView.
 
 ## [1.0.0] - 2025-02-21
 

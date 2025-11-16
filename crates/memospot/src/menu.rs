@@ -23,14 +23,16 @@ use url::Url;
 enum MainMenu {
     #[strum(serialize = "appmenu")]
     App,
-    #[strum(serialize = "appmenu-settings")]
-    AppSettings,
     #[strum(serialize = "appmenu-browse-data-directory")]
     AppBrowseDataDirectory,
-    #[strum(serialize = "appmenu-check-for-updates")]
-    AppUpdate,
+    #[strum(serialize = "appmenu-settings")]
+    AppSettings,
+    #[strum(serialize = "appmenu-open-in-browser")]
+    AppOpenInBrowser,
     #[strum(serialize = "appmenu-quit")]
     AppQuit,
+    #[strum(serialize = "appmenu-check-for-updates")]
+    AppUpdate,
     #[strum(serialize = "viewmenu")]
     View,
     #[strum(serialize = "viewmenu-developer-tools")]
@@ -45,20 +47,20 @@ enum MainMenu {
     Window,
     #[strum(serialize = "helpmenu")]
     Help,
-    #[strum(serialize = "helpmenu-memospot-version")]
-    HelpMemospotVersion,
     #[strum(serialize = "helpmenu-documentation")]
     HelpMemospotDocumentation,
     #[strum(serialize = "helpmenu-release-notes")]
     HelpMemospotReleaseNotes,
     #[strum(serialize = "helpmenu-report-issue")]
     HelpMemospotReportIssue,
-    #[strum(serialize = "helpmenu-memos-version")]
-    HelpMemosVersion,
+    #[strum(serialize = "helpmenu-memospot-version")]
+    HelpMemospotVersion,
     #[strum(serialize = "helpmenu-documentation")]
     HelpMemosDocumentation,
     #[strum(serialize = "helpmenu-release-notes")]
     HelpMemosReleaseNotes,
+    #[strum(serialize = "helpmenu-memos-version")]
+    HelpMemosVersion,
 }
 impl MainMenu {
     /// Get the MenuId for the item.
@@ -85,19 +87,28 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
         return build_empty(handle);
     }
 
-    let settings = MenuItemBuilder::new(MainMenu::AppSettings.text())
-        .id(MainMenu::AppSettings.id())
-        .accelerator("CmdOrCtrl+,")
-        .build(handle)?;
+    let settings =
+        MenuItemBuilder::with_id(MainMenu::AppSettings.id(), MainMenu::AppSettings.text())
+            .accelerator("CmdOrCtrl+,")
+            .build(handle)?;
 
-    let browse_data_directory = MenuItemBuilder::new(MainMenu::AppBrowseDataDirectory.text())
-        .id(MainMenu::AppBrowseDataDirectory.id())
-        .accelerator("CmdOrCtrl+D")
-        .build(handle)?;
+    let browse_data_directory = MenuItemBuilder::with_id(
+        MainMenu::AppBrowseDataDirectory.id(),
+        MainMenu::AppBrowseDataDirectory.text(),
+    )
+    .accelerator("CmdOrCtrl+D")
+    .build(handle)?;
 
     let check_for_updates =
         MenuItemBuilder::with_id(MainMenu::AppUpdate.id(), MainMenu::AppUpdate.text())
             .build(handle)?;
+
+    let open_in_browser = MenuItemBuilder::with_id(
+        MainMenu::AppOpenInBrowser.id(),
+        MainMenu::AppOpenInBrowser.text(),
+    )
+    .accelerator("CmdOrCtrl+B")
+    .build(handle)?;
 
     let quit = MenuItemBuilder::with_id(MainMenu::AppQuit.id(), MainMenu::AppQuit.text())
         .accelerator("CmdOrCtrl+W")
@@ -113,6 +124,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
         .item(&settings)
         .item(&browse_data_directory)
         .item(&check_for_updates)
+        .item(&open_in_browser)
         .separator()
         .services()
         .separator()
@@ -129,6 +141,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
             &settings,
             &browse_data_directory,
             &check_for_updates,
+            &open_in_browser,
             &PredefinedMenuItem::separator(handle)?,
             &quit,
         ])
@@ -243,19 +256,6 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
         return;
     };
     match action {
-        MainMenu::AppQuit => {
-            handle.exit(0);
-        }
-        MainMenu::AppBrowseDataDirectory => {
-            let config = RuntimeConfig::from_global_store();
-            handle
-                .opener()
-                .open_url(
-                    config.paths.memospot_data.to_string_lossy().to_string(),
-                    None::<&str>,
-                )
-                .ok();
-        }
         MainMenu::AppSettings => {
             let handle_ = handle.clone();
             tauri::async_runtime::spawn(async move {
@@ -282,6 +282,23 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
                     .build()
                     .ok();
             });
+        }
+        MainMenu::AppBrowseDataDirectory => {
+            let config = RuntimeConfig::from_global_store();
+            handle
+                .opener()
+                .open_url(
+                    config.paths.memospot_data.to_string_lossy().to_string(),
+                    None::<&str>,
+                )
+                .ok();
+        }
+        MainMenu::AppOpenInBrowser => {
+            let config = RuntimeConfig::from_global_store();
+            handle
+                .opener()
+                .open_url(config.memos_url, None::<&str>)
+                .ok();
         }
         MainMenu::AppUpdate => {
             let handle_ = handle.clone();
@@ -311,6 +328,10 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
                 }
             });
         }
+        MainMenu::AppQuit => {
+            handle.exit(0);
+        }
+
         #[cfg(any(debug_assertions, feature = "devtools"))]
         MainMenu::ViewDevTools => {
             webview.open_devtools();
