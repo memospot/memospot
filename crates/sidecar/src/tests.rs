@@ -4,6 +4,7 @@ mod test {
     use crate::*;
     use std::env::current_dir;
 
+    #[cfg(not(windows))]
     fn detect_workspace_root() -> Option<PathBuf> {
         const MAX_DEPTH: usize = 5;
         let mut current_dir = current_dir().ok()?;
