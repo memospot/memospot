@@ -13,7 +13,7 @@ describe("UPX Pack", async () => {
                 supportedPlatforms: [],
                 ignoreErrors: false
             } as UpxOptions,
-            /`UPX pack` is not supported on/i
+            /`UPX pack` is not supported or is disabled on/i
         ],
         [
             // non-existing file
