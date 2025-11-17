@@ -66,7 +66,10 @@ opt-level = "s"
 #
 # - symbols(true): same as debuginfo, but the rest of the symbol table section is
 # stripped as well if the linker supports it.
-strip = true
+# strip = true
+#
+# https://github.com/tauri-apps/tauri/issues/14186
+strip = "debuginfo" # Remove debug info but keep symbols needed for bundler.
 
 [profile.dev.build-override]
 incremental = true
