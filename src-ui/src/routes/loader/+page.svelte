@@ -1,8 +1,7 @@
 <script lang="ts">
 import { isTauri } from "@tauri-apps/api/core";
-import { userPrefersMode } from "mode-watcher";
+import { mode } from "mode-watcher";
 import { onMount } from "svelte";
-import { MediaQuery } from "svelte/reactivity";
 import Update from "svelte-radix/Update.svelte";
 import { m } from "$lib/i18n";
 import { getEnv, getMemosURL, pingMemos } from "$lib/tauri";
@@ -15,17 +14,14 @@ const CONFIG = {
     DEBUG_NO_REDIRECT: !isTauri()
 };
 
-let theme = $state("system");
-userPrefersMode.subscribe((value) => {
-    theme = value;
-});
+const logo = {
+    light: "powered_by_memos.webp",
+    dark: "powered_by_memos_dark.webp"
+};
 
-const darkTheme = new MediaQuery("prefers-color-scheme: dark");
+let logoImg = $state("light");
 $effect(() => {
-    if (theme === "system") {
-        theme = darkTheme.current ? "dark" : "light";
-    }
-    document.documentElement.setAttribute("data-theme", theme);
+    logoImg = logo[mode.current ?? "light"];
 });
 
 const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "false");
@@ -44,6 +40,10 @@ async function redirectWhenReady() {
     const debugNoRedirect =
         CONFIG.DEBUG_NO_REDIRECT ||
         ["true", "on", "1"].includes((await getEnv("MEMOSPOT_NO_REDIRECT")).toLowerCase());
+    const debugDelayRedirectSecs = Number.parseInt(
+        (await getEnv("MEMOSPOT_DELAY_REDIRECT_SECS")) ?? "0",
+        10
+    );
 
     const memosUrl = await getMemosURL().then((url) =>
         url.endsWith("/") ? url.slice(0, -1) : url
@@ -65,6 +65,12 @@ async function redirectWhenReady() {
     ) {
         if (!debugNoRedirect && (await pingMemos(memosUrl))) {
             updateMs();
+
+            if (debugDelayRedirectSecs) {
+                await new Promise((resolve) => {
+                    setTimeout(resolve, debugDelayRedirectSecs * 1000);
+                });
+            }
 
             globalThis.location.replace(memosUrl);
             return redirectDetails;
@@ -112,7 +118,7 @@ onMount(async () => {
       title={m.loaderClickToOpenMemosWebsite()}
     >
       <img
-        src="powered_by_memos{theme === 'dark' ? '_dark' : ''}.webp"
+        src={logoImg}
         class={cn(
           "!h-60 p-6 logo",
           reduceAnimation ? "logo-glow-static" : "logo-glow",

@@ -1,7 +1,7 @@
 <script lang="ts">
 import type { Selected } from "bits-ui";
 import * as jsonpatch from "fast-json-patch";
-import { resetMode as resetTheme, setMode as setTheme } from "mode-watcher";
+import { modeStorageKey, resetMode, setMode } from "mode-watcher";
 import { onMount } from "svelte";
 import LightningBolt from "svelte-radix/LightningBolt.svelte";
 import Moon from "svelte-radix/Moon.svelte";
@@ -16,7 +16,7 @@ import {
 import { Setting } from "$lib/components/ui/setting/index";
 import { Switch } from "$lib/components/ui/switch/index";
 import { debouncePromise } from "$lib/debounce";
-import { detectLocale, type Locale, locales, m, setLocale } from "$lib/i18n";
+import { type Locale, locales, m, setLocale } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
 import { getAppConfig, getDefaultAppConfig, setAppLocale } from "$lib/tauri";
 import type { Config } from "$lib/types/gen/Config";
@@ -86,7 +86,7 @@ async function setPageToInitialConfig() {
         locale: (initialConfig.memospot.window.locale ?? "system") as Locale,
         reduce_animation: initialConfig.memospot.window.reduce_animation ?? false,
         theme: (initialConfig.memospot.window.theme ??
-            localStorage.getItem("mode-watcher-mode") ??
+            localStorage.getItem(modeStorageKey.current) ??
             "system") as Theme
     };
 
@@ -147,9 +147,9 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
     })();
 
     if (input.theme === "system") {
-        resetTheme();
+        resetMode();
     } else {
-        setTheme(input.theme);
+        setMode(input.theme);
     }
 
     if (localeChanged) {

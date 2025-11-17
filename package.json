@@ -1,0 +1,6 @@
+{
+  "name": "memospot",
+  "version": "1.0.1",
+  "private": true,
+  "workspaces": ["build-scripts", "src-ui"]
+}

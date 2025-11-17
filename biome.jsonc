@@ -9,7 +9,10 @@
     "ignoreUnknown": true,
     "includes": ["**", "!**/build/", "!**/gen/", "!**/lib/paraglide/", "!**/.svelte-kit/"]
   },
-  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "assist": {
+    "enabled": true,
+    "actions": { "source": { "organizeImports": "on" } }
+  },
   "linter": {
     "enabled": true,
     "rules": {
@@ -62,12 +65,6 @@
       }
     }
   ],
-  "css": {
-    "parser": { "cssModules": true, "tailwindDirectives": true }
-  },
-  "vcs": {
-    "enabled": true,
-    "clientKind": "git",
-    "useIgnoreFile": true
-  }
+  "css": { "parser": { "cssModules": true, "tailwindDirectives": true } },
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true }
 }
