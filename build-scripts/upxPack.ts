@@ -32,7 +32,9 @@ export function upxPack(options: UpxOptions) {
     };
 
     if (!supportedPlatforms.includes(process.platform)) {
-        return HandleError(`\`UPX pack\` is not supported on ${process.platform}.`);
+        return HandleError(
+            `\`UPX pack\` is not supported or is disabled on ${process.platform}.`
+        );
     }
 
     const root = findRepositoryRoot();
@@ -92,6 +94,7 @@ if (import.meta.main) {
         bin: `upx${process.platform === "win32" ? ".exe" : ""}`,
         flags: ["-9"],
         fileList: filesToPack,
+        supportedPlatforms: [], // Disabled due to https://github.com/tauri-apps/tauri/issues/14186.
         ignoreErrors: true
     };
 
