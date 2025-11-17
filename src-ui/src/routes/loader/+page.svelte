@@ -19,7 +19,7 @@ const logo = {
     dark: "powered_by_memos_dark.webp"
 };
 
-let logoImg = $state("light");
+let logoImg = $state(logo[mode.current ?? "light"]);
 $effect(() => {
     logoImg = logo[mode.current ?? "light"];
 });
