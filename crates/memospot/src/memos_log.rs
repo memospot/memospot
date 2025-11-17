@@ -1,6 +1,6 @@
 //! Memos event log.
 //!
-//! This is split as a module so log4rs can filter out the logs.
+//! This is split as a module so `log4rs` can filter out the logs.
 
 use log::{error, info, warn};
 use sidecar::{CommandEvent, Receiver};

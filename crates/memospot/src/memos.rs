@@ -92,10 +92,12 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
             return Err(e);
         }
         Ok(receiver) => {
-            let (rx, _) = receiver;
-            tauri::async_runtime::spawn(async move {
-                memos_log::log_events(rx).await;
-            });
+            if rtcfg.yaml.memospot.log.enabled.unwrap_or_default() {
+                let (rx_, _) = receiver;
+                tauri::async_runtime::spawn(async move {
+                    memos_log::log_events(rx_).await;
+                });
+            }
         }
     }
 

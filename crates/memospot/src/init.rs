@@ -491,9 +491,9 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
     let log_config: PathBuf = rtcfg.paths.memospot_data.join("logging_config.yaml");
 
     // SAFETY: There's potential for race conditions when setting environment
-    // variables in a multi-threaded context. Shouldn't be an issue here.
+    // variables in a multithreaded context. Shouldn't be an issue here.
     unsafe {
-        // Allows using $ENV{MEMOSPOT_DATA} in log4rs config.
+        // Allows using $ENV{MEMOSPOT_DATA} in `log4rs` config.
         env::set_var(
             "MEMOSPOT_DATA",
             rtcfg.paths.memospot_data.to_string_lossy().to_string(),
