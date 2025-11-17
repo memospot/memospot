@@ -42,12 +42,6 @@ impl VersionStore {
     }
 }
 
-type MemosLaunchRetries = Arc<Mutex<i32>>;
-fn memos_launch_retries() -> &'static MemosLaunchRetries {
-    static LAUNCH_RETRIES: LazyLock<MemosLaunchRetries> = LazyLock::new(Default::default);
-    &LAUNCH_RETRIES
-}
-
 /// Spawn Memos server.
 ///
 /// Spawns a managed child process with custom environment variables.
@@ -58,50 +52,52 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
     debug!("working directory: {}", cwd.to_string_lossy());
     debug!("environment: {env_vars:#?}");
 
-    let res = sidecar::Command::new(&command)
-        .envs(env_vars.clone())
-        .current_dir(cwd.clone())
-        .spawn();
+    const MAX_RETRIES: usize = 2;
+    let mut last_error = anyhow!("failed to spawn Memos server");
 
-    match res {
-        Err(e) => {
-            warn!("failed to spawn server: {e}.");
+    for _ in 1..=MAX_RETRIES {
+        let res = sidecar::Command::new(&command)
+            .envs(env_vars.clone())
+            .current_dir(cwd.clone())
+            .spawn();
 
-            #[cfg(unix)]
-            {
-                warn!("attempting to add executable permissions to the binary…");
-                let mut perms = fs::metadata(&command)?.permissions();
-                perms.set_mode(0o755);
-                fs::set_permissions(&command, perms)?;
-
-                warn!("permissions added successfully. Attempting to relaunch.");
-
-                let mut attempts = memos_launch_retries()
-                    .lock()
-                    .expect_dialog("unable to acquire lock");
-
-                if *attempts >= 1 {
-                    warn!("exceeded launch retries limit ({attempts}/1). Giving up.");
-                    return Err(e);
+        match res {
+            Ok(receiver) => {
+                if rtcfg.yaml.memospot.log.enabled.unwrap_or(false) {
+                    let (rx_, _) = receiver;
+                    tauri::async_runtime::spawn(async move {
+                        memos_log::log_events(rx_).await;
+                    });
                 }
-                *attempts += 1;
+                return Ok(());
+            }
+            Err(e) => {
+                last_error = last_error.context(e);
+                warn!("{last_error}");
 
-                return spawn(rtcfg);
+                #[cfg(unix)]
+                {
+                    warn!("attempting to add executable permissions to the binary…");
+                    if let Err(perm_err) = (|| -> Result<(), anyhow::Error> {
+                        let mut perms = fs::metadata(&command)?.permissions();
+                        perms.set_mode(0o755);
+                        fs::set_permissions(&command, perms)?;
+                        Ok(())
+                    })() {
+                        last_error = last_error
+                            .context(anyhow!("failed to set permissions").context(perm_err));
+                        warn!("{last_error}");
+                    } else {
+                        info!("permissions added successfully. Attempting to relaunch.");
+                    }
+                }
+                continue;
             }
-            #[cfg(not(unix))]
-            return Err(e);
-        }
-        Ok(receiver) => {
-            if rtcfg.yaml.memospot.log.enabled.unwrap_or_default() {
-                let (rx_, _) = receiver;
-                tauri::async_runtime::spawn(async move {
-                    memos_log::log_events(rx_).await;
-                });
-            }
-        }
+        };
     }
 
-    Ok(())
+    warn!("exceeded launch retries limit ({MAX_RETRIES}). Giving up.");
+    Err(last_error)
 }
 
 /// Shutdown the Memos server and checkpoint the database.

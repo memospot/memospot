@@ -25,6 +25,7 @@ Security: in case of vulnerabilities.
 ### Changed
 
 - (Memos) Bundled version: v0.25.2.
+- Disabled UPX on Linux to fix issues with the Tauri bundler.
 
 ### Fixed
 
