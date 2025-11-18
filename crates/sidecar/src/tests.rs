@@ -25,12 +25,13 @@ mod test {
     #[test]
     fn test_cmd_output() {
         let ws_root = detect_workspace_root().unwrap();
-
-        // create a command to run cat.
-        let cmd = Command::new("cat").args([ws_root.join("Cargo.toml").to_str().unwrap()]);
-        let (mut rx, _) = cmd.spawn().unwrap();
+        let cargo_toml = ws_root.join("Cargo.toml");
 
         block_on(async move {
+            // create a command to run cat.
+            let cmd = Command::new("cat").args([cargo_toml.to_str().unwrap()]);
+            let (mut rx, _) = cmd.spawn().unwrap();
+
             let mut matched = false;
             let mut terminated = false;
             while let Some(event) = rx.recv().await {
@@ -68,10 +69,10 @@ mod test {
     #[test]
     // test the failure case
     fn test_cmd_fail() {
-        let cmd = Command::new("cat").args(["__non_existent_file__"]);
-        let (mut rx, _) = cmd.spawn().unwrap();
-
         block_on(async move {
+            let cmd = Command::new("cat").args(["__non_existent_file__"]);
+            let (mut rx, _) = cmd.spawn().unwrap();
+
             while let Some(event) = rx.recv().await {
                 match event {
                     CommandEvent::Terminated(payload) => {
