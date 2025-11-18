@@ -252,11 +252,11 @@ pub fn run() {
                             }
                         }
                         tauri::WindowEvent::CloseRequested { .. } => {
-                            const WEBVIEW_WINDOWS: [&str; 2] = ["main", "settings"];
-                            for w in WEBVIEW_WINDOWS {
-                                if let Some(window) = app_handle.get_webview_window(w) {
-                                    window.close().ok();
-                                }
+                            const CHILDREN_WINDOWS: [&str; 1] = ["settings"];
+                            for window in CHILDREN_WINDOWS {
+                                app_handle
+                                    .get_webview_window(window)
+                                    .map(|w| w.close().ok());
                             }
                         }
                         _ => {}
