@@ -2820,6 +2820,7 @@ dependencies = [
  "json-patch 4.1.0",
  "log",
  "log4rs",
+ "memospot",
  "migration",
  "path-clean",
  "portpicker",

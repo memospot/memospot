@@ -67,9 +67,14 @@ tempfile = { workspace = true }
 winreg = "0.55"
 
 [dev-dependencies]
+# Allows gating code in `build.rs` to run only in test/lint mode.
+memospot = { path = ".", features = ["unittest"] }
 tempfile = { workspace = true }
 
 [features]
+# Allows gating code in `build.rs` to run only in test/lint mode.
+unittest = []
+
 # this feature is used for production builds or when `devPath` points to the filesystem
 # DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]
