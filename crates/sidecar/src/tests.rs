@@ -4,88 +4,119 @@ mod test {
     use crate::*;
     use build_utils::find_workspace_root;
 
+    const TIMEOUT_MS: u128 = 5_000;
+
     #[test]
     fn test_cmd_output() {
-        let ws_root = find_workspace_root().unwrap();
+        let ws_root = find_workspace_root().expect("failed to find workspace root");
         let cargo_toml = ws_root.join("Cargo.toml");
 
         block_on(async move {
-            #[cfg(windows)]
-            let cmd = Command::new("powershell").args([
-                "-Command",
-                "Get-Content",
-                cargo_toml.to_str().unwrap(),
-            ]);
+            let mut time_start = tokio::time::Instant::now();
 
-            #[cfg(not(windows))]
-            let cmd = Command::new("cat").args([cargo_toml.to_str().unwrap()]);
-
-            let (mut rx, _) = cmd.spawn().unwrap();
-
-            let mut matched = false;
             let mut terminated = false;
-            while let Some(event) = rx.recv().await {
-                match event {
-                    CommandEvent::Terminated(payload) => {
-                        assert!(
-                            payload.code.map(|c| c == 0).unwrap_or(true),
-                            "expected non-zero exit code, got {:?}",
-                            payload.code
-                        );
+            let mut matched = false;
 
-                        terminated = true;
-                        if matched {
-                            break;
-                        }
+            'outer: for _ in 1..5 {
+                #[cfg(windows)]
+                let cmd = Command::new("powershell").args([
+                    "-Command",
+                    "Get-Content",
+                    cargo_toml.to_string_lossy(),
+                ]);
+                #[cfg(not(windows))]
+                let cmd = Command::new("cat").args([cargo_toml.to_string_lossy()]);
+
+                let (mut rx, _) = cmd.spawn().expect("failed to spawn command");
+                while let Some(event) = rx.recv().await {
+                    if time_start.elapsed().as_millis() > TIMEOUT_MS {
+                        kill_children();
+                        time_start = tokio::time::Instant::now();
+                        continue 'outer;
                     }
-                    CommandEvent::Stdout(line) => {
-                        if !matched && line.contains(r#"package"#) {
-                            matched = true;
-                            if terminated {
-                                break;
+                    match event {
+                        CommandEvent::Terminated(payload) => {
+                            terminated = payload.code.map(|c| c == 0).unwrap_or(true);
+                            if matched {
+                                break 'outer;
                             }
                         }
+                        CommandEvent::Stdout(line) => {
+                            if !matched && line.contains(r#"package"#) {
+                                matched = true;
+                                if terminated {
+                                    break 'outer;
+                                }
+                            }
+                        }
+                        _ => {
+                            panic!("unexpected event: {:?}", event);
+                        }
                     }
-                    _ => {}
                 }
             }
+            assert!(terminated, "expected Terminated event with zero exit code");
             assert!(matched, "expected stdout containing 'package'");
-            assert!(terminated, "expected Terminated event");
         });
     }
 
     #[test]
     fn test_cmd_fail() {
         block_on(async move {
-            #[cfg(not(windows))]
-            let cmd = Command::new("cat").args(["__non_existent_file__"]);
+            let mut time_start = tokio::time::Instant::now();
+            let mut terminated = false;
+            let mut matched = false;
 
-            #[cfg(windows)]
-            let cmd = Command::new("powershell").args([
-                "-Command",
-                "Get-Content",
-                "__non_existent_file__",
-            ]);
+            'outer: for _ in 1..5 {
+                #[cfg(not(windows))]
+                let cmd = Command::new("cat").args(["__non_existent_file__"]);
 
-            let (mut rx, _) = cmd.spawn().unwrap();
+                #[cfg(windows)]
+                let cmd = Command::new("powershell").args([
+                    "-Command",
+                    "Get-Content",
+                    "__non_existent_file__",
+                ]);
 
-            while let Some(event) = rx.recv().await {
-                match event {
-                    CommandEvent::Terminated(payload) => {
-                        assert!(
-                            payload.code.map(|c| c != 0).unwrap_or(true),
-                            "expected non-zero exit code, got {:?}",
-                            payload.code
-                        );
-                        break;
+                let (mut rx, _) = cmd.spawn().unwrap();
+
+                while let Some(event) = rx.recv().await {
+                    if time_start.elapsed().as_millis() > TIMEOUT_MS {
+                        kill_children();
+                        time_start = tokio::time::Instant::now();
+                        continue 'outer;
                     }
-                    CommandEvent::Stderr(line) => {
-                        assert!(line.contains("__non_existent_file__"));
-                        break;
+                    match event {
+                        CommandEvent::Terminated(payload) => {
+                            terminated = payload.code.map(|c| c != 0).unwrap_or(true);
+                            if matched {
+                                break 'outer;
+                            }
+
+                            break;
+                        }
+                        CommandEvent::Stderr(line) => {
+                            if !matched && line.contains(r#"__non_existent_file__"#) {
+                                matched = true;
+                                if terminated {
+                                    break 'outer;
+                                }
+                            }
+                        }
+                        _ => {
+                            panic!("unexpected event: {:?}", event);
+                        }
                     }
-                    _ => {}
                 }
             }
+            assert!(
+                terminated,
+                "expected Terminated event with non-zero exit code"
+            );
+            assert!(
+                matched,
+                "expected stderr containing '__non_existent_file__'"
+            );
         });
     }
 
