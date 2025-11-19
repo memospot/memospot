@@ -17,6 +17,7 @@ crate-type = ["staticlib", "cdylib", "lib"]
 
 [build-dependencies]
 tauri-build = { features = ["config-toml"], version = "2.0" }
+build_utils = { path = "../build_utils" }
 
 [target.'cfg(not(local_crates))'.dependencies]
 config = { path = "../config" }
@@ -67,13 +68,11 @@ tempfile = { workspace = true }
 winreg = "0.55"
 
 [dev-dependencies]
-# Allows gating code in `build.rs` to run only in test/lint mode.
-memospot = { path = ".", features = ["unittest"] }
+memospot = { path = ".", features = ["unittest"] } # Allows gating code in `build.rs` to run only in test/lint mode.
 tempfile = { workspace = true }
 
 [features]
-# Allows gating code in `build.rs` to run only in test/lint mode.
-unittest = []
+unittest = [] # Allows gating code in `build.rs` to run only in test/lint mode.
 
 # this feature is used for production builds or when `devPath` points to the filesystem
 # DO NOT REMOVE!!

@@ -2,34 +2,24 @@
 #[cfg(test)]
 mod test {
     use crate::*;
-    use std::env::current_dir;
+    use build_utils::find_workspace_root;
 
-    #[cfg(not(windows))]
-    fn detect_workspace_root() -> Option<PathBuf> {
-        const MAX_DEPTH: usize = 5;
-        let mut current_dir = current_dir().ok()?;
-
-        for _ in 0..=MAX_DEPTH {
-            if current_dir.join(".git").exists() && current_dir.join(".gitattributes").exists()
-            {
-                return Some(current_dir);
-            }
-            if !current_dir.pop() {
-                return None;
-            }
-        }
-        None
-    }
-
-    #[cfg(not(windows))]
     #[test]
     fn test_cmd_output() {
-        let ws_root = detect_workspace_root().unwrap();
+        let ws_root = find_workspace_root().unwrap();
         let cargo_toml = ws_root.join("Cargo.toml");
 
         block_on(async move {
-            // create a command to run cat.
+            #[cfg(windows)]
+            let cmd = Command::new("powershell").args([
+                "-Command",
+                "Get-Content",
+                cargo_toml.to_str().unwrap(),
+            ]);
+
+            #[cfg(not(windows))]
             let cmd = Command::new("cat").args([cargo_toml.to_str().unwrap()]);
+
             let (mut rx, _) = cmd.spawn().unwrap();
 
             let mut matched = false;
@@ -37,7 +27,6 @@ mod test {
             while let Some(event) = rx.recv().await {
                 match event {
                     CommandEvent::Terminated(payload) => {
-                        // Accept zero exit code (or None) to avoid flaky tests.
                         assert!(
                             payload.code.map(|c| c == 0).unwrap_or(true),
                             "expected non-zero exit code, got {:?}",
@@ -65,18 +54,24 @@ mod test {
         });
     }
 
-    #[cfg(not(windows))]
     #[test]
-    // test the failure case
     fn test_cmd_fail() {
         block_on(async move {
+            #[cfg(not(windows))]
             let cmd = Command::new("cat").args(["__non_existent_file__"]);
+
+            #[cfg(windows)]
+            let cmd = Command::new("powershell").args([
+                "-Command",
+                "Get-Content",
+                "__non_existent_file__",
+            ]);
+
             let (mut rx, _) = cmd.spawn().unwrap();
 
             while let Some(event) = rx.recv().await {
                 match event {
                     CommandEvent::Terminated(payload) => {
-                        // Accept any non-zero exit code (or None) to avoid flaky tests.
                         assert!(
                             payload.code.map(|c| c != 0).unwrap_or(true),
                             "expected non-zero exit code, got {:?}",
@@ -85,7 +80,7 @@ mod test {
                         break;
                     }
                     CommandEvent::Stderr(line) => {
-                        assert!(line.contains("cat: __non_existent_file__:"));
+                        assert!(line.contains("__non_existent_file__"));
                         break;
                     }
                     _ => {}

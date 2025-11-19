@@ -419,6 +419,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "build_utils"
+version = "1.0.1"
+
+[[package]]
 name = "bumpalo"
 version = "3.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2810,6 +2814,7 @@ version = "1.0.1"
 dependencies = [
  "anyhow",
  "async_zip",
+ "build_utils",
  "chrono",
  "config",
  "dialog",
@@ -4855,6 +4860,7 @@ name = "sidecar"
 version = "1.0.1"
 dependencies = [
  "anyhow",
+ "build_utils",
  "encoding_rs",
  "log",
  "os_pipe",

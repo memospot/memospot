@@ -1,0 +1,9 @@
+[package]
+name = "build_utils"
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+publish = { workspace = true }
+repository = "https://github.com/memospot/memospot/crates/build_utils"
+description = "Memospot Build Utils"

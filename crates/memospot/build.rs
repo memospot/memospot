@@ -1,24 +1,10 @@
-use std::{env, fs, path::PathBuf};
+use build_utils::find_workspace_root;
 
 #[cfg(unix)]
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
+use std::{env, fs, path::PathBuf};
 
-fn find_workspace_root() -> Option<PathBuf> {
-    const MAX_DEPTH: usize = 5;
-    let mut current_dir = env::current_dir().ok()?;
-
-    for _ in 0..=MAX_DEPTH {
-        if current_dir.join(".git").exists() && current_dir.join(".gitattributes").exists() {
-            return Some(current_dir);
-        }
-        if !current_dir.pop() {
-            return None;
-        }
-    }
-    None
-}
-
-/// Find the target directory.
+/// Find the build target directory.
 ///
 /// Workaround for <https://github.com/rust-lang/cargo/issues/5457>.
 ///
