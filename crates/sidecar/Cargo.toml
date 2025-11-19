@@ -27,3 +27,4 @@ windows-sys = { version = "0.61", features = ["Win32_System_Console"] }
 
 [dev-dependencies]
 build_utils = { path = "../build_utils" }
+tokio = { workspace = true, features = ["time"] }

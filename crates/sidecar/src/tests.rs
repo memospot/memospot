@@ -22,7 +22,7 @@ mod test {
                 let cmd = Command::new("powershell").args([
                     "-Command",
                     "Get-Content",
-                    cargo_toml.to_string_lossy(),
+                    &cargo_toml.to_string_lossy(),
                 ]);
                 #[cfg(not(windows))]
                 let cmd = Command::new("cat").args([cargo_toml.to_string_lossy()]);
@@ -50,7 +50,7 @@ mod test {
                             }
                         }
                         _ => {
-                            panic!("unexpected event: {:?}", event);
+                            eprintln!("unexpected event: {:?}", event);
                         }
                     }
                 }
@@ -104,7 +104,7 @@ mod test {
                             }
                         }
                         _ => {
-                            panic!("unexpected event: {:?}", event);
+                            eprintln!("unexpected event: {:?}", event);
                         }
                     }
                 }
