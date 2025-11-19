@@ -111,7 +111,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
     .build(handle)?;
 
     let quit = MenuItemBuilder::with_id(MainMenu::AppQuit.id(), MainMenu::AppQuit.text())
-        .accelerator("CmdOrCtrl+W")
+        .accelerator("CmdOrCtrl+Q")
         .build(handle)?;
 
     #[cfg(target_os = "macos")]

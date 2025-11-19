@@ -48,6 +48,15 @@ page.
 > - On macOS, you may need to
 >   [allow the app to run](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac)
 >   first.
+>
+>   ```bash
+>   # Remove the quarantine attribute:
+>   xattr -dr com.apple.quarantine /Applications/Memospot.app
+>
+>   # Self-sign the app:
+>   codesign -s - --deep --force /Applications/Memospot.app/Contents/MacOS/memospot
+>   codesign -s - --deep --force /Applications/Memospot.app/Contents/MacOS/memos
+>   ```
 
 ## Extra information
 
