@@ -1,4 +1,4 @@
-#: schema https://raw.githubusercontent.com/tauri-apps/tauri/refs/tags/tauri-v2.0.6/crates/tauri-cli/config.schema.json
+#: schema https://raw.githubusercontent.com/tauri-apps/tauri/refs/tags/tauri-v2.9.3/crates/tauri-cli/config.schema.json
 productName = "Memospot"
 mainBinaryName = "memospot"
 identifier = "com.memospot.app"

@@ -37,7 +37,7 @@ Security: in case of vulnerabilities.
 - Reduce animation setting - ([e0965de](https://github.com/memospot/memospot/commit/e0965de7410929776f9491dfdd4a59675a06d8ee)).
 - (Linux/macOS) Gracefully shut down Memos via SIGINT - ([b77000e](https://github.com/memospot/memospot/commit/b77000ee4f8ed6142a641960f322ba0b542dd544)).
 - (Windows) Gracefully shut down Memos via CTRL+BREAK - ([938be92](https://github.com/memospot/memospot/commit/938be92f6ca0e8cc744c2b95d408dc0bbd8c88c9)).
-- Improved logging. If enabled, Memos server output will be logged to `memos.log`. Delete any existing `logging_config.yaml` to get the new logger configuration.
+- Improved logging. If enabled, the Memos server output will be logged to `memos.log`. The new log config file is `log.yaml`. You may delete any existing `logging_config.yaml`.
 - Support for Memos v0.26.0+ API.
 - "Open in browser" (CmdOrCtrl+B) menu item. It can be used to circumvent any issues with the WebView.
 

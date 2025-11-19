@@ -429,58 +429,11 @@ pub fn find_memos(rtcfg: &RuntimeConfig) -> PathBuf {
     panic_dialog!(fl!("panic-unable-to-find-memos-binary"));
 }
 
-static LOGGING_CONFIG_YAML: &str = r#"
-# Log4rs configuration file.
-# https://github.com/estk/log4rs#quick-start
-#
-# Use absolute paths for file appender. Otherwise, it'll try to write next to the application binary.
-# Data directory is available as: $ENV{MEMOSPOT_DATA}
-appenders:
-    file:
-        encoder:
-            pattern: "{d(%Y-%m-%d %H:%M:%S)} {h({l})} {module}: {m}{n}"
-        path: $ENV{MEMOSPOT_DATA}/memospot.log
-        kind: rolling_file
-        policy:
-            trigger:
-                kind: size
-                limit: 5 mb
-            roller:
-                kind: fixed_window
-                pattern: $ENV{MEMOSPOT_DATA}/memospot.log.{}.gz
-                count: 5
-                base: 1
-    memos:
-        path: $ENV{MEMOSPOT_DATA}/memos.log
-        encoder:
-            pattern: "{message}"
-        kind: rolling_file
-        policy:
-            trigger:
-                kind: size
-                limit: 5 mb
-            roller:
-                kind: fixed_window
-                pattern: $ENV{MEMOSPOT_DATA}/memos.log.{}.gz
-                count: 5
-                base: 1
-root:
-    # debug | info | warn | error | off
-    level: info
-    appenders:
-        - file
-loggers:
-    memospot_lib::memos_log:
-        # info | warn | error | off
-        level: info
-        additive: false
-        appenders:
-            - memos
-"#;
+static LOG_CONFIG_YAML: &str = include_str!("log.default.yaml");
 
 /// Setup logging if it's enabled.
 ///
-/// - Validates `logging_config.yaml`.
+/// - Validates `log.yaml`.
 ///
 /// Return true if logging is enabled.
 pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
@@ -488,7 +441,7 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
         return false;
     }
 
-    let log_config: PathBuf = rtcfg.paths.memospot_data.join("logging_config.yaml");
+    let log_config: PathBuf = rtcfg.paths.memospot_data.join("log.yaml");
 
     // SAFETY: There's potential for race conditions when setting environment
     // variables in a multithreaded context. Shouldn't be an issue here.
@@ -511,8 +464,7 @@ pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
         file = log_config.to_string_lossy()
     ));
 
-    let config_template = LOGGING_CONFIG_YAML.replace("    ", "  ");
-    file.write_all(config_template.as_bytes())
+    file.write_all(LOG_CONFIG_YAML.as_bytes())
         .expect_dialog(fl!(
             "panic-log-config-write-error",
             file = log_config.to_string_lossy()
