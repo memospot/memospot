@@ -1,7 +1,6 @@
 [package]
 name = "homedir"
 version = { workspace = true }
-authors = ["eulegang <eulegang@gmail.com>", "Lars Wirzenius", "Lincoln Nogueira"]
 edition = { workspace = true }
 license = "MIT"
 publish = false
@@ -14,3 +13,6 @@ thiserror = { workspace = true }
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
 nix = { workspace = true }
+
+[lints]
+workspace = true

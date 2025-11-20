@@ -4,7 +4,6 @@
 [package]
 name = "sidecar"
 version = { workspace = true }
-authors = { workspace = true }
 edition = { workspace = true }
 license = { workspace = true }
 publish = { workspace = true }
@@ -28,3 +27,6 @@ windows-sys = { version = "0.61", features = ["Win32_System_Console"] }
 [dev-dependencies]
 build_utils = { path = "../build_utils" }
 tokio = { workspace = true, features = ["time"] }
+
+[lints]
+workspace = true

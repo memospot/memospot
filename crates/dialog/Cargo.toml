@@ -1,7 +1,6 @@
 [package]
 name = "dialog"
 version = { workspace = true }
-authors = { workspace = true }
 edition = { workspace = true }
 license = { workspace = true }
 publish = { workspace = true }
@@ -17,3 +16,6 @@ features = ["windows_dpi_awareness", "windows_visual_styles"]
 
 [target.'cfg(not(target_os = "windows"))'.dependencies.native-dialog]
 version = "0.6.4"
+
+[lints]
+workspace = true

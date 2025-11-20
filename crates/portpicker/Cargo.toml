@@ -1,7 +1,6 @@
 [package]
 name = "portpicker"
 version = { workspace = true }
-authors = { workspace = true }
 edition = { workspace = true }
 license = { workspace = true }
 publish = { workspace = true }
@@ -14,3 +13,6 @@ rand = ["dep:rand"]
 [dependencies.rand]
 version = "0.9.2"
 optional = true
+
+[lints]
+workspace = true

@@ -4,12 +4,14 @@
 [package]
 name = "memospot"
 version = "1.0.1"
-authors = { workspace = true }
 edition = { workspace = true }
 license = { workspace = true }
 publish = { workspace = true }
 repository = { workspace = true }
 description = { workspace = true }
+
+[package.metadata.cargo-machete]
+ignored = ["tauri-build"]
 
 [lib]
 name = "memospot_lib"
@@ -18,15 +20,6 @@ crate-type = ["staticlib", "cdylib", "lib"]
 [build-dependencies]
 tauri-build = { features = ["config-toml"], version = "2.0" }
 build_utils = { path = "../build_utils" }
-
-[target.'cfg(not(local_crates))'.dependencies]
-config = { path = "../config" }
-dialog = { path = "../dialog" }
-homedir = { path = "../homedir" }
-migration = { path = "../migration" }
-portpicker = { path = "../portpicker" }
-sidecar = { path = "../sidecar" }
-writable = { path = "../writable" }
 
 [dependencies]
 anyhow = { workspace = true }
@@ -47,12 +40,21 @@ tokio = { workspace = true }
 ts-rs = { workspace = true }
 url = { version = "2", features = ["serde"] }
 
-[target.'cfg(not(i18n_group))'.dependencies]
+# Local crates
+config = { path = "../config" }
+dialog = { path = "../dialog" }
+homedir = { path = "../homedir" }
+migration = { path = "../migration" }
+portpicker = { path = "../portpicker" }
+sidecar = { path = "../sidecar" }
+writable = { path = "../writable" }
+
+# i18n
 i18n-embed = { version = "0.16.0", features = ["fluent-system", "desktop-requester"] }
 i18n-embed-fl = "0.10.0"
 rust-embed = "8"
 
-[target.'cfg(not(tauri_group))'.dependencies]
+# tauri
 tauri = { workspace = true, features = ["config-toml"] }
 tauri-plugin-fs = "^2"
 tauri-plugin-http = { version = "^2", features = ["gzip"] }
@@ -75,10 +77,10 @@ tempfile = { workspace = true }
 [features]
 unittest = [] # Allows gating code in `build.rs` to run only in test/lint mode.
 
-# this feature is used for production builds or when `devPath` points to the filesystem
+# This feature is used for production builds or when `devPath` points to the filesystem.
 # DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]
 devtools = ["tauri/devtools"]
 
-[package.metadata.cargo-machete]
-ignored = ["tauri-build"]
+[lints]
+workspace = true

@@ -6,7 +6,6 @@ resolver = "2"
 
 [workspace.package]
 version = "1.0.1"
-authors = ["Lincoln Nogueira"]
 edition = "2021"
 homepage = "https://memospot.github.io/"
 license = "MIT"
@@ -32,6 +31,9 @@ uuid = { version = "1.11", features = ["v4"] }
 
 tauri = { version = "^2.9" }
 tauri-utils = "^2.8"
+
+[workspace.lints.clippy]
+# unwrap_used = "deny"
 
 [profile.release]
 codegen-units = 1

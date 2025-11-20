@@ -24,3 +24,7 @@ let other_user_home = "~otheruser".expand_home().unwrap();
 ```
 
 > Note: Named user expansion is currently not supported on Windows, so this will return an error.
+
+## Original package
+
+<https://github.com/eulegang/home-dir>
