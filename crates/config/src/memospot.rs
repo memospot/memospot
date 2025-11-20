@@ -67,11 +67,15 @@ impl Default for EnvironmentVariables {
 #[derive(TS, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Updater {
     pub enabled: Option<bool>,
+    pub check_interval: Option<String>,
+    pub last_check: Option<u64>,
 }
 impl Default for Updater {
     fn default() -> Self {
         Self {
             enabled: Some(true),
+            check_interval: Some("3d".to_string()),
+            last_check: None,
         }
     }
 }

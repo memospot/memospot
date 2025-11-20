@@ -18,6 +18,7 @@ let input = $state({
     remoteURL: "",
     remoteUserAgent: "",
     updaterEnabled: false,
+    updaterCheckInterval: "",
     migrationsEnabled: false,
     backupsEnabled: false,
     loggingEnabled: false,
@@ -38,6 +39,7 @@ async function setPageToInitialConfig() {
         remoteURL: initialConfig.memospot.remote.url ?? "",
         remoteUserAgent: initialConfig.memospot.remote.user_agent ?? "",
         updaterEnabled: initialConfig.memospot.updater.enabled ?? false,
+        updaterCheckInterval: initialConfig.memospot.updater.check_interval ?? "",
         migrationsEnabled: initialConfig.memospot.migrations.enabled ?? false,
         backupsEnabled: initialConfig.memospot.backups.enabled ?? false,
         loggingEnabled: initialConfig.memospot.log.enabled ?? false,
@@ -55,6 +57,7 @@ async function setPageToDefaultConfig() {
         remoteURL: defaultJSON.memospot.remote.url ?? "",
         remoteUserAgent: defaultJSON.memospot.remote.user_agent ?? "",
         updaterEnabled: defaultJSON.memospot.updater.enabled ?? false,
+        updaterCheckInterval: defaultJSON.memospot.updater.check_interval ?? "",
         migrationsEnabled: defaultJSON.memospot.migrations.enabled ?? false,
         backupsEnabled: defaultJSON.memospot.backups.enabled ?? false,
         loggingEnabled: defaultJSON.memospot.log.enabled ?? false,
@@ -180,17 +183,30 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
     </Setting>
   </SettingToggle>
 
-  <Setting
+  <SettingToggle
     name={m.settingsMemospotUpdater()}
     desc={m.settingsMemospotUpdaterDescription()}
+    bind:state={input.updaterEnabled}
+    onclick={() => {
+      currentConfig.memospot.updater.enabled = input.updaterEnabled;
+    }}
   >
-    <Switch
-      bind:checked={input.updaterEnabled}
-      onclick={() => {
-        currentConfig.memospot.updater.enabled = input.updaterEnabled;
-      }}
-    />
-  </Setting>
+    <Setting
+      name={m.settingsMemospotUpdaterInterval()}
+      desc={m.settingsMemospotUpdaterIntervalDescription()}
+    >
+      <input
+        id="updaterCheckInterval"
+        type="text"
+        bind:value={input.updaterCheckInterval}
+        onfocusout={() => {
+          currentConfig.memospot.updater.check_interval = input.updaterCheckInterval;
+        }}
+        class="p-2 rounded-md border bg-input min-w-max md:w-96"
+        disabled={!input.updaterEnabled}
+      />
+    </Setting>
+  </SettingToggle>
 
   <Setting
     name={m.settingsMemospotMigrations()}

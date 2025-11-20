@@ -1,7 +1,64 @@
-use crate::{fl, memos};
+use crate::{fl, memos, RuntimeConfig};
+use chrono::DateTime;
 use dialog::{confirm_dialog, MessageType};
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
+use std::{
+    env,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 use tauri_plugin_updater::UpdaterExt;
+
+/// Check whether the updater is enabled.
+///
+/// This is true if the updater is not explicitly disabled by the
+/// user and the application is not running in a Flatpak sandbox.
+pub fn is_enabled(config: &RuntimeConfig) -> bool {
+    let is_flatpak = env::var("FLATPAK_ID").is_ok_and(|v| !v.is_empty());
+    let is_enabled = config
+        .yaml
+        .memospot
+        .updater
+        .enabled
+        .is_some_and(|enabled| enabled && !is_flatpak);
+    debug!("enabled: {is_enabled}");
+    is_enabled
+}
+
+/// Check if the updater should be run.
+///
+/// True if the last check time is more than the configured check interval ago.
+pub fn should_run(config: &RuntimeConfig) -> bool {
+    let check_interval = config
+        .yaml
+        .memospot
+        .updater
+        .check_interval
+        .clone()
+        .unwrap_or_default()
+        .parse::<humantime::Duration>()
+        .unwrap_or_default();
+
+    let last_check =
+        Duration::from_secs(config.yaml.memospot.updater.last_check.unwrap_or_default());
+
+    let unix_time_now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+
+    let timestamp =
+        DateTime::from_timestamp(last_check.as_secs() as i64, 0).unwrap_or_default();
+    let datefmt = timestamp.format("%Y-%m-%d %H:%M:%S");
+
+    debug!("last check: {datefmt} UTC");
+    debug!("check interval: {check_interval}");
+
+    let should_run = check_interval.as_secs() > 0
+        && last_check.as_secs() + check_interval.as_secs() < unix_time_now;
+
+    debug!("should run: {should_run}");
+    should_run
+}
 
 /// Initialize the updater in the background.
 pub fn spawn(app: &tauri::AppHandle) {

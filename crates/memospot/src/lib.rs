@@ -18,6 +18,7 @@ use i18n::*;
 use log::{debug, info, warn};
 use std::env;
 use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Manager;
 use tauri_utils::config::WindowConfig;
 use window::{WebviewWindowExt, WindowConfigExt};
@@ -118,6 +119,15 @@ pub fn run() {
         });
     warn!("WebView user agent: {}", &config.user_agent);
 
+    let should_run_updater = updater::is_enabled(&config) && updater::should_run(&config);
+    if should_run_updater {
+        let unix_time_now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        config.yaml.memospot.updater.last_check = Some(unix_time_now);
+    }
+
     // Store `config` and make it immutable after this point.
     config.to_global_store();
     let config = config.clone();
@@ -196,17 +206,8 @@ pub fn run() {
             app.set_menu(menu::build(app_handle)?)?;
             menu::update_with_memos_version(app_handle);
 
-            let is_flatpak = env::var("FLATPAK_ID").is_ok_and(|v| !v.is_empty());
-            let updater_enabled = config_
-                .yaml
-                .memospot
-                .updater
-                .enabled
-                .is_some_and(|enabled| enabled && !is_flatpak);
-            if updater_enabled {
+            if should_run_updater {
                 updater::spawn(app_handle);
-            } else {
-                warn!("updater: updater is disabled");
             }
 
             if !config_.is_managed_server {
