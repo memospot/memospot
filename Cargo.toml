@@ -14,13 +14,14 @@ repository = "https://github.com/memospot/memospot"
 rust-version = "1.77.2"
 description = "Memospot is a desktop version of Memos, a beautiful, privacy-first, lightweight note-taking service."
 
+# Features should be listed at package level.
 [workspace.dependencies]
 anyhow = "1.0"
 home = "0.5"
 log = "0.4"
-nix = { version = "0.30", features = ["user"] }
-sea-orm = { version = "1.1", default-features = false, features = ["sqlx-sqlite", "runtime-tokio-rustls"] }
-sea-orm-migration = { version = "1.1", default-features = false, features = ["sqlx-sqlite", "runtime-tokio-rustls"] }
+nix = { version = "0.30", default-features = false }
+sea-orm = { version = "1.1", default-features = false }
+sea-orm-migration = { version = "1.1", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tempfile = "3.23"

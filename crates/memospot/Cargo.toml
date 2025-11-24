@@ -36,6 +36,7 @@ semver = "1"
 serde = { workspace = true }
 serde_json = { workspace = true }
 strum_macros = "0.27"
+sysinfo = "0.37"
 tokio = { workspace = true }
 ts-rs = { workspace = true }
 url = { version = "2", features = ["serde"] }

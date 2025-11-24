@@ -28,7 +28,7 @@ helpmenu-report-issue = &Reportar um problema…
 dialog-update-title = Atualização disponível
 dialog-update-no-update = Nenhuma atualização disponível.
 dialog-update-message =
-    A versão { $version } está disponível para download.
+    A versão {$version} está disponível para download.
 
     Deseja baixá-la?
 panic-failed-to-spawn-memos = Não foi possível iniciar o Memos

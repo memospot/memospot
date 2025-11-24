@@ -14,7 +14,7 @@ homedir = { path = "../homedir" }
 itertools = "0.14.0"
 log = { workspace = true }
 sea-orm = { workspace = true }
-sea-orm-migration = { workspace = true }
+sea-orm-migration = { workspace = true, features = ["sqlx-sqlite", "runtime-tokio-rustls"] }
 serde_json = { workspace = true }
 
 [lints]
