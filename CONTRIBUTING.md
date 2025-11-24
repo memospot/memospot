@@ -212,7 +212,8 @@ brew install cargo-binstall
 - Powershell
 
 ```powershell
-Set-ExecutionPolicy Unrestricted -Scope Process; iex (iwr "https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.ps1").Content
+Set-ExecutionPolicy Unrestricted -Scope Process; `
+iex (iwr "https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.ps1").Content
 ```
 
 - Cargo (build from source)
@@ -248,7 +249,7 @@ cargo binstall \
 > Should you experience issues with `cargo-tauri` under macOS, like `bad CPU type in executable`, try building it manually:
 >
 > ```bash
-> cargo install --locked --target=$(rustc -vV | sed -n 's|host: ||p') tauri-cli
+> cargo install --locked --force --target=$(rustc -vV | sed -n 's|host: ||p') tauri-cli
 > ```
 
 ##### Powershell

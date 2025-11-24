@@ -14,6 +14,7 @@ on:
       - "**/*.{cts,mts,ts,tsx}"
       - "**/bun.lock"
       - "**/package.json"
+    tags-ignore: ["*"]
   schedule: [{ cron: "0 9 */15 * *" }] # 9 AM, every 15 days
   workflow_dispatch:
 

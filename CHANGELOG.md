@@ -24,8 +24,8 @@ Security: in case of vulnerabilities.
 
 ### Changed
 
-- Default Memos port to the standard 5230. It will still be changed on the
-  fly if the port is already in use and won't affect existing installs.
+- Default Memos port to 5230. It will still be changed on the fly if
+  the port is already in use and won't affect existing installs.
 
 ## [1.0.1] - 2025-11-20
 
