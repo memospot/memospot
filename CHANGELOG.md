@@ -24,6 +24,13 @@ Security: in case of vulnerabilities.
 
 ### Changed
 
+- Default Memos port to the standard 5230. It will still be changed on the
+  fly if the port is already in use and won't affect existing installs.
+
+## [1.0.1] - 2025-11-20
+
+### Changed
+
 - (Memos) Bundled version: v0.25.2.
 - Disabled UPX on Linux to fix issues with the Tauri bundler.
 - Quit shortcut is now `CmdOrCtrl+Q`.
@@ -41,7 +48,7 @@ Security: in case of vulnerabilities.
 - Improved logging. If enabled, the Memos server output will be logged to `memos.log`. The new log config file is `log.yaml`. You may delete any existing `logging_config.yaml` - ([219c098](https://github.com/memospot/memospot/commit/219c09815fc399e78dcfca410de96fee6c1db0aa))([7e81d37](https://github.com/memospot/memospot/commit/7e81d3735f5fe498676f77b5ae7c0d509ddf77c6)).
 - Support for Memos v0.26.0+ API - ([78ae677](https://github.com/memospot/memospot/commit/78ae67765f215edf8f613acece99811162eb3cae)).
 - "Open in browser" (CmdOrCtrl+B) menu item. It can be used to circumvent any issues with the WebView - ([9291eb9](https://github.com/memospot/memospot/commit/9291eb942ebc90a9cb05969e64d90259b86a1e77)).
-- Updater execution interval setting.
+- Updater execution interval setting - ([8643ce1](https://github.com/memospot/memospot/commit/8643ce14e0e56ca49c6404f4c9194d22bad32b7b)).
 
 ## [1.0.0] - 2025-02-21
 

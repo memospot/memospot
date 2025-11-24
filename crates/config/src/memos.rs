@@ -59,7 +59,7 @@ impl Default for Memos {
             data: None,
             mode: Some("prod".to_string()),
             addr: Some("127.0.0.1".to_string()),
-            port: Some(0),
+            port: Some(5230),
             env: EnvironmentVariables::default(),
         }
     }
