@@ -155,7 +155,7 @@ mod tests {
         }
         assert_eq!(
             env::var("XDG_CONFIG_HOME").unwrap(),
-            xdg_config_home.clone().to_string_lossy()
+            xdg_config_home.to_string_lossy()
         );
 
         // Test fallback to HOME/.memospot.

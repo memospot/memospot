@@ -33,9 +33,6 @@ uuid = { version = "1.11", features = ["v4"] }
 tauri = { version = "^2.9" }
 tauri-utils = "^2.8"
 
-[workspace.lints.clippy]
-# unwrap_used = "deny"
-
 [profile.release]
 codegen-units = 1
 incremental = true
@@ -94,3 +91,10 @@ debug = 0 # Disabling debug info speeds up builds.
 
 [profile.dev.package]
 serde.opt-level = 3 # Tests depending on serde runs faster with higher optimization level.
+
+[workspace.lints.clippy]
+dbg_macro = "deny"
+disallowed_methods = "deny"
+redundant_clone = "deny"
+todo = "deny"
+# unwrap_used = "deny"

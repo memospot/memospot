@@ -7,10 +7,11 @@ use dialog::{error_dialog, panic_dialog};
 use homedir::HomeDirExt;
 use log::{debug, info, warn};
 use std::collections::HashMap;
+use std::fs;
 
-use std::path::{Path, PathBuf};
 #[cfg(unix)]
-use std::{fs, os::unix::fs::PermissionsExt};
+use std::os::unix::fs::PermissionsExt;
+use std::path::{Path, PathBuf};
 use sysinfo::{Pid, System};
 use tauri::async_runtime;
 use tauri::utils::platform::resource_dir as tauri_resource_dir;

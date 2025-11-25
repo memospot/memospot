@@ -43,7 +43,7 @@ pub fn run() {
             memospot_bin: PathBuf::new(),
             memospot_config_file: config_path.clone(),
             memospot_cwd: PathBuf::new(),
-            memospot_data: memospot_data.clone(),
+            memospot_data,
         },
         is_managed_server: true,
         memos_url: String::new(),
@@ -134,7 +134,7 @@ pub fn run() {
 
     // Store `config` and make it immutable after this point.
     config.to_global_store();
-    let config = config.clone();
+    let config = config;
 
     let window_config = &mut tauri_ctx.config_mut().app.windows;
     if !window_config.is_empty() {
@@ -176,7 +176,7 @@ pub fn run() {
         tauri_ctx.config_mut().bundle.macos.exception_domain = Some(domain);
     }
 
-    let config_ = config.clone();
+    let config_ = config;
     let Ok(tauri_app) = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_http::init())
