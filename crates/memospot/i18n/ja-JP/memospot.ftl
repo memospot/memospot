@@ -3,9 +3,9 @@
 
 # Menu items
 appmenu = アプリケーション(&A)
-appmenu-browse-data-directory = &Browse data directory…
-appmenu-check-for-updates = &Check for updates…
-appmenu-open-in-browser = &Open in browser…
+appmenu-browse-data-directory = データディレクトリを参照…
+appmenu-check-for-updates = 更新を確認しています…
+appmenu-open-in-browser = ブラウザで開く…
 appmenu-quit = 終了(&Q)
 appmenu-settings = 設定(&S)
 viewmenu = 表示(&V)
@@ -19,7 +19,7 @@ helpmenu-memos-version = メモのバージョン
 helpmenu-memospot-version = メモポットのバージョン(&M)
 helpmenu-documentation = ドキュメント(&D)
 helpmenu-release-notes = リリースノート(&L)
-helpmenu-report-issue = &Report an Issue…
+helpmenu-report-issue = 問題を報告する…
 # Dialogs
 dialog-update-title = アップデートがあります
 dialog-update-no-update = 利用可能な更新はありません。
@@ -89,9 +89,7 @@ prompt-config-error-message =
     
     設定ファイルをリセットしますか?
     (バックアップが作成されます。
-panic-config-error =
-    Please, fix the configuration file
-    manually and restart the application.
+panic-config-error = 設定ファイルを手動で修正して、アプリケーションを再起動してください。
 panic-config-unable-to-backup = 現在の設定ファイルのバックアップに失敗しました
 panic-config-unable-to-reset = 設定ファイルをリセットできません
 panic-config-parse-error = 設定ファイルの解析中に致命的なエラーが発生しました
