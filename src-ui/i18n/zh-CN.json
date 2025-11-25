@@ -29,7 +29,7 @@
   "settingsViewCentered": "强制进入窗口",
   "settingsViewCenteredDescription": "禁用以将窗口还原到您离开它的确切位置。",
   "settingsViewFullscreen": "全屏",
-  "settingsViewFullscreenDescription": "WARNING: You'll need to use <em>Alt+F4/Ctrl+Q/Cmd+Q</em> to close the window.",
+  "settingsViewFullscreenDescription": "警告：您需要使用 <em>Alt+F4/Ctrl+Q/Cmd+Q</em> 关闭窗口。",
   "settingsViewMaximized": "最大化",
   "settingsViewMaximizedDescription": "启动最大化应用程序。",
   "settingsViewResizable": "可调整窗口",
