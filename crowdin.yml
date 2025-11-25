@@ -1,5 +1,24 @@
+preserve_hierarchy: false
+commit_message: "chore(i18n): add %language% via Crowdin [no ci]"
+append_commit_message: false
 files:
   - source: /src-ui/i18n/en.json
     translation: /src-ui/i18n/%locale%.json
+    labels: ["front-end"]
   - source: /crates/memospot/i18n/en/memospot.ftl
     translation: /crates/memospot/i18n/%locale%/memospot.ftl
+    labels: ["desktop"]
+translation_replace:
+  - zh-TW: zh-Hant
+  - zh-CN: zh-Hans
+export_languages:
+  - de
+  - es
+  - fr
+  - ja
+  - pt-BR
+  - ru
+  - zh-CN
+  - zh-Hans
+  - zh-Hant
+  - zh-TW
