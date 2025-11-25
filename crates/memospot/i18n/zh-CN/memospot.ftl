@@ -19,7 +19,7 @@ helpmenu-memos-version = Memos 版本
 helpmenu-memospot-version = &Memospot 版本
 helpmenu-documentation = 文档
 helpmenu-release-notes = &发布说明
-helpmenu-report-issue = &Report an Issue…
+helpmenu-report-issue = &报告问题…
 # Dialogs
 dialog-update-title = 可用更新
 dialog-update-no-update = 无可用更新。
@@ -63,10 +63,10 @@ warn-failed-to-backup-database =
     { $error }
 prompt-install-webview-title = WebView 错误
 prompt-install-webview-message =
-    A WebView is *required* for this application to
-    work and it is not available on this system!
+    此应用程序*需要* WebView 才能运行，
+    而该系统上不可用！
     
-    Do you want to install it?
+    您是否希望安装它？
 error-failed-to-install-webview =
     无法安装 WebView:
     
