@@ -2,34 +2,34 @@
 # Make sure they don't conflict with other mnemonics in the same context.
 
 # Menu items
-appmenu = &Application
-appmenu-browse-data-directory = &Browse data directory…
+appmenu = &Програма
+appmenu-browse-data-directory = &Переглянути каталог даних…
 appmenu-check-for-updates = &Check for updates…
-appmenu-open-in-browser = &Open in browser…
-appmenu-quit = &Quit
-appmenu-settings = &Settings
-viewmenu = &View
-viewmenu-developer-tools = &Developer Tools
-viewmenu-hide-menu-bar = &Hide menu bar
-viewmenu-refresh = &Refresh
+appmenu-open-in-browser = &Відкрити у браузері…
+appmenu-quit = &Вихід
+appmenu-settings = &Налаштування
+viewmenu = &Вигляд
+viewmenu-developer-tools = &Інструменти розробника
+viewmenu-hide-menu-bar = &Приховувати панель меню
+viewmenu-refresh = &Оновити
 viewmenu-reload-view = Re&load
-windowmenu = &Window
-helpmenu = &Help
-helpmenu-memos-version = Memos version
-helpmenu-memospot-version = &Memospot version
-helpmenu-documentation = &Documentation
-helpmenu-release-notes = &Release Notes
-helpmenu-report-issue = &Report an Issue…
+windowmenu = &Вікно
+helpmenu = &Допомога
+helpmenu-memos-version = Версія Memos
+helpmenu-memospot-version = &Версія Memospot
+helpmenu-documentation = &Документація
+helpmenu-release-notes = &Історія змін
+helpmenu-report-issue = &Повідомити про проблему…
 # Dialogs
-dialog-update-title = Update available
-dialog-update-no-update = No update available.
+dialog-update-title = Доступне оновлення
+dialog-update-no-update = Оновлення відсутні.
 dialog-update-message =
     Version { $version } is available for download.
     
     Do you want to download it?
-panic-failed-to-spawn-memos = Failed to spawn Memos
+panic-failed-to-spawn-memos = Не вдалося створити пам'яті
 panic-failed-to-create-data-directory =
-    Failed to create data directory!
+    Не вдалося створити каталог даних!
     { $dir }
 panic-data-directory-is-not-writable =
     Data directory is not writable!
@@ -44,7 +44,7 @@ panic-unable-to-create-backup-directory =
     Unable to create backup directory!
     { $dir }
 panic-backup-directory-is-a-file =
-    Backup directory exists as a file!
+    Каталог для резервних копій існує як файл!
     { $dir }
 panic-backup-directory-is-not-writable =
     Backup directory is not writable!
@@ -52,28 +52,28 @@ panic-backup-directory-is-not-writable =
 panic-database-file-is-not-writable =
     Database file is not writable!
     { $file }
-panic-failed-to-connect-to-database = Failed to connect to the database
+panic-failed-to-connect-to-database = Не вдалося підключитися до бази даних
 panic-failed-to-run-database-migrations =
-    Failed to run database migrations:
+    Не вдалося запустити міграцію бази даних:
     { $error }
-panic-failed-to-close-database-connection = Failed to close database connection
+panic-failed-to-close-database-connection = Не вдалося закрити підключення до бази даних
 warn-failed-to-backup-database =
-    Failed to backup database:
+    Не вдалося створити резервну копію:
     
     { $error }
-prompt-install-webview-title = WebView Error
+prompt-install-webview-title = Помилка WebView
 prompt-install-webview-message =
     A WebView is *required* for this application to
     work and it is not available on this system!
     
     Do you want to install it?
 error-failed-to-install-webview =
-    Failed to install WebView:
+    Не вдалося встановити WebView:
     
     { $error }
     
-    Please install it manually.
-panic-config-unable-to-create = Unable to create configuration file
+    Будь ласка, встановіть його вручну.
+panic-config-unable-to-create = Не вдалося створити файл конфігурації
 panic-config-is-not-a-file =
     Provided configuration path is a directory.
     It must be a file!
@@ -81,32 +81,32 @@ panic-config-is-not-a-file =
 panic-config-is-not-writable =
     Configuration file is not writable!
     { $file }
-prompt-config-error-title = Configuration Error
+prompt-config-error-title = Помилка конфігурації
 prompt-config-error-message =
-    Failed to parse configuration file:
+    Не вдалося обробити файл конфігурації:
     
     { $error }
     
-    Reset the configuration file?
-    (A backup will be created.)
+    Скинути файл конфігурації?
+    (Резервну копію буде створено.)
 panic-config-error =
-    Please, fix the configuration file
-    manually and restart the application.
-panic-config-unable-to-backup = Failed to backup the current configuration file
-panic-config-unable-to-reset = Unable to reset the configuration file
-panic-config-parse-error = Fatal error while parsing the configuration file
+    Будь ласка, виправте файл конфігурації
+    вручну і перезапустіть додаток.
+panic-config-unable-to-backup = Не вдалося зарезервувати поточний файл конфігурації
+panic-config-unable-to-reset = Неможливо скинути файл конфігурації
+panic-config-parse-error = Критична помилка під час аналізу файлу конфігурації
 error-config-write-error =
     Failed to write configuration file:
     
     { $error }
-panic-portpicker-error = Failed to find a free port to bind Memos to!
+panic-portpicker-error = Не вдалося знайти вільний порт для прив'язки приміток!
 error-invalid-server-url =
-    Invalid remote server URL:
+    Неправильний URL віддаленого сервера:
     { $url }
     
-    URL must start with "http".
-    Check the settings.
-panic-unable-to-find-memos-binary = Unable to find Memos server binary!
+    URL повинен починатися з "http".
+    Перевірте налаштування.
+panic-unable-to-find-memos-binary = Не вдалося знайти файл Memos сервера!
 panic-log-config-write-error =
     Failed to write log configuration file:
     { $file }
