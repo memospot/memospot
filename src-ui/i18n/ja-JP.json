@@ -73,5 +73,5 @@
   "settingsMemosBindPort": "Bind port",
   "settingsMemosBindPortDescription": "ここで指定したポートは好ましいですが、既に使用されている場合は、Memospot によって透過的に上書きされます。",
   "settingsMemosEnvironmentVariables": "環境変数",
-  "settingsMemosEnvironmentVariablesDescription": "Memos バイナリに渡す環境変数。<br />形式は <code>VARIABLE=VALUE</code> で、変数は改行で区切ります。<br />警告: <code>MEMOS_MODE</code> のような管理対象の変数は無視されます。"
+  "settingsMemosEnvironmentVariablesDescription": "Memos バイナリに渡す環境変数。<br />\n形式は <code>VARIABLE=VALUE</code> で、変数は改行で区切ります。<br />\n警告: <code>MEMOS_MODE</code> のような管理対象の変数は無視されます。"
 }
