@@ -1,0 +1,5 @@
+files:
+  - source: /src-ui/i18n/en.json
+    translation: /src-ui/i18n/%locale%.json
+  - source: /crates/memospot/i18n/en/memospot.ftl
+    translation: /crates/memospot/i18n/%locale%/memospot.ftl
