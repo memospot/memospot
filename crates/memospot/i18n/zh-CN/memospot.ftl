@@ -2,115 +2,115 @@
 # Make sure they don't conflict with other mnemonics in the same context.
 
 # Menu items
-appmenu = &Application
-appmenu-browse-data-directory = &Browse data directory…
-appmenu-check-for-updates = &Check for updates…
-appmenu-open-in-browser = &Open in browser…
-appmenu-quit = &Quit
-appmenu-settings = &Settings
-viewmenu = &View
-viewmenu-developer-tools = &Developer Tools
-viewmenu-hide-menu-bar = &Hide menu bar
-viewmenu-refresh = &Refresh
+appmenu = &应用程序
+appmenu-browse-data-directory = 浏览数据目录…
+appmenu-check-for-updates = 检查更新…
+appmenu-open-in-browser = 在浏览器中打开…
+appmenu-quit = &退出
+appmenu-settings = &设置
+viewmenu = &查看
+viewmenu-developer-tools = 开发者工具
+viewmenu-hide-menu-bar = 隐藏菜单栏
+viewmenu-refresh = &刷新
 viewmenu-reload-view = Re&load
-windowmenu = &Window
-helpmenu = &Help
-helpmenu-memos-version = Memos version
-helpmenu-memospot-version = &Memospot version
-helpmenu-documentation = &Documentation
-helpmenu-release-notes = &Release Notes
+windowmenu = 窗口
+helpmenu = 帮助
+helpmenu-memos-version = Memos 版本
+helpmenu-memospot-version = &Memospot 版本
+helpmenu-documentation = 文档
+helpmenu-release-notes = &发布说明
 helpmenu-report-issue = &Report an Issue…
 # Dialogs
-dialog-update-title = Update available
-dialog-update-no-update = No update available.
+dialog-update-title = 可用更新
+dialog-update-no-update = 无可用更新。
 dialog-update-message =
-    Version { $version } is available for download.
+    版本 { $version } 可供下载。
     
-    Do you want to download it?
-panic-failed-to-spawn-memos = Failed to spawn Memos
+    您想要下载吗？
+panic-failed-to-spawn-memos = 生成内存失败
 panic-failed-to-create-data-directory =
-    Failed to create data directory!
+    创建数据目录失败！
     { $dir }
 panic-data-directory-is-not-writable =
-    Data directory is not writable!
+    数据目录不可写!
     { $dir }
 panic-unable-to-resolve-custom-data-directory =
-    Failed to resolve custom Memos data directory!
+    无法解析自定义Memos 数据目录！
     { $dir }
     
-    Ensure the path exists as a directory, or remove the
-    setting `memos.data` to use the default data path.
+    确保路径作为目录存在，或删除
+    设置 `memos'。 使用默认数据路径的 ata` 。
 panic-unable-to-create-backup-directory =
-    Unable to create backup directory!
+    无法创建备份目录！
     { $dir }
 panic-backup-directory-is-a-file =
-    Backup directory exists as a file!
+    备份目录作为文件存在！
     { $dir }
 panic-backup-directory-is-not-writable =
-    Backup directory is not writable!
+    备份目录不可写!
     { $dir }
 panic-database-file-is-not-writable =
-    Database file is not writable!
+    数据库文件不可写！
     { $file }
-panic-failed-to-connect-to-database = Failed to connect to the database
+panic-failed-to-connect-to-database = 无法连接到数据库
 panic-failed-to-run-database-migrations =
-    Failed to run database migrations:
+    无法运行数据库迁移:
     { $error }
-panic-failed-to-close-database-connection = Failed to close database connection
+panic-failed-to-close-database-connection = 关闭数据库连接失败
 warn-failed-to-backup-database =
-    Failed to backup database:
+    备份数据库失败：
     
     { $error }
-prompt-install-webview-title = WebView Error
+prompt-install-webview-title = WebView 错误
 prompt-install-webview-message =
     A WebView is *required* for this application to
     work and it is not available on this system!
     
     Do you want to install it?
 error-failed-to-install-webview =
-    Failed to install WebView:
+    无法安装 WebView:
     
     { $error }
     
-    Please install it manually.
-panic-config-unable-to-create = Unable to create configuration file
+    请手动安装它。
+panic-config-unable-to-create = 无法创建配置文件
 panic-config-is-not-a-file =
-    Provided configuration path is a directory.
-    It must be a file!
+    提供的配置路径是一个目录。
+    它必须是一个文件！
     { $path }
 panic-config-is-not-writable =
-    Configuration file is not writable!
+    配置文件不可写！
     { $file }
-prompt-config-error-title = Configuration Error
+prompt-config-error-title = 配置错误
 prompt-config-error-message =
-    Failed to parse configuration file:
+    解析配置文件失败：
     
     { $error }
     
-    Reset the configuration file?
-    (A backup will be created.)
+    重置配置文件？
+    (将创建备份)
 panic-config-error =
-    Please, fix the configuration file
-    manually and restart the application.
-panic-config-unable-to-backup = Failed to backup the current configuration file
-panic-config-unable-to-reset = Unable to reset the configuration file
-panic-config-parse-error = Fatal error while parsing the configuration file
+    请手动修复配置文件
+    并重启应用程序。
+panic-config-unable-to-backup = 备份当前配置文件失败
+panic-config-unable-to-reset = 无法重置配置文件
+panic-config-parse-error = 解析配置文件时发生严重错误
 error-config-write-error =
-    Failed to write configuration file:
+    写入配置文件失败：
     
     { $error }
-panic-portpicker-error = Failed to find a free port to bind Memos to!
+panic-portpicker-error = 找不到可绑定Memos的自由端口！
 error-invalid-server-url =
-    Invalid remote server URL:
+    无效的远程服务器 URL：
     { $url }
     
-    URL must start with "http".
-    Check the settings.
-panic-unable-to-find-memos-binary = Unable to find Memos server binary!
+    URL必须以“http”开头。
+    请检查设置。
+panic-unable-to-find-memos-binary = 找不到 Memos 服务器二进制！
 panic-log-config-write-error =
-    Failed to write log configuration file:
+    写入日志配置文件失败：
     { $file }
 panic-log-config-reset-error =
-    Failed to reset the log configuration file:
+    重置日志配置文件失败：
     { $file }
-    Please delete it and restart the application.
+    请删除它并重启应用程序。
