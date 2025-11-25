@@ -16,7 +16,6 @@ on:
       - "**/*.{dll,nsi,nsh,wxs,xml}"
       - "**/*.lock"
       - "**/justfile"
-    tags-ignore: ["*"]
   workflow_dispatch:
 
 concurrency:

@@ -10,7 +10,6 @@ on:
     paths:
       - "**/audit-rust.yml"
       - "**/Cargo.{lock,toml}"
-    tags-ignore: ["*"]
   schedule: [{ cron: "0 0 * * *" }]
   workflow_dispatch:
 
