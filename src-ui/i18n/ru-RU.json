@@ -54,7 +54,7 @@
   "settingsMemospotLogging": "Ведение журнала",
   "settingsMemospotLoggingDescription": "Полезно только для диагностики и устранения неполадок.",
   "settingsMemospotEnvironmentVariables": "Переменные окружения",
-  "settingsMemospotEnvironmentVariablesDescription": "May be used to configure the WebView on Linux.<br />Format is <code>VARIABLE=VALUE</code>, separated by newlines.",
+  "settingsMemospotEnvironmentVariablesDescription": "Его можно использовать для настройки WebView в Linux.<br />Формат: <code>VARIABLE=VALUE</code>, значения разделяются переносами строк.",
   "settingsMemos": "Запоминания",
   "settingsMemosDescription": "Встроенный сервер Memos",
   "settingsMemosMode": "Режим",
@@ -73,5 +73,5 @@
   "settingsMemosBindPort": "Bind port",
   "settingsMemosBindPortDescription": "Предпочтителен указанный здесь порт, но он будет прозрачно переопределен Memospot, если он уже используется.",
   "settingsMemosEnvironmentVariables": "Переменные окружения",
-  "settingsMemosEnvironmentVariablesDescription": "Environment variables to pass to the Memos binary.<br />Format is <code>VARIABLE=VALUE</code>, separating variables by newlines.<br />WARNING: managed variables like <code>MEMOS_MODE</code> will be ignored."
+  "settingsMemosEnvironmentVariablesDescription": "Переменные окружения, которые будут переданы бинарному файлу Memos.<br />Формат: <code>VARIABLE=VALUE</code>, переменные разделяются переносами строк.<br />ПРЕДУПРЕЖДЕНИЕ: управляемые переменные, такие как <code>MEMOS_MODE</code>, будут игнорироваться."
 }
