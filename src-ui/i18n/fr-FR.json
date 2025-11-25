@@ -48,7 +48,7 @@
   "settingsMemospotUpdaterInterval": "Intervalle de vérification",
   "settingsMemospotUpdaterIntervalDescription": "Utilisez des formats anglais simples comme <em>12h</em>, <em>1d</em>, <em>3w</em> ou <em>1M</em>.",
   "settingsMemospotMigrations": "Migrations de la base de données",
-  "settingsMemospotMigrationsDescription": "Extra database migrations that run when Memos is updated.<br />These may address issues that were not handled by Memos and can also improve the user experience with Memospot.",
+  "settingsMemospotMigrationsDescription": "Migrations de base de données supplémentaires exécutées lors de la mise à jour de Memos.<br />Ces migrations peuvent résoudre des problèmes non pris en charge par Memos et améliorer l'expérience utilisateur avec Memospot.",
   "settingsMemospotBackups": "Sauvegardes",
   "settingsMemospotBackupsDescription": "Actuellement, les sauvegardes ne sont exécutées qu'avant les migrations de bases de données.",
   "settingsMemospotLogging": "Journalisation",
