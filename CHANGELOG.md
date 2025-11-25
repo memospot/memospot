@@ -27,6 +27,12 @@ Security: in case of vulnerabilities.
 - Default Memos port to 5230. It will still be changed on the fly if
   the port is already in use and won't affect existing installs.
 
+### Added
+
+- An orphaned Memos process will be killed on startup. This works around a Tauri issue that prevents
+  the cleanup code from running on macOS when the app is closed via the dock context menu. It should
+  also help to recover from any abnormal shutdowns.
+
 ## [1.0.1] - 2025-11-20
 
 ### Changed

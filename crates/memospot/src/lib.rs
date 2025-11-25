@@ -3,6 +3,7 @@ mod i18n;
 mod init;
 mod memos;
 mod memos_log;
+mod memos_version;
 mod menu;
 mod runtime_config;
 mod sqlite;
@@ -19,7 +20,7 @@ use log::{debug, info, warn};
 use std::env;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tauri::Manager;
+use tauri::{async_runtime, Manager};
 use tauri_utils::config::WindowConfig;
 use window::{WebviewWindowExt, WindowConfigExt};
 
@@ -71,10 +72,13 @@ pub fn run() {
         config.yaml.memos.port = Some(config.yaml.memos.port.unwrap_or_default() + 1);
     }
 
+    // Cleanup orphaned Memos processes.
+    memos::find_and_kill_orphans(&config);
+
     config.yaml.memos.port = Some(init::memos_port(&config));
     config.paths.memos_data = init::memos_data(&config);
     config.paths.memos_db_file = init::database(&config);
-    config.memos_url = init::memos_url(&config);
+    config.memos_url = memos::get_url(&config);
 
     info!(
         "Memos data directory: {}",
@@ -103,7 +107,7 @@ pub fn run() {
 
     {
         let url = config.memos_url.clone();
-        tauri::async_runtime::spawn(async move {
+        async_runtime::spawn(async move {
             memos::wait_api_ready(&url).await;
         });
     }
@@ -151,7 +155,7 @@ pub fn run() {
 
     if config.is_managed_server {
         let config_ = config.clone();
-        tauri::async_runtime::spawn(async move {
+        async_runtime::spawn(async move {
             init::migrate_database(&config_).await;
             memos::spawn(&config_).expect_dialog(fl!("panic-failed-to-spawn-memos"));
         });
@@ -253,20 +257,23 @@ pub fn run() {
                             }
                         }
                         tauri::WindowEvent::CloseRequested { .. } => {
-                            const CHILDREN_WINDOWS: [&str; 1] = ["settings"];
-                            for window in CHILDREN_WINDOWS {
-                                app_handle
-                                    .get_webview_window(window)
-                                    .map(|w| w.close().ok());
-                            }
+                            app_handle.webview_windows().into_iter().for_each(
+                                |(label, window)| {
+                                    if label != "main" {
+                                        window.close().ok();
+                                    }
+                                },
+                            );
                         }
                         _ => {}
                     }
                 }
             }
             tauri::RunEvent::ExitRequested { api, .. } => {
-                debug!("Exit requested.");
+                // Keep the event loop running even if all
+                // windows are closed to run cleanup code.
                 api.prevent_exit();
+                debug!("Exit requested.");
 
                 #[cfg(not(debug_assertions))]
                 let final_config = RuntimeConfig::from_global_store();
@@ -282,7 +289,7 @@ pub fn run() {
 
                 if final_config.yaml != final_config.__yaml__ {
                     info!("Configuration has changed. Saving…");
-                    tauri::async_runtime::block_on(async {
+                    async_runtime::block_on(async {
                         if let Err(e) = final_config.yaml.save_to_file(&config_path).await {
                             error_dialog!(
                                 "Failed to save config file:\n`{}`\n\n{}",
@@ -294,6 +301,7 @@ pub fn run() {
                 }
 
                 memos::shutdown();
+
                 info!("Memospot closed.");
                 app_handle.cleanup_before_exit();
                 std::process::exit(0);

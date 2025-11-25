@@ -336,30 +336,6 @@ pub fn memos_port(rtcfg: &RuntimeConfig) -> u16 {
     panic_dialog!(fl!("panic-portpicker-error"));
 }
 
-/// Memos URL.
-///
-/// It's ensured to end with a slash.
-///
-/// If remote server is enabled, return the configured URL.
-/// Otherwise, return the default Memos address for the spawned server.
-pub fn memos_url(rtcfg: &RuntimeConfig) -> String {
-    if !rtcfg.yaml.memospot.remote.enabled.unwrap_or_default()
-        || rtcfg.yaml.memospot.remote.url.is_none()
-    {
-        return format!(
-            "http://localhost:{}/",
-            rtcfg.yaml.memos.port.unwrap_or_default()
-        );
-    }
-
-    let url = rtcfg.yaml.memospot.remote.url.as_deref().unwrap();
-    if url.is_empty() || !url.starts_with("http") {
-        error_dialog!(fl!("error-invalid-server-url", url = url));
-    }
-
-    url.trim_end_matches('/').to_string() + "/"
-}
-
 /// Locate Memos server binary.
 ///
 /// Look for Memos server binary in the following order:

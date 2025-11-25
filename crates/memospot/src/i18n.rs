@@ -24,11 +24,10 @@ pub static LOCALE_LOADER: LazyLock<FluentLanguageLoader> = LazyLock::new(|| {
 
 /// Get a localized string.
 ///
-/// Most of the times, it's better to use the `fl!` macro instead.
+/// Most of the time, it's better to use the `fl!` macro instead.
 pub fn fl(message_id: &str) -> String {
     LOCALE_LOADER.get(message_id)
 }
-
 /// Get a localized string.
 ///
 /// This does compile time check to ensure the `message_id` is valid.

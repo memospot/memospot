@@ -1,5 +1,5 @@
 use crate::fl;
-use crate::memos;
+use crate::memos_version::MemosVersionStore;
 use crate::runtime_config::RuntimeConfig;
 use dialog::{confirm_dialog, info_dialog, MessageType};
 use log::{debug, error, warn};
@@ -76,12 +76,12 @@ impl MainMenu {
 }
 
 /// Build an empty menu.
-pub fn build_empty<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Menu<R>> {
+pub fn build_empty<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     Menu::with_items(handle, &[])
 }
 
 /// Build the main menu.
-pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Menu<R>> {
+pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     let config = RuntimeConfig::from_global_store();
     if config.yaml.memospot.window.hide_menu_bar == Some(true) {
         return build_empty(handle);
@@ -110,12 +110,12 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
     .accelerator("CmdOrCtrl+B")
     .build(handle)?;
 
+    #[cfg(target_os = "macos")]
+    let app_name = handle.config().product_name.clone().unwrap_or_default();
+
     let quit = MenuItemBuilder::with_id(MainMenu::AppQuit.id(), MainMenu::AppQuit.text())
         .accelerator("CmdOrCtrl+Q")
         .build(handle)?;
-
-    #[cfg(target_os = "macos")]
-    let app_name = handle.config().product_name.clone().unwrap_or_default();
 
     #[cfg(target_os = "macos")]
     let mac_menu = &SubmenuBuilder::new(handle, app_name)
@@ -210,7 +210,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<tauri::menu::Me
             &PredefinedMenuItem::separator(handle)?,
             &MenuItemBuilder::with_id(
                 MainMenu::HelpMemosVersion.id(),
-                format!("Memos v{}", memos::VersionStore::get()),
+                format!("Memos v{}", MemosVersionStore::get()),
             )
             .enabled(false)
             .build(handle)?,
@@ -258,7 +258,7 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
     match action {
         MainMenu::AppSettings => {
             let handle_ = handle.clone();
-            tauri::async_runtime::spawn(async move {
+            async_runtime::spawn(async move {
                 let window_builder = tauri::WebviewWindowBuilder::new(
                     &handle_,
                     "settings",
@@ -302,7 +302,7 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
         }
         MainMenu::AppUpdate => {
             let handle_ = handle.clone();
-            tauri::async_runtime::spawn(async move {
+            async_runtime::spawn(async move {
                 let Ok(updater) = handle_.updater() else {
                     return;
                 };
@@ -379,7 +379,7 @@ pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
         MainMenu::HelpMemosReleaseNotes => {
             let url = format!(
                 "https://www.usememos.com/changelog/{}",
-                memos::VersionStore::get().replace(".", "-")
+                MemosVersionStore::get().replace(".", "-")
             );
             open_link(url.as_str());
         }
@@ -411,7 +411,7 @@ pub fn update_with_memos_version<R: Runtime>(handle: &AppHandle<R>) {
                 );
                 break;
             }
-            if !memos::VersionStore::get().is_empty() {
+            if !MemosVersionStore::get().is_empty() {
                 break;
             }
         }
@@ -425,7 +425,7 @@ pub fn update_with_memos_version<R: Runtime>(handle: &AppHandle<R>) {
         };
 
         // Find and update the Memos version entry in the Help menu.
-        let version_text = format!("Memos v{}", memos::VersionStore::get());
+        let version_text = format!("Memos v{}", MemosVersionStore::get());
         menu.items()
             .iter()
             .flat_map(|item| item.iter())

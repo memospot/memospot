@@ -1,44 +1,186 @@
-use crate::memos_log;
+use crate::memos_version::MemosVersionStore;
 use crate::utils::absolute_path;
+use crate::{fl, memos_log};
 use crate::{sqlite, RuntimeConfig};
 use anyhow::{anyhow, Result};
-use dialog::ExpectDialogExt;
+use dialog::{error_dialog, panic_dialog};
 use homedir::HomeDirExt;
 use log::{debug, info, warn};
 use std::collections::HashMap;
+
 use std::path::{Path, PathBuf};
-use std::sync::LazyLock;
-use std::sync::{Arc, Mutex};
 #[cfg(unix)]
 use std::{fs, os::unix::fs::PermissionsExt};
+use sysinfo::{Pid, System};
+use tauri::async_runtime;
 use tauri::utils::platform::resource_dir as tauri_resource_dir;
 use tauri_plugin_http::reqwest;
 use tauri_utils::PackageInfo;
+use tokio::io::AsyncWriteExt;
 
-#[derive(Clone, Debug, Default)]
-pub struct VersionStore {
-    version: Arc<Mutex<String>>,
+/// Cleanup orphaned Memos processes.
+///
+/// NOTE: there's a serious bug that prevents the `ExitRequested` event from
+/// running on macOS when the app is closed via the dock context menu.
+/// See: <https://github.com/tauri-apps/tauri/issues/9198>
+///
+/// This causes Memos to stay as an orphaned process, and it also makes the UI hang while
+/// Memospot tries to checkpoint a database locked by a process it no longer controls.
+///
+/// This function is cross-platform and should help to recover from such situations.
+pub fn find_and_kill_orphans(rtcfg: &RuntimeConfig) {
+    if let Some(pid) = get_last_pid(rtcfg) {
+        debug!("unclean shutdown detected");
+        let prev_port = rtcfg.__yaml__.memos.port.unwrap_or_default();
+        let prev_url = format!("http://localhost:{}/", prev_port);
+
+        async_runtime::block_on(async {
+            if Ok(true) == ping_api(&prev_url, 2_000).await {
+                warn!("detected orphaned Memos server (PID: {pid}). Attempting to terminate…");
+                kill_pid(pid).await;
+
+                // Give some time for the port to be released.
+                std::thread::sleep(std::time::Duration::from_secs(2));
+                return;
+            }
+            debug!("got no response from {prev_url}. No action taken.");
+        });
+    }
 }
-impl VersionStore {
-    /// Returns a reference to the global singleton instance of `VersionStore`.
-    fn instance() -> &'static Self {
-        static INSTANCE: LazyLock<VersionStore> = LazyLock::new(Default::default);
-        &INSTANCE
+
+/// Get the last known Memos PID.
+///
+/// Should return None if it had a graceful shutdown.
+pub fn get_last_pid(rtcfg: &RuntimeConfig) -> Option<u32> {
+    let pid_file = rtcfg.paths.memospot_data.join("memos.pid");
+    if pid_file.is_file() {
+        return match fs::read_to_string(&pid_file) {
+            Ok(content) => match content.trim().parse::<u32>() {
+                Ok(pid) => Some(pid),
+                Err(e) => {
+                    warn!("Failed to parse PID from file {pid_file:#?}: {e}");
+                    None
+                }
+            },
+            Err(e) => {
+                debug!("Failed to read PID file {pid_file:#?}: {e}");
+                None
+            }
+        };
     }
-    /// Get version previously stored by [`memos::wait_api_ready()`].
-    pub fn get() -> String {
-        VersionStore::instance()
-            .version
-            .lock()
-            .expect_dialog("unable to lock version store")
-            .clone()
+    debug!("PID file does not exist: {pid_file:#?}");
+    None
+}
+
+/// Save PID.
+///
+/// Stores the PID so we can use this to track and recover from ungraceful shutdowns.
+///
+/// Only a single PID is ever stored.
+fn save_pid_file(pid: u32, file_path: &Path) {
+    if file_path.is_dir() {
+        panic_dialog("provided file path is a directory");
     }
-    pub fn set(version: impl Into<String>) {
-        let mut store = VersionStore::instance()
-            .version
-            .lock()
-            .expect_dialog("unable to lock version store");
-        *store = version.into();
+
+    let pid_file = file_path.to_path_buf();
+    let file_contents = pid.to_string();
+    let time_start = tokio::time::Instant::now();
+
+    async_runtime::spawn(async move {
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
+        let mut last_error: String = "".into();
+        loop {
+            interval.tick().await;
+            if time_start.elapsed() > tokio::time::Duration::from_secs(5) {
+                warn!("timed out after 5 seconds while trying to write pid file");
+                break;
+            }
+
+            let mut file = match tokio::fs::File::create(&pid_file).await {
+                Ok(f) => f,
+                Err(e) => {
+                    let error = e.to_string();
+                    if last_error != error {
+                        warn!("unable to create pid file: {error}");
+                        last_error = error;
+                    }
+                    continue;
+                }
+            };
+
+            if let Err(e) = file.write_all(file_contents.as_bytes()).await {
+                let error = e.to_string();
+                if last_error != error {
+                    warn!("unable to write pid file: {error}");
+                    last_error = error;
+                }
+                continue;
+            }
+
+            if let Err(e) = file.flush().await {
+                let error = e.to_string();
+                if last_error != error {
+                    warn!("unable to flush pid file: {error}");
+                    last_error = error;
+                }
+                continue;
+            }
+
+            break;
+        }
+    });
+}
+
+fn remove_pid_file(rtcfg: &RuntimeConfig) {
+    let pid_file = rtcfg.paths.memospot_data.join("memos.pid");
+    let time_start = tokio::time::Instant::now();
+    let timeout = tokio::time::Duration::from_secs(5);
+
+    async_runtime::block_on(async move {
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
+        let mut last_error: String = "".into();
+        loop {
+            interval.tick().await;
+            if time_start.elapsed() > timeout {
+                warn!("timed out after 5 seconds while trying to remove pid file");
+                break;
+            }
+
+            if let Err(e) = tokio::fs::remove_file(&pid_file).await {
+                let error = e.to_string();
+                if last_error != error {
+                    warn!("unable to remove pid file: {error}");
+                    last_error = error;
+                }
+                continue;
+            }
+            debug!("pid file removed");
+            break;
+        }
+    });
+}
+
+async fn kill_pid(pid: u32) {
+    let time_start = tokio::time::Instant::now();
+    let timeout = tokio::time::Duration::from_secs(5);
+    let sys = System::new_all();
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
+    loop {
+        interval.tick().await;
+        if time_start.elapsed() > timeout {
+            warn!("timed out after {timeout:?} seconds");
+            break;
+        }
+
+        if let Some(process) = sys.process(Pid::from(pid as usize)) {
+            if let Err(e) = process.kill_and_wait() {
+                warn!("unable to kill pid {pid}: {e:?}")
+            } else {
+                let elapsed = time_start.elapsed().as_millis();
+                warn!("killed pid {pid} after {elapsed} ms");
+                break;
+            }
+        }
     }
 }
 
@@ -49,6 +191,7 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
     let env_vars: HashMap<String, String> = prepare_env(rtcfg);
     let command = rtcfg.paths.memos_bin.to_string_lossy().to_string();
     let cwd = get_cwd(rtcfg);
+
     debug!("working directory: {}", cwd.to_string_lossy());
     debug!("environment: {env_vars:#?}");
 
@@ -62,13 +205,19 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
             .spawn();
 
         match res {
-            Ok(receiver) => {
+            Ok(receiver, ..) => {
                 if rtcfg.yaml.memospot.log.enabled.unwrap_or(false) {
                     let (rx_, _) = receiver;
-                    tauri::async_runtime::spawn(async move {
+                    async_runtime::spawn(async move {
                         memos_log::log_events(rx_).await;
                     });
                 }
+
+                let (_, child) = receiver;
+                let pid_file = rtcfg.paths.memospot_data.join("memos.pid");
+
+                save_pid_file(child.pid(), &pid_file);
+
                 return Ok(());
             }
             Err(e) => {
@@ -78,17 +227,17 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
                 #[cfg(unix)]
                 {
                     warn!("attempting to add executable permissions to the binary…");
-                    if let Err(perm_err) = (|| -> Result<(), anyhow::Error> {
+                    if let Err(e) = (|| -> Result<(), anyhow::Error> {
                         let mut perms = fs::metadata(&command)?.permissions();
                         perms.set_mode(0o755);
                         fs::set_permissions(&command, perms)?;
                         Ok(())
                     })() {
-                        last_error = last_error
-                            .context(anyhow!("failed to set permissions").context(perm_err));
+                        let perm_err = anyhow!("failed to set permissions").context(e);
+                        last_error = last_error.context(perm_err);
                         warn!("{last_error}");
                     } else {
-                        info!("permissions added successfully. Attempting to relaunch.");
+                        info!("permissions added successfully. Attempting to relaunch…");
                     }
                 }
                 continue;
@@ -108,10 +257,10 @@ pub fn shutdown() {
     sidecar::kill_children();
 
     let db_file = config.paths.memos_db_file.clone();
-    tauri::async_runtime::block_on(async move {
+    async_runtime::block_on(async move {
         sqlite::wait_checkpoint(&db_file).await;
     });
-
+    remove_pid_file(&config);
     debug!("server shutdown");
 }
 
@@ -174,6 +323,30 @@ pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
     }
     // Fallback to data directory.
     rtcfg.paths.memospot_data.clone()
+}
+
+/// Memos URL.
+///
+/// It's ensured to end with a slash.
+///
+/// If remote server is enabled, return the configured URL.
+/// Otherwise, return the default Memos address for the spawned server.
+pub fn get_url(rtcfg: &RuntimeConfig) -> String {
+    let remote = &rtcfg.yaml.memospot.remote;
+    let url = remote.url.as_deref().unwrap_or_default();
+
+    if remote.enabled != Some(true) || url.is_empty() {
+        return format!(
+            "http://localhost:{}/",
+            rtcfg.yaml.memos.port.unwrap_or_default()
+        );
+    }
+
+    if !url.starts_with("http") {
+        error_dialog!(fl!("error-invalid-server-url", url = url));
+    }
+
+    format!("{}/", url.trim_end_matches('/'))
 }
 
 /// Make environment variable key suitable for Memos server.
@@ -254,8 +427,8 @@ pub async fn query_version(memos_url: &str) -> Result<String, anyhow::Error> {
         match request {
             Ok(response) => {
                 if !response.status().is_success() {
-                    last_error =
-                        anyhow!("server responded with status code {}", response.status());
+                    let code = response.status();
+                    last_error = anyhow!("server responded with status code {code}");
                     continue;
                 }
                 let json = response
@@ -314,7 +487,7 @@ pub async fn wait_api_ready(memos_url: &str) {
         time_start.elapsed().as_millis(),
         version
     );
-    VersionStore::set(version);
+    MemosVersionStore::set(version);
 }
 
 /// Ping the Memos API to check if it is ready.
@@ -345,62 +518,4 @@ pub async fn ping_api(memos_url: &str, timeout_millis: u64) -> Result<bool, Stri
         }
     }
     Ok(false)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_version_store() {
-        assert_eq!(VersionStore::get(), "");
-
-        // set version to 1.0.0 in the main thread
-        VersionStore::set("1.0.0");
-        assert_eq!(VersionStore::get(), "1.0.0");
-
-        std::thread::spawn(|| {
-            assert_eq!(VersionStore::get(), "1.0.0");
-        })
-        .join()
-        .unwrap();
-
-        tokio::spawn(async {
-            assert_eq!(VersionStore::get(), "1.0.0");
-        })
-        .await
-        .unwrap();
-
-        // set version to 1.0.1 in the async runtime
-        tokio::spawn(async {
-            VersionStore::set("1.0.1");
-            assert_eq!(VersionStore::get(), "1.0.1");
-        })
-        .await
-        .unwrap();
-
-        assert_eq!(VersionStore::get(), "1.0.1");
-
-        std::thread::spawn(|| {
-            assert_eq!(VersionStore::get(), "1.0.1");
-        })
-        .join()
-        .unwrap();
-
-        // set version to 1.0.2 in another thread
-        std::thread::spawn(|| {
-            VersionStore::set("1.0.2");
-            assert_eq!(VersionStore::get(), "1.0.2");
-        })
-        .join()
-        .unwrap();
-
-        assert_eq!(VersionStore::get(), "1.0.2");
-
-        tokio::spawn(async {
-            assert_eq!(VersionStore::get(), "1.0.2");
-        })
-        .await
-        .unwrap();
-    }
 }
