@@ -2,115 +2,115 @@
 # Make sure they don't conflict with other mnemonics in the same context.
 
 # Menu items
-appmenu = &Application
-appmenu-browse-data-directory = &Browse data directory…
-appmenu-check-for-updates = &Check for updates…
-appmenu-open-in-browser = &Open in browser…
-appmenu-quit = &Quit
-appmenu-settings = &Settings
-viewmenu = &View
-viewmenu-developer-tools = &Developer Tools
-viewmenu-hide-menu-bar = &Hide menu bar
-viewmenu-refresh = &Refresh
-viewmenu-reload-view = Re&load
-windowmenu = &Window
-helpmenu = &Help
-helpmenu-memos-version = Memos version
-helpmenu-memospot-version = &Memospot version
-helpmenu-documentation = &Documentation
-helpmenu-release-notes = &Release Notes
-helpmenu-report-issue = &Report an Issue…
+appmenu = &Aplicação
+appmenu-browse-data-directory = &Explorar diretório de dados…
+appmenu-check-for-updates = &Verificar atualizações…
+appmenu-open-in-browser = Abrir no &navegador…
+appmenu-quit = &Sair
+appmenu-settings = &Configurações
+viewmenu = &Exibição
+viewmenu-developer-tools = &Ferramentas do desenvolvedor…
+viewmenu-hide-menu-bar = &Esconder barra de menu
+viewmenu-refresh = &Atualizar
+viewmenu-reload-view = &Recarregar
+windowmenu = Jane&la
+helpmenu = A&juda
+helpmenu-memos-version = &Versão do Memos
+helpmenu-memospot-version = &Versão do Memospot
+helpmenu-documentation = &Documentação
+helpmenu-release-notes = &Notas de lançamento
+helpmenu-report-issue = &Reportar um problema…
 # Dialogs
-dialog-update-title = Update available
-dialog-update-no-update = No update available.
+dialog-update-title = Atualização disponível
+dialog-update-no-update = Nenhuma atualização disponível.
 dialog-update-message =
-    Version { $version } is available for download.
+    A versão { $version } está disponível para download.
     
-    Do you want to download it?
-panic-failed-to-spawn-memos = Failed to spawn Memos
+    Deseja baixá-la?
+panic-failed-to-spawn-memos = Não foi possível iniciar o Memos
 panic-failed-to-create-data-directory =
-    Failed to create data directory!
+    Não foi possível criar o diretório de dados!
     { $dir }
 panic-data-directory-is-not-writable =
-    Data directory is not writable!
+    O diretório de dados não é gravável!
     { $dir }
 panic-unable-to-resolve-custom-data-directory =
-    Failed to resolve custom Memos data directory!
+    Falha ao resolver o diretório de dados do Memos!
     { $dir }
     
-    Ensure the path exists as a directory, or remove the
-    setting `memos.data` to use the default data path.
+    Certifique-se de que o caminho exista como um diretório,
+    ou remova o ajuste `memos.data` para usar o diretório padrão.
 panic-unable-to-create-backup-directory =
-    Unable to create backup directory!
+    Não foi possível criar o diretório de backup!
     { $dir }
 panic-backup-directory-is-a-file =
-    Backup directory exists as a file!
+    O diretório de backup existe como um arquivo!
     { $dir }
 panic-backup-directory-is-not-writable =
-    Backup directory is not writable!
+    O diretório de backup não é gravável!
     { $dir }
 panic-database-file-is-not-writable =
-    Database file is not writable!
+    O arquivo de banco de dados não é gravável!
     { $file }
-panic-failed-to-connect-to-database = Failed to connect to the database
+panic-failed-to-connect-to-database = Falha ao conectar ao banco de dados
 panic-failed-to-run-database-migrations =
-    Failed to run database migrations:
+    Falha ao executar migrações do banco de dados:
     { $error }
-panic-failed-to-close-database-connection = Failed to close database connection
+panic-failed-to-close-database-connection = Falha ao fechar a conexão com o banco de dados
 warn-failed-to-backup-database =
-    Failed to backup database:
+    Falha ao fazer backup do banco de dados:
     
     { $error }
-prompt-install-webview-title = WebView Error
+prompt-install-webview-title = Erro no WebView
 prompt-install-webview-message =
-    A WebView is *required* for this application to
-    work and it is not available on this system!
+    O WebView é *obrigatório* para o funcionamento deste
+    aplicativo e não está disponível no seu sistema!
     
-    Do you want to install it?
+    Deseja instalá-lo?
 error-failed-to-install-webview =
-    Failed to install WebView:
+    Falha ao instalar o WebView:
     
     { $error }
     
-    Please install it manually.
-panic-config-unable-to-create = Unable to create configuration file
+    Por favor, instale-o manualmente.
+panic-config-unable-to-create = Não foi possível criar o arquivo de configuração
 panic-config-is-not-a-file =
-    Provided configuration path is a directory.
-    It must be a file!
+    O caminho fornecido para a configuração é um diretório.
+    Deve ser um arquivo!
     { $path }
 panic-config-is-not-writable =
-    Configuration file is not writable!
+    O arquivo de configuração não é gravável!
     { $file }
-prompt-config-error-title = Configuration Error
+prompt-config-error-title = Erro na configuração
 prompt-config-error-message =
-    Failed to parse configuration file:
+    Erro ao ler o arquivo de configuração:
     
     { $error }
     
-    Reset the configuration file?
-    (A backup will be created.)
+    Redefinir o arquivo de configuração?
+    (Será criado um backup.)
 panic-config-error =
-    Please, fix the configuration file
-    manually and restart the application.
-panic-config-unable-to-backup = Failed to backup the current configuration file
-panic-config-unable-to-reset = Unable to reset the configuration file
-panic-config-parse-error = Fatal error while parsing the configuration file
+    Por favor, corrija o arquivo de configuração
+    manualmente e reinicie o aplicativo.
+panic-config-unable-to-backup = Falha ao fazer backup do arquivo de configuração atual
+panic-config-unable-to-reset = Não foi possível redefinir o arquivo de configuração
+panic-config-parse-error = Erro fatal ao ler o arquivo de configuração
 error-config-write-error =
-    Failed to write configuration file:
+    Falha ao gravar o arquivo de configuração:
     
     { $error }
-panic-portpicker-error = Failed to find a free port to bind Memos to!
+panic-portpicker-error = Falha ao encontrar uma porta livre para o Memos escutar!
 error-invalid-server-url =
-    Invalid remote server URL:
+    URL do servidor inválida:
     { $url }
     
-    URL must start with "http".
-    Check the settings.
-panic-unable-to-find-memos-binary = Unable to find Memos server binary!
+    A URL deve iniciar com "http".
+    Verifique as configurações.
+panic-unable-to-find-memos-binary = Não foi possível encontrar o binário do servidor do Memos!
 panic-log-config-write-error =
-    Failed to write log configuration file:
+    Falha ao gravar o arquivo de configuração de log:
     { $file }
 panic-log-config-reset-error =
-    Failed to reset the log configuration file:
+    Falha ao redefinir o arquivo de configuração de log:
     { $file }
-    Please delete it and restart the application.
+    Por favor, exclua este arquivo e reinicie o aplicativo.
