@@ -2,34 +2,34 @@
 # Make sure they don't conflict with other mnemonics in the same context.
 
 # Menu items
-appmenu = &Application
-appmenu-browse-data-directory = &Browse data directory…
-appmenu-check-for-updates = &Check for updates…
-appmenu-open-in-browser = &Open in browser…
-appmenu-quit = &Quit
-appmenu-settings = &Settings
-viewmenu = &View
-viewmenu-developer-tools = &Developer Tools
-viewmenu-hide-menu-bar = &Hide menu bar
-viewmenu-refresh = &Refresh
+appmenu = &Приложение
+appmenu-browse-data-directory = &Просмотр каталога данных…
+appmenu-check-for-updates = &Проверять наличие обновлений…
+appmenu-open-in-browser = &Открыть в браузере…
+appmenu-quit = &Выйти
+appmenu-settings = &Настройки
+viewmenu = Вид
+viewmenu-developer-tools = &Инструменты разработчика
+viewmenu-hide-menu-bar = &Скрыть панель меню
+viewmenu-refresh = &Обновить
 viewmenu-reload-view = Re&load
-windowmenu = &Window
-helpmenu = &Help
-helpmenu-memos-version = Memos version
-helpmenu-memospot-version = &Memospot version
-helpmenu-documentation = &Documentation
-helpmenu-release-notes = &Release Notes
-helpmenu-report-issue = &Report an Issue…
+windowmenu = &Окно
+helpmenu = &Помощь
+helpmenu-memos-version = Версия примечаний
+helpmenu-memospot-version = &Версия Memospot
+helpmenu-documentation = &Документация
+helpmenu-release-notes = &Заметки о выпуске
+helpmenu-report-issue = &Сообщить о проблеме…
 # Dialogs
-dialog-update-title = Update available
-dialog-update-no-update = No update available.
+dialog-update-title = Доступно обновление
+dialog-update-no-update = Нет доступных обновлений.
 dialog-update-message =
-    Version { $version } is available for download.
+    Версия { $version } доступна для скачивания.
     
-    Do you want to download it?
-panic-failed-to-spawn-memos = Failed to spawn Memos
+    Вы хотите скачать его?
+panic-failed-to-spawn-memos = Не удалось создать примечания
 panic-failed-to-create-data-directory =
-    Failed to create data directory!
+    Не удалось создать каталог данных!
     { $dir }
 panic-data-directory-is-not-writable =
     Data directory is not writable!
@@ -41,7 +41,7 @@ panic-unable-to-resolve-custom-data-directory =
     Ensure the path exists as a directory, or remove the
     setting `memos.data` to use the default data path.
 panic-unable-to-create-backup-directory =
-    Unable to create backup directory!
+    Невозможно создать резервную копию!
     { $dir }
 panic-backup-directory-is-a-file =
     Backup directory exists as a file!
@@ -52,28 +52,28 @@ panic-backup-directory-is-not-writable =
 panic-database-file-is-not-writable =
     Database file is not writable!
     { $file }
-panic-failed-to-connect-to-database = Failed to connect to the database
+panic-failed-to-connect-to-database = Не удалось подключиться к базе данных
 panic-failed-to-run-database-migrations =
-    Failed to run database migrations:
+    Не удалось выполнить миграцию базы данных:
     { $error }
-panic-failed-to-close-database-connection = Failed to close database connection
+panic-failed-to-close-database-connection = Не удалось закрыть соединение с базой данных
 warn-failed-to-backup-database =
-    Failed to backup database:
+    Ошибка резервного копирования базы данных:
     
     { $error }
-prompt-install-webview-title = WebView Error
+prompt-install-webview-title = Ошибка WebView
 prompt-install-webview-message =
     A WebView is *required* for this application to
     work and it is not available on this system!
     
     Do you want to install it?
 error-failed-to-install-webview =
-    Failed to install WebView:
+    Не удалось установить WebView:
     
     { $error }
     
-    Please install it manually.
-panic-config-unable-to-create = Unable to create configuration file
+    Пожалуйста, установите его вручную.
+panic-config-unable-to-create = Не удается создать файл конфигурации
 panic-config-is-not-a-file =
     Provided configuration path is a directory.
     It must be a file!
@@ -81,36 +81,36 @@ panic-config-is-not-a-file =
 panic-config-is-not-writable =
     Configuration file is not writable!
     { $file }
-prompt-config-error-title = Configuration Error
+prompt-config-error-title = Ошибка конфигурации
 prompt-config-error-message =
-    Failed to parse configuration file:
+    Не удалось разобрать конфигурационный файл:
     
     { $error }
     
-    Reset the configuration file?
-    (A backup will be created.)
+    Сбросить конфигурационный файл?
+    (будет создана резервная копия)
 panic-config-error =
-    Please, fix the configuration file
-    manually and restart the application.
-panic-config-unable-to-backup = Failed to backup the current configuration file
-panic-config-unable-to-reset = Unable to reset the configuration file
-panic-config-parse-error = Fatal error while parsing the configuration file
+    Пожалуйста, исправьте конфигурационный файл
+    вручную и перезапустите приложение.
+panic-config-unable-to-backup = Не удалось сделать резервную копию текущего файла конфигурации
+panic-config-unable-to-reset = Не удалось сбросить файл конфигурации
+panic-config-parse-error = Фатальная ошибка при разборе конфигурационного файла
 error-config-write-error =
-    Failed to write configuration file:
+    Не удалось записать файл конфигурации:
     
     { $error }
-panic-portpicker-error = Failed to find a free port to bind Memos to!
+panic-portpicker-error = Не удалось найти свободный порт для привязки Memos!
 error-invalid-server-url =
-    Invalid remote server URL:
+    Неверный URL удаленного сервера:
     { $url }
     
-    URL must start with "http".
-    Check the settings.
-panic-unable-to-find-memos-binary = Unable to find Memos server binary!
+    URL должен начинаться с "http".
+    Проверьте настройки.
+panic-unable-to-find-memos-binary = Не удалось найти бинарный файл Memos сервера!
 panic-log-config-write-error =
-    Failed to write log configuration file:
+    Не удалось записать файл конфигурации журнала:
     { $file }
 panic-log-config-reset-error =
-    Failed to reset the log configuration file:
+    Не удалось сбросить конфигурационный файл журнала:
     { $file }
-    Please delete it and restart the application.
+    Удалите его и перезапустите приложение.
