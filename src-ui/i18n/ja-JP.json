@@ -1,6 +1,6 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "loaderWaitingForServer": "Waiting for the server…",
+  "loaderWaitingForServer": "サーバーを待っています…",
   "loaderClickToOpenMemosWebsite": "クリックしてメモのウェブサイトを開く",
   "loaderCheckAgainIfServerStarted": "サーバーが起動した場合、もう一度確認してください",
   "loaderCheckAgain": "もう一度確認",
@@ -73,5 +73,5 @@
   "settingsMemosBindPort": "Bind port",
   "settingsMemosBindPortDescription": "ここで指定したポートは好ましいですが、既に使用されている場合は、Memospot によって透過的に上書きされます。",
   "settingsMemosEnvironmentVariables": "環境変数",
-  "settingsMemosEnvironmentVariablesDescription": "Environment variables to pass to the Memos binary.<br />Format is <code>VARIABLE=VALUE</code>, separating variables by newlines.<br />WARNING: managed variables like <code>MEMOS_MODE</code> will be ignored."
+  "settingsMemosEnvironmentVariablesDescription": "Memos バイナリに渡す環境変数。<br />\n形式は <code>VARIABLE=VALUE</code> で、変数は改行で区切ります。<br />\n警告: <code>MEMOS_MODE</code> のような管理対象の変数は無視されます。"
 }
