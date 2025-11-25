@@ -29,7 +29,7 @@ dialog-update-message =
     Voulez-vous la télécharger ?
 panic-failed-to-spawn-memos = Échec de l'apparition des mémos
 panic-failed-to-create-data-directory =
-    Failed to create data directory!
+    Impossible de créer le répertoire des données!
     { $dir }
 panic-data-directory-is-not-writable =
     Le répertoire des données n'est pas accessible en écriture !
@@ -63,10 +63,10 @@ warn-failed-to-backup-database =
     { $error }
 prompt-install-webview-title = Erreur WebView
 prompt-install-webview-message =
-    A WebView is *required* for this application to
-    work and it is not available on this system!
+    Une WebView est *nécessaire* pour que cette application fonctionne sur
+    et n'est pas disponible sur ce système !
     
-    Do you want to install it?
+    Voulez-vous l'installer ?
 error-failed-to-install-webview =
     Impossible d'installer WebView :
     
