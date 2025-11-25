@@ -2,115 +2,115 @@
 # Make sure they don't conflict with other mnemonics in the same context.
 
 # Menu items
-appmenu = &Application
+appmenu = アプリケーション(&A)
 appmenu-browse-data-directory = &Browse data directory…
 appmenu-check-for-updates = &Check for updates…
 appmenu-open-in-browser = &Open in browser…
-appmenu-quit = &Quit
-appmenu-settings = &Settings
-viewmenu = &View
-viewmenu-developer-tools = &Developer Tools
-viewmenu-hide-menu-bar = &Hide menu bar
-viewmenu-refresh = &Refresh
+appmenu-quit = 終了(&Q)
+appmenu-settings = 設定(&S)
+viewmenu = 表示(&V)
+viewmenu-developer-tools = 開発ツール(&O)
+viewmenu-hide-menu-bar = メニューバーを非表示(&H)
+viewmenu-refresh = リフレッシュ(&R)
 viewmenu-reload-view = Re&load
-windowmenu = &Window
-helpmenu = &Help
-helpmenu-memos-version = Memos version
-helpmenu-memospot-version = &Memospot version
-helpmenu-documentation = &Documentation
-helpmenu-release-notes = &Release Notes
+windowmenu = ウィンドウ(&W)
+helpmenu = ヘルプ (&H)
+helpmenu-memos-version = メモのバージョン
+helpmenu-memospot-version = メモポットのバージョン(&M)
+helpmenu-documentation = ドキュメント(&D)
+helpmenu-release-notes = リリースノート(&L)
 helpmenu-report-issue = &Report an Issue…
 # Dialogs
-dialog-update-title = Update available
-dialog-update-no-update = No update available.
+dialog-update-title = アップデートがあります
+dialog-update-no-update = 利用可能な更新はありません。
 dialog-update-message =
-    Version { $version } is available for download.
+    バージョン { $version } がダウンロード可能です。
     
-    Do you want to download it?
-panic-failed-to-spawn-memos = Failed to spawn Memos
+    ダウンロードしますか？
+panic-failed-to-spawn-memos = メモの生成に失敗しました
 panic-failed-to-create-data-directory =
-    Failed to create data directory!
+    データディレクトリの作成に失敗しました！
     { $dir }
 panic-data-directory-is-not-writable =
-    Data directory is not writable!
+    データディレクトリが書き込み可能ではありません!
     { $dir }
 panic-unable-to-resolve-custom-data-directory =
-    Failed to resolve custom Memos data directory!
+    カスタムメモスデータディレクトリの解決に失敗しました！
     { $dir }
     
-    Ensure the path exists as a directory, or remove the
-    setting `memos.data` to use the default data path.
+    パスがディレクトリとして存在することを確認するか、
+    設定の `memos を削除します。 ata` はデフォルトのデータパスを使用します。
 panic-unable-to-create-backup-directory =
-    Unable to create backup directory!
+    バックアップディレクトリを作成できません！
     { $dir }
 panic-backup-directory-is-a-file =
-    Backup directory exists as a file!
+    バックアップディレクトリはファイルとして存在します!
     { $dir }
 panic-backup-directory-is-not-writable =
-    Backup directory is not writable!
+    バックアップディレクトリが書き込み可能ではありません！
     { $dir }
 panic-database-file-is-not-writable =
-    Database file is not writable!
+    データベースファイルが書き込み可能ではありません!
     { $file }
-panic-failed-to-connect-to-database = Failed to connect to the database
+panic-failed-to-connect-to-database = データベースに接続できませんでした
 panic-failed-to-run-database-migrations =
-    Failed to run database migrations:
+    データベース移行の実行に失敗しました:
     { $error }
-panic-failed-to-close-database-connection = Failed to close database connection
+panic-failed-to-close-database-connection = データベース接続の終了に失敗しました
 warn-failed-to-backup-database =
-    Failed to backup database:
+    データベースのバックアップに失敗しました:
     
     { $error }
-prompt-install-webview-title = WebView Error
+prompt-install-webview-title = WebView エラー
 prompt-install-webview-message =
-    A WebView is *required* for this application to
-    work and it is not available on this system!
+    このアプリケーションを
+    動作させるために WebView が必要です。このシステムでは利用できません！
     
-    Do you want to install it?
+    インストールしますか？
 error-failed-to-install-webview =
-    Failed to install WebView:
+    WebViewのインストールに失敗しました:
     
     { $error }
     
-    Please install it manually.
-panic-config-unable-to-create = Unable to create configuration file
+    手動でインストールしてください。
+panic-config-unable-to-create = 設定ファイルを作成できません
 panic-config-is-not-a-file =
-    Provided configuration path is a directory.
-    It must be a file!
+    指定された設定パスはディレクトリです。
+    ファイルでなければなりません！
     { $path }
 panic-config-is-not-writable =
-    Configuration file is not writable!
+    設定ファイルが書き込み可能ではありません!
     { $file }
-prompt-config-error-title = Configuration Error
+prompt-config-error-title = 設定エラー
 prompt-config-error-message =
-    Failed to parse configuration file:
+    設定ファイルの解析に失敗しました:
     
     { $error }
     
-    Reset the configuration file?
-    (A backup will be created.)
+    設定ファイルをリセットしますか?
+    (バックアップが作成されます。
 panic-config-error =
     Please, fix the configuration file
     manually and restart the application.
-panic-config-unable-to-backup = Failed to backup the current configuration file
-panic-config-unable-to-reset = Unable to reset the configuration file
-panic-config-parse-error = Fatal error while parsing the configuration file
+panic-config-unable-to-backup = 現在の設定ファイルのバックアップに失敗しました
+panic-config-unable-to-reset = 設定ファイルをリセットできません
+panic-config-parse-error = 設定ファイルの解析中に致命的なエラーが発生しました
 error-config-write-error =
-    Failed to write configuration file:
+    設定ファイルの書き込みに失敗しました:
     
     { $error }
-panic-portpicker-error = Failed to find a free port to bind Memos to!
+panic-portpicker-error = メモをバインドするフリーポートが見つかりませんでした！
 error-invalid-server-url =
-    Invalid remote server URL:
+    無効なリモート サーバー URL:
     { $url }
     
-    URL must start with "http".
-    Check the settings.
-panic-unable-to-find-memos-binary = Unable to find Memos server binary!
+    URL は "http" で始まる必要があります。
+    設定を確認してください。
+panic-unable-to-find-memos-binary = メモサーバーのバイナリが見つかりません！
 panic-log-config-write-error =
-    Failed to write log configuration file:
+    ログ設定ファイルの書き込みに失敗しました:
     { $file }
 panic-log-config-reset-error =
-    Failed to reset the log configuration file:
+    ログ設定ファイルのリセットに失敗しました:
     { $file }
-    Please delete it and restart the application.
+    削除してアプリケーションを再起動してください。
