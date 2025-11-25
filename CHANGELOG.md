@@ -32,6 +32,7 @@ Security: in case of vulnerabilities.
 - An orphaned Memos process will be killed on startup. This works around a Tauri issue that prevents
   the cleanup code from running on macOS when the app is closed via the dock context menu. It should
   also help to recover from any abnormal shutdowns.
+- Machine translations to Chinese Simplified, Chinese Traditional, French, German, Japanese, Russian and Spanish. Those can be improved by joining the [Crowdin](https://crowdin.com/project/memospot) project.
 
 ## [1.0.1] - 2025-11-20
 

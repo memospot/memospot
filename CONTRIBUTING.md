@@ -2,6 +2,13 @@
 
 [Memospot](https://github.com/memospot/memospot) contributor's guide.
 
+## Localization
+
+This project is available in multiple languages, and you can play an important role in its localization.
+Join the [Crowdin](https://crowdin.com/project/memospot) platform to help make this project accessible to a broader audience!
+
+## Development
+
 The recommended code editor is [Visual Studio Code](https://code.visualstudio.com/). The project has a pre-configured workspace, which will prompt you to install the recommended extensions.
 
 > [!TIP]
@@ -10,7 +17,7 @@ The recommended code editor is [Visual Studio Code](https://code.visualstudio.co
 > A `justfile` is available with lots of pre-configured [recipes](#using-just) for this project.
 > Just installation is covered in the [Pre-requisites](#pre-requisites) section.
 
-## Container build
+### Container build
 
 It's possible to easily build the app for Linux and Windows (NSIS only) using [Docker](https://www.docker.com/) or [Podman](https://podman.io/), via [Earthly](https://earthly.dev/get-earthly). This bypasses the need to setup the base OS and other dependencies.
 
@@ -30,7 +37,7 @@ Listing the additional recipes available in the [Earthfile](./Earthfile):
 earthly ls
 ```
 
-## Pre-requisites
+### Pre-requisites
 
 - A package manager: [Homebrew](https://brew.sh/) or [winget](https://apps.microsoft.com/detail/9NBLGGH4NNS1).
 - A system WebView (Edge [WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703), Safari, or WebkitGTK), for Tauri to work.
@@ -42,7 +49,7 @@ earthly ls
 >
 > Open a new terminal window and try to run the tool from there. If it doesn't work, read the tool's installation instructions thoroughly and setup it accordingly.
 
-### OS-specific dependencies
+#### OS-specific dependencies
 
 See also: [Tauri Prerequisites](https://v2.tauri.app/start/prerequisites/)
 
@@ -114,7 +121,7 @@ winget install --id=Microsoft.EdgeWebView2Runtime -e
 
 </details>
 
-### Bun
+#### Bun
 
 Bun is a fast JavaScript/TypeScript runtime, bundler, test runner, and package manager. It's used to bundle the front end and to run build scripts.
 
@@ -132,7 +139,7 @@ Bun is a fast JavaScript/TypeScript runtime, bundler, test runner, and package m
   winget install --id Oven-sh.Bun
   ```
 
-### Node JS
+#### Node JS
 
 Node is a JavaScript runtime built on Chrome's V8 JavaScript engine.
 
@@ -156,7 +163,7 @@ Node is a JavaScript runtime built on Chrome's V8 JavaScript engine.
   winget install --id OpenJS.NodeJS.LTS
   ```
 
-### UPX (optional; Linux-only)
+#### UPX (optional; Linux-only)
 
 [UPX](https://upx.github.io/) is a packer for executable files.
 
@@ -171,7 +178,7 @@ Node is a JavaScript runtime built on Chrome's V8 JavaScript engine.
   brew install upx
   ```
 
-### Rust
+#### Rust
 
 [Rustup](https://rustup.rs/) | [Official Website](https://www.rust-lang.org/tools/install)
 
@@ -189,14 +196,14 @@ Node is a JavaScript runtime built on Chrome's V8 JavaScript engine.
   winget install --id Rustlang.Rustup
   ```
 
-### Rust toolchain
+#### Rust toolchain
 
 ```bash
 rustup default stable
 rustup component add clippy rust-analyzer
 ```
 
-### Cargo binstall
+#### Cargo binstall
 
 [Binstall](https://github.com/cargo-bins/cargo-binstall) is a tool for installing pre-built Rust binaries.
 
@@ -222,7 +229,7 @@ iex (iwr "https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/insta
 cargo install cargo-binstall --locked
 ```
 
-#### Rust tools
+##### Rust tools
 
 - [cargo-cache](https://github.com/matthiaskrgr/cargo-cache): Utility to manage `cargo` cache.
 - [cargo-edit](https://github.com/killercup/cargo-edit): Utility to manage `cargo` dependencies.
@@ -230,7 +237,7 @@ cargo install cargo-binstall --locked
 - [dprint](https://github.com/dprint/dprint): A pluggable code formatter.
 - [just](https://github.com/casey/just): A command runner.
 
-##### Bash
+###### Bash
 
 ```bash
 cargo binstall \
@@ -252,7 +259,7 @@ cargo binstall \
 > cargo install --locked --force --target=$(rustc -vV | sed -n 's|host: ||p') tauri-cli
 > ```
 
-##### Powershell
+###### Powershell
 
 ```powershell
 cargo binstall `
@@ -270,7 +277,7 @@ cargo binstall `
 >
 > `cargo binstall` outputs the installed tools to `$HOME/.cargo/bin` which already should be in your PATH.
 
-## Memos server build
+### Memos server build
 
 [Memos server](https://github.com/usememos/memos) is built separately on the repository [memos-builds](https://github.com/memospot/memos-builds).
 
@@ -291,19 +298,19 @@ Sample valid server binary names:
 > [!TIP]
 > You can check your current system target triple with the command `rustc -vV`.
 
-## Cloning the repository
+### Cloning the repository
 
 ```bash
 git clone https://github.com/memospot/memospot.git
 ```
 
-## Changing into the project directory
+### Changing into the project directory
 
 ```bash
 cd memospot
 ```
 
-## Using Just
+### Using Just
 
 > [!IMPORTANT]
 > Under Windows, you must allow PowerShell script execution:
@@ -320,7 +327,7 @@ Listing all available Just recipes:
 just --list
 ```
 
-### Common recipes
+#### Common recipes
 
 - `just dev`: Run the app in development mode.
 - `just build`: Build the app.
@@ -329,12 +336,12 @@ just --list
 - `just test`: Run all available tests.
 - `just clean`: Remove build artifacts and caches.
 
-## Coding style
+### Coding style
 
 - Try your best match the existing code style.
 - Run `just pre-commit` on the repository before submitting a pull request. This will run all the code formatters, linters and tests.
 
-## License
+### License
 
 By contributing, you agree that all your contributions will be licensed under the [MIT License](https://choosealicense.com/licenses/mit/).
 

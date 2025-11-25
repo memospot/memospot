@@ -8,9 +8,9 @@ service. Available for Windows, macOS, and Linux.
 This project allows you to use Memos locally without the Docker overhead or to easily test Memos before deploying a
 container. Data can be seamlessly moved between instances.
 
-[![Downloads](https://img.shields.io/github/downloads/memospot/memospot/total?logo=github)](https://github.com/memospot/memospot/releases) [![GitHub Stars](https://img.shields.io/github/stars/memospot/memospot?logo=github)](https://github.com/memospot/memospot)
+[![Downloads](https://img.shields.io/github/downloads/memospot/memospot/total?logo=github)](https://github.com/memospot/memospot/releases) [![Crowdin](https://badges.crowdin.net/memospot/localized.svg)](https://crowdin.com/project/memospot) [![GitHub Stars](https://img.shields.io/github/stars/memospot/memospot?logo=github)](https://github.com/memospot/memospot)
 
-## Screenshot
+## Preview
 
 <div align="center">
     <picture>
@@ -43,8 +43,8 @@ page.
 
 > [!WARNING]
 >
-> - On Windows, you may get a warning from Windows Defender SmartScreen.
->   This is because the app is not digitally signed. To solve, click `More info` and then `Run anyway`.
+> - On Windows, you may get a warning from Windows Defender SmartScreen, as the
+>   app is not digitally signed. To solve it, click `More info` and then `Run anyway`.
 > - On macOS, you may need to
 >   [allow the app to run](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac)
 >   first.
@@ -53,7 +53,7 @@ page.
 >   # Remove the quarantine attribute:
 >   xattr -dr com.apple.quarantine /Applications/Memospot.app
 >
->   # Self-sign the app:
+>   # Self-sign the app (last resource):
 >   codesign -s - --deep --force /Applications/Memospot.app/Contents/MacOS/memospot
 >   codesign -s - --deep --force /Applications/Memospot.app/Contents/MacOS/memos
 >   ```
