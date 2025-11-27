@@ -11,6 +11,7 @@ appmenu-settings = 設定(&S)
 viewmenu = 表示(&V)
 viewmenu-developer-tools = 開発ツール(&O)
 viewmenu-hide-menu-bar = メニューバーを非表示(&H)
+viewmenu-new-window = 新しいウィンドウ(&N)
 viewmenu-refresh = リフレッシュ(&R)
 viewmenu-reload-view = Re&load
 windowmenu = ウィンドウ(&W)
