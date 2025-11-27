@@ -1,24 +1,25 @@
 //! Tauri event handler.
-use crate::fl;
 use crate::memos;
 use crate::memos_version::MemosVersionStore;
 use crate::menu;
 use crate::menu::build_empty;
 use crate::menu::MainMenu;
+use crate::routes::Routes;
 use crate::runtime_config::RuntimeConfig;
+use crate::updater;
 use crate::window::WebviewWindowExt;
+use anyhow::{bail, Error, Result};
 use dialog::error_dialog;
-use dialog::{confirm_dialog, info_dialog, MessageType};
 use log::info;
-use log::{debug, error, warn};
+use log::{debug, error};
+#[cfg(not(debug_assertions))]
+use tauri::Url;
 use tauri::WebviewUrl;
 use tauri::WebviewWindow;
 use tauri::WebviewWindowBuilder;
 use tauri::WindowEvent;
 use tauri::{async_runtime, AppHandle, Manager, RunEvent, Runtime};
 use tauri_plugin_opener::OpenerExt;
-use tauri_plugin_updater::UpdaterExt;
-use url::Url;
 use uuid::Uuid;
 
 /// Handles Tauri events.
@@ -26,13 +27,14 @@ pub fn handle_run_events(app: &AppHandle, run_event: RunEvent) {
     match run_event {
         RunEvent::Exit => handle_exit_event(app),
         RunEvent::ExitRequested { .. } => handle_exit_requested_event(app, run_event),
-        RunEvent::MenuEvent { .. } => handle_menu_event(app, run_event),
+        RunEvent::MenuEvent { .. } => handle_menu_event(app, run_event)
+            .unwrap_or_else(|e| error!("failed to handle menu event: {e}")),
         RunEvent::WindowEvent { .. } => handle_window_event(app, run_event),
         _ => {}
     }
 }
 
-/// Handles the `RunEvent::Exit` event.
+/// Handles the [`RunEvent::Exit`] event.
 ///
 /// Not the recommended way to run events on exit, but it's the only
 /// thing that works when closing the app via the dock on macOS.
@@ -52,7 +54,7 @@ fn handle_exit_event<R: Runtime>(app: &AppHandle<R>) {
 /// the shortcut and menu option trigger this event.
 ///
 /// Closing via the dock still skips this event; in that case, we rely on
-/// `RunEvent::Exit`, which behaves correctly.
+/// [`RunEvent::Exit`], which behaves correctly.
 fn handle_exit_requested_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) {
     let RunEvent::ExitRequested { api, .. } = run_event else {
         return;
@@ -100,37 +102,32 @@ fn on_exit_cleanup<R: Runtime>(app: &AppHandle<R>) {
     std::process::exit(0);
 }
 
-fn handle_menu_event<R: Runtime>(handle: &AppHandle<R>, run_event: RunEvent) {
+/// Handles main menu events defined in [`menu::build`].
+fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) -> Result<(), Error> {
     let RunEvent::MenuEvent(menu_event, ..) = run_event else {
-        return;
+        bail!("expected MenuEvent");
     };
-
-    #[cfg(debug_assertions)]
-    debug!("menu event: {menu_event:?}");
-
-    let Ok(event_id) = menu_event.id().0.parse::<usize>() else {
-        return;
-    };
-
-    let webview = handle
-        .get_webview_window("main")
-        .expect("failed to get webview window");
-    let open_link = |url| {
-        handle.opener().open_url(url, None::<&str>).ok();
-    };
-
+    let event_id = menu_event.id().0.parse::<usize>()?;
     let Some(action) = MainMenu::from_repr(event_id) else {
-        error!("received bad event id");
-        return;
+        bail!("unrecognized menu action for event id #{event_id}");
     };
+    let Some(main_window) = app.get_webview_window("main") else {
+        bail!("main window not found");
+    };
+    let empty_menu = build_empty(app)?;
+
+    let open_link = |url| {
+        app.opener().open_url(url, None::<&str>).ok();
+    };
+
     match action {
         MainMenu::AppSettings => {
-            let handle_ = handle.clone();
+            let handle_ = app.clone();
             async_runtime::spawn(async move {
-                let window_builder = tauri::WebviewWindowBuilder::new(
+                let new_window = WebviewWindowBuilder::new(
                     &handle_,
                     "settings",
-                    tauri::WebviewUrl::App("/settings".into()),
+                    WebviewUrl::App(Routes::Settings.into()),
                 )
                 .title(MainMenu::AppSettings.text().replace("&", ""))
                 .center()
@@ -141,12 +138,12 @@ fn handle_menu_event<R: Runtime>(handle: &AppHandle<R>, run_event: RunEvent) {
                 .zoom_hotkeys_enabled(true)
                 .visible(cfg!(debug_assertions))
                 .focused(true)
-                .menu(build_empty(&handle_).expect("failed to build menu"));
+                .menu(empty_menu);
 
                 #[cfg(not(target_os = "macos"))]
-                window_builder.build().ok();
+                new_window.build().ok();
                 #[cfg(target_os = "macos")]
-                window_builder
+                new_window
                     .title_bar_style(tauri::TitleBarStyle::Visible)
                     .build()
                     .ok();
@@ -154,73 +151,41 @@ fn handle_menu_event<R: Runtime>(handle: &AppHandle<R>, run_event: RunEvent) {
         }
         MainMenu::AppBrowseDataDirectory => {
             let config = RuntimeConfig::from_global_store();
-            handle
-                .opener()
-                .open_url(
-                    config.paths.memospot_data.to_string_lossy().to_string(),
-                    None::<&str>,
-                )
-                .ok();
+            app.opener().open_url(
+                config.paths.memospot_data.to_string_lossy().to_string(),
+                None::<&str>,
+            )?;
         }
         MainMenu::AppOpenInBrowser => {
             let config = RuntimeConfig::from_global_store();
-            handle
-                .opener()
-                .open_url(config.memos_url, None::<&str>)
-                .ok();
+            app.opener().open_url(config.memos_url, None::<&str>)?;
         }
         MainMenu::AppUpdate => {
-            let handle_ = handle.clone();
+            let handle_ = app.clone();
             async_runtime::spawn(async move {
-                let Ok(updater) = handle_.updater() else {
-                    return;
-                };
-                let Ok(check) = updater.check().await else {
-                    return;
-                };
-                if let Some(update) = check {
-                    let user_confirmed = confirm_dialog(
-                        fl!("dialog-update-title").as_str(),
-                        fl!("dialog-update-message", version = update.version).as_str(),
-                        MessageType::Info,
-                    );
-                    if user_confirmed {
-                        handle_
-                            .opener()
-                            .open_url(update.download_url.as_str(), None::<&str>)
-                            .ok();
-                    } else {
-                        warn!("user declined update download.");
-                    }
-                } else {
-                    info_dialog(fl!("dialog-update-no-update"));
-                }
+                updater::manual_check(handle_).await;
             });
         }
         MainMenu::AppQuit => {
-            handle.exit(0);
+            app.exit(0);
         }
 
         MainMenu::ViewNewWindow => {
-            let handle_ = handle.clone();
-            let main_title = handle
-                .get_webview_window("main")
-                .map(|w| w.title().unwrap_or_default())
-                .unwrap_or_default();
-
+            let main_title = main_window.title().unwrap_or_default();
+            let handle_ = app.clone();
             async_runtime::spawn(async move {
                 let uuid = Uuid::new_v4();
                 let builder = WebviewWindowBuilder::new(
                     &handle_,
                     uuid,
-                    WebviewUrl::App("/loader".into()),
+                    WebviewUrl::App(Routes::Loader.into()),
                 )
                 .title(main_title)
                 .auto_resize()
                 .disable_drag_drop_handler()
                 .visible(cfg!(debug_assertions))
                 .focused(true)
-                .menu(build_empty(&handle_).expect("failed to build menu"));
+                .menu(empty_menu);
                 #[cfg(not(target_os = "macos"))]
                 builder.build().ok();
                 #[cfg(target_os = "macos")]
@@ -233,40 +198,37 @@ fn handle_menu_event<R: Runtime>(handle: &AppHandle<R>, run_event: RunEvent) {
 
         #[cfg(any(debug_assertions, feature = "devtools"))]
         MainMenu::ViewDevTools => {
-            webview.open_devtools();
+            main_window.open_devtools();
         }
         MainMenu::ViewHideMenuBar => {
-            handle
-                .get_webview_window("main")
-                .map(|w| w.remove_menu().ok());
+            main_window.remove_menu()?;
         }
         MainMenu::ViewRefresh => {
-            let url = webview
+            main_window
                 .url()
-                .expect("failed to get url")
-                .join("./")
-                .expect("failed to join url");
-            webview.navigate(url).ok();
+                .map(|mut url| {
+                    url.set_path("/");
+                    main_window.navigate(url)
+                })
+                .ok();
         }
         MainMenu::ViewReload => {
-            handle
-                .set_menu(menu::build(handle).expect("failed to build menu"))
-                .ok();
+            let menu = menu::build(app)?;
+            app.set_menu(menu)?;
+
             #[cfg(debug_assertions)]
-            const URL: &str = "http://localhost:1420"; // Same as build.devUrl in Tauri.toml.
+            let url = app.config().build.dev_url.clone();
             #[cfg(not(debug_assertions))]
-            const URL: &str = "tauri://localhost";
-            let parsed_url = Url::parse(URL).expect("failed to parse url");
-            webview.navigate(parsed_url).ok();
+            let url = Url::parse("tauri://localhost").ok();
+
+            url.map(|u| main_window.navigate(u).ok());
         }
         MainMenu::HelpMemospotDocumentation => {
             open_link("https://memospot.github.io/");
         }
         MainMenu::HelpMemospotReleaseNotes => {
-            let url = format!(
-                "https://github.com/memospot/memospot/releases/tag/v{}",
-                handle.package_info().version
-            );
+            let version = app.package_info().version.clone();
+            let url = format!("https://github.com/memospot/memospot/releases/tag/v{version}",);
             open_link(url.as_str());
         }
         MainMenu::HelpMemospotReportIssue => {
@@ -276,16 +238,16 @@ fn handle_menu_event<R: Runtime>(handle: &AppHandle<R>, run_event: RunEvent) {
             open_link("https://usememos.com/docs");
         }
         MainMenu::HelpMemosReleaseNotes => {
-            let url = format!(
-                "https://www.usememos.com/changelog/{}",
-                MemosVersionStore::get().replace(".", "-")
-            );
+            let current_version = MemosVersionStore::get();
+            let changelog_version = current_version.replace(".", "-");
+            let url = format!("https://www.usememos.com/changelog/{changelog_version}",);
             open_link(url.as_str());
         }
         _ => {
             error!("unhandled event: {}", menu_event.id().0)
         }
     }
+    Ok(())
 }
 
 fn handle_window_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent)

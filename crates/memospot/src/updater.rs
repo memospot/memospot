@@ -1,11 +1,13 @@
 use crate::{fl, memos, RuntimeConfig};
 use chrono::DateTime;
-use dialog::{confirm_dialog, MessageType};
+use dialog::{confirm_dialog, info_dialog, MessageType};
 use log::{debug, error, info, warn};
 use std::{
     env,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
+use tauri::Runtime;
+use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_updater::UpdaterExt;
 
 /// Check whether the updater is enabled.
@@ -111,7 +113,34 @@ async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
         app.restart();
     } else {
         info!("no update available");
+        #[cfg(debug_assertions)]
+        info_dialog(fl!("dialog-update-no-update"));
     }
 
     Ok(())
+}
+
+pub async fn manual_check<R: Runtime>(app: tauri::AppHandle<R>) {
+    let Ok(updater) = app.updater() else {
+        return;
+    };
+    let Ok(check) = updater.check().await else {
+        return;
+    };
+    if let Some(update) = check {
+        let user_confirmed = confirm_dialog(
+            fl!("dialog-update-title").as_str(),
+            fl!("dialog-update-message", version = update.version).as_str(),
+            MessageType::Info,
+        );
+        if user_confirmed {
+            app.opener()
+                .open_url(update.download_url.as_str(), None::<&str>)
+                .ok();
+        } else {
+            warn!("user declined update download.");
+        }
+    } else {
+        info_dialog(fl!("dialog-update-no-update"));
+    }
 }

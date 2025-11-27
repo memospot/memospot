@@ -477,7 +477,7 @@ pub fn hw_acceleration() {
     let disable_compositing = || {
         warn!("Forcing software rendering preemptively with 'WEBKIT_DISABLE_COMPOSITING_MODE=1'. Should this cause you issues, override this heuristic by setting 'memospot.env.vars.WEBKIT_DISABLE_COMPOSITING_MODE'='0' on `memospot.yaml`.");
         // SAFETY: There's potential for race conditions when setting environment
-        // variables in a multi-threaded context. Shouldn't be an issue here.
+        // variables in a multithreaded context. Shouldn't be an issue here.
         unsafe {
             env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
         }

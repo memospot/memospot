@@ -6,6 +6,7 @@ mod memos;
 mod memos_log;
 mod memos_version;
 mod menu;
+mod routes;
 mod runtime_config;
 mod sqlite;
 mod updater;
@@ -15,6 +16,7 @@ mod window;
 mod zip;
 
 use crate::events::handle_run_events;
+use crate::routes::Routes;
 use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
 use dialog::*;
 use i18n::*;
@@ -139,7 +141,11 @@ pub fn run() {
     let config = config;
 
     let main_title = if config.is_managed_server {
-        "Memospot".to_string()
+        #[cfg(debug_assertions)]
+        let title = "Memospot - DEBUG";
+        #[cfg(not(debug_assertions))]
+        let title = "Memospot";
+        title.to_string()
     } else {
         let url = config
             .memos_url
@@ -154,12 +160,13 @@ pub fn run() {
     if !window_config.is_empty() {
         window_config[0] = WindowConfig {
             title: main_title,
-            url: tauri::WebviewUrl::App("/loader".into()),
+            url: tauri::WebviewUrl::App(Routes::Loader.into()),
             user_agent: Some(config.user_agent.clone()),
             // Stop Tauri from handling drag-and-drop events and pass them to the webview.
             drag_drop_enabled: false,
             incognito: cfg!(debug_assertions),
-            // Prevent theme flashing on release builds. The frontend code calls getCurrentWebviewWindow().show() immediately after configuring the theme.
+            // Prevent theme flashing on release builds.
+            // The frontend code calls getCurrentWebviewWindow().show() after configuring the theme.
             visible: cfg!(debug_assertions),
             // Doesn't work as it relies on injecting a polyfill, and we are redirecting to the server.
             // TODO: register global hotkeys to change the webview zoom level.
