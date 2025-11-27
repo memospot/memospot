@@ -28,7 +28,7 @@ dialog-update-message =
     版本 { $version } 可供下载。
     
     您想要下载吗？
-panic-failed-to-spawn-memos = 生成内存失败
+panic-failed-to-spawn-memos = 啟動 Memos 失敗
 panic-failed-to-create-data-directory =
     创建数据目录失败！
     { $dir }
