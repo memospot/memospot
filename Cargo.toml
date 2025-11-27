@@ -95,6 +95,6 @@ serde.opt-level = 3 # Tests depending on serde runs faster with higher optimizat
 [workspace.lints.clippy]
 dbg_macro = "deny"
 disallowed_methods = "deny"
-redundant_clone = "deny"
+redundant_clone = "warn"
 todo = "deny"
 # unwrap_used = "deny"

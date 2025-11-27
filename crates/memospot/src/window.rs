@@ -1,6 +1,7 @@
 use crate::runtime_config::RuntimeConfig;
 use tauri::WebviewWindow;
 use tauri_utils::config::WindowConfig;
+
 pub trait WebviewWindowExt {
     fn persist_window_state(&self);
 }

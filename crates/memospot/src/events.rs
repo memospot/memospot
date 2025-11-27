@@ -1,0 +1,290 @@
+//! Tauri event handler.
+use crate::fl;
+use crate::memos;
+use crate::memos_version::MemosVersionStore;
+use crate::menu;
+use crate::menu::build_empty;
+use crate::menu::MainMenu;
+use crate::runtime_config::RuntimeConfig;
+use crate::window::WebviewWindowExt;
+use dialog::error_dialog;
+use dialog::{confirm_dialog, info_dialog, MessageType};
+use log::info;
+use log::{debug, error, warn};
+use tauri::WebviewWindow;
+use tauri::WindowEvent;
+use tauri::{async_runtime, AppHandle, Manager, RunEvent, Runtime};
+use tauri_plugin_opener::OpenerExt;
+use tauri_plugin_updater::UpdaterExt;
+use url::Url;
+
+/// Handles Tauri events.
+pub fn handle_run_events(app: &AppHandle, run_event: RunEvent) {
+    match run_event {
+        RunEvent::Exit => handle_exit_event(app),
+        RunEvent::ExitRequested { .. } => handle_exit_requested_event(app, run_event),
+        RunEvent::MenuEvent { .. } => handle_menu_event(app, run_event),
+        RunEvent::WindowEvent { .. } => handle_window_event(app, run_event),
+        _ => {}
+    }
+}
+
+/// Handles the `RunEvent::Exit` event.
+///
+/// Not the recommended way to run events on exit, but it's the only
+/// thing that works when closing the app via the dock on macOS.
+///
+/// See `handle_exit_requested_event` for details.
+fn handle_exit_event<R: Runtime>(app: &AppHandle<R>) {
+    debug!("RunEvent::Exit triggered");
+    on_exit_cleanup(app)
+}
+
+/// Handles the `RunEvent::ExitRequested` event.
+///
+/// On macOS, this only triggers when closing the window with the X button.
+///
+/// To work around this, the built-in `quit()` menu action was replaced with
+/// a custom `CmdOrCtrl+Q` binding that calls `app.exit(0)`, ensuring both
+/// the shortcut and menu option trigger this event.
+///
+/// Closing via the dock still skips this event; in that case, we rely on
+/// `RunEvent::Exit`, which behaves correctly.
+fn handle_exit_requested_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) {
+    let RunEvent::ExitRequested { api, .. } = run_event else {
+        return;
+    };
+
+    // Keep the event loop running even if all windows are closed to run cleanup code.
+    api.prevent_exit();
+    debug!("RunEvent::ExitRequested triggered");
+    on_exit_cleanup(app)
+}
+
+fn on_exit_cleanup<R: Runtime>(app: &AppHandle<R>) {
+    debug!("running before exit cleanup code…");
+
+    #[cfg(not(debug_assertions))]
+    let final_config = RuntimeConfig::from_global_store();
+    #[cfg(debug_assertions)]
+    let mut final_config = RuntimeConfig::from_global_store();
+
+    #[cfg(debug_assertions)]
+    {
+        // Restore previous mode and port.
+        final_config.yaml.memos.mode = final_config.__yaml__.memos.mode.clone();
+        final_config.yaml.memos.port = final_config.__yaml__.memos.port;
+    }
+
+    if final_config.yaml != final_config.__yaml__ {
+        info!("configuration has changed. Saving…");
+        async_runtime::block_on(async {
+            let config_path = final_config.paths.memospot_config_file;
+            if let Err(e) = final_config.yaml.save_to_file(&config_path).await {
+                error_dialog!(
+                    "Failed to save config file:\n`{}`\n\n{}",
+                    config_path.display(),
+                    e
+                );
+            }
+        })
+    }
+
+    memos::shutdown();
+
+    info!("Memospot closed.");
+    app.cleanup_before_exit();
+    std::process::exit(0);
+}
+
+fn handle_menu_event<R: Runtime>(handle: &AppHandle<R>, run_event: RunEvent) {
+    let RunEvent::MenuEvent(menu_event, ..) = run_event else {
+        return;
+    };
+
+    #[cfg(debug_assertions)]
+    debug!("menu event: {menu_event:?}");
+
+    let Ok(event_id) = menu_event.id().0.parse::<usize>() else {
+        return;
+    };
+
+    let webview = handle
+        .get_webview_window("main")
+        .expect("failed to get webview window");
+    let open_link = |url| {
+        handle.opener().open_url(url, None::<&str>).ok();
+    };
+
+    let Some(action) = MainMenu::from_repr(event_id) else {
+        error!("received bad event id");
+        return;
+    };
+    match action {
+        MainMenu::AppSettings => {
+            let handle_ = handle.clone();
+            async_runtime::spawn(async move {
+                let window_builder = tauri::WebviewWindowBuilder::new(
+                    &handle_,
+                    "settings",
+                    tauri::WebviewUrl::App("/settings".into()),
+                )
+                .title(MainMenu::AppSettings.text().replace("&", ""))
+                .center()
+                .min_inner_size(800.0, 600.0)
+                .inner_size(1160.0, 720.0)
+                .auto_resize()
+                .disable_drag_drop_handler()
+                .zoom_hotkeys_enabled(true)
+                .visible(cfg!(debug_assertions))
+                .focused(true)
+                .menu(build_empty(&handle_).expect("failed to build menu"));
+
+                #[cfg(not(target_os = "macos"))]
+                window_builder.build().ok();
+                #[cfg(target_os = "macos")]
+                window_builder
+                    .title_bar_style(tauri::TitleBarStyle::Visible)
+                    .build()
+                    .ok();
+            });
+        }
+        MainMenu::AppBrowseDataDirectory => {
+            let config = RuntimeConfig::from_global_store();
+            handle
+                .opener()
+                .open_url(
+                    config.paths.memospot_data.to_string_lossy().to_string(),
+                    None::<&str>,
+                )
+                .ok();
+        }
+        MainMenu::AppOpenInBrowser => {
+            let config = RuntimeConfig::from_global_store();
+            handle
+                .opener()
+                .open_url(config.memos_url, None::<&str>)
+                .ok();
+        }
+        MainMenu::AppUpdate => {
+            let handle_ = handle.clone();
+            async_runtime::spawn(async move {
+                let Ok(updater) = handle_.updater() else {
+                    return;
+                };
+                let Ok(check) = updater.check().await else {
+                    return;
+                };
+                if let Some(update) = check {
+                    let user_confirmed = confirm_dialog(
+                        fl!("dialog-update-title").as_str(),
+                        fl!("dialog-update-message", version = update.version).as_str(),
+                        MessageType::Info,
+                    );
+                    if user_confirmed {
+                        handle_
+                            .opener()
+                            .open_url(update.download_url.as_str(), None::<&str>)
+                            .ok();
+                    } else {
+                        warn!("user declined update download.");
+                    }
+                } else {
+                    info_dialog(fl!("dialog-update-no-update"));
+                }
+            });
+        }
+        MainMenu::AppQuit => {
+            handle.exit(0);
+        }
+
+        #[cfg(any(debug_assertions, feature = "devtools"))]
+        MainMenu::ViewDevTools => {
+            webview.open_devtools();
+        }
+        MainMenu::ViewHideMenuBar => {
+            if let Some(main_window) = handle.get_webview_window("main") {
+                main_window.remove_menu().ok();
+            }
+        }
+        MainMenu::ViewRefresh => {
+            let url = webview
+                .url()
+                .expect("failed to get url")
+                .join("./")
+                .expect("failed to join url");
+            webview.navigate(url).ok();
+        }
+        MainMenu::ViewReload => {
+            handle
+                .set_menu(menu::build(handle).expect("failed to build menu"))
+                .ok();
+            #[cfg(debug_assertions)]
+            const URL: &str = "http://localhost:1420"; // Same as build.devUrl in Tauri.toml.
+            #[cfg(not(debug_assertions))]
+            const URL: &str = "tauri://localhost";
+            let parsed_url = Url::parse(URL).expect("failed to parse url");
+            webview.navigate(parsed_url).ok();
+        }
+        MainMenu::HelpMemospotDocumentation => {
+            open_link("https://memospot.github.io/");
+        }
+        MainMenu::HelpMemospotReleaseNotes => {
+            let url = format!(
+                "https://github.com/memospot/memospot/releases/tag/v{}",
+                handle.package_info().version
+            );
+            open_link(url.as_str());
+        }
+        MainMenu::HelpMemospotReportIssue => {
+            open_link("https://github.com/memospot/memospot/issues/new");
+        }
+        MainMenu::HelpMemosDocumentation => {
+            open_link("https://usememos.com/docs");
+        }
+        MainMenu::HelpMemosReleaseNotes => {
+            let url = format!(
+                "https://www.usememos.com/changelog/{}",
+                MemosVersionStore::get().replace(".", "-")
+            );
+            open_link(url.as_str());
+        }
+        _ => {
+            error!("unhandled event: {}", menu_event.id().0)
+        }
+    }
+}
+
+fn handle_window_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent)
+where
+    WebviewWindow<R>: WebviewWindowExt,
+{
+    let RunEvent::WindowEvent { label, event, .. } = run_event else {
+        return;
+    };
+
+    match label.as_str() {
+        "main" => {
+            match event {
+                WindowEvent::Resized { .. } | WindowEvent::Moved { .. } => {
+                    if let Some(main_window) = app.get_webview_window("main") {
+                        main_window.persist_window_state();
+                    }
+                }
+                WindowEvent::CloseRequested { .. } => {
+                    // Close all windows except the `main` itself.
+                    app.webview_windows()
+                        .into_iter()
+                        .skip(1)
+                        .for_each(|(_, w)| {
+                            w.close().ok();
+                        });
+                }
+                _ => {}
+            }
+        }
+        _ => {
+            // Currently, only `main` window events matter.
+        }
+    }
+}

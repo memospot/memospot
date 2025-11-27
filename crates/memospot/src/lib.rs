@@ -1,4 +1,5 @@
 mod cmd;
+mod events;
 mod i18n;
 mod init;
 mod memos;
@@ -13,21 +14,22 @@ mod webview;
 mod window;
 mod zip;
 
+use crate::events::handle_run_events;
 use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
 use dialog::*;
 use i18n::*;
-use log::{debug, info, warn};
+use log::{info, warn};
 use std::env;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{async_runtime, Manager};
 use tauri_utils::config::WindowConfig;
-use window::{WebviewWindowExt, WindowConfigExt};
+use window::WindowConfigExt;
 
 #[warn(unused_extern_crates)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    i18n::localize();
+    localize();
 
     init::ensure_webview();
 
@@ -41,7 +43,7 @@ pub fn run() {
             memos_data: PathBuf::new(),
             memos_db_file: PathBuf::new(),
             memospot_bin: PathBuf::new(),
-            memospot_config_file: config_path.clone(),
+            memospot_config_file: config_path,
             memospot_cwd: PathBuf::new(),
             memospot_data,
         },
@@ -60,7 +62,7 @@ pub fn run() {
         .clone()
         .unwrap_or_default();
 
-    i18n::reload(locale.as_str());
+    reload(locale.as_str());
     init::setup_logger(&config);
 
     #[cfg(debug_assertions)]
@@ -177,6 +179,7 @@ pub fn run() {
     }
 
     let config_ = config;
+    #[allow(unused_qualifications)]
     let Ok(tauri_app) = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_http::init())
@@ -203,32 +206,28 @@ pub fn run() {
         ])
         .setup(move |app| {
             let app_handle = app.handle();
-            // Remove the plugin to use custom logic.
+
+            // Remove the updater plugin to use custom logic.
             app_handle.remove_plugin("tauri-plugin-updater");
 
             // Menu must be set at the application level to also work in macOS.
             app.set_menu(menu::build(app_handle)?)?;
-            menu::update_with_memos_version(app_handle);
+            menu::update_memos_version_entry(app_handle);
 
             if should_run_updater {
                 updater::spawn(app_handle);
             }
 
             if !config_.is_managed_server {
-                info!(
-                    "Running in client mode for `{}`. Memos server will not be started.",
-                    config_.memos_url
-                );
-                let title_url = config_
+                let url = config_
                     .memos_url
                     .trim_start_matches("http://")
                     .trim_start_matches("https://")
                     .trim_end_matches("/");
-                if let Some(main_window) = app.get_webview_window("main") {
-                    main_window
-                        .set_title(&format!("Memospot - {title_url}"))
-                        .unwrap_or_default();
+                if let Some(window) = app.get_webview_window("main") {
+                    window.set_title(&format!("Memospot - {url}")).ok();
                 }
+                info!("running in client mode for `{url}`. Memos server will not be started");
             }
 
             Ok(())
@@ -238,75 +237,5 @@ pub fn run() {
         panic_dialog!("Failed to build Tauri application!");
     };
 
-    tauri_app.run(move |app_handle, run_event| {
-        match run_event {
-            tauri::RunEvent::MenuEvent(menu_event) => {
-                menu::handle_event(app_handle, menu_event);
-            }
-            tauri::RunEvent::WindowEvent {
-                label,
-                event: window_event,
-                ..
-            } => {
-                if label == "main" {
-                    match window_event {
-                        tauri::WindowEvent::Resized { .. }
-                        | tauri::WindowEvent::Moved { .. } => {
-                            if let Some(main_window) = app_handle.get_webview_window("main") {
-                                main_window.persist_window_state();
-                            }
-                        }
-                        tauri::WindowEvent::CloseRequested { .. } => {
-                            app_handle.webview_windows().into_iter().for_each(
-                                |(label, window)| {
-                                    if label != "main" {
-                                        window.close().ok();
-                                    }
-                                },
-                            );
-                        }
-                        _ => {}
-                    }
-                }
-            }
-            tauri::RunEvent::ExitRequested { api, .. } => {
-                // Keep the event loop running even if all
-                // windows are closed to run cleanup code.
-                api.prevent_exit();
-                debug!("Exit requested.");
-
-                #[cfg(not(debug_assertions))]
-                let final_config = RuntimeConfig::from_global_store();
-                #[cfg(debug_assertions)]
-                let mut final_config = RuntimeConfig::from_global_store();
-
-                #[cfg(debug_assertions)]
-                {
-                    // Restore previous mode and port.
-                    final_config.yaml.memos.mode = final_config.__yaml__.memos.mode.clone();
-                    final_config.yaml.memos.port = final_config.__yaml__.memos.port;
-                }
-
-                if final_config.yaml != final_config.__yaml__ {
-                    info!("Configuration has changed. Saving…");
-                    async_runtime::block_on(async {
-                        if let Err(e) = final_config.yaml.save_to_file(&config_path).await {
-                            error_dialog!(
-                                "Failed to save config file:\n`{}`\n\n{}",
-                                &config_path.display(),
-                                e
-                            );
-                        }
-                    })
-                }
-
-                memos::shutdown();
-
-                info!("Memospot closed.");
-                app_handle.cleanup_before_exit();
-                std::process::exit(0);
-            }
-            _ => {}
-        }
-    });
+    tauri_app.run(handle_run_events);
 }

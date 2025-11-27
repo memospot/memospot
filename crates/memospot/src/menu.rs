@@ -1,26 +1,22 @@
 use crate::fl;
 use crate::memos_version::MemosVersionStore;
 use crate::runtime_config::RuntimeConfig;
-use dialog::{confirm_dialog, info_dialog, MessageType};
-use log::{debug, error, warn};
+use log::{debug, error};
 use std::convert::AsRef;
 use strum_macros::AsRefStr;
 use strum_macros::FromRepr;
 #[cfg(target_os = "macos")]
 use tauri::menu::AboutMetadata;
-use tauri::menu::MenuId;
 use tauri::{
     async_runtime,
-    menu::{Menu, MenuEvent, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder},
+    menu::MenuId,
+    menu::{Menu, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder},
     AppHandle, Manager, Runtime,
 };
-use tauri_plugin_opener::OpenerExt;
-use tauri_plugin_updater::UpdaterExt;
 use tokio::time::{self, Duration, Instant};
-use url::Url;
 
 #[derive(AsRefStr, FromRepr, Clone, Copy)]
-enum MainMenu {
+pub enum MainMenu {
     #[strum(serialize = "appmenu")]
     App,
     #[strum(serialize = "appmenu-browse-data-directory")]
@@ -236,165 +232,12 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     Ok(menu)
 }
 
-pub fn handle_event<R: Runtime>(handle: &AppHandle<R>, event: MenuEvent) {
-    #[cfg(debug_assertions)]
-    debug!("menu event: {event:?}");
-
-    let Ok(event_id) = event.id().0.parse::<usize>() else {
-        return;
-    };
-
-    let webview = handle
-        .get_webview_window("main")
-        .expect("failed to get webview window");
-    let open_link = |url| {
-        handle.opener().open_url(url, None::<&str>).ok();
-    };
-
-    let Some(action) = MainMenu::from_repr(event_id) else {
-        error!("received bad event id");
-        return;
-    };
-    match action {
-        MainMenu::AppSettings => {
-            let handle_ = handle.clone();
-            async_runtime::spawn(async move {
-                let window_builder = tauri::WebviewWindowBuilder::new(
-                    &handle_,
-                    "settings",
-                    tauri::WebviewUrl::App("/settings".into()),
-                )
-                .title(MainMenu::AppSettings.text().replace("&", ""))
-                .center()
-                .min_inner_size(800.0, 600.0)
-                .inner_size(1160.0, 720.0)
-                .disable_drag_drop_handler()
-                .zoom_hotkeys_enabled(true)
-                .visible(cfg!(debug_assertions))
-                .focused(true)
-                .menu(build_empty(&handle_).expect("failed to build menu"));
-
-                #[cfg(not(target_os = "macos"))]
-                window_builder.build().ok();
-                #[cfg(target_os = "macos")]
-                window_builder
-                    .title_bar_style(tauri::TitleBarStyle::Visible)
-                    .build()
-                    .ok();
-            });
-        }
-        MainMenu::AppBrowseDataDirectory => {
-            let config = RuntimeConfig::from_global_store();
-            handle
-                .opener()
-                .open_url(
-                    config.paths.memospot_data.to_string_lossy().to_string(),
-                    None::<&str>,
-                )
-                .ok();
-        }
-        MainMenu::AppOpenInBrowser => {
-            let config = RuntimeConfig::from_global_store();
-            handle
-                .opener()
-                .open_url(config.memos_url, None::<&str>)
-                .ok();
-        }
-        MainMenu::AppUpdate => {
-            let handle_ = handle.clone();
-            async_runtime::spawn(async move {
-                let Ok(updater) = handle_.updater() else {
-                    return;
-                };
-                let Ok(check) = updater.check().await else {
-                    return;
-                };
-                if let Some(update) = check {
-                    let user_confirmed = confirm_dialog(
-                        fl!("dialog-update-title").as_str(),
-                        fl!("dialog-update-message", version = update.version).as_str(),
-                        MessageType::Info,
-                    );
-                    if user_confirmed {
-                        handle_
-                            .opener()
-                            .open_url(update.download_url.as_str(), None::<&str>)
-                            .ok();
-                    } else {
-                        warn!("user declined update download.");
-                    }
-                } else {
-                    info_dialog(fl!("dialog-update-no-update"));
-                }
-            });
-        }
-        MainMenu::AppQuit => {
-            handle.exit(0);
-        }
-
-        #[cfg(any(debug_assertions, feature = "devtools"))]
-        MainMenu::ViewDevTools => {
-            webview.open_devtools();
-        }
-        MainMenu::ViewHideMenuBar => {
-            if let Some(main_window) = handle.get_webview_window("main") {
-                main_window.remove_menu().ok();
-            }
-        }
-        MainMenu::ViewRefresh => {
-            let url = webview
-                .url()
-                .expect("failed to get url")
-                .join("./")
-                .expect("failed to join url");
-            webview.navigate(url).ok();
-        }
-        MainMenu::ViewReload => {
-            handle
-                .set_menu(build(handle).expect("failed to build menu"))
-                .ok();
-            #[cfg(debug_assertions)]
-            const URL: &str = "http://localhost:1420"; // Same as build.devUrl in Tauri.toml.
-            #[cfg(not(debug_assertions))]
-            const URL: &str = "tauri://localhost";
-            let parsed_url = Url::parse(URL).expect("failed to parse url");
-            webview.navigate(parsed_url).ok();
-        }
-        MainMenu::HelpMemospotDocumentation => {
-            open_link("https://memospot.github.io/");
-        }
-        MainMenu::HelpMemospotReleaseNotes => {
-            let url = format!(
-                "https://github.com/memospot/memospot/releases/tag/v{}",
-                handle.package_info().version
-            );
-            open_link(url.as_str());
-        }
-        MainMenu::HelpMemospotReportIssue => {
-            open_link("https://github.com/memospot/memospot/issues/new");
-        }
-        MainMenu::HelpMemosDocumentation => {
-            open_link("https://usememos.com/docs");
-        }
-        MainMenu::HelpMemosReleaseNotes => {
-            let url = format!(
-                "https://www.usememos.com/changelog/{}",
-                MemosVersionStore::get().replace(".", "-")
-            );
-            open_link(url.as_str());
-        }
-        _ => {
-            error!("unhandled event: {}", event.id().0)
-        }
-    }
-}
-
 /// Update menu after Memos version is known.
 ///
 /// Display current Memos version in the help menu.
 ///
 /// * This function must never interrupt the program flow.
-pub fn update_with_memos_version<R: Runtime>(handle: &AppHandle<R>) {
+pub fn update_memos_version_entry<R: Runtime>(handle: &AppHandle<R>) {
     const INTERVAL_MS: u64 = 100;
     const TIMEOUT_MS: u128 = 15_000;
 
