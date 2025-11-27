@@ -32,9 +32,10 @@ BINSTALL:
   FUNCTION
   RUN cargo binstall \
     --disable-telemetry \
-    --target=$(rustc -vV | sed -n 's|host: ||p') \
+    --locked \
+    --targets=$(rustc -vV | sed -n 's|host: ||p') \
     cargo-sweep@0.8.0 \
-    cargo-edit@0.13.7 \
+    cargo-edit@0.13.8 \
     cargo-xwin@0.20.2 \
     dprint@0.50.2 \
     just@1.43.0 \

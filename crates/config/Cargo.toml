@@ -9,7 +9,7 @@ description = "Memospot configuration file definitions"
 
 [dependencies]
 anyhow = { workspace = true }
-figment = { version = "0.10", features = ["env", "json", "yaml"] }
+figment = { version = "0.10.19", features = ["env", "json", "yaml"] }
 serde = { workspace = true }
 serde_yaml = "0.9.34"
 tokio = { workspace = true, features = ["fs", "io-std", "io-util", "macros", "rt", "rt-multi-thread", "time"] }

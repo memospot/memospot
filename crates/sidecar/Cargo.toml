@@ -17,12 +17,12 @@ serde = { workspace = true }
 tauri-utils = { workspace = true }
 tokio = { workspace = true, features = ["sync", "rt", "rt-multi-thread"] }
 
-encoding_rs = "0.8"
-os_pipe = "1"
-shared_child = "1.1"
+encoding_rs = "0.8.35"
+os_pipe = "1.2.3"
+shared_child = "1.1.1"
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = ["Win32_System_Console"] }
+windows-sys = { version = "0.61.2", features = ["Win32_System_Console"] }
 
 [dev-dependencies]
 build_utils = { path = "../build_utils" }

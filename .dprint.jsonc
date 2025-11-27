@@ -23,11 +23,14 @@
   "lineWidth": 96,
   "indentWidth": 4,
   "plugins": [
-    "https://plugins.dprint.dev/biome-0.11.6.wasm",
+    // https://github.com/dprint/dprint-plugin-biome/releases
+    "https://plugins.dprint.dev/biome-0.11.6.wasm@57c957c064561af97f836923a8bf048b537b5749ee4cfd9670b15626f0bb0fe0",
     "https://plugins.dprint.dev/exec-0.6.0.json@a054130d458f124f9b5c91484833828950723a5af3f8ff2bd1523bd47b83b364",
-    "https://plugins.dprint.dev/g-plane/markup_fmt-v0.25.0.wasm",
+    // https://github.com/g-plane/markup_fmt/releases
+    "https://plugins.dprint.dev/g-plane/markup_fmt-v0.25.1.wasm@67010908b5d8219a0826e94206b750d4ab74b2170460b4926458f2b9c6e338ab",
     "https://plugins.dprint.dev/prettier-0.58.2.json@2fd8cc9c9773364848dc93735b01a00d55fcfa78a56a9230b4b63c014964c82d",
-    "https://plugins.dprint.dev/toml-0.7.0.wasm"
+    // https://github.com/dprint/dprint-plugin-toml/releases
+    "https://plugins.dprint.dev/toml-0.7.0.wasm@0126c8112691542d30b52a639076ecc83e07bace877638cee7c6915fd36b8629"
   ],
   "exec": {
     "commands": [

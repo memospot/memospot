@@ -179,6 +179,7 @@ dev-killprocesses:
 
 [group('update')]
 [doc('Update project dependencies')]
+[confirm('This will update all dependencies. This should be done carefully. Are you sure?')]
 update: update-dprint update-rs update-ts
 
 [group('update')]

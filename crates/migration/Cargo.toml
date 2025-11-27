@@ -11,7 +11,7 @@ description = "Memospot database migration"
 homedir = { path = "../homedir" }
 
 [dependencies]
-itertools = "0.14"
+itertools = "0.14.0"
 log = { workspace = true }
 sea-orm = { workspace = true }
 sea-orm-migration = { workspace = true, features = ["sqlx-sqlite", "runtime-tokio-rustls"] }
