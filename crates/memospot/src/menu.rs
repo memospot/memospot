@@ -1,3 +1,6 @@
+//! Main window menu bar.
+//!
+//! Events fired here are handled by the [`crate::events::handle_menu_event`] function.
 use crate::fl;
 use crate::memos_version::MemosVersionStore;
 use crate::runtime_config::RuntimeConfig;
@@ -31,6 +34,8 @@ pub enum MainMenu {
     AppUpdate,
     #[strum(serialize = "viewmenu")]
     View,
+    #[strum(serialize = "viewmenu-new-window")]
+    ViewNewWindow,
     #[strum(serialize = "viewmenu-developer-tools")]
     ViewDevTools,
     #[strum(serialize = "viewmenu-hide-menu-bar")]
@@ -145,6 +150,12 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
 
     let view_menu = &SubmenuBuilder::new(handle, MainMenu::View.text())
         .items(&[
+            &MenuItemBuilder::with_id(
+                MainMenu::ViewNewWindow.id(),
+                MainMenu::ViewNewWindow.text(),
+            )
+            .accelerator("CmdOrCtrl+N")
+            .build(handle)?,
             #[cfg(target_os = "macos")]
             &PredefinedMenuItem::fullscreen(handle, None)?,
             #[cfg(any(debug_assertions, feature = "devtools"))]

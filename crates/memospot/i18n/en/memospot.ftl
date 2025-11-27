@@ -12,6 +12,7 @@ appmenu-settings = &Settings
 viewmenu = &View
 viewmenu-developer-tools = &Developer Tools
 viewmenu-hide-menu-bar = &Hide menu bar
+viewmenu-new-window = &New Window
 viewmenu-refresh = &Refresh
 viewmenu-reload-view = Re&load
 

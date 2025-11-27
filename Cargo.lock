@@ -2851,6 +2851,7 @@ dependencies = [
  "tokio",
  "ts-rs",
  "url",
+ "uuid",
  "winreg",
  "writable",
 ]

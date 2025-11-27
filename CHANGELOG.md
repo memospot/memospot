@@ -26,13 +26,23 @@ Security: in case of vulnerabilities.
 
 - Default Memos port to 5230. It will still be changed on the fly if
   the port is already in use and won't affect existing installs.
+- Only one process is allowed to run at a time.
+  If you need to work with multiple windows, use the new "View->New Window"
+  option (CmdOrCtrl+N) or "App->Open in browser" (CmdOrCtrl+B).
+
+### Fixed
+
+- (macOS) ungraceful shutdown when closing the app via the dock.
 
 ### Added
 
 - An orphaned Memos process will be killed on startup. This works around a Tauri issue that prevents
   the cleanup code from running on macOS when the app is closed via the dock context menu. It should
   also help to recover from any abnormal shutdowns.
-- Machine translations to Chinese Simplified, Chinese Traditional, French, German, Japanese, Russian and Spanish. Those can be improved by joining the [Crowdin](https://crowdin.com/project/memospot) project.
+- New machine translations to Chinese Simplified, Chinese Traditional, French, German, Japanese, Russian and Spanish.
+  Those can be improved by joining the [Crowdin](https://crowdin.com/project/memospot) project.
+- "View->New Window" (CmdOrCtrl+N) option to open as many windows as you want.
+  Note that all child windows will be closed when the main window that holds the menu bar exits.
 
 ## [1.0.1] - 2025-11-20
 

@@ -11,12 +11,15 @@ use dialog::error_dialog;
 use dialog::{confirm_dialog, info_dialog, MessageType};
 use log::info;
 use log::{debug, error, warn};
+use tauri::WebviewUrl;
 use tauri::WebviewWindow;
+use tauri::WebviewWindowBuilder;
 use tauri::WindowEvent;
 use tauri::{async_runtime, AppHandle, Manager, RunEvent, Runtime};
 use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_updater::UpdaterExt;
 use url::Url;
+use uuid::Uuid;
 
 /// Handles Tauri events.
 pub fn handle_run_events(app: &AppHandle, run_event: RunEvent) {
@@ -198,14 +201,44 @@ fn handle_menu_event<R: Runtime>(handle: &AppHandle<R>, run_event: RunEvent) {
             handle.exit(0);
         }
 
+        MainMenu::ViewNewWindow => {
+            let handle_ = handle.clone();
+            let main_title = handle
+                .get_webview_window("main")
+                .map(|w| w.title().unwrap_or_default())
+                .unwrap_or_default();
+
+            async_runtime::spawn(async move {
+                let uuid = Uuid::new_v4();
+                let builder = WebviewWindowBuilder::new(
+                    &handle_,
+                    uuid,
+                    WebviewUrl::App("/loader".into()),
+                )
+                .title(main_title)
+                .auto_resize()
+                .disable_drag_drop_handler()
+                .visible(cfg!(debug_assertions))
+                .focused(true)
+                .menu(build_empty(&handle_).expect("failed to build menu"));
+                #[cfg(not(target_os = "macos"))]
+                builder.build().ok();
+                #[cfg(target_os = "macos")]
+                builder
+                    .title_bar_style(tauri::TitleBarStyle::Visible)
+                    .build()
+                    .ok();
+            });
+        }
+
         #[cfg(any(debug_assertions, feature = "devtools"))]
         MainMenu::ViewDevTools => {
             webview.open_devtools();
         }
         MainMenu::ViewHideMenuBar => {
-            if let Some(main_window) = handle.get_webview_window("main") {
-                main_window.remove_menu().ok();
-            }
+            handle
+                .get_webview_window("main")
+                .map(|w| w.remove_menu().ok());
         }
         MainMenu::ViewRefresh => {
             let url = webview
