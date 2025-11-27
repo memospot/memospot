@@ -25,7 +25,7 @@ longDescription = "Memospot is a desktop version of Memos, a beautiful markdown-
 shortDescription = "Memospot - a note-taking application"
 targets = "all"
 externalBin = ["../../server-dist/memos"]
-createUpdaterArtifacts = "v1Compatible"
+createUpdaterArtifacts = true
 
 [bundle.linux.appimage]
 bundleMediaFramework = true
