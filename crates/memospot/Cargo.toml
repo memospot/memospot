@@ -69,6 +69,9 @@ tauri-utils = { workspace = true }
 tempfile = { workspace = true }
 winreg = "0.55"
 
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-single-instance = "2"
+
 [dev-dependencies]
 memospot = { path = ".", features = ["unittest"] } # Allows gating code in `build.rs` to run only in test/lint mode.
 tempfile = { workspace = true }

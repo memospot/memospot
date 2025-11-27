@@ -17,6 +17,8 @@ finish-args:
   - --filesystem=xdg-run/gvfsd
   - --filesystem=xdg-download
   - --persist=.memospot
+  - --talk-name=org.com_memospot_app.SingleInstance
+  - --own-name=org.com_memospot_app.SingleInstance
 
 modules:
   - name: memospot

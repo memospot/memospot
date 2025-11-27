@@ -18,7 +18,7 @@ use crate::events::handle_run_events;
 use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
 use dialog::*;
 use i18n::*;
-use log::{info, warn};
+use log::{debug, info, warn};
 use std::env;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -181,6 +181,9 @@ pub fn run() {
     let config_ = config;
     #[allow(unused_qualifications)]
     let Ok(tauri_app) = tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
+            app.get_webview_window("main").map(|w| w.set_focus().ok());
+        }))
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
@@ -215,6 +218,7 @@ pub fn run() {
             menu::update_memos_version_entry(app_handle);
 
             if should_run_updater {
+                debug!("starting updater");
                 updater::spawn(app_handle);
             }
 
@@ -224,9 +228,11 @@ pub fn run() {
                     .trim_start_matches("http://")
                     .trim_start_matches("https://")
                     .trim_end_matches("/");
-                if let Some(window) = app.get_webview_window("main") {
-                    window.set_title(&format!("Memospot - {url}")).ok();
-                }
+
+                let title = format!("Memospot - {url}");
+                app.get_webview_window("main")
+                    .map(|w| w.set_title(&title).ok());
+
                 info!("running in client mode for `{url}`. Memos server will not be started");
             }
 
