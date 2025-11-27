@@ -77,6 +77,7 @@ SETUP_BASE_IMAGE:
     libssl-dev \
     libwebkit2gtk-4.1-dev \
     libxdo-dev \
+    jq \
     -y
 
 SETUP_RUST:

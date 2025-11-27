@@ -79,6 +79,7 @@ sudo apt install --no-install-recommends -qq \
     libssl-dev \
     libwebkit2gtk-4.1-dev \
     libxdo-dev \
+    jq \
     -y
 ```
 
@@ -161,6 +162,22 @@ Node is a JavaScript runtime built on Chrome's V8 JavaScript engine.
 
   ```powershell
   winget install --id OpenJS.NodeJS.LTS
+  ```
+
+#### jq
+
+[jq](https://jqlang.org) is a lightweight and flexible command-line JSON processor.
+
+- Homebrew
+
+  ```bash
+  brew install jq
+  ```
+
+- Winget
+
+  ```powershell
+  winget install --id=jqlang.jq -e
   ```
 
 #### UPX (optional; Linux-only)

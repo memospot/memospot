@@ -1,6 +1,6 @@
 {
   "name": "memospot",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "type": "module",
   "private": true,
@@ -45,5 +45,8 @@
     "vite": "7.2.2",
     "vitest": "4.0.9"
   },
-  "trustedDependencies": ["@biomejs/biome", "esbuild"]
+  "trustedDependencies": [
+    "@biomejs/biome",
+    "esbuild"
+  ]
 }

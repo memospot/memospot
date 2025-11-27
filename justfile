@@ -469,8 +469,12 @@ bumpversion VERSION:
     clean="{{trim_start_match(VERSION, "v")}}"
     cargo set-version --locked "$clean"
     cargo generate-lockfile
+    for d in "." "./build-scripts" "./src-ui"; do
+        jq --arg version "$clean" '.version = $version' "$d/package.json" > "$d/package.json.tmp" && mv "$d/package.json.tmp" "$d/package.json"
+    done
     just fmt
-    git add ./crates/memospot/Cargo.toml ./crates/memospot/Tauri.toml ./Cargo.lock ./Cargo.toml
+    git add ./crates/memospot/Cargo.toml ./crates/memospot/Tauri.toml ./Cargo.lock ./Cargo.toml \
+        ./build-scripts/package.json ./src-ui/package.json ./package.json
     git commit -m "chore: bump version to v$clean"
 
 [group('maintainer')]
