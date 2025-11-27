@@ -123,7 +123,7 @@ jobs:
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
         with:
-          targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ runner.os == 'Windows' && 'aarch64-pc-windows-msvc,x86_64-pc-windows-msvc' || '' }}
           toolchain: ${{ env.RUST_TOOLCHAIN }}
 
       - name: Setup Cargo cache
