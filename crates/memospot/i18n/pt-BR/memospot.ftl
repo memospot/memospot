@@ -11,6 +11,7 @@ appmenu-settings = &Configurações
 viewmenu = &Exibição
 viewmenu-developer-tools = &Ferramentas do desenvolvedor…
 viewmenu-hide-menu-bar = &Esconder barra de menu
+viewmenu-new-window = &Nova Janela
 viewmenu-refresh = &Atualizar
 viewmenu-reload-view = &Recarregar
 windowmenu = Jane&la
