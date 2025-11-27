@@ -11,6 +11,7 @@ appmenu-settings = &设置
 viewmenu = &查看
 viewmenu-developer-tools = 开发者工具
 viewmenu-hide-menu-bar = 隐藏菜单栏
+viewmenu-new-window = &New Window
 viewmenu-refresh = &刷新
 viewmenu-reload-view = Re&load
 windowmenu = 窗口
