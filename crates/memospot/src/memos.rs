@@ -29,7 +29,7 @@ use tokio::io::AsyncWriteExt;
 /// Memospot tries to checkpoint a database locked by a process it no longer controls.
 ///
 /// This function is cross-platform and should help to recover from such situations.
-pub fn find_and_kill_orphans(rtcfg: &RuntimeConfig) {
+pub fn find_and_kill_orphaned(rtcfg: &RuntimeConfig) {
     if let Some(pid) = get_last_pid(rtcfg) {
         debug!("unclean shutdown detected");
         let prev_port = rtcfg.__yaml__.memos.port.unwrap_or_default();
@@ -253,6 +253,10 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
 /// Shutdown the Memos server and checkpoint the database.
 pub fn shutdown() {
     let config = RuntimeConfig::from_global_store();
+    if !config.is_managed_server {
+        debug!("server is not managed by Memospot. No need to cleanup before exit");
+        return;
+    }
 
     debug!("shutting down server…");
     sidecar::kill_children();

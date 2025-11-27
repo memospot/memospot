@@ -75,7 +75,7 @@ pub fn run() {
     }
 
     // Cleanup orphaned Memos processes.
-    memos::find_and_kill_orphans(&config);
+    memos::find_and_kill_orphaned(&config);
 
     config.yaml.memos.port = Some(init::memos_port(&config));
     config.paths.memos_data = init::memos_data(&config);
@@ -138,10 +138,22 @@ pub fn run() {
     config.to_global_store();
     let config = config;
 
+    let main_title = if config.is_managed_server {
+        "Memospot".to_string()
+    } else {
+        let url = config
+            .memos_url
+            .trim_start_matches("http://")
+            .trim_start_matches("https://")
+            .trim_end_matches("/");
+        info!("running in client mode for `{url}`. Memos server will not be started");
+        format!("Memospot - {url}")
+    };
+
     let window_config = &mut tauri_ctx.config_mut().app.windows;
     if !window_config.is_empty() {
         window_config[0] = WindowConfig {
-            title: "Memospot".into(),
+            title: main_title,
             url: tauri::WebviewUrl::App("/loader".into()),
             user_agent: Some(config.user_agent.clone()),
             // Stop Tauri from handling drag-and-drop events and pass them to the webview.
@@ -149,6 +161,8 @@ pub fn run() {
             incognito: cfg!(debug_assertions),
             // Prevent theme flashing on release builds. The frontend code calls getCurrentWebviewWindow().show() immediately after configuring the theme.
             visible: cfg!(debug_assertions),
+            // Doesn't work as it relies on injecting a polyfill, and we are redirecting to the server.
+            // TODO: register global hotkeys to change the webview zoom level.
             zoom_hotkeys_enabled: true,
             ..Default::default()
         }
@@ -220,20 +234,6 @@ pub fn run() {
             if should_run_updater {
                 debug!("starting updater");
                 updater::spawn(app_handle);
-            }
-
-            if !config_.is_managed_server {
-                let url = config_
-                    .memos_url
-                    .trim_start_matches("http://")
-                    .trim_start_matches("https://")
-                    .trim_end_matches("/");
-
-                let title = format!("Memospot - {url}");
-                app.get_webview_window("main")
-                    .map(|w| w.set_title(&title).ok());
-
-                info!("running in client mode for `{url}`. Memos server will not be started");
             }
 
             Ok(())
