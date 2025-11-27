@@ -11,6 +11,7 @@ appmenu-settings = &Настройки
 viewmenu = &Просмотр
 viewmenu-developer-tools = &Инструменты разработчика
 viewmenu-hide-menu-bar = &Скрыть панель меню
+viewmenu-new-window = &New Window
 viewmenu-refresh = &Обновить
 viewmenu-reload-view = Перезагрузить
 windowmenu = &Окно
