@@ -11,6 +11,7 @@ appmenu-settings = &Einstellungen
 viewmenu = &Ansicht
 viewmenu-developer-tools = &Entwicklerwerkzeuge
 viewmenu-hide-menu-bar = &Menüleiste ausblenden
+viewmenu-new-window = &Neues Fenster
 viewmenu-refresh = &Aktualisieren
 viewmenu-reload-view = Re&load
 windowmenu = &Fenster
