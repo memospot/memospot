@@ -42,7 +42,8 @@ export const rustToGoMap = {
     "aarch64-apple-darwin": "memos-*-darwin-arm64.tar.gz",
     "x86_64-apple-darwin": "memos-*-darwin-x86_64.tar.gz",
     "x86_64-unknown-linux-gnu": "memos-*-linux-x86_64.tar.gz",
-    "x86_64-pc-windows-msvc": "memos-*-windows-x86_64.zip"
+    "x86_64-pc-windows-msvc": "memos-*-windows-x86_64.zip",
+    "aarch64-pc-windows-msvc": "memos-*-windows-arm64.zip"
 } as const;
 export const supportedPlatforms = Object.values(rustToGoMap);
 

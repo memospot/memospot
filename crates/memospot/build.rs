@@ -53,11 +53,12 @@ fn ensure_deps() {
         .canonicalize()
         .expect("Failed to canonicalize server-dist path!");
 
-    const TARGETS: [&str; 4] = [
+    const TARGETS: [&str; 5] = [
         "x86_64-unknown-linux-gnu",
         "aarch64-apple-darwin",
         "x86_64-apple-darwin",
         "x86_64-pc-windows-msvc.exe",
+        "aarch64-pc-windows-msvc.exe",
     ];
     for target in TARGETS {
         let target_bin = dist_path.join(format!("memos-{target}"));
