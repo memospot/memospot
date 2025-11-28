@@ -473,6 +473,7 @@ bumpversion VERSION:
         jq --arg version "$clean" '.version = $version' "$d/package.json" > "$d/package.json.tmp" && mv "$d/package.json.tmp" "$d/package.json"
     done
     just fmt
+    bun install --lockfile-only
     git add ./crates/memospot/Cargo.toml ./crates/memospot/Tauri.toml ./Cargo.lock ./Cargo.toml \
         ./build-scripts/package.json ./src-ui/package.json ./package.json
     git commit -m "chore: bump version to v$clean"
