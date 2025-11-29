@@ -475,7 +475,7 @@ pub fn hw_acceleration() {
     use std::process::{Command, Stdio};
 
     let disable_compositing = || {
-        warn!("Forcing software rendering preemptively with 'WEBKIT_DISABLE_COMPOSITING_MODE=1'. Should this cause you issues, override this heuristic by setting 'memospot.env.vars.WEBKIT_DISABLE_COMPOSITING_MODE'='0' on `memospot.yaml`.");
+        warn!("Forcing software rendering preemptively with `WEBKIT_DISABLE_COMPOSITING_MODE=1`. Should this cause you issues, override this heuristic by setting `WEBKIT_DISABLE_COMPOSITING_MODE=''` in settings.");
         // SAFETY: There's potential for race conditions when setting environment
         // variables in a multithreaded context. Shouldn't be an issue here.
         unsafe {
@@ -483,9 +483,9 @@ pub fn hw_acceleration() {
         }
     };
     let disable_dmabuf_renderer = || {
-        warn!("Disabling DMABuf rendering preemptively with 'WEBKIT_DISABLE_DMABUF_RENDERER=1'. Should this cause you issues, override this heuristic by setting 'memospot.env.vars.WEBKIT_DISABLE_DMABUF_RENDERER'='0' on `memospot.yaml`.");
+        warn!("Disabling DMABuf rendering preemptively with `WEBKIT_DISABLE_DMABUF_RENDERER=1`. Should this cause you issues, override this heuristic by setting `WEBKIT_DISABLE_DMABUF_RENDERER='0'` in settings.");
         // SAFETY: There's potential for race conditions when setting environment
-        // variables in a multi-threaded context. Shouldn't be an issue here.
+        // variables in a multithreaded context. Shouldn't be an issue here.
         unsafe {
             env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
         }
@@ -544,8 +544,15 @@ pub fn set_env_vars(rtcfg: &RuntimeConfig) {
     if let Some(memospot_env) = &rtcfg.yaml.memospot.env.vars {
         for (key, value) in memospot_env {
             // SAFETY: There's potential for race conditions when setting environment
-            // variables in a multi-threaded context. Shouldn't be an issue here.
+            // variables in a multithreaded context. Shouldn't be an issue here.
             unsafe {
+                // Some software treats *any* value in an env var as "enabled".
+                if value.is_empty() {
+                    debug!("removing environment variable: {}", key);
+                    env::remove_var(key);
+                    continue;
+                }
+                debug!("setting environment variable: {}={}", key, value);
                 env::set_var(key, value);
             }
         }

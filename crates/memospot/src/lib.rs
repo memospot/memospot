@@ -234,7 +234,7 @@ pub fn run() {
             // Remove the updater plugin to use custom logic.
             app_handle.remove_plugin("tauri-plugin-updater");
 
-            // Menu must be set at the application level to also work in macOS.
+            // The menu must be set at the application level to also work in macOS.
             app.set_menu(menu::build(app_handle)?)?;
             menu::update_memos_version_entry(app_handle);
 
