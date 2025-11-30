@@ -10,15 +10,12 @@ description = "Memospot platform-agnostic dialog utilities"
 [dependencies]
 log = { workspace = true }
 
-# There are updates for `native-dialog`, but they were causing issues
-# with some dialogs not displaying on KDE and other platforms.
-
 [target.'cfg(windows)'.dependencies.native-dialog]
-version = "0.6.4"
+workspace = true
 features = ["windows_dpi_awareness", "windows_visual_styles"]
 
 [target.'cfg(not(target_os = "windows"))'.dependencies.native-dialog]
-version = "0.6.4"
+workspace = true
 
 [lints]
 workspace = true

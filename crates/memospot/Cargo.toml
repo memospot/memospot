@@ -22,26 +22,6 @@ tauri-build = { features = ["config-toml"], version = "2.5" }
 build_utils = { path = "../build_utils" }
 
 [dependencies]
-anyhow = { workspace = true }
-async_zip = { version = "0.0.18", features = ["zstd", "tokio-fs"] }
-chrono = { version = "0.4", default-features = false }
-home = { workspace = true }
-humantime = "2.3"
-json-patch = "4.1"
-log = { workspace = true }
-log4rs = { version = "1.4", features = ["background_rotation", "config_parsing", "gzip", "yaml_format"] }
-path-clean = "1.0"
-sea-orm = { workspace = true, default-features = false, features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
-semver = "1"
-serde = { workspace = true }
-serde_json = { workspace = true }
-strum_macros = "0.27"
-sysinfo = "0.37"
-tokio = { workspace = true }
-ts-rs = { workspace = true }
-url = { version = "2", features = ["serde"] }
-uuid = { workspace = true }
-
 # Local crates
 config = { path = "../config" }
 dialog = { path = "../dialog" }
@@ -51,27 +31,47 @@ portpicker = { path = "../portpicker" }
 sidecar = { path = "../sidecar" }
 writable = { path = "../writable" }
 
+anyhow = { workspace = true }
+async_zip = { workspace = true, features = ["zstd", "tokio-fs"] }
+chrono = { workspace = true, default-features = false }
+home = { workspace = true }
+humantime = { workspace = true }
+json-patch = { workspace = true }
+log = { workspace = true }
+log4rs = { workspace = true, features = ["background_rotation", "config_parsing", "gzip", "yaml_format"] }
+path-clean = { workspace = true }
+sea-orm = { workspace = true, default-features = false, features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
+semver = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+strum_macros = { workspace = true }
+sysinfo = { workspace = true }
+tokio = { workspace = true }
+ts-rs = { workspace = true }
+url = { workspace = true, features = ["serde"] }
+uuid = { workspace = true }
+
 # i18n
-i18n-embed = { version = "0.16", features = ["fluent-system", "desktop-requester"] }
-i18n-embed-fl = "0.10"
-rust-embed = "8"
+i18n-embed = { workspace = true, features = ["rust-embed", "fluent-system", "desktop-requester"] }
+i18n-embed-fl = { workspace = true }
+rust-embed = { workspace = true }
 
 # tauri
 tauri = { workspace = true, features = ["config-toml"] }
-tauri-plugin-fs = "2.4.4"
-tauri-plugin-http = { version = "2.5.4", features = ["gzip", "rustls-tls"] }
-tauri-plugin-opener = "2.5.2"
-tauri-plugin-process = "2.3.1"
-tauri-plugin-shell = "2.3.3"
-tauri-plugin-updater = "2.9.0"
+tauri-plugin-fs = { workspace = true }
+tauri-plugin-http = { workspace = true, features = ["gzip", "rustls-tls"] }
+tauri-plugin-opener = { workspace = true }
+tauri-plugin-process = { workspace = true }
+tauri-plugin-shell = { workspace = true }
+tauri-plugin-updater = { workspace = true }
 tauri-utils = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 tempfile = { workspace = true }
-winreg = "0.55.0"
+winreg = { workspace = true }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-single-instance = "2"
+tauri-plugin-single-instance = { workspace = true }
 
 [dev-dependencies]
 memospot = { path = ".", features = ["unittest"] } # Allows gating code in `build.rs` to run only in test/lint mode.

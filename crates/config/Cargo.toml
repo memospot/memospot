@@ -9,12 +9,12 @@ description = "Memospot configuration file definitions"
 
 [dependencies]
 anyhow = { workspace = true }
-figment = { version = "0.10.19", features = ["env", "json", "yaml"] }
+figment = { workspace = true, features = ["env", "json", "yaml"] }
 serde = { workspace = true }
-serde_yaml = "0.9.34"
+serde_yaml = { workspace = true }
 tokio = { workspace = true, features = ["fs", "io-std", "io-util", "macros", "rt", "rt-multi-thread", "time"] }
 ts-rs = { workspace = true }
-uuid = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }
 
 [dev-dependencies]
 tempfile = { workspace = true }
