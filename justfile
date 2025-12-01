@@ -92,12 +92,12 @@ dev-ui: deps-ts
 
 [private]
 download-memos: deps-ts
-    bun run ./build-scripts/downloadMemos.ts
+    bun run ./build-scripts/bin/downloadMemos.ts
 
 [private]
 upx:
     #!{{bash}}
-    bun run ./build-scripts/upxPack.ts || true
+    bun run ./build-scripts/bin/upxPack.ts || true
 
 # Tauri hooks
 [private]

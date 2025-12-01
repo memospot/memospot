@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { UpxOptions } from "./upxPack";
-import { upxPack } from "./upxPack";
+import type { UpxOptions } from "../bin/upxPack";
+import { upxPack } from "../bin/upxPack";
 
 describe("UPX Pack", async () => {
     test.each([

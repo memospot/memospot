@@ -1,7 +1,8 @@
+#!/usr/bin/env bun
 /*
  * This script runs before `Tauri bundle` step.
  */
-import { findRepositoryRoot, runSync } from "./common";
+import { findRepositoryRoot, runSync } from "../lib/util";
 
 export type UpxOptions = {
     bin: string;
