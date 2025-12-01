@@ -11,6 +11,10 @@ import { makeTripletFromFileName } from "../lib/util";
 
 describe("match assets according to environment", async () => {
     test("dev machine", () => {
+        Object.defineProperty(process, "CI", {
+            value: false
+        });
+
         const platformExpectations: Record<string, string[]> = {
             darwin: SUPPORTED_BUILDS.filter((p) => p.includes("darwin")),
             win32: SUPPORTED_BUILDS.filter((p) => p.includes("windows")),
