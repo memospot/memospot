@@ -97,7 +97,7 @@ jobs:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
 
       - name: Setup Cargo cache
-        uses: swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1
+        uses: swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
         with:
           prefix-key: cargo
           key: ${{ env.GLIBC_VERSION }}
