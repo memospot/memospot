@@ -11,8 +11,8 @@ import { makeTripletFromFileName } from "../lib/util";
 
 describe("match assets according to environment", async () => {
     test("dev machine", () => {
-        Object.defineProperty(process, "CI", {
-            value: false
+        Object.defineProperty(process.env, "CI", {
+            value: "false"
         });
 
         const platformExpectations: Record<string, string[]> = {
