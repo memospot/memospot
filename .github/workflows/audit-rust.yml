@@ -24,7 +24,7 @@ jobs:
     permissions: { issues: read, checks: write }
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: "Install cargo-audit"
         uses: taiki-e/install-action@3575e532701a5fc614b0c842e4119af4cc5fd16d
