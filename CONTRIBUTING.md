@@ -19,25 +19,56 @@ The recommended code editor is [Visual Studio Code](https://code.visualstudio.co
 
 ### Container build
 
-It's possible to easily build the app for Linux and Windows (NSIS only) using [Docker](https://www.docker.com/) or [Podman](https://podman.io/), via [Earthly](https://earthly.dev/get-earthly). This bypasses the need to setup the base OS and other dependencies.
+It's possible to build the app for Linux and Windows (NSIS only) using [Docker](https://www.docker.com/) , via [Docker Bake](https://docs.docker.com/build/bake/). This bypasses the need to setup the host OS and other dependencies.
+
+<details>
+<summary>Details</summary>
+
+See [docker-bake.hcl](./docker-bake.hcl) for available targets.
+
+#### Usage
+
+Available actions:
+
+- CI
+  - `lint`
+  - `test`
+- Release
+  - `linux`
+  - `windows`
+- Release (no-bundle)
+  - `linux-no-bundle`
+  - `windows-no-bundle`
 
 ```bash
-earthly +build --target=x86_64-pc-windows-msvc --nosign=1
+docker buildx bake [action]
 ```
+
+or [^1]
 
 ```bash
-earthly +build --target=x86_64-unknown-linux-gnu --nosign=1
+just bake [action]
 ```
 
-> The `--nosign=1` flag is used to skip signing the updater, which only the repository owner can do.
-
-Listing the additional recipes available in the [Earthfile](./Earthfile):
+#### Pruning caches (it can take a lot of storage!)
 
 ```bash
-earthly ls
+docker builder du && docker builder prune -a
 ```
 
-### Pre-requisites
+or [^1]
+
+```bash
+just bake prune
+```
+
+[^1]:
+    The [`justfile`](./justfile) is configured to run Docker with sudo, as it's the standard way to do it.
+    For rootless Docker, edit the justfile or invoke `docker buildx bake [action]` directly.
+
+</details>
+
+### Pre-requisites for host machine
 
 - A package manager: [Homebrew](https://brew.sh/) or [winget](https://apps.microsoft.com/detail/9NBLGGH4NNS1).
 - A system WebView (Edge [WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703), Safari, or WebkitGTK), for Tauri to work.

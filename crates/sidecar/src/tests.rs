@@ -122,15 +122,14 @@ mod test {
 
     #[test]
     fn test_command_interruption() {
-        let command = Command::new("ping");
-        command
-            .args([
-                #[cfg(windows)]
-                "-t",
-                "127.0.0.1",
-            ])
-            .spawn()
-            .unwrap();
+        #[cfg(windows)]
+        let command = Command::new("ping").args(["-t", "127.0.0.1"]);
+
+        #[cfg(unix)]
+        // Using cat allows this test to run on minimal Linux containers.
+        let command = Command::new("cat");
+
+        command.spawn().unwrap();
         kill_children();
     }
 }

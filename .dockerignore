@@ -1,0 +1,16 @@
+.env
+.secret
+.dprint/
+**/.flatpak-builder/
+build/
+server-dist/
+**/build
+**/.svelte-kit
+**/package
+vite.config.ts.timestamp-*
+**/lib/paraglide
+.vite
+dist
+dist-ssr
+node_modules
+**/target/**

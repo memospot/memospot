@@ -15,8 +15,7 @@ RUST_TOOLCHAIN := 'stable'
 RUSTFLAGS := env_var_or_default('RUSTFLAGS','') + if RUST_TOOLCHAIN == 'stable' { '' } else { ' -Z threads='+num_cpus() }
 CI := env_var_or_default('CI', 'false')
 GITHUB_ENV := env_var_or_default('GITHUB_ENV', '.GITHUB_ENV')
-TAURI_SIGNING_PRIVATE_KEY := env_var_or_default('TAURI_SIGNING_PRIVATE_KEY', '')
-TAURI_SIGNING_PRIVATE_KEY_PASSWORD := env_var_or_default('TAURI_SIGNING_PRIVATE_KEY_PASSWORD', '')
+TAURI_SIGNING_PRIVATE_KEY := env_var_or_default('TAURI_SIGNING_PRIVATE_KEY', shell("cat ${HOME}/.tauri/memospot_updater.key 2>/dev/null | tr -d '\n' || echo ''"))
 PATH := if os() == 'windows' {
 		env_var_or_default('PROGRAMFILES', 'C:\Program Files') + '\Git\usr\bin;' + env_var_or_default('PATH','')
 	} else {
@@ -298,6 +297,19 @@ build TARGET='all':
         cargo tauri build -c '{"bundle": {"targets": "{{TARGET}}" }}'
     fi
     just postbuild
+
+
+[doc('Actions: prune, lint, test, linux, windows, linux-no-bundle, windows-no-bundle.')]
+[group('Docker Bake')]
+bake ACTION='':
+    #!{{bash}}
+    if [ "{{ACTION}}" = "prune" ]; then
+        sudo docker builder du
+        sudo docker builder prune -a
+    else
+        sudo --preserve-env docker buildx bake {{ACTION}}
+        test -d "./build" && sudo chown -R $(id -u):$(id -g) ./build
+    fi
 
 [linux]
 flatpak-lint:
