@@ -1,4 +1,3 @@
-#!/usr/bin/env bun
 /**
  * This script runs before `Tauri build` step.
  *

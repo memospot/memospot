@@ -15,7 +15,9 @@ RUST_TOOLCHAIN := 'stable'
 RUSTFLAGS := env_var_or_default('RUSTFLAGS','') + if RUST_TOOLCHAIN == 'stable' { '' } else { ' -Z threads='+num_cpus() }
 CI := env_var_or_default('CI', 'false')
 GITHUB_ENV := env_var_or_default('GITHUB_ENV', '.GITHUB_ENV')
-TAURI_SIGNING_PRIVATE_KEY := env_var_or_default('TAURI_SIGNING_PRIVATE_KEY', shell("cat ${HOME}/.tauri/memospot_updater.key 2>/dev/null | tr -d '\n' || echo ''"))
+TAURI_SIGNING_PRIVATE_KEY := env_var_or_default('TAURI_SIGNING_PRIVATE_KEY', shell(
+if os() == 'windows' {"cat $Env:USERPROFILE\\.tauri\\memospot_updater.key 2>&1 | Out-String | %{$_.TrimEnd()}" } else { "cat ${HOME}/.tauri/memospot_updater.key 2>/dev/null | tr -d '\n' || echo ''"}))
+TAURI_SIGNING_PRIVATE_KEY_PASSWORD := env_var_or_default('TAURI_SIGNING_PRIVATE_KEY_PASSWORD', '')
 PATH := if os() == 'windows' {
 		env_var_or_default('PROGRAMFILES', 'C:\Program Files') + '\Git\usr\bin;' + env_var_or_default('PATH','')
 	} else {
