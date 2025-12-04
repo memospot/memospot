@@ -10,22 +10,23 @@ set dotenv-load := true
 bash := if os() == 'windows' { 'env -S bash -euo pipefail' } else { '/usr/bin/env -S bash -euo pipefail' }
 powershell := if os() == 'windows' {'powershell.exe'} else {'/usr/bin/env pwsh'}
 bun := if os() == 'windows' { 'bun.exe' } else { '/usr/bin/env bun' }
+RUST_TOOLCHAIN := env('RUST_TOOLCHAIN', 'stable')
+RUSTFLAGS := env('RUSTFLAGS','')
+CI := env('CI', 'false')
+GITHUB_ENV := env('GITHUB_ENV', '.GITHUB_ENV')
 
-RUST_TOOLCHAIN := 'stable'
-RUSTFLAGS := env_var_or_default('RUSTFLAGS','') + if RUST_TOOLCHAIN == 'stable' { '' } else { ' -Z threads='+num_cpus() }
-CI := env_var_or_default('CI', 'false')
-GITHUB_ENV := env_var_or_default('GITHUB_ENV', '.GITHUB_ENV')
-TAURI_SIGNING_PRIVATE_KEY := env_var_or_default('TAURI_SIGNING_PRIVATE_KEY', shell(
-if os() == 'windows' {"cat $Env:USERPROFILE\\.tauri\\memospot_updater.key 2>&1 | Out-String | %{$_.TrimEnd()}" } else { "cat ${HOME}/.tauri/memospot_updater.key 2>/dev/null | tr -d '\n' || echo ''"}))
-TAURI_SIGNING_PRIVATE_KEY_PASSWORD := env_var_or_default('TAURI_SIGNING_PRIVATE_KEY_PASSWORD', '')
-PATH := if os() == 'windows' {
-		env_var_or_default('PROGRAMFILES', 'C:\Program Files') + '\Git\usr\bin;' + env_var_or_default('PATH','')
-	} else {
-		env_var_or_default('PATH','')
-	}
+KEY_FILE := join(home_directory(), ".tauri", "memospot_updater.key")
+KEY_FILE_CONTENTS :=  if path_exists(KEY_FILE)=="true" { trim_end(read(KEY_FILE))} else {""}
+TAURI_SIGNING_PRIVATE_KEY := env('TAURI_SIGNING_PRIVATE_KEY', KEY_FILE_CONTENTS)
+
+TAURI_SIGNING_PRIVATE_KEY_PASSWORD := env('TAURI_SIGNING_PRIVATE_KEY_PASSWORD', '')
+
+GIT_WIN := join(env('PROGRAMFILES',''), 'Git','usr','bin')
+PATH := if os() == 'windows' { GIT_WIN +';'+ env('PATH') } else { env('PATH') }
+
 REPO_ROOT := justfile_directory()
-BIOME_CONFIG_PATH := absolute_path(join(REPO_ROOT,'biome.jsonc'))
-DPRINT_CACHE_DIR := absolute_path(join(REPO_ROOT,'.dprint'))
+BIOME_CONFIG_PATH := join(REPO_ROOT,'biome.jsonc')
+DPRINT_CACHE_DIR := join(REPO_ROOT,'.dprint')
 RUST_BACKTRACE := 'full'
 RUST_TARGETS := if os() == 'windows' {
     'x86_64-pc-windows-msvc'
@@ -34,33 +35,21 @@ RUST_TARGETS := if os() == 'windows' {
 } else {
     'x86_64-unknown-linux-gnu'
 }
-RUSTC_WRAPPER := env_var_or_default('RUSTC_WRAPPER', '')
+RUSTC_WRAPPER := env('RUSTC_WRAPPER', '')
 CARGO_INCREMENTAL := if RUSTC_WRAPPER == '' { '1' } else { '0' }
-TS_RS_EXPORT_DIR:= absolute_path(join(REPO_ROOT,'src-ui/src/lib/types/gen'))
-
-RESET := '\033[0m'
-BOLD := '\033[1m'
-DIM := '\033[2m'
-UNDERLINE := '\033[4m'
-BLACK := '\033[30m'
-RED := '\033[31m'
-GREEN := '\033[32m'
-YELLOW := '\033[33m'
-BLUE := '\033[34m'
-MAGENTA := '\033[35m'
-CYAN := '\033[36m'
-WHITE := '\033[37m'
+TS_RS_EXPORT_DIR:= join(REPO_ROOT,'src-ui','src','lib','types','gen')
 
 set export
 
 [private]
 default:
     #!{{bash}}
-    echo -e "${BOLD}This justfile contains recipes for building ${UNDERLINE}https://github.com/memospot/memospot${RESET}.\n"
+    echo "REPO_ROOT is ${REPO_ROOT}"
+    echo -e "{{BOLD}}This justfile contains recipes for building {{UNDERLINE}}https://github.com/memospot/memospot{{NORMAL}}.\n"
     if [[ "{{os()}}" == "windows" ]]; then
-        program_files="{{replace(env_var_or_default('PROGRAMFILES', 'C:\Program Files'), '\\', '\\\\')}}"
-        echo -e "To use this justfile on Windows, make sure Git is installed under ${BOLD}${UNDERLINE}$program_files\\Git${RESET}."
-        echo -e "${BOLD}${UNDERLINE}https://git-scm.com/download/win${RESET}"
+        git_win="{{replace(GIT_WIN, '\\', '\\\\')}}"
+        echo -e "To use this justfile on Windows, make sure Git is installed under {{BOLD}}{{UNDERLINE}}$git_win{{NORMAL}}."
+        echo -e "{{BOLD}}{{UNDERLINE}}https://git-scm.com/download/win{{NORMAL}}"
         echo ""
     fi
     deps=(
@@ -73,13 +62,13 @@ default:
     )
     for dep in "${deps[@]}"; do
         if ! command -v "$dep" &> /dev/null; then
-            echo -e "${RED}ERROR:${RESET} Please install ${MAGENTA}${BOLD}${UNDERLINE}$dep${RESET}."
-            echo -e "Try running ${BOLD}${UNDERLINE}just setup${RESET}."
+            echo -e "{{RED}}ERROR:{{NORMAL}} Please install {{MAGENTA}}{{BOLD}}{{UNDERLINE}}$dep{{NORMAL}}."
+            echo -e "Try running {{BOLD}}{{UNDERLINE}}just setup{{NORMAL}}."
             exit 1
         fi
     done
-    echo -e "${GREEN}Found project dependencies: ${deps[@]}${RESET}"
-    echo -e "${YELLOW}This quick test does not verify tool versions. If you experience any errors, consider updating the related tool.${RESET}\n"
+    echo -e "{{GREEN}}Found project dependencies: ${deps[@]}{{NORMAL}}"
+    echo -e "{{YELLOW}}This quick test does not verify tool versions. If you experience any errors, consider updating the related tool.{{NORMAL}}\n"
     just --list
 
 [private]
@@ -244,12 +233,12 @@ gen-icons:
     )
     for file in "${check_files[@]}"; do
         if ! git diff --quiet --exit-code HEAD -- "$file"; then
-            echo "${YELLOW}$file was modified since last commit, regenerating icons…${RESET}"
+            echo "{{YELLOW}}$file was modified since last commit, regenerating icons…{{NORMAL}}"
             just gen-icons-force
             exit 0
         fi
     done
-    echo -e "${GREEN}App icons are up to date.${RESET}"
+    echo -e "{{GREEN}}App icons are up to date.{{NORMAL}}"
 
 gen-bindings:
     #!{{bash}}
@@ -261,12 +250,12 @@ gen-bindings:
     )
     for file in "${check_files[@]}"; do
         if ! git diff --quiet --exit-code HEAD -- "$file"; then
-            echo -e "${YELLOW}${file} was modified since last commit, regenerating TypeScript bindings…${RESET}"
+            echo -e "{{YELLOW}}${file} was modified since last commit, regenerating TypeScript bindings…{{NORMAL}}"
             pushd crates/memospot; cargo test export_bindings; popd
             exit 0
         fi
     done
-    echo -e "${CYAN}Skipping TypeScript bindings regeneration, no changes detected.${RESET}"
+    echo -e "{{CYAN}}Skipping TypeScript bindings regeneration, no changes detected.{{NORMAL}}"
 
 build-ui-force:
     cd "src-ui"; bun run build
@@ -277,7 +266,7 @@ build-ui:
     if ! git diff --quiet --exit-code HEAD -- "src-ui/src/**" || [ ! -d "./src-ui/build/" ] || [ ! -f "./src-ui/build/index.html" ]; then
         just build-ui-force
     else
-        echo -e "${GREEN}UI is up to date.${RESET}"
+        echo -e "{{GREEN}}UI is up to date.{{NORMAL}}"
     fi
 
 [doc('Build app')]
@@ -290,10 +279,10 @@ build TARGET='all':
     fi
     if [ -z $TAURI_SIGNING_PRIVATE_KEY ] && [ -f $HOME/.tauri/memospot_updater.key ]; then
         export TAURI_SIGNING_PRIVATE_KEY=$(cat $HOME/.tauri/memospot_updater.key 2>/dev/null | tr -d '\n' || echo "")
-        echo -e "${CYAN}Setting TAURI_SIGNING_PRIVATE_KEY from $HOME/.tauri/memospot_updater.key${RESET}"
+        echo -e "{{CYAN}}Setting TAURI_SIGNING_PRIVATE_KEY from $HOME/.tauri/memospot_updater.key{{NORMAL}}"
     fi
     if [ -z $TAURI_SIGNING_PRIVATE_KEY ] || [ -z $TAURI_SIGNING_PRIVATE_KEY_PASSWORD ]; then
-        echo -e "${YELLOW}Environment not fully configured. Building without updater.${RESET}"
+        echo -e "{{YELLOW}}Environment not fully configured. Building without updater.{{NORMAL}}"
         cargo tauri build -c '{"bundle": {"targets": "{{TARGET}}" }, "plugins": {"updater": {}}}'
     else
         cargo tauri build -c '{"bundle": {"targets": "{{TARGET}}" }}'
@@ -337,14 +326,14 @@ flatpak-run:
 debug-env:
     #!{{bash}}
     pid="$(pidof memospot)"
-    test -z $pid && echo -e "${RED}Memospot is not running.${RESET}" && exit 1
+    test -z $pid && echo -e "{{RED}}Memospot is not running.{{NORMAL}}" && exit 1
     tr '\0' '\n' < /proc/$pid/environ | sort
 
 [private]
 postbuild:
     #!{{bash}}
     set +e
-    echo -e "${CYAN}Moving relevant build files to ./build directory…${RESET}"
+    echo -e "{{CYAN}}Moving relevant build files to ./build directory…{{NORMAL}}"
     ! test -d "./build" && mkdir -p "./build"
     artifacts=(
         "bundle/appimage/*.AppImage"
@@ -369,9 +358,9 @@ postbuild:
             ! test -d "${appimage}.home" && mkdir -p "${appimage}.home"
         done
     if ls ./memos* 1> /dev/null 2>&1; then
-        echo -e "${GREEN}Done.${RESET}"
+        echo -e "{{GREEN}}Done.{{NORMAL}}"
     else
-        echo -e "${RED}Failed to move files.${RESET}"
+        echo -e "{{RED}}Failed to move files.{{NORMAL}}"
     fi
     popd
 
@@ -461,17 +450,17 @@ gh-clean-cache:
 repo-status:
     #!{{bash}}
     if ! git diff-index --quiet HEAD --; then
-        echo -e "${MAGENTA}There are unstaged changes.${RESET}"
+        echo -e "{{MAGENTA}}There are unstaged changes.{{NORMAL}}"
     elif ! git diff-files --quiet; then
-        echo -e "${MAGENTA}There are unstaged changes.${RESET}"
+        echo -e "{{MAGENTA}}There are unstaged changes.{{NORMAL}}"
     elif ! git status; then
-        echo -e "${MAGENTA}There are untracked files.${RESET}"
+        echo -e "{{MAGENTA}}There are untracked files.{{NORMAL}}"
     elif ! [ -z "$(git ls-files --deleted)" ]; then
-        echo -e "${MAGENTA}There are deleted files.${RESET}"
+        echo -e "{{MAGENTA}}There are deleted files.{{NORMAL}}"
     elif ! [ -z "$(git ls-files --modified)" ]; then
-        echo -e "${MAGENTA}There are modified files.${RESET}"
+        echo -e "{{MAGENTA}}There are modified files.{{NORMAL}}"
     else
-        echo -e "${GREEN}Repository is clean.${RESET}"
+        echo -e "{{GREEN}}Repository is clean.{{NORMAL}}"
         exit 0
     fi
     exit 1
