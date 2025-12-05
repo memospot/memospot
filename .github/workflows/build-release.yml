@@ -107,7 +107,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: latest }
 
-      - # node_modules is not cached on Windows as it breaks subsequent runs
+      - # node_modules is not cached on Windows as it breaks subsequent runs.
         if: ${{ runner.os != 'Windows' }}
         name: Cache node_modules
         uses: actions/cache@v4
@@ -123,7 +123,7 @@ jobs:
         with:
           key: bundeps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
           restore-keys: bundeps-${{ runner.os }}
-          path: ~/.bun
+          path: ~/.bun/install
       # /Bun
 
       - name: Cache Memos builds

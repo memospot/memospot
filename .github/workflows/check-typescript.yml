@@ -42,7 +42,7 @@ jobs:
       matrix:
         platform:
           - runner: ubuntu-latest
-          - runner: macos-14
+          - runner: macos-15
           - runner: windows-2022
 
     runs-on: ${{ matrix.platform.runner }}
@@ -50,11 +50,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        # Bun
+      - uses: oven-sh/setup-bun@v2
         with: { bun-version: latest }
 
-      - # node_modules is not cached on Windows as it breaks subsequent runs
+      - # node_modules is not cached on Windows as it breaks subsequent runs.
         if: ${{ runner.os != 'Windows' }}
         name: Cache node_modules
         uses: actions/cache@v4
@@ -70,7 +70,8 @@ jobs:
         with:
           key: bundeps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
           restore-keys: bundeps-${{ runner.os }}
-          path: ~/.bun
+          path: ~/.bun/install
+      # /Bun
 
       - name: Install dependencies with Bun
         shell: bash
