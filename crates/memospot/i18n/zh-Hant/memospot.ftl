@@ -25,6 +25,13 @@ helpmenu-report-issue = &報告問題…
 dialog-update-title = 有可用的更新
 dialog-update-no-update = 沒有可用的更新。
 dialog-update-message = 版本 { $version } 可供下載。您想下載它嗎？
+dialog-update-failed-title = Auto-update failed
+dialog-update-manually-prompt =
+    Failed to auto update to version { $version }:
+    
+    { $error }
+    
+    Would you like to update manually?
 panic-failed-to-spawn-memos = 無法啟動備忘錄
 panic-failed-to-create-data-directory = 無法創建數據目錄！ { $dir }
 panic-data-directory-is-not-writable = 數據目錄不可寫！ { $dir }
