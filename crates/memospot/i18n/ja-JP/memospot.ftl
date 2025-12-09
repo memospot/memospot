@@ -28,6 +28,13 @@ dialog-update-message =
     バージョン { $version } がダウンロード可能です。
     
     ダウンロードしますか？
+dialog-update-failed-title = 自動更新に失敗しました
+dialog-update-manually-prompt =
+    { $version }への自動更新に失敗しました :
+    
+    { $error }
+    
+    手動で更新しますか？
 panic-failed-to-spawn-memos = メモの生成に失敗しました
 panic-failed-to-create-data-directory =
     データディレクトリの作成に失敗しました！
