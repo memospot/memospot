@@ -28,6 +28,13 @@ dialog-update-message =
     版本 { $version } 可供下载。
     
     您想要下载吗？
+dialog-update-failed-title = 自动更新失败
+dialog-update-manually-prompt =
+    自动更新到版本 { $version }失败：
+    
+    { $error }
+    
+    您想手动更新吗？
 panic-failed-to-spawn-memos = 啟動 Memos 失敗
 panic-failed-to-create-data-directory =
     创建数据目录失败！
