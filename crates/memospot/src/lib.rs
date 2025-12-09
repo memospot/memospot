@@ -1,23 +1,25 @@
 mod cmd;
-mod events;
+mod event;
 mod i18n;
 mod init;
 mod memos;
 mod memos_log;
 mod memos_version;
 mod menu;
-mod routes;
+mod route;
 mod runtime_config;
 mod sqlite;
 mod updater;
 mod utils;
 mod webview;
 mod window;
+mod window_ext;
 mod zip;
 
-use crate::events::handle_run_events;
-use crate::routes::Routes;
+use crate::event::handle_run_events;
+use crate::route::Route;
 use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
+use crate::window::Window;
 use dialog::*;
 use i18n::*;
 use log::{debug, info, warn};
@@ -26,7 +28,7 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{async_runtime, Manager};
 use tauri_utils::config::WindowConfig;
-use window::WindowConfigExt;
+use window_ext::WindowConfigExt;
 
 #[warn(unused_extern_crates)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -160,7 +162,7 @@ pub fn run() {
     if !window_config.is_empty() {
         window_config[0] = WindowConfig {
             title: main_title,
-            url: tauri::WebviewUrl::App(Routes::Loader.into()),
+            url: tauri::WebviewUrl::App(Route::Loader.into()),
             user_agent: Some(config.user_agent.clone()),
             // Stop Tauri from handling drag-and-drop events and pass them to the webview.
             drag_drop_enabled: false,
@@ -203,7 +205,8 @@ pub fn run() {
     #[allow(unused_qualifications)]
     let Ok(tauri_app) = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
-            app.get_webview_window("main").map(|w| w.set_focus().ok());
+            app.get_webview_window(Window::Main.into())
+                .map(|w| w.set_focus().ok());
         }))
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_http::init())

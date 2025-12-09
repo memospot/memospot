@@ -1,13 +1,17 @@
 //! Tauri event handler.
+use std::str::FromStr;
+use std::sync::LazyLock;
+
 use crate::memos;
 use crate::memos_version::MemosVersionStore;
 use crate::menu;
 use crate::menu::build_empty;
 use crate::menu::MainMenu;
-use crate::routes::Routes;
+use crate::route::Route;
 use crate::runtime_config::RuntimeConfig;
 use crate::updater;
-use crate::window::WebviewWindowExt;
+use crate::window::Window;
+use crate::window_ext::WebviewWindowExt;
 use anyhow::{bail, Error, Result};
 use dialog::error_dialog;
 use log::info;
@@ -21,6 +25,9 @@ use tauri::WindowEvent;
 use tauri::{async_runtime, AppHandle, Manager, RunEvent, Runtime};
 use tauri_plugin_opener::OpenerExt;
 use uuid::Uuid;
+
+pub static PREVENT_EXIT: LazyLock<std::sync::Mutex<bool>> =
+    LazyLock::new(|| std::sync::Mutex::new(true));
 
 /// Handles Tauri events.
 pub fn handle_run_events(app: &AppHandle, run_event: RunEvent) {
@@ -95,9 +102,23 @@ fn on_exit_cleanup<R: Runtime>(app: &AppHandle<R>) {
         })
     }
 
-    memos::shutdown();
+    async_runtime::block_on(async move {
+        memos::shutdown().await;
+        *PREVENT_EXIT.lock().unwrap() = false;
+    });
 
+    app.get_webview_window(Window::Main.into())
+        .map(|w| w.hide().ok());
+    loop {
+        if !*PREVENT_EXIT.lock().unwrap() {
+            debug!("finished pre-exit cleanup");
+            break;
+        }
+    }
+    app.get_webview_window(Window::Main.into())
+        .map(|w| w.close().ok());
     info!("Memospot closed.");
+
     app.cleanup_before_exit();
     std::process::exit(0);
 }
@@ -111,7 +132,7 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) -> Res
     let Some(action) = MainMenu::from_repr(event_id) else {
         bail!("unrecognized menu action for event id #{event_id}");
     };
-    let Some(main_window) = app.get_webview_window("main") else {
+    let Some(main_window) = app.get_webview_window(Window::Main.into()) else {
         bail!("main window not found");
     };
     let empty_menu = build_empty(app)?;
@@ -126,8 +147,8 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) -> Res
             async_runtime::spawn(async move {
                 let new_window = WebviewWindowBuilder::new(
                     &handle_,
-                    "settings",
-                    WebviewUrl::App(Routes::Settings.into()),
+                    Window::Settings.to_string(),
+                    WebviewUrl::App(Route::Settings.into()),
                 )
                 .title(MainMenu::AppSettings.text().replace("&", ""))
                 .center()
@@ -161,10 +182,8 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) -> Res
             app.opener().open_url(config.memos_url, None::<&str>)?;
         }
         MainMenu::AppUpdate => {
-            let handle_ = app.clone();
-            async_runtime::spawn(async move {
-                updater::spawn(&handle_);
-            });
+            let app_ = app.clone();
+            updater::manual_check(app_);
         }
         MainMenu::AppQuit => {
             app.exit(0);
@@ -178,7 +197,7 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) -> Res
                 let builder = WebviewWindowBuilder::new(
                     &handle_,
                     uuid,
-                    WebviewUrl::App(Routes::Loader.into()),
+                    WebviewUrl::App(Route::Loader.into()),
                 )
                 .title(main_title)
                 .auto_resize()
@@ -258,16 +277,21 @@ where
         return;
     };
 
-    match label.as_str() {
-        "main" => {
+    let Ok(window) = Window::from_str(&label) else {
+        error!("unrecognized window label #{label}");
+        return;
+    };
+
+    match window {
+        Window::Main => {
             match event {
                 WindowEvent::Resized { .. } | WindowEvent::Moved { .. } => {
-                    if let Some(main_window) = app.get_webview_window("main") {
-                        main_window.persist_window_state();
+                    if let Some(w) = app.get_webview_window(Window::Main.into()) {
+                        w.persist_window_state();
                     }
                 }
                 WindowEvent::CloseRequested { .. } => {
-                    // Close all windows except the `main` itself.
+                    // Close all windows except `main` itself.
                     app.webview_windows()
                         .into_iter()
                         .skip(1)
@@ -275,7 +299,9 @@ where
                             w.close().ok();
                         });
                 }
-                _ => {}
+                _ => {
+                    // Ignore other events.
+                }
             }
         }
         _ => {

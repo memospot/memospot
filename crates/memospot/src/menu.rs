@@ -4,6 +4,7 @@
 use crate::fl;
 use crate::memos_version::MemosVersionStore;
 use crate::runtime_config::RuntimeConfig;
+use crate::window::Window;
 use log::{debug, error};
 use std::convert::AsRef;
 use strum_macros::AsRefStr;
@@ -270,7 +271,7 @@ pub fn update_memos_version_entry<R: Runtime>(handle: &AppHandle<R>) {
             }
         }
 
-        let Some(main_window) = handle_.get_webview_window("main") else {
+        let Some(main_window) = handle_.get_webview_window(Window::Main.into()) else {
             error!("unable to set Memos version in Help menu. Main window not found.");
             return;
         };

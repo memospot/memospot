@@ -12,7 +12,7 @@ use std::fs;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
-use sysinfo::{Pid, System};
+use sysinfo::{Pid, ProcessStatus, System};
 use tauri::async_runtime;
 use tauri::utils::platform::resource_dir as tauri_resource_dir;
 use tauri_plugin_http::reqwest;
@@ -59,12 +59,12 @@ pub fn get_last_pid(rtcfg: &RuntimeConfig) -> Option<u32> {
             Ok(content) => match content.trim().parse::<u32>() {
                 Ok(pid) => Some(pid),
                 Err(e) => {
-                    warn!("Failed to parse PID from file {pid_file:#?}: {e}");
+                    warn!("failed to parse PID from file {pid_file:#?}: {e}");
                     None
                 }
             },
             Err(e) => {
-                debug!("Failed to read PID file {pid_file:#?}: {e}");
+                debug!("failed to read PID file {pid_file:#?}: {e}");
                 None
             }
         };
@@ -132,33 +132,31 @@ fn save_pid_file(pid: u32, file_path: &Path) {
     });
 }
 
-fn remove_pid_file(rtcfg: &RuntimeConfig) {
+async fn remove_pid_file(rtcfg: &RuntimeConfig) {
     let pid_file = rtcfg.paths.memospot_data.join("memos.pid");
     let time_start = tokio::time::Instant::now();
     let timeout = tokio::time::Duration::from_secs(5);
 
-    async_runtime::block_on(async move {
-        let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
-        let mut last_error: String = "".into();
-        loop {
-            interval.tick().await;
-            if time_start.elapsed() > timeout {
-                warn!("timed out after 5 seconds while trying to remove pid file");
-                break;
-            }
-
-            if let Err(e) = tokio::fs::remove_file(&pid_file).await {
-                let error = e.to_string();
-                if last_error != error {
-                    warn!("unable to remove pid file: {error}");
-                    last_error = error;
-                }
-                continue;
-            }
-            debug!("pid file removed");
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
+    let mut last_error: String = "".into();
+    loop {
+        interval.tick().await;
+        if time_start.elapsed() > timeout {
+            warn!("timed out after 5 seconds while trying to remove pid file");
             break;
         }
-    });
+
+        if let Err(e) = tokio::fs::remove_file(&pid_file).await {
+            let error = e.to_string();
+            if last_error != error {
+                warn!("unable to remove pid file: {error}");
+                last_error = error;
+            }
+            continue;
+        }
+        debug!("pid file removed");
+        break;
+    }
 }
 
 async fn kill_pid(pid: u32) {
@@ -251,7 +249,7 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
 }
 
 /// Shutdown the Memos server and checkpoint the database.
-pub fn shutdown() {
+pub async fn shutdown() {
     let config = RuntimeConfig::from_global_store();
     if !config.is_managed_server {
         debug!("server is not managed by Memospot. No need to cleanup before exit");
@@ -261,11 +259,41 @@ pub fn shutdown() {
     debug!("shutting down server…");
     sidecar::kill_children();
 
-    let db_file = config.paths.memos_db_file.clone();
-    async_runtime::block_on(async move {
-        sqlite::wait_checkpoint(&db_file).await;
-    });
-    remove_pid_file(&config);
+    if let Some(pid) = get_last_pid(&config) {
+        let pid = Pid::from_u32(pid);
+
+        let time_start = tokio::time::Instant::now();
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
+        loop {
+            interval.tick().await;
+            if time_start.elapsed() > tokio::time::Duration::from_secs(5) {
+                warn!("timed out after 5 seconds waiting for pid {pid} to exit");
+                break;
+            }
+
+            let sys = System::new_all();
+            if let Some(proc) = sys.process(pid) {
+                match proc.status() {
+                    ProcessStatus::Run => {
+                        proc.kill_and_wait().ok();
+                    }
+                    ProcessStatus::Sleep => {
+                        proc.kill_and_wait().ok();
+                    }
+                    _ => {
+                        break;
+                    }
+                }
+            } else {
+                debug!("pid {pid} is not running anymore");
+                break;
+            }
+        }
+    }
+
+    let db_file = config.paths.memos_db_file.as_ref();
+    sqlite::wait_checkpoint(db_file).await;
+    remove_pid_file(&config).await;
     debug!("server shutdown");
 }
 

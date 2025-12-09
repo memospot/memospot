@@ -68,14 +68,27 @@ pub fn should_run(config: &RuntimeConfig) -> bool {
 pub fn spawn<R: Runtime>(app: &AppHandle<R>) {
     let app_ = app.clone();
     async_runtime::spawn(async move {
-        update(app_).await.unwrap_or_else(|e| {
+        if let Err(e) = update(app_).await {
             error!("failed with error {e}");
-        });
+        };
+    });
+}
+
+pub fn manual_check<R: Runtime>(app: AppHandle<R>) {
+    async_runtime::spawn(async move {
+        match update(app).await {
+            Err(e) => error!("failed with error {e}"),
+            Ok(update_available) => {
+                if !update_available {
+                    info_dialog(fl!("dialog-update-no-update"));
+                }
+            }
+        }
     });
 }
 
 /// Check for updates and prompt the user to install them.
-async fn update<R: Runtime>(app: AppHandle<R>) -> tauri_plugin_updater::Result<()> {
+async fn update<R: Runtime>(app: AppHandle<R>) -> tauri_plugin_updater::Result<bool> {
     debug!("auto-updater is starting");
     let updater = app
         .updater_builder()
@@ -98,10 +111,10 @@ async fn update<R: Runtime>(app: AppHandle<R>) -> tauri_plugin_updater::Result<(
         );
         if !user_confirmed {
             warn!("user declined update download");
-            return Ok(());
+            return Ok(true);
         }
 
-        info!("auto-updater: downloading update…");
+        info!("downloading update…");
         let mut downloaded = 0;
         if let Err(e) = update
             .download_and_install(
@@ -115,7 +128,7 @@ async fn update<R: Runtime>(app: AppHandle<R>) -> tauri_plugin_updater::Result<(
             )
             .await
         {
-            error!("auto-updater: failed to auto update to version {new_version}: {e}");
+            error!("failed to auto update to version {new_version}: {e}");
             let user_confirmed = confirm_dialog(
                 fl!("dialog-update-failed-title").as_str(),
                 fl!(
@@ -128,16 +141,14 @@ async fn update<R: Runtime>(app: AppHandle<R>) -> tauri_plugin_updater::Result<(
             );
             if user_confirmed {
                 app.opener().open_url(LATEST_RELEASE_URL, None::<&str>).ok();
-                return Ok(());
+                return Ok(true);
             }
         }
 
-        info!("auto-updater: update installed, restarting application");
+        info!("update installed, restarting application");
         app.restart();
     }
-    info!("auto-updater: no update available");
-    #[cfg(debug_assertions)]
-    info_dialog(fl!("dialog-update-no-update"));
+    info!("no update available");
 
-    Ok(())
+    Ok(false)
 }

@@ -51,7 +51,7 @@ pub async fn checkpoint(db: &Path) -> Result<(), anyhow::Error> {
 /// This is a blocking function.
 pub async fn wait_checkpoint(db_file: &Path) {
     const INTERVAL_MS: u64 = 100;
-    const TIMEOUT_MS: u128 = 15_000;
+    const TIMEOUT_MS: u128 = 5_000;
 
     debug!("checkpointing WAL…");
     let wal = &db_file.with_extension("db-wal");

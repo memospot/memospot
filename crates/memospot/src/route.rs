@@ -6,17 +6,16 @@ use strum_macros::AsRefStr;
 use strum_macros::FromRepr;
 
 #[derive(AsRefStr, FromRepr, Clone, Copy)]
-pub enum Routes {
+pub enum Route {
     #[strum(serialize = "/loader")]
     Loader,
     #[strum(serialize = "/settings")]
     Settings,
 }
-impl Routes {
+impl Route {
     pub fn id(&self) -> u8 {
         *self as u8
     }
-
     pub fn text(self) -> String {
         self.as_ref().to_string()
     }
@@ -24,8 +23,8 @@ impl Routes {
         self.as_ref().into()
     }
 }
-impl From<Routes> for PathBuf {
-    fn from(r: Routes) -> Self {
+impl From<Route> for PathBuf {
+    fn from(r: Route) -> Self {
         r.path()
     }
 }
