@@ -28,6 +28,13 @@ dialog-update-message =
     A versão { $version } está disponível para download.
     
     Deseja baixá-la?
+dialog-update-failed-title = Auto-atualização falhou
+dialog-update-manually-prompt =
+    Falha ao atualizar automaticamente a versão { $version }:
+    
+    { $error }
+    
+    Você gostaria de atualizar manualmente?
 panic-failed-to-spawn-memos = Não foi possível iniciar o Memos
 panic-failed-to-create-data-directory =
     Não foi possível criar o diretório de dados!
