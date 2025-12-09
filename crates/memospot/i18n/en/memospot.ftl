@@ -32,6 +32,13 @@ dialog-update-message =
     Version {$version} is available for download.
 
     Do you want to download it?
+dialog-autoupdate-failed-title = Auto-update failed
+dialog-autoupdate-update-manually-prompt =
+    Failed to auto update to version {$version}:
+
+    {$error}
+
+    Would you like to update manually?
 panic-failed-to-spawn-memos = Failed to spawn Memos
 panic-failed-to-create-data-directory =
     Failed to create data directory!
