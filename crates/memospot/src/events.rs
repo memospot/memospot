@@ -163,7 +163,7 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) -> Res
         MainMenu::AppUpdate => {
             let handle_ = app.clone();
             async_runtime::spawn(async move {
-                updater::manual_check(handle_).await;
+                updater::spawn(&handle_);
             });
         }
         MainMenu::AppQuit => {

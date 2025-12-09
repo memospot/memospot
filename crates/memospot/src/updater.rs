@@ -65,7 +65,7 @@ pub fn should_run(config: &RuntimeConfig) -> bool {
 }
 
 /// Initialize the updater in the background.
-pub fn spawn(app: &AppHandle) {
+pub fn spawn<R: Runtime>(app: &AppHandle<R>) {
     let app_ = app.clone();
     async_runtime::spawn(async move {
         update(app_).await.unwrap_or_else(|e| {
@@ -75,7 +75,7 @@ pub fn spawn(app: &AppHandle) {
 }
 
 /// Check for updates and prompt the user to install them.
-async fn update(app: AppHandle) -> tauri_plugin_updater::Result<()> {
+async fn update<R: Runtime>(app: AppHandle<R>) -> tauri_plugin_updater::Result<()> {
     debug!("auto-updater is starting");
     let updater = app
         .updater_builder()
@@ -117,9 +117,9 @@ async fn update(app: AppHandle) -> tauri_plugin_updater::Result<()> {
         {
             error!("auto-updater: failed to auto update to version {new_version}: {e}");
             let user_confirmed = confirm_dialog(
-                fl!("dialog-autoupdate-failed-title").as_str(),
+                fl!("dialog-update-failed-title").as_str(),
                 fl!(
-                    "dialog-autoupdate-update-manually-prompt",
+                    "dialog-update-manually-prompt",
                     version = new_version,
                     error = e.to_string()
                 )
@@ -140,29 +140,4 @@ async fn update(app: AppHandle) -> tauri_plugin_updater::Result<()> {
     info_dialog(fl!("dialog-update-no-update"));
 
     Ok(())
-}
-
-pub async fn manual_check<R: Runtime>(app: AppHandle<R>) {
-    let Ok(updater) = app.updater() else {
-        return;
-    };
-    let Ok(check) = updater.check().await else {
-        return;
-    };
-    if let Some(update) = check {
-        let user_confirmed = confirm_dialog(
-            fl!("dialog-update-title").as_str(),
-            fl!("dialog-update-message", version = update.version).as_str(),
-            MessageType::Info,
-        );
-        if user_confirmed {
-            app.opener()
-                .open_url(update.download_url.as_str(), None::<&str>)
-                .ok();
-        } else {
-            warn!("user declined update download.");
-        }
-    } else {
-        info_dialog(fl!("dialog-update-no-update"));
-    }
 }

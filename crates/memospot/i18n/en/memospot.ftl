@@ -32,8 +32,8 @@ dialog-update-message =
     Version {$version} is available for download.
 
     Do you want to download it?
-dialog-autoupdate-failed-title = Auto-update failed
-dialog-autoupdate-update-manually-prompt =
+dialog-update-failed-title = Auto-update failed
+dialog-update-manually-prompt =
     Failed to auto update to version {$version}:
 
     {$error}
