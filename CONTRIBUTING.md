@@ -2,6 +2,8 @@
 
 [Memospot](https://github.com/memospot/memospot) contributor's guide.
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/memospot/memospot)
+
 ## Localization
 
 This project is available in multiple languages, and you can play an important role in its localization.
