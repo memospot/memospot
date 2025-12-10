@@ -300,7 +300,7 @@ cargo binstall \
     cargo-xwin@0.20.2 \
     dprint@0.50.2 \
     just@1.43.0 \
-    tauri-cli@2.9.4 \
+    tauri-cli@2.9.5 \
     -y
 ```
 
@@ -323,7 +323,7 @@ cargo binstall `
     cargo-edit@0.13.8 `
     dprint@0.50.2 `
     just@1.43.0 `
-    tauri-cli@2.9.4 `
+    tauri-cli@2.9.5 `
     -y
 ```
 

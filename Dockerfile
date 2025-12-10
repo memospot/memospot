@@ -124,7 +124,7 @@ RUN \
       cargo-xwin@0.20.2
       dprint@0.50.2
       just@1.43.0
-      tauri-cli@2.9.4
+      tauri-cli@2.9.5
       -y
   )
   if [ -s /run/secrets/GITHUB_TOKEN ]; then

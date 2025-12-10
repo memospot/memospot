@@ -18,7 +18,7 @@ name = "memospot_lib"
 crate-type = ["staticlib", "cdylib", "lib"]
 
 [build-dependencies]
-tauri-build = { features = ["config-toml"], version = "2.5" }
+tauri-build = { workspace = true, features = ["config-toml"] }
 build_utils = { path = "../build_utils" }
 
 [dependencies]
