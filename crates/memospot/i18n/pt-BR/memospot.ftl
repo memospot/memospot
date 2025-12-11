@@ -11,6 +11,7 @@ appmenu-settings = &Configurações
 viewmenu = &Exibição
 viewmenu-developer-tools = &Ferramentas do desenvolvedor…
 viewmenu-hide-menu-bar = &Esconder barra de menu
+viewmenu-new-window = &Nova Janela
 viewmenu-refresh = &Atualizar
 viewmenu-reload-view = &Recarregar
 windowmenu = Jane&la
@@ -27,6 +28,13 @@ dialog-update-message =
     A versão { $version } está disponível para download.
     
     Deseja baixá-la?
+dialog-update-failed-title = Auto-atualização falhou
+dialog-update-manually-prompt =
+    Falha ao atualizar automaticamente para a versão { $version }:
+    
+    { $error }
+    
+    Gostaria de atualizar manualmente?
 panic-failed-to-spawn-memos = Não foi possível iniciar o Memos
 panic-failed-to-create-data-directory =
     Não foi possível criar o diretório de dados!

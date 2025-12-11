@@ -11,6 +11,7 @@ appmenu-settings = &Настройки
 viewmenu = &Просмотр
 viewmenu-developer-tools = &Инструменты разработчика
 viewmenu-hide-menu-bar = &Скрыть панель меню
+viewmenu-new-window = &Новое окно
 viewmenu-refresh = &Обновить
 viewmenu-reload-view = Перезагрузить
 windowmenu = &Окно
@@ -24,6 +25,13 @@ helpmenu-report-issue = &Сообщить об ошибке…
 dialog-update-title = Доступно обновление
 dialog-update-no-update = Обновление недоступно.
 dialog-update-message = Версия { $version } доступна для загрузки. Вы хотите загрузить её?
+dialog-update-failed-title = Ошибка автообновления
+dialog-update-manually-prompt =
+    Ошибка автоматического обновления до версии { $version }:
+    
+    { $error }
+    
+    Вы хотите обновить вручную?
 panic-failed-to-spawn-memos = Не удалось запустить Мемо
 panic-failed-to-create-data-directory = Не удалось создать каталог данных! { $dir }
 panic-data-directory-is-not-writable = Каталог данных недоступен для записи! { $dir }
