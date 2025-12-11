@@ -112,7 +112,7 @@ RUN \
       cargo-sweep@0.8.0
       cargo-xwin@0.20.2
       dprint@0.50.2
-      just@1.43.0
+      just@1.45.0
       tauri-cli@2.9.5
       -y
   )
