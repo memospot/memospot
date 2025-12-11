@@ -11,6 +11,7 @@ appmenu-settings = &Paramètres
 viewmenu = &Voir
 viewmenu-developer-tools = Outils de développement
 viewmenu-hide-menu-bar = Cacher la barre de menu
+viewmenu-new-window = &Nouvelle fenêtre
 viewmenu-refresh = Rafraîchir
 viewmenu-reload-view = Re&load
 windowmenu = &Fenêtre
@@ -27,6 +28,13 @@ dialog-update-message =
     La version { $version } est disponible en téléchargement.
     
     Voulez-vous la télécharger ?
+dialog-update-failed-title = La mise à jour automatique a échoué
+dialog-update-manually-prompt =
+    Échec de la mise à jour automatique vers la version { $version }:
+    
+    { $error }
+    
+    Souhaitez-vous mettre à jour manuellement ?
 panic-failed-to-spawn-memos = Échec de l'apparition des mémos
 panic-failed-to-create-data-directory =
     Impossible de créer le répertoire des données!
