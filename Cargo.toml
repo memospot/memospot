@@ -31,7 +31,7 @@ rust-embed = "8.9.0"
 
 itertools = "0.14.0"
 json-patch = "4.1.0"
-log = { version = "0.4.28", default-features = false }
+log = { version = "0.4.29", default-features = false }
 log4rs = { version = "1.4.0" }
 # Newer versions of `native-dialog` were causing issues with some dialogues
 # not displaying on KDE and other platforms, so the version is pinned.
@@ -50,7 +50,8 @@ shared_child = "1.1.1"
 strum = "0.27.2"
 strum_macros = "0.27.2"
 sysinfo = "0.37.2"
-tauri = { version = "2.9.3" }
+tauri = { version = "2.9.5" }
+tauri-build = { version = "2.5.3", default-features = false }
 tauri-plugin-fs = { version = "2.4.4" }
 tauri-plugin-http = { version = "2.5.4", features = ["gzip", "rustls-tls"] }
 tauri-plugin-opener = { version = "2.5.2" }
@@ -58,13 +59,13 @@ tauri-plugin-process = { version = "2.3.1" }
 tauri-plugin-shell = { version = "2.3.3" }
 tauri-plugin-single-instance = "2.3.6"
 tauri-plugin-updater = { version = "2.9.0" }
-tauri-utils = { version = "2.8.0" }
+tauri-utils = { version = "2.8.1" }
 tempfile = { version = "3.23.0" }
 thiserror = { version = "2.0.17" }
 tokio = { version = "1.48.0" }
 ts-rs = { version = "11.1.0" }
 url = { version = "2.5.7", default-features = false }
-uuid = { version = "1.18.1", default-features = false }
+uuid = { version = "1.19.0", default-features = false }
 windows-sys = { version = "0.61.2", default-features = false }
 winreg = "0.55.0"
 

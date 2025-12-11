@@ -108,6 +108,10 @@ fn cleanup_dummy_deps() {
 }
 
 fn main() {
+    println!(
+        "cargo:rustc-env=TARGET_TRIPLE={}",
+        std::env::var("TARGET").unwrap_or_default()
+    );
     ensure_deps();
     // Runs only on dev and release builds.
     if cfg!(not(feature = "unittest")) {

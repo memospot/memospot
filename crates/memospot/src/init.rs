@@ -346,6 +346,27 @@ pub fn memos_port(rtcfg: &RuntimeConfig) -> u16 {
 /// 5. /Applications/Memospot.app/Contents/MacOS/memos (macOS)
 /// 6. /usr/local/bin, /var/opt/memos, /usr/local/memos (Linux).
 pub fn find_memos(rtcfg: &RuntimeConfig) -> PathBuf {
+    #[cfg(debug_assertions)]
+    {
+        // cwd is target/debug/ on dev.
+        let server_dist_dir = rtcfg
+            .paths
+            .memospot_cwd
+            .clone()
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("server-dist");
+
+        let current_triple = env::var("TARGET_TRIPLE").unwrap_or_default();
+        let binary = server_dist_dir.join(format!("memos-{current_triple}"));
+        if binary.exists() {
+            warn!("Using Memos server from {binary:?}");
+            return binary;
+        }
+    }
+
     // Prefer path from the configuration file if it's valid.
     if let Some(binary_path) = &rtcfg.yaml.memos.binary_path {
         let yaml_bin = binary_path.as_str().trim();

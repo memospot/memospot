@@ -72,7 +72,7 @@ jobs:
         with: { toolchain: "${{ env.RUST_TOOLCHAIN }}" }
 
       - name: Install cargo-machete
-        uses: taiki-e/install-action@92e6dd1c202153a204d471a3c509bf1e03dcfa44
+        uses: taiki-e/install-action@493d7f216ecab2af0602481ce809ab2c72836fa1
         with: { tool: "cargo-machete@0.9.1" }
 
       - name: Run cargo-machete
@@ -88,7 +88,6 @@ jobs:
           - { runner: macos-15, rust_target: aarch64-apple-darwin }
           - { runner: macos-15-intel, rust_target: x86_64-apple-darwin }
           - { runner: ubuntu-22.04, rust_target: x86_64-unknown-linux-gnu }
-          - { runner: windows-2022, rust_target: aarch64-pc-windows-msvc }
           - { runner: windows-2022, rust_target: x86_64-pc-windows-msvc }
 
     runs-on: ${{ matrix.platform.runner }}
@@ -138,7 +137,7 @@ jobs:
       # Clippy with SARIF output
       - if: ${{ github.event_name == 'pull_request' }}
         name: "Install sarif-fmt and clippy-sarif"
-        uses: taiki-e/install-action@92e6dd1c202153a204d471a3c509bf1e03dcfa44
+        uses: taiki-e/install-action@493d7f216ecab2af0602481ce809ab2c72836fa1
         with: { tool: "clippy-sarif@0.8.0, sarif-fmt@0.8.0" }
 
       # Clippy with SARIF output

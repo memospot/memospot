@@ -8,7 +8,7 @@ service. Available for Windows, macOS, and Linux.
 This project allows you to use Memos locally without the Docker overhead or to easily test Memos before deploying a
 container. Data can be seamlessly moved between instances.
 
-[![Downloads](https://img.shields.io/github/downloads/memospot/memospot/total?logo=github)](https://github.com/memospot/memospot/releases) [![Crowdin](https://badges.crowdin.net/memospot/localized.svg)](https://crowdin.com/project/memospot) [![GitHub Stars](https://img.shields.io/github/stars/memospot/memospot?logo=github)](https://github.com/memospot/memospot)
+[![Downloads](https://img.shields.io/github/downloads/memospot/memospot/total?logo=github)](https://github.com/memospot/memospot/releases) [![Crowdin](https://badges.crowdin.net/memospot/localized.svg)](https://crowdin.com/project/memospot) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/memospot/memospot) [![GitHub Stars](https://img.shields.io/github/stars/memospot/memospot?logo=github)](https://github.com/memospot/memospot)
 
 ## Preview
 

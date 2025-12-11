@@ -51,8 +51,13 @@ env:
     libgtk-3-dev
     librsvg2-dev
     libssl-dev
-    libwebkit2gtk-4.1-dev
     libxdo-dev
+    libwebkit2gtk-4.1-0=2.44.0-2
+    libjavascriptcoregtk-4.1-0=2.44.0-2
+    libwebkit2gtk-4.1-dev=2.44.0-2
+    libjavascriptcoregtk-4.1-dev=2.44.0-2
+    gir1.2-webkit2-4.1=2.44.0-2
+    gir1.2-javascriptcoregtk-4.1=2.44.0-2
 
 jobs:
   build-test:
@@ -64,7 +69,7 @@ jobs:
         platform:
           - { runner: macos-15, rust_target: aarch64-apple-darwin }
           - { runner: macos-15-intel, rust_target: x86_64-apple-darwin }
-          - { runner: ubuntu-22.04, rust_target: x86_64-unknown-linux-gnu }
+          - { runner: ubuntu-24.04, rust_target: x86_64-unknown-linux-gnu }
           - { runner: windows-2022, rust_target: x86_64-pc-windows-msvc }
 
     runs-on: ${{ matrix.platform.runner }}
@@ -115,8 +120,8 @@ jobs:
         with: { install-only: true }
 
       - name: Install Just
-        uses: taiki-e/install-action@92e6dd1c202153a204d471a3c509bf1e03dcfa44
-        with: { tool: just@1.43.0 }
+        uses: taiki-e/install-action@493d7f216ecab2af0602481ce809ab2c72836fa1
+        with: { tool: just@1.45.0 }
 
       # Rust
       - name: Setup Rust toolchain

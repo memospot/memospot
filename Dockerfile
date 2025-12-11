@@ -47,39 +47,28 @@ RUN \
     -O /usr/local/bin/apt-fast
   chmod +x /usr/local/bin/apt-fast
 
-  # Pin webkit2gtk libraries to 2.44.0-2.
-  apt-fast install --no-install-recommends -qq \
-    libwebkit2gtk-4.1-0=2.44.0-2 \
-    libjavascriptcoregtk-4.1-0=2.44.0-2 \
-    libwebkit2gtk-4.1-dev=2.44.0-2 \
-    libjavascriptcoregtk-4.1-dev=2.44.0-2 \
-    gir1.2-webkit2-4.1=2.44.0-2 \
-    gir1.2-javascriptcoregtk-4.1=2.44.0-2 \
-    -y
-  apt-mark hold \
-    libwebkit2gtk-4.1-0 \
-    libjavascriptcoregtk-4.1-0 \
-    libwebkit2gtk-4.1-dev \
-    libjavascriptcoregtk-4.1-dev \
-    gir1.2-webkit2-4.1 \
-    gir1.2-javascriptcoregtk-4.1
-
   apt-fast install --no-install-recommends -qq \
     build-essential \
     curl \
     file \
     patchelf \
     xdg-utils \
-    libayatana-appindicator3-dev \
-    libgtk-3-dev \
-    librsvg2-dev \
-    libssl-dev \
-    libxdo-dev \
     git \
     nsis \
     clang \
     lld \
     llvm \
+    libayatana-appindicator3-dev \
+    libgtk-3-dev \
+    librsvg2-dev \
+    libssl-dev \
+    libxdo-dev \
+    libwebkit2gtk-4.1-0=2.44.0-2 \
+    libjavascriptcoregtk-4.1-0=2.44.0-2 \
+    libwebkit2gtk-4.1-dev=2.44.0-2 \
+    libjavascriptcoregtk-4.1-dev=2.44.0-2 \
+    gir1.2-webkit2-4.1=2.44.0-2 \
+    gir1.2-javascriptcoregtk-4.1=2.44.0-2 \
     -y
 
   apt-get autoremove --yes
@@ -123,8 +112,8 @@ RUN \
       cargo-sweep@0.8.0
       cargo-xwin@0.20.2
       dprint@0.50.2
-      just@1.43.0
-      tauri-cli@2.9.4
+      just@1.45.0
+      tauri-cli@2.9.5
       -y
   )
   if [ -s /run/secrets/GITHUB_TOKEN ]; then
