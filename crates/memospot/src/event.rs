@@ -278,7 +278,8 @@ where
     };
 
     let Ok(window) = Window::from_str(&label) else {
-        error!("unrecognized window label #{label}");
+        // Main window duplicates use UUID as label, and
+        // they don't need to be handled individually.
         return;
     };
 
