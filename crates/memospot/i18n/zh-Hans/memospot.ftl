@@ -22,6 +22,8 @@ helpmenu-documentation = 文档
 helpmenu-release-notes = &发布说明
 helpmenu-report-issue = &报告问题…
 # Dialogs
+dialog-generic-error = 错误
+dialog-generic-info = 信息
 dialog-update-title = 可用更新
 dialog-update-no-update = 无可用更新。
 dialog-update-message =
