@@ -1,5 +1,5 @@
 preserve_hierarchy: false
-commit_message: "chore(i18n): add %language% via Crowdin [no ci]"
+commit_message: "chore(i18n): update %language% via Crowdin [no ci]"
 append_commit_message: false
 files:
   - source: /src-ui/i18n/en.json
