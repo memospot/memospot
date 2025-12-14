@@ -22,6 +22,8 @@ helpmenu-documentation = &文檔
 helpmenu-release-notes = &發佈說明
 helpmenu-report-issue = &報告問題…
 # Dialogs
+dialog-generic-error = Error
+dialog-generic-info = Information
 dialog-update-title = 有可用的更新
 dialog-update-no-update = 沒有可用的更新。
 dialog-update-message = 版本 { $version } 可供下載。您想下載它嗎？
