@@ -22,6 +22,8 @@ helpmenu-documentation = &Документация
 helpmenu-release-notes = &Примечания к выпуску
 helpmenu-report-issue = &Сообщить об ошибке…
 # Dialogs
+dialog-generic-error = Ошибка
+dialog-generic-info = Информация
 dialog-update-title = Доступно обновление
 dialog-update-no-update = Обновление недоступно.
 dialog-update-message = Версия { $version } доступна для загрузки. Вы хотите загрузить её?
