@@ -22,6 +22,8 @@ helpmenu-documentation = ドキュメント(&D)
 helpmenu-release-notes = リリースノート(&L)
 helpmenu-report-issue = 問題を報告する…
 # Dialogs
+dialog-generic-error = エラー
+dialog-generic-info = 情報
 dialog-update-title = アップデートがあります
 dialog-update-no-update = 利用可能な更新はありません。
 dialog-update-message =
