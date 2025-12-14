@@ -84,17 +84,12 @@ dev-ui: deps-ts
 download-memos: deps-ts
     bun run ./build-scripts/bin/downloadMemos.ts
 
-[private]
-upx:
-    #!{{bash}}
-    bun run ./build-scripts/bin/upxPack.ts || true
-
 # Tauri hooks
 [private]
 tauri-before-build: download-memos gen-icons gen-bindings build-ui
 
 [private]
-tauri-before-bundle: deps-ts upx
+tauri-before-bundle: deps-ts
 
 [private]
 tauri-before-dev: download-memos gen-icons gen-bindings dev-ui

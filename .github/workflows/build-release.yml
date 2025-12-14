@@ -86,11 +86,6 @@ jobs:
         uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd
         with: { xcode-version: "latest-stable" }
 
-      - if: ${{ runner.os == 'Linux' }}
-        name: "[Linux] Install UPX"
-        uses: crazy-max/ghaction-upx@db8cc9515a4a7ea1b312cb82fbeae6d716daf777
-        with: { install-only: true }
-
       - name: Install Just
         uses: taiki-e/install-action@493d7f216ecab2af0602481ce809ab2c72836fa1
         with: { tool: just@1.45.0 }

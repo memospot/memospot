@@ -213,21 +213,6 @@ Node is a JavaScript runtime built on Chrome's V8 JavaScript engine.
   winget install --id=jqlang.jq -e
   ```
 
-#### UPX (optional; Linux-only)
-
-[UPX](https://upx.github.io/) is a packer for executable files.
-
-> [!NOTE]
->
-> - Not required to build the app, but it's recommended to reduce its size.
-> - Disabled on Windows, as it may cause false-positive AV detections.
-
-- Homebrew
-
-  ```bash
-  brew install upx
-  ```
-
 #### Rust
 
 [Rustup](https://rustup.rs/) | [Official Website](https://www.rust-lang.org/tools/install)

@@ -97,7 +97,6 @@ RUN \
     cargo-binstall \
     rustup-init \
     oven-sh/bun/bun \
-    upx \
     --force
   brew cleanup
 
