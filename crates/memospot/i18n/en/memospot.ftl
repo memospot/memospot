@@ -26,6 +26,8 @@ helpmenu-release-notes = &Release Notes
 helpmenu-report-issue = &Report an Issue…
 
 # Dialogs
+dialog-generic-error = Error
+dialog-generic-info = Information
 dialog-update-title = Update available
 dialog-update-no-update = No update available.
 dialog-update-message =
