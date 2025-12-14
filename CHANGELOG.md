@@ -28,11 +28,12 @@ Security: in case of vulnerabilities.
   the port is already in use and won't affect existing installs.
 - Only one process is allowed to run at a time.
   If you need to work with multiple windows, use the new "View->New Window"
-  option (CmdOrCtrl+N) or "App->Open in browser" (CmdOrCtrl+B).
+  feature (CmdOrCtrl+N) or "App->Open in browser" (CmdOrCtrl+B).
 
 ### Fixed
 
 - (macOS) ungraceful shutdown when closing the app via the dock.
+- (macOS) fixed updater crashes due to native dialogs not running in the main thread.
 
 ### Added
 

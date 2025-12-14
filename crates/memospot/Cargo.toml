@@ -59,6 +59,7 @@ rust-embed = { workspace = true }
 
 # tauri
 tauri = { workspace = true, features = ["config-toml"] }
+tauri-plugin-dialog = { workspace = true }
 tauri-plugin-fs = { workspace = true }
 tauri-plugin-http = { workspace = true, features = ["gzip", "rustls-tls"] }
 tauri-plugin-opener = { workspace = true }

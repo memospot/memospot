@@ -1,12 +1,12 @@
 use crate::{fl, memos, RuntimeConfig};
 use chrono::DateTime;
-use dialog::{confirm_dialog, info_dialog, MessageType};
 use log::{debug, error, info, warn};
 use std::{
     env,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tauri::{async_runtime, AppHandle, Runtime};
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_updater::UpdaterExt;
 
@@ -76,11 +76,19 @@ pub fn spawn<R: Runtime>(app: &AppHandle<R>) {
 
 pub fn manual_check<R: Runtime>(app: AppHandle<R>) {
     async_runtime::spawn(async move {
-        match update(app).await {
+        match update(app.clone()).await {
             Err(e) => error!("failed with error {e}"),
             Ok(update_available) => {
                 if !update_available {
-                    info_dialog(fl!("dialog-update-no-update"));
+                    app.dialog()
+                        .message(fl!("dialog-update-no-update"))
+                        .kind(MessageDialogKind::Info)
+                        .title(if cfg!(target_os = "linux") {
+                            "".into()
+                        } else {
+                            fl!("dialog-generic-info")
+                        })
+                        .blocking_show();
                 }
             }
         }
@@ -102,53 +110,65 @@ async fn update<R: Runtime>(app: AppHandle<R>) -> tauri_plugin_updater::Result<b
         .check()
         .await?;
 
-    if let Some(update) = updater {
-        let new_version = &update.version;
-        let user_confirmed = confirm_dialog(
-            fl!("dialog-update-title").as_str(),
-            fl!("dialog-update-message", version = new_version).as_str(),
-            MessageType::Info,
-        );
-        if !user_confirmed {
-            warn!("user declined update download");
-            return Ok(true);
-        }
+    let Some(update) = updater else {
+        info!("no update available");
+        return Ok(false);
+    };
 
-        info!("downloading update…");
-        let mut downloaded = 0;
-        if let Err(e) = update
-            .download_and_install(
-                |chunk_length, content_length| {
-                    downloaded += chunk_length;
-                    info!("downloaded {downloaded} from {content_length:?}");
-                },
-                || {
-                    info!("download finished");
-                },
-            )
-            .await
-        {
-            error!("failed to auto update to version {new_version}: {e}");
-            let user_confirmed = confirm_dialog(
-                fl!("dialog-update-failed-title").as_str(),
+    let new_version = update.version.to_owned();
+    let user_confirmed = app
+        .dialog()
+        .message(fl!("dialog-update-message", version = new_version.clone()).as_str())
+        .title(if cfg!(target_os = "linux") {
+            "".into()
+        } else {
+            fl!("dialog-update-title")
+        })
+        .buttons(MessageDialogButtons::OkCancel)
+        .blocking_show();
+    if !user_confirmed {
+        warn!("user declined update download");
+        return Ok(true);
+    }
+
+    info!("downloading update…");
+    let mut downloaded = 0;
+    let update_install = update
+        .download_and_install(
+            |chunk_length, content_length| {
+                downloaded += chunk_length;
+                info!("downloaded {downloaded} from {content_length:?}");
+            },
+            || {
+                info!("download finished");
+            },
+        )
+        .await;
+    if let Err(e) = update_install {
+        error!("failed to auto update to version {new_version}: {e}");
+        let user_confirmed = app
+            .dialog()
+            .message(
                 fl!(
                     "dialog-update-manually-prompt",
                     version = new_version,
                     error = e.to_string()
                 )
                 .as_str(),
-                MessageType::Info,
-            );
-            if user_confirmed {
-                app.opener().open_url(LATEST_RELEASE_URL, None::<&str>).ok();
-                return Ok(true);
-            }
+            )
+            .title(if cfg!(target_os = "linux") {
+                "".into()
+            } else {
+                fl!("dialog-update-failed-title")
+            })
+            .buttons(MessageDialogButtons::OkCancel)
+            .blocking_show();
+        if user_confirmed {
+            app.opener().open_url(LATEST_RELEASE_URL, None::<&str>).ok();
+            return Ok(true);
         }
-
-        info!("update installed, restarting application");
-        app.restart();
     }
-    info!("no update available");
 
-    Ok(false)
+    info!("update installed, restarting application");
+    app.restart();
 }

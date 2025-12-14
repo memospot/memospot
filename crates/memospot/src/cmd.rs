@@ -10,7 +10,8 @@ use dialog::error_dialog;
 use json_patch::Patch;
 use log::{debug, error, info};
 use serde_json::json;
-use tauri::{command, State};
+use tauri::{command, AppHandle, Runtime, State};
+use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tokio::sync::Mutex;
 
 use crate::{fl, memos, runtime_config::RuntimeConfig};
@@ -56,7 +57,11 @@ pub async fn get_locale(locale: State<'_, Locale>) -> Result<String, String> {
 }
 
 #[command]
-pub async fn set_locale(new: String, locale: State<'_, Locale>) -> Result<bool, String> {
+pub async fn set_locale<R: Runtime>(
+    app: AppHandle<R>,
+    new: String,
+    locale: State<'_, Locale>,
+) -> Result<bool, String> {
     debug!("setting locale to {new}");
     *locale.0.lock().await = new.clone();
 
@@ -68,7 +73,11 @@ pub async fn set_locale(new: String, locale: State<'_, Locale>) -> Result<bool, 
 
     let config_path = config.paths.memospot_config_file.clone();
     if let Err(e) = config.yaml.save_to_file(&config_path).await {
-        error_dialog!(fl!("error-config-write-error", error = e.to_string()));
+        app.dialog()
+            .message(fl!("error-config-write-error", error = e.to_string()))
+            .kind(MessageDialogKind::Error)
+            .title(fl!("dialog-generic-error"))
+            .show(|_| {});
     }
 
     let current_locale = locale.0.lock().await.clone();

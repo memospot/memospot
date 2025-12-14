@@ -204,6 +204,7 @@ pub fn run() {
     let config_ = config;
     #[allow(unused_qualifications)]
     let Ok(tauri_app) = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             app.get_webview_window(Window::Main.into())
                 .map(|w| w.set_focus().ok());
@@ -250,7 +251,7 @@ pub fn run() {
         })
         .build(tauri_ctx)
     else {
-        panic_dialog!("Failed to build Tauri application!");
+        panic_dialog!("failed to build Tauri application");
     };
 
     tauri_app.run(handle_run_events);

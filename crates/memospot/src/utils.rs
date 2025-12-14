@@ -3,6 +3,26 @@ use path_clean::PathClean;
 use std::env;
 use std::io::Result;
 use std::path::{Path, PathBuf};
+use tauri::AppHandle;
+use tauri::Runtime;
+
+/// Run a function on the main thread and block until it completes.
+///
+/// macOS requires UI operations to be performed on the main thread.
+#[allow(dead_code)]
+pub fn run_on_main_thread_blocking<R, T, F>(app: &AppHandle<R>, f: F) -> Option<T>
+where
+    R: Runtime,
+    T: Send + 'static,
+    F: FnOnce() -> T + Send + 'static,
+{
+    let (tx, rx) = std::sync::mpsc::sync_channel(1);
+    app.run_on_main_thread(move || {
+        let _ = tx.send(f());
+    })
+    .ok()?;
+    rx.recv().ok()
+}
 
 /// Get the data path to supplied application name.
 ///

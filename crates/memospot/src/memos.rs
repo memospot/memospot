@@ -3,9 +3,9 @@ use crate::utils::absolute_path;
 use crate::{fl, memos_log};
 use crate::{sqlite, RuntimeConfig};
 use anyhow::{anyhow, Result};
-use dialog::{error_dialog, panic_dialog};
+use dialog::error_dialog;
 use homedir::HomeDirExt;
-use log::{debug, info, warn};
+use log::{debug, error, info, warn};
 use std::collections::HashMap;
 use std::fs;
 
@@ -80,7 +80,8 @@ pub fn get_last_pid(rtcfg: &RuntimeConfig) -> Option<u32> {
 /// Only a single PID is ever stored.
 fn save_pid_file(pid: u32, file_path: &Path) {
     if file_path.is_dir() {
-        panic_dialog("provided file path is a directory");
+        error!("unable to save pid file: provided file path is a directory");
+        return;
     }
 
     let pid_file = file_path.to_path_buf();

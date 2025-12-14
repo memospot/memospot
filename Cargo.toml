@@ -52,6 +52,7 @@ strum_macros = "0.27.2"
 sysinfo = "0.37.2"
 tauri = { version = "2.9.5" }
 tauri-build = { version = "2.5.3", default-features = false }
+tauri-plugin-dialog = { version = "2.4.2" }
 tauri-plugin-fs = { version = "2.4.4" }
 tauri-plugin-http = { version = "2.5.4", features = ["gzip", "rustls-tls"] }
 tauri-plugin-opener = { version = "2.5.2" }
@@ -68,9 +69,6 @@ url = { version = "2.5.7", default-features = false }
 uuid = { version = "1.19.0", default-features = false }
 windows-sys = { version = "0.61.2", default-features = false }
 winreg = "0.55.0"
-
-[patch.crates-io]
-wry = { git = "https://github.com/tauri-apps/wry", branch = "temp/crash-log" }
 
 [profile.release]
 codegen-units = 1
