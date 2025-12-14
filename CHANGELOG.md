@@ -22,6 +22,10 @@ Security: in case of vulnerabilities.
 
 ## [Unreleased] - ReleaseDate
 
+<!-- next-header -->
+
+## [1.0.2] - 2025-12-14
+
 ### Changed
 
 - Default Memos port to 5230. It will still be changed on the fly if
@@ -39,7 +43,7 @@ Security: in case of vulnerabilities.
 
 - An orphaned Memos process will be killed on startup. This works around a Tauri issue that prevents
   the cleanup code from running on macOS when the app is closed via the dock context menu. It should
-  also help to recover from any abnormal shutdowns.
+  also help to recover from abnormal shutdowns on any platform.
 - New machine translations to Chinese Simplified, Chinese Traditional, French, German, Japanese, Russian and Spanish.
   Those can be improved by joining the [Crowdin](https://crowdin.com/project/memospot) project.
 - "View->New Window" (CmdOrCtrl+N) option to open as many windows as you want.
@@ -273,7 +277,9 @@ Security: in case of vulnerabilities.
 
 <!-- next-url -->
 
-[Unreleased]: https://github.com/memospot/memospot/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/memospot/memospot/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/memospot/memospot/releases/tag/v1.0.2
+[1.0.1]: https://github.com/memospot/memospot/releases/tag/v1.0.1
 [1.0.0]: https://github.com/memospot/memospot/releases/tag/v1.0.0
 [0.1.7]: https://github.com/memospot/memospot/releases/tag/v0.1.7
 [0.1.6]: https://github.com/memospot/memospot/releases/tag/v0.1.6
