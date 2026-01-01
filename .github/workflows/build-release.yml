@@ -110,7 +110,7 @@ jobs:
       - # node_modules is not cached on Windows as it breaks subsequent runs.
         if: ${{ runner.os != 'Windows' }}
         name: Cache node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: node_modules-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
           restore-keys: node_modules-${{ runner.os }}
@@ -119,7 +119,7 @@ jobs:
             ${{github.workspace}}/**/node_modules
 
       - name: Cache Bun dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: bundeps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
           restore-keys: bundeps-${{ runner.os }}
@@ -127,7 +127,7 @@ jobs:
       # /Bun
 
       - name: Cache Memos builds
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: memosbuilds-${{ runner.os }}-${{ env.CACHE_KEY }}
           restore-keys: memosbuilds-${{ runner.os }}
