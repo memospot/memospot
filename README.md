@@ -9,20 +9,20 @@ service. Available for Windows, macOS, and Linux.
 
 ## Key features
 
-- Full-featured [Memos experience](https://www.usememos.com/docs): 
-    The same features from a hosted Memos instance are available offline in Memospot.
+- Full-featured [Memos experience](https://www.usememos.com/docs):
+  The same features from a hosted Memos instance are available offline in Memospot.
 - Client mode:
-    Optionally, connect to a remote Memos server while using Memospot as a desktop client.
+  Optionally, connect to a remote Memos server while using Memospot as a desktop client.
 - Data portability:
-    Data can be seamlessly moved between hosted Memos and local Memospot instances.
-    Start taking notes on your desktop and later migrate them to a hosted Memos server if desired.
+  Data can be seamlessly moved between hosted Memos and local Memospot instances.
+  Start taking notes on your desktop and later migrate them to a hosted Memos server if desired.
 - Enhanced privacy:
-    All data is stored locally on your device, ensuring maximum privacy and control.
-    Neither Memospot nor Memos tracks any user data.
+  All data is stored locally on your device, ensuring maximum privacy and control.
+  Neither Memospot nor Memos tracks any user data.
 - Lightweight:
-    Memospot is designed to be lightweight and efficient, minimizing resource usage on your device.
+  Memospot is designed to be lightweight and efficient, minimizing resource usage on your device.
 - Cross-platform:
-    Available for Windows, macOS, and Linux.
+  Available for Windows, macOS, and Linux.
 
 ## Preview
 
@@ -58,7 +58,7 @@ page.
 >   ```bash
 >   # Remove the quarantine attribute:
 >   xattr -dr com.apple.quarantine /Applications/Memospot.app
->
+>   ```
 
 ## Extra information
 
