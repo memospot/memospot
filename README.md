@@ -5,35 +5,24 @@
 Self-contained desktop version of [Memos](https://github.com/usememos/memos) -a privacy-first, lightweight note-taking
 service. Available for Windows, macOS, and Linux.
 
-This project allows you to use Memos locally without the Docker overhead or to easily test Memos before deploying a
-container. Data can be seamlessly moved between instances.
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/memospot/memospot) [![Downloads](https://img.shields.io/github/downloads/memospot/memospot/total?logo=github)](https://github.com/memospot/memospot/releases) [![Crowdin](https://badges.crowdin.net/memospot/localized.svg)](https://crowdin.com/project/memospot) [![GitHub Stars](https://img.shields.io/github/stars/memospot/memospot?logo=github)](https://github.com/memospot/memospot)
 
 ## Key features
 
-- Full-featured [Memos experience](https://www.usememos.com/docs):
-
+- Full-featured [Memos experience](https://www.usememos.com/docs): 
     The same features from a hosted Memos instance are available offline in Memospot.
-- Client mode: 
-    
+- Client mode:
     Optionally, connect to a remote Memos server while using Memospot as a desktop client.
 - Data portability:
-
     Data can be seamlessly moved between hosted Memos and local Memospot instances.
-    
     Start taking notes on your desktop and later migrate them to a hosted Memos server if desired.
 - Enhanced privacy:
-
     All data is stored locally on your device, ensuring maximum privacy and control.
-    
     Neither Memospot nor Memos tracks any user data.
-- Lightweight
-
+- Lightweight:
     Memospot is designed to be lightweight and efficient, minimizing resource usage on your device.
 - Cross-platform:
-    
     Available for Windows, macOS, and Linux.
-
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/memospot/memospot) [![Downloads](https://img.shields.io/github/downloads/memospot/memospot/total?logo=github)](https://github.com/memospot/memospot/releases) [![Crowdin](https://badges.crowdin.net/memospot/localized.svg)](https://crowdin.com/project/memospot) [![GitHub Stars](https://img.shields.io/github/stars/memospot/memospot?logo=github)](https://github.com/memospot/memospot)
 
 ## Preview
 
@@ -74,6 +63,7 @@ page.
 ## Extra information
 
 For advanced configuration, troubleshooting and standalone Memos server updates, see:
+
 <https://memospot.github.io/>
 
 ## Data Portability
