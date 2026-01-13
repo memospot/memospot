@@ -68,7 +68,7 @@
   ],
   "files.associations": {
     "CODEOWNERS": "gitignore",
-    "ftl": "toml"
+    "*.ftl": "toml"
   },
   "markdownlint.config": {
     "MD028": false,

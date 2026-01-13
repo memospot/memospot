@@ -1,4 +1,4 @@
-# Memospot
+# [Memospot](https://memospot.github.io)
 
 <img height="128" src="assets/app-icon-lossless.webp" alt="app-icon" align="right" />
 
@@ -8,7 +8,32 @@ service. Available for Windows, macOS, and Linux.
 This project allows you to use Memos locally without the Docker overhead or to easily test Memos before deploying a
 container. Data can be seamlessly moved between instances.
 
-[![Downloads](https://img.shields.io/github/downloads/memospot/memospot/total?logo=github)](https://github.com/memospot/memospot/releases) [![Crowdin](https://badges.crowdin.net/memospot/localized.svg)](https://crowdin.com/project/memospot) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/memospot/memospot) [![GitHub Stars](https://img.shields.io/github/stars/memospot/memospot?logo=github)](https://github.com/memospot/memospot)
+## Key features
+
+- Full-featured [Memos experience](https://www.usememos.com/docs):
+
+    The same features from a hosted Memos instance are available offline in Memospot.
+- Client mode: 
+    
+    Optionally, connect to a remote Memos server while using Memospot as a desktop client.
+- Data portability:
+
+    Data can be seamlessly moved between hosted Memos and local Memospot instances.
+    
+    Start taking notes on your desktop and later migrate them to a hosted Memos server if desired.
+- Enhanced privacy:
+
+    All data is stored locally on your device, ensuring maximum privacy and control.
+    
+    Neither Memospot nor Memos tracks any user data.
+- Lightweight
+
+    Memospot is designed to be lightweight and efficient, minimizing resource usage on your device.
+- Cross-platform:
+    
+    Available for Windows, macOS, and Linux.
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/memospot/memospot) [![Downloads](https://img.shields.io/github/downloads/memospot/memospot/total?logo=github)](https://github.com/memospot/memospot/releases) [![Crowdin](https://badges.crowdin.net/memospot/localized.svg)](https://crowdin.com/project/memospot) [![GitHub Stars](https://img.shields.io/github/stars/memospot/memospot?logo=github)](https://github.com/memospot/memospot)
 
 ## Preview
 
@@ -20,18 +45,10 @@ container. Data can be seamlessly moved between instances.
     </picture>
 </div>
 
-## Key features
-
-- Easy-to-use
-- Full-featured [Memos experience](https://www.usememos.com/docs)
-- Minimal overhead
-- Data portability
-- Enhanced privacy
-
 ## Requirements
 
 - Windows 10, macOS, or Linux
-- System WebView (Edge, Safari, or WebkitGTK).
+- System WebView (Edge, Safari, or WebKit2GTK).
 
 > [!TIP]
 > On Windows, you will be prompted to install WebView2, if it's not available.
@@ -53,25 +70,20 @@ page.
 >   # Remove the quarantine attribute:
 >   xattr -dr com.apple.quarantine /Applications/Memospot.app
 >
->   # Self-sign the app (last resource):
->   codesign -s - --deep --force /Applications/Memospot.app/Contents/MacOS/memospot
->   codesign -s - --deep --force /Applications/Memospot.app/Contents/MacOS/memos
->   ```
 
 ## Extra information
 
-For advanced configuration, troubleshooting and standalone Memos server updates, see <https://memospot.github.io/>.
+For advanced configuration, troubleshooting and standalone Memos server updates, see:
+<https://memospot.github.io/>
 
 ## Data Portability
 
 > [!TIP]
-> The current version of Memos stores assets in a portable format.
->
 > Data can be seamlessly moved between Memos containers and Memospot instances, regardless of the operating system.
 
 > [!IMPORTANT]
 > If your data is coming from Memos v0.18.1 or earlier, see
-> [Memospot data migration](https://memospot.github.io/data-migration#migrating-data-from-earlier-memos-versions).
+> [Memospot data migration](https://memospot.github.io/guides/data-migration/).
 
 ## Special Thanks
 
@@ -117,7 +129,7 @@ This project is made possible by the following open-source projects:
 
 ## Supporting
 
-If you appreciate this project, be sure to [⭐star](https://github.com/memospot/memospot) it on GitHub.
+You can show your support for this project by [⭐starring](https://github.com/memospot/memospot) it on GitHub.
 
 <details>
 <summary>Star History</summary>

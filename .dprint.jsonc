@@ -9,7 +9,8 @@
     "**/build/*",
     "**/lib/paraglide/**",
     "**/gen/schemas/*.json",
-    "**/gen/**"
+    "**/gen/**",
+    "recipe.json"
   ],
   "includes": [
     "**/*.{css,html}",
