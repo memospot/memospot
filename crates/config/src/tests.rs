@@ -44,9 +44,10 @@ mode: prod
         bail!("init must fail with malformed YAML");
     };
 
-    assert!(e
-        .to_string()
-        .contains("invalid type: found unit, expected struct Memospot for key"));
+    assert!(
+        e.to_string()
+            .contains("invalid type: found unit, expected struct Memospot for key")
+    );
     Ok(())
 }
 

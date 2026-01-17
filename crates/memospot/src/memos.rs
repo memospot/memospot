@@ -1,8 +1,8 @@
 use crate::memos_version::MemosVersionStore;
 use crate::utils::absolute_path;
+use crate::{RuntimeConfig, sqlite};
 use crate::{fl, memos_log};
-use crate::{sqlite, RuntimeConfig};
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use dialog::error_dialog;
 use homedir::HomeDirExt;
 use log::{debug, error, info, warn};
@@ -316,15 +316,13 @@ pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
     let mut search_paths: Vec<PathBuf> = Vec::new();
 
     // Prefer user-provided working_dir, if it's not empty.
-    if let Some(working_dir) = &rtcfg.yaml.memos.working_dir {
-        if !working_dir.trim().is_empty() {
-            Path::new(working_dir)
-                .expand_home()
-                .map(|expanded| {
-                    absolute_path(expanded).map(|absolute| search_paths.push(absolute))
-                })
-                .ok();
-        }
+    if let Some(working_dir) = &rtcfg.yaml.memos.working_dir
+        && !working_dir.trim().is_empty()
+    {
+        Path::new(working_dir)
+            .expand_home()
+            .map(|expanded| absolute_path(expanded).map(|absolute| search_paths.push(absolute)))
+            .ok();
     }
 
     let package_info = PackageInfo {
@@ -413,11 +411,11 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
     let mut env_vars: HashMap<String, String> = HashMap::new();
 
     // Add user-provided environment variables.
-    if rtcfg.yaml.memos.env.enabled.unwrap_or_default() {
-        if let Some(memos_env) = &rtcfg.yaml.memos.env.vars {
-            for (key, value) in memos_env {
-                env_vars.insert(key.into(), value.into());
-            }
+    if rtcfg.yaml.memos.env.enabled.unwrap_or_default()
+        && let Some(memos_env) = &rtcfg.yaml.memos.env.vars
+    {
+        for (key, value) in memos_env {
+            env_vars.insert(key.into(), value.into());
         }
     }
 
@@ -542,14 +540,12 @@ pub async fn ping_api(memos_url: &str, timeout_millis: u64) -> Result<bool, Stri
         }))
         .send()
         .await
+        && response.status().is_success()
+        && let Ok(body) = response.text().await
+        && body.starts_with("Service ready.")
     {
-        if response.status().is_success() {
-            if let Ok(body) = response.text().await {
-                if body.starts_with("Service ready.") {
-                    return Ok(true);
-                }
-            }
-        }
+        return Ok(true);
     }
+
     Ok(false)
 }

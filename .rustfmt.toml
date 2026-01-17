@@ -1,5 +1,5 @@
 #: schema https://json.schemastore.org/rustfmt.json
-edition = "2021"
+edition = "2024"
 max_width = 96
 newline_style = "Unix"
 reorder_imports = true

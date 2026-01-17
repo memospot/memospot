@@ -76,15 +76,13 @@ impl MigrationTrait for Migration {
             .filter(system_setting::Column::Name.eq("STORAGE"))
             .one(db)
             .await?
+            && current_storage.value.contains("storageType")
+            && current_storage.value.contains("filepathTemplate")
+            && current_storage.value.contains("uploadSizeLimitMb")
         {
-            if current_storage.value.contains("storageType")
-                && current_storage.value.contains("filepathTemplate")
-                && current_storage.value.contains("uploadSizeLimitMb")
-            {
-                // Storage values seems valid. Mark the migration as completed.
-                debug!("Found v0.22 storage settings. Marking migration as completed.");
-                return Ok(());
-            }
+            // Storage values seems valid. Mark the migration as completed.
+            debug!("Found v0.22 storage settings. Marking migration as completed.");
+            return Ok(());
         }
 
         let storage_service_id = match SystemSetting::find()

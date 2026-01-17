@@ -2,7 +2,7 @@ use crate::memos::Memos;
 use crate::memospot::Memospot;
 use crate::migration::MigrationExt;
 
-use anyhow::{bail, Error, Result};
+use anyhow::{Error, Result, bail};
 use figment::providers::{Env, Format, Json, Serialized, Yaml};
 use figment::{Figment, Profile};
 use serde::{Deserialize, Serialize};
@@ -94,7 +94,9 @@ impl Config {
         loop {
             interval.tick().await;
             if time_start.elapsed() > tokio::time::Duration::from_secs(5) {
-                bail!("unable to write configuration. Timed out after 5 seconds. Last error: {last_error:?}");
+                bail!(
+                    "unable to write configuration. Timed out after 5 seconds. Last error: {last_error:?}"
+                );
             }
 
             let uuid = Uuid::new_v4();

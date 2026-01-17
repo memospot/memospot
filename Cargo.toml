@@ -6,12 +6,12 @@ resolver = "2"
 
 [workspace.package]
 version = "1.0.2"
-edition = "2021"
+edition = "2024"
 homepage = "https://memospot.github.io/"
 license = "MIT"
 publish = false
 repository = "https://github.com/memospot/memospot"
-rust-version = "1.77.2"
+rust-version = "1.85.0"
 description = "Memospot is a desktop version of Memos, a beautiful, privacy-first, lightweight note-taking service."
 
 # Features should be listed at package level.

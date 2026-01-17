@@ -2,7 +2,7 @@ use std::future::Future;
 use std::sync::OnceLock;
 pub use tokio::{
     runtime::Runtime,
-    sync::mpsc::{channel, Receiver, Sender},
+    sync::mpsc::{Receiver, Sender, channel},
 };
 
 static RUNTIME: OnceLock<Runtime> = OnceLock::new();

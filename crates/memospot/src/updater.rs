@@ -1,11 +1,11 @@
-use crate::{fl, memos, RuntimeConfig};
+use crate::{RuntimeConfig, fl, memos};
 use chrono::DateTime;
 use log::{debug, error, info, warn};
 use std::{
     env,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use tauri::{async_runtime, AppHandle, Runtime};
+use tauri::{AppHandle, Runtime, async_runtime};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_updater::UpdaterExt;

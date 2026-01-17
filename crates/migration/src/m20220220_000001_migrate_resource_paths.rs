@@ -11,7 +11,7 @@
 //!
 //! - As of sea-orm 0.12.15 it's not possible to rename a previous migration without breaking all migrator functionality.
 
-use log::{debug, info, LevelFilter};
+use log::{LevelFilter, debug, info};
 use sea_orm::*;
 use sea_orm_migration::prelude::*;
 
@@ -50,7 +50,9 @@ pub struct Migration;
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        info!("::Database Migrator:: Migrating resource internal paths from absolute to relative.  [<= v0.21.1]");
+        info!(
+            "::Database Migrator:: Migrating resource internal paths from absolute to relative.  [<= v0.21.1]"
+        );
 
         // Check the `resource` table schema.
         {
@@ -114,11 +116,10 @@ impl MigrationTrait for Migration {
             new_path = resource_path::to_slash(&new_path);
 
             // Fall back: strip everything before "/assets/".
-            if new_path.contains("/assets/") {
-                if let Some(file_name) = new_path.split("/assets/").collect::<Vec<&str>>().pop()
-                {
-                    new_path = "assets/".to_string() + file_name;
-                }
+            if new_path.contains("/assets/")
+                && let Some(file_name) = new_path.split("/assets/").collect::<Vec<&str>>().pop()
+            {
+                new_path = "assets/".to_string() + file_name;
             }
 
             new_path = new_path.trim_start_matches('/').to_string();

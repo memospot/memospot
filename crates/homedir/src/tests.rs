@@ -2,16 +2,17 @@ use crate::*;
 use std::env;
 
 #[cfg(not(target_os = "windows"))]
-use {super::getent, super::Error};
+use {super::Error, super::getent};
 
 /// Test that `~` is expanded to the current user's home directory.
 /// Uses some code from the `home` crate.
 /// See: https://github.com/rust-lang/cargo/blob/master/crates/home/src/windows.rs
 #[test]
 fn test_expand() {
-    env::remove_var("HOME");
-    env::remove_var("USERPROFILE");
-
+    unsafe {
+        env::remove_var("HOME");
+        env::remove_var("USERPROFILE");
+    }
     #[cfg(target_os = "windows")]
     static HOME: &str = r"C:\Users\foo tar baz";
 
@@ -20,8 +21,10 @@ fn test_expand() {
 
     let homepath = Path::new(HOME);
 
-    env::set_var("HOME", homepath.as_os_str());
-    env::set_var("USERPROFILE", HOME);
+    unsafe {
+        env::set_var("HOME", homepath.as_os_str());
+        env::set_var("USERPROFILE", HOME);
+    }
 
     assert_eq!(home_dir().as_deref(), Some(homepath));
     assert_eq!(home_dir().as_deref(), Some(homepath));

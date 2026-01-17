@@ -9,12 +9,12 @@
 mod async_runtime;
 mod tests;
 
-use anyhow::{format_err, Result};
-use async_runtime::{block_on, channel};
+use anyhow::{Result, format_err};
 pub use async_runtime::{Receiver, Sender};
+use async_runtime::{block_on, channel};
 use encoding_rs::Encoding;
 use log::debug;
-use os_pipe::{pipe, PipeReader, PipeWriter};
+use os_pipe::{PipeReader, PipeWriter, pipe};
 use serde::Serialize;
 use shared_child::SharedChild;
 use std::{

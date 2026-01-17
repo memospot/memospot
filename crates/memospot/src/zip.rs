@@ -32,10 +32,10 @@ pub async fn related_files(
     let mut related_files: Vec<PathBuf> = Vec::from([input_file.to_path_buf()]);
     for ext in related_extensions {
         let related = input_file.with_extension(ext);
-        if let Ok(exists) = related.try_exists() {
-            if exists {
-                related_files.push(related);
-            }
+        if let Ok(exists) = related.try_exists()
+            && exists
+        {
+            related_files.push(related);
         }
     }
     debug!("related files: {related_files:?}");

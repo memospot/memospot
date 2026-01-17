@@ -26,7 +26,7 @@ use log::{debug, info, warn};
 use std::env;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tauri::{async_runtime, Manager};
+use tauri::{Manager, async_runtime};
 use tauri_utils::config::WindowConfig;
 use window_ext::WindowConfigExt;
 

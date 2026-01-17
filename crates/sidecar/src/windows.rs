@@ -2,8 +2,8 @@ use log::debug;
 use std::os::windows::process::CommandExt;
 use std::process::Command as StdCommand;
 use windows_sys::Win32::System::Console::{
-    AttachConsole, FreeConsole, GenerateConsoleCtrlEvent, SetConsoleCtrlHandler,
-    CTRL_BREAK_EVENT, CTRL_C_EVENT,
+    AttachConsole, CTRL_BREAK_EVENT, CTRL_C_EVENT, FreeConsole, GenerateConsoleCtrlEvent,
+    SetConsoleCtrlHandler,
 };
 
 const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
@@ -66,7 +66,10 @@ pub fn send_ctrl_break(pid: u32) {
             SetConsoleCtrlHandler(Some(ctrl_handler), 0);
         } else {
             let error = windows_sys::Win32::Foundation::GetLastError();
-            debug!("sidecar: failed to attach to console of pid {}, error: {}, falling back to kill", pid, error);
+            debug!(
+                "sidecar: failed to attach to console of pid {}, error: {}, falling back to kill",
+                pid, error
+            );
         }
     }
 }

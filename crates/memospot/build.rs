@@ -100,10 +100,10 @@ fn cleanup_dummy_deps() {
     if !memos_bin.exists() {
         return;
     }
-    if let Ok(meta) = memos_bin.metadata() {
-        if meta.len() == 0 {
-            fs::remove_file(memos_bin).ok();
-        }
+    if let Ok(meta) = memos_bin.metadata()
+        && meta.len() == 0
+    {
+        fs::remove_file(memos_bin).ok();
     }
 }
 

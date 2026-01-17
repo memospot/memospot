@@ -130,15 +130,19 @@ mod tests {
         remove_env_vars();
 
         // Test fallback to USERPROFILE (via home crate).
-        assert!(get_app_data_path("memospot")
-            .to_string_lossy()
-            .ends_with("memospot"));
+        assert!(
+            get_app_data_path("memospot")
+                .to_string_lossy()
+                .ends_with("memospot")
+        );
 
         let ci = env::var("CI").unwrap_or_default() == "true";
         if ci {
-            assert!(get_app_data_path("memospot")
-                .to_string_lossy()
-                .ends_with("memospot"));
+            assert!(
+                get_app_data_path("memospot")
+                    .to_string_lossy()
+                    .ends_with("memospot")
+            );
         } else {
             // Test fallback via APPDATA (ancient Windows versions).
             env::set_var("APPDATA", r"C:\Users\foo\AppData\Roaming");
@@ -179,19 +183,23 @@ mod tests {
         );
 
         // Test fallback to HOME/.memospot.
-        assert!(get_app_data_path("memospot")
-            .to_string_lossy()
-            .ends_with("memospot"));
+        assert!(
+            get_app_data_path("memospot")
+                .to_string_lossy()
+                .ends_with("memospot")
+        );
 
         // Create XDG_CONFIG_HOME/memospot.
         std::fs::create_dir_all(xdg_config_home.join("memospot"))?;
-        assert!(get_app_data_path("memospot")
-            .to_string_lossy()
-            .ends_with(if cfg!(windows) {
-                r".config\memospot"
-            } else {
-                ".config/memospot"
-            }));
+        assert!(
+            get_app_data_path("memospot")
+                .to_string_lossy()
+                .ends_with(if cfg!(windows) {
+                    r".config\memospot"
+                } else {
+                    ".config/memospot"
+                })
+        );
         Ok(())
     }
 }

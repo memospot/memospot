@@ -68,10 +68,10 @@ pub fn build_path_list() -> Vec<String> {
         norm_suffix(data_path.to_string_lossy().as_ref()),
         norm_suffix(cwd.to_string_lossy().as_ref()),
     ];
-    if OS == "windows" {
-        if let Ok(program_data) = std::env::var("PROGRAMDATA") {
-            paths.push(format!("{program_data}\\memos\\"));
-        }
+    if OS == "windows"
+        && let Ok(program_data) = std::env::var("PROGRAMDATA")
+    {
+        paths.push(format!("{program_data}\\memos\\"));
     }
     paths.into_iter().unique().collect()
 }

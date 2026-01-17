@@ -12,10 +12,9 @@ use strum_macros::FromRepr;
 #[cfg(target_os = "macos")]
 use tauri::menu::AboutMetadata;
 use tauri::{
-    async_runtime,
+    AppHandle, Manager, Runtime, async_runtime,
     menu::MenuId,
     menu::{Menu, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder},
-    AppHandle, Manager, Runtime,
 };
 use tokio::time::{self, Duration, Instant};
 

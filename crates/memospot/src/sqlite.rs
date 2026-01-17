@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use log::{debug, warn};
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseConnection};
 use std::path::Path;
