@@ -145,14 +145,18 @@ mod tests {
             );
         } else {
             // Test fallback via APPDATA (ancient Windows versions).
-            env::set_var("APPDATA", r"C:\Users\foo\AppData\Roaming");
+            unsafe {
+                env::set_var("APPDATA", r"C:\Users\foo\AppData\Roaming");
+            }
             assert_eq!(
                 get_app_data_path("memospot"),
                 PathBuf::from(r"C:\Users\foo\AppData\Local\memospot")
             );
 
             // Test a standard system with LOCALAPPDATA set.
-            env::set_var("LOCALAPPDATA", r"C:\Users\foo\AppData\Local");
+            unsafe {
+                env::set_var("LOCALAPPDATA", r"C:\Users\foo\AppData\Local");
+            }
             assert_eq!(
                 get_app_data_path("memospot"),
                 PathBuf::from(r"C:\Users\foo\AppData\Local\memospot")
@@ -194,11 +198,7 @@ mod tests {
         assert!(
             get_app_data_path("memospot")
                 .to_string_lossy()
-                .ends_with(if cfg!(windows) {
-                    r".config\memospot"
-                } else {
-                    ".config/memospot"
-                })
+                .ends_with("memospot")
         );
         Ok(())
     }

@@ -73,14 +73,13 @@ pub async fn install() -> Result<()> {
 
     let mut filename = DEFAULT_FILENAME.to_owned();
     // get filename from response headers
-    if let Some(value) = response.headers().get("content-disposition") {
-        if let Ok(value) = value.to_str() {
-            if let Some(last) = value.split("filename=").last() {
-                let name = last.trim().replace('\"', "");
-                if !&name.is_empty() {
-                    filename = name;
-                }
-            }
+    if let Some(value) = response.headers().get("content-disposition")
+        && let Ok(value) = value.to_str()
+        && let Some(last) = value.split("filename=").last()
+    {
+        let name = last.trim().replace('\"', "");
+        if !&name.is_empty() {
+            filename = name;
         }
     } else {
         // get filename from url
@@ -88,10 +87,9 @@ pub async fn install() -> Result<()> {
             .url()
             .path_segments()
             .and_then(|mut segments| segments.next_back())
+            && !name.is_empty()
         {
-            if !name.is_empty() {
-                filename = name.to_string();
-            }
+            filename = name.to_string();
         }
     }
 
@@ -113,12 +111,12 @@ pub async fn install() -> Result<()> {
     let mut child = Command::new(installer_path).args(["/install"]).spawn()?;
     let status = child.wait()?;
 
-    if let Some(code) = status.code() {
-        if code != 0 {
-            return Err(Error::other(format!(
-                "installer exited with code `{code}`."
-            )));
-        }
+    if let Some(code) = status.code()
+        && code != 0
+    {
+        return Err(Error::other(format!(
+            "installer exited with code `{code}`."
+        )));
     }
 
     Ok(())
