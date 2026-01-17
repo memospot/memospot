@@ -107,8 +107,6 @@ pub fn run() {
     config.paths.memospot_cwd = config.paths.memospot_bin.parent().unwrap().to_path_buf();
     config.paths.memos_bin = init::find_memos(&config);
 
-    #[cfg(target_os = "linux")]
-    init::hw_acceleration();
     init::set_env_vars(&config);
 
     {
