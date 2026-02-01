@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: "Install cargo-audit"
-        uses: taiki-e/install-action@e0db384ad69f5ba2c6dd0129d8934e0d0ba465c1
+        uses: taiki-e/install-action@650c5ca14212efbbf3e580844b04bdccf68dac31
         with: { tool: "cargo-audit@0.22.0" }
 
       - name: Rust audit
