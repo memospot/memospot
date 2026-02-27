@@ -231,11 +231,14 @@ pub fn run() {
             cmd::path_exists,
             cmd::zoom_in,
             cmd::zoom_out,
-            cmd::reset_zoom
+            cmd::reset_zoom,
+            cmd::toggle_menu_bar,
+            cmd::open_settings
         ])
-        // Register numpad zoom shortcuts via JS injected on each page load.
+        // Register fallback shortcuts via JS injected on each page load.
         //
-        // Regular zoom shortcuts (Ctrl+=/Ctrl+-/Ctrl+0) are handled by menu accelerators.
+        // This ensures shortcuts like Ctrl+H, Ctrl+, and Numpad zoom still work
+        // even when the native menu bar (and its hardware accelerators) is hidden.
         .on_page_load(|webview, payload| {
             if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished) {
                 static POLYFILL: &str = include_str!("polyfills/pageload.js");

@@ -38,8 +38,8 @@ pub enum MainMenu {
     ViewNewWindow,
     #[strum(serialize = "viewmenu-developer-tools")]
     ViewDevTools,
-    #[strum(serialize = "viewmenu-hide-menu-bar")]
-    ViewHideMenuBar,
+    #[strum(serialize = "viewmenu-toggle-menu-bar")]
+    ViewToggleMenuBar,
     #[strum(serialize = "viewmenu-zoom-in")]
     ViewZoomIn,
     #[strum(serialize = "viewmenu-zoom-out")]
@@ -173,8 +173,8 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
             .build(handle)?,
             #[cfg(not(target_os = "macos"))]
             &MenuItemBuilder::with_id(
-                MainMenu::ViewHideMenuBar.id(),
-                MainMenu::ViewHideMenuBar.text(),
+                MainMenu::ViewToggleMenuBar.id(),
+                MainMenu::ViewToggleMenuBar.text(),
             )
             .accelerator("CmdOrCtrl+H")
             .build(handle)?,

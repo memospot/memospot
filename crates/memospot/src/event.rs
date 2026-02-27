@@ -236,8 +236,14 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) -> Res
         MainMenu::ViewDevTools => {
             main_window.open_devtools();
         }
-        MainMenu::ViewHideMenuBar => {
-            main_window.remove_menu()?;
+        MainMenu::ViewToggleMenuBar => {
+            if let Ok(visible) = main_window.is_menu_visible() {
+                if visible {
+                    let _ = main_window.hide_menu();
+                } else {
+                    let _ = main_window.show_menu();
+                }
+            }
         }
         MainMenu::ViewRefresh => {
             main_window

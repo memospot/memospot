@@ -208,3 +208,46 @@ pub fn zoom_out<R: Runtime>(app: AppHandle<R>) {
 pub fn reset_zoom<R: Runtime>(app: AppHandle<R>) {
     crate::event::apply_zoom(&app, 1.0);
 }
+
+#[command]
+pub fn toggle_menu_bar<R: Runtime>(app: AppHandle<R>) {
+    use tauri::Manager;
+    if let Some(main_window) = app.get_webview_window(crate::window::Window::Main.into()) {
+        if let Ok(true) = main_window.is_menu_visible() {
+            let _ = main_window.hide_menu();
+        } else if let Ok(false) = main_window.is_menu_visible() {
+            let _ = main_window.show_menu();
+        }
+    }
+}
+
+#[command]
+pub fn open_settings<R: Runtime>(app: AppHandle<R>) {
+    tauri::async_runtime::spawn(async move {
+        let empty_menu = crate::menu::build_empty(&app)
+            .unwrap_or_else(|_| tauri::menu::Menu::with_items(&app, &[]).unwrap());
+        let new_window = tauri::WebviewWindowBuilder::new(
+            &app,
+            crate::window::Window::Settings.to_string(),
+            tauri::WebviewUrl::App(crate::route::Route::Settings.into()),
+        )
+        .title(crate::menu::MainMenu::AppSettings.text().replace("&", ""))
+        .center()
+        .min_inner_size(800.0, 600.0)
+        .inner_size(1160.0, 720.0)
+        .auto_resize()
+        .disable_drag_drop_handler()
+        .zoom_hotkeys_enabled(true)
+        .visible(cfg!(debug_assertions))
+        .focused(true)
+        .menu(empty_menu);
+
+        #[cfg(not(target_os = "macos"))]
+        new_window.build().ok();
+        #[cfg(target_os = "macos")]
+        new_window
+            .title_bar_style(tauri::TitleBarStyle::Visible)
+            .build()
+            .ok();
+    });
+}

@@ -11,7 +11,7 @@ appmenu-settings = &Settings
 
 viewmenu = &View
 viewmenu-developer-tools = &Developer Tools
-viewmenu-hide-menu-bar = &Hide menu bar
+viewmenu-toggle-menu-bar = T&oggle menu bar
 viewmenu-new-window = &New Window
 viewmenu-zoom-in = Zoom &In
 viewmenu-zoom-out = Zoom &Out
