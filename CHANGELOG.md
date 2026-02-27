@@ -31,6 +31,10 @@ Security: in case of vulnerabilities.
 
 - Complete support for zoom shortcuts (`CmdOrCtrl+=`, `CmdOrCtrl+-`, `CmdOrCtrl+0`, `NumLock+Add`, `NumLock+Subtract`, `NumLock+0`).
 
+### Fixed
+
+- Hiding the menu bar now doesn't unregister keyboard shortcuts.
+
 <!-- next-header -->
 
 ## [1.0.2] - 2025-12-14
