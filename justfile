@@ -290,10 +290,10 @@ build TARGET='all':
 bake ACTION='':
     #!{{bash}}
     if [ "{{ACTION}}" = "prune" ]; then
-        sudo docker builder du
-        sudo docker builder prune -a
+        docker builder du
+        docker builder prune -a
     else
-        sudo --preserve-env docker buildx bake {{ACTION}}
+        docker buildx bake {{ACTION}}
         test -d "./build" && sudo chown -R $(id -u):$(id -g) ./build
     fi
 
