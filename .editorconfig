@@ -25,3 +25,9 @@ trim_trailing_whitespace = false
 
 [*.{json,jsonc,yaml,yml}]
 indent_size = 2
+
+[*.ps1]
+indent_size = 2
+
+[*.sh]
+indent_size = 4

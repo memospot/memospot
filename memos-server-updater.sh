@@ -25,6 +25,7 @@ Yellow=''
 # Bold
 Bold_Cyan=''
 Bold_Green=''
+Bold_Red=''
 Bold_White=''
 Bold_Yellow=''
 
@@ -69,6 +70,27 @@ info_bold() {
 
 success() {
     echo -e "${Green}$* ${Color_Off}"
+}
+
+terminate_user_processes() {
+    local user="$1"
+    local process
+
+    if ! command -v pgrep >/dev/null || ! command -v pkill >/dev/null; then
+        warn "pgrep/pkill not available; skipping process termination checks."
+        return
+    fi
+
+    for process in memos memospot; do
+        if pgrep -u "$user" -x "$process" >/dev/null 2>&1; then
+            info "Stopping running process for user $Bold_White$user$Dim: $Bold_White$process"
+            pkill -u "$user" -x "$process" >/dev/null 2>&1 || true
+            sleep 1
+            if pgrep -u "$user" -x "$process" >/dev/null 2>&1; then
+                error "Failed to terminate process '$process' for user '$user'."
+            fi
+        fi
+    done
 }
 
 cpu_supports_avx2() {
@@ -173,7 +195,12 @@ EOF
     REPO=${REPO-"memospot/memos-builds"}
     repo_url="$GITHUB/$REPO"
     latest_tag=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | jq -r '.tag_name') || error "Failed to fetch latest tag from GitHub."
-    install_tag=${1-$latest_tag}
+    requested_tag=${1:-latest}
+    if [[ $requested_tag = latest ]]; then
+        install_tag=$latest_tag
+    else
+        install_tag=$requested_tag
+    fi
     download_file=memos-$install_tag-$target.tar.gz
     sha256sums_uri=$(curl -s "https://api.github.com/repos/$REPO/releases/tags/$install_tag" | jq -r '.assets[] | select(.name|endswith(".txt")) | .browser_download_url') || error "Failed to fetch tag $install_tag from GitHub."
     memos_uri=$repo_url/releases/download/$install_tag/$download_file
@@ -181,7 +208,16 @@ EOF
     INSTALL_DIR=${INSTALL_DIR-"/usr/bin"}
     SUDO_USER=${SUDO_USER-"$USER"}
     USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+    legacy_data_dir="$USER_HOME/.memospot"
+    xdg_data_dir=${XDG_CONFIG_HOME:-$USER_HOME/.config}/memospot
 
+    if [[ -f "$xdg_data_dir/memos_prod.db" ]]; then
+        DATA_DIR="$xdg_data_dir"
+    else
+        DATA_DIR="$legacy_data_dir"
+    fi
+
+    memos_bin=''
     locations=(
         "$INSTALL_DIR"
         "/usr/local/bin"
@@ -203,6 +239,8 @@ EOF
     if [[ ! -w $memos_bin ]]; then
         error "Memos' binary at $memos_bin is not writable. Please run this script with sudo."
     fi
+
+    terminate_user_processes "$SUDO_USER"
 
     msg "· Latest Memos' release found: $Bold_White$latest_tag"
     msg "· Selected tag: $Bold_Cyan$install_tag$Dim (You may pass a different tag as an argument to this script)"
@@ -231,41 +269,69 @@ EOF
         error "Failed to download sha256sums from \"$sha256sums_uri\"."
 
     info "Verifying SHA256SUMS"
-    (cd /tmp && sha256sum --ignore-missing --quiet --check "memos_sha256sums.txt") ||
-        (cd /tmp && shasum -a 256 --binary --status --check "memos_sha256sums.txt") ||
-        warn "Failed to verify SHA256SUMS."
+    expected_hash=$(awk -v file="$download_file" '$2 == file { print $1 }' /tmp/memos_sha256sums.txt)
+    if [[ -z $expected_hash ]]; then
+        error "Failed to find checksum entry for $download_file."
+    fi
 
-    tar -xzf "/tmp/$download_file" -C "$INSTALL_DIR" memos ||
-        error "Failed to extract Memos from \"/tmp/$download_file\"."
+    if command -v sha256sum >/dev/null; then
+        actual_hash=$(sha256sum "/tmp/$download_file" | awk '{print $1}')
+    elif command -v shasum >/dev/null; then
+        actual_hash=$(shasum -a 256 "/tmp/$download_file" | awk '{print $1}')
+    else
+        error "No SHA256 tool found (sha256sum or shasum required)."
+    fi
 
-    rm "/tmp/$download_file"
-    rm "/tmp/memos_sha256sums.txt"
+    if [[ $expected_hash != $actual_hash ]]; then
+        error "SHA256 mismatch for $download_file. Expected $expected_hash but got $actual_hash."
+    fi
 
-    chmod +x "$memos_bin" ||
-        error 'Failed to set permissions on Memos executable'
+    backup_dir="$DATA_DIR/server-updater-backups"
+    date_string=$(date +%Y-%m-%d_%H-%M-%S)
+    mkdir -p "$backup_dir" || error "Failed to create backup directory."
 
-    success "Memos $install_tag was installed successfully to $INSTALL_DIR"
+    # Backup existing Memos binary if it exists, before extracting the new one
+    if [[ -f "$memos_bin" ]]; then
+        info "Backing up current memos binary to $Bold_White$backup_dir"
 
-    database="$USER_HOME/.memospot/memos_prod.db"
+        binary_backup_file="$backup_dir/memos_binary-${date_string}_before_${install_tag}.tar.gz"
+        (cd "$(dirname "$memos_bin")" && tar -czf "$binary_backup_file" "$(basename "$memos_bin")") || error "Failed to backup memos binary."
+        [[ -s "$binary_backup_file" ]] || error "Binary backup archive was not created correctly."
+        success "Binary backup was created at $Bold_Green$backup_dir"
+    fi
+
+    database_dir="$DATA_DIR"
+    database="$database_dir/memos_prod.db"
     if [[ -f "$database" ]]; then
-        backup_dir="$USER_HOME/.memospot/server-updater-backups"
-        date_string=$(date +%Y-%m-%d_%H-%M-%S)
-        mkdir -p "$backup_dir" || error "Failed to create backup directory."
         info "Backing up database to $Bold_White$backup_dir"
 
-        file_list=("memos_prod.db")
+        db_files=("memos_prod.db")
         if [[ -f "$database-wal" ]]; then
-            file_list+=("memos_prod.db-wal")
+            db_files+=("memos_prod.db-wal")
         fi
         if [[ -f "$database-shm" ]]; then
-            file_list+=("memos_prod.db-shm")
+            db_files+=("memos_prod.db-shm")
         fi
 
-        (cd "$backup_dir/../" && tar -czf "$backup_dir/memos_prod-${date_string}_before_${install_tag}.tar.gz" "${file_list[@]}") || error "Failed to backup database."
+        database_backup_file="$backup_dir/memos_db-${date_string}_before_${install_tag}.tar.gz"
+        (cd "$database_dir" && tar -czf "$database_backup_file" "${db_files[@]}") || error "Failed to backup memos database files."
+        [[ -s "$database_backup_file" ]] || error "Database backup archive was not created correctly."
         success "Database backup was created at $Bold_Green$backup_dir"
-
-        chown -R "$SUDO_USER":"$SUDO_USER" "$backup_dir"
     fi
+
+    extract_dir=$(mktemp -d "/tmp/memos-updater-extract.XXXXXX") || error "Failed to create temp extraction directory."
+    tar -xzf "/tmp/$download_file" -C "$extract_dir" memos || error "Failed to extract Memos from \"/tmp/$download_file\"."
+    [[ -f "$extract_dir/memos" ]] || error "Extracted archive does not contain memos binary."
+
+    cp "$extract_dir/memos" "$memos_bin.new" || error "Failed to stage updated memos binary."
+    chmod +x "$memos_bin.new" || error 'Failed to set permissions on staged Memos executable'
+    mv -f "$memos_bin.new" "$memos_bin" || error 'Failed to replace Memos executable'
+
+    rm -rf "$extract_dir"
+    rm -f "/tmp/$download_file" "/tmp/memos_sha256sums.txt"
+    chown -R "$SUDO_USER":"$SUDO_USER" "$backup_dir" || true
+
+    success "Memos $install_tag was installed successfully to $INSTALL_DIR"
 
     success "Update complete."
 }

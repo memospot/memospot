@@ -1,5 +1,33 @@
-﻿
-# Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/memospot/memospot/main/memos-server-updater.ps1'))
+﻿# Latest: Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; & ([ScriptBlock]::Create((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/memospot/memospot/main/memos-server-updater.ps1')))
+# Specific tag: Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; & ([ScriptBlock]::Create((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/memospot/memospot/main/memos-server-updater.ps1'))) "v0.25.2"
+
+function main {
+  param([string]$Version="latest")
+
+function Stop-MemospotProcesses {
+  $processNames = @("memos", "memospot")
+  foreach ($name in $processNames) {
+    $running = @(Get-Process -Name $name -ErrorAction SilentlyContinue)
+    if ($running.Count -gt 0) {
+      Write-Host "Stopping running process: $name" -f Cyan
+      foreach ($proc in $running) {
+        try {
+          Stop-Process -Id $proc.Id -Force -ErrorAction Stop
+        }
+        catch {
+          Write-Host "Failed to terminate process $name (PID $($proc.Id)): $($_.Exception.Message)" -f Red
+          Exit 1
+        }
+      }
+
+      Start-Sleep -Seconds 1
+      if (@(Get-Process -Name $name -ErrorAction SilentlyContinue).Count -gt 0) {
+        Write-Host "Process still running after termination attempt: $name" -f Red
+        Exit 1
+      }
+    }
+  }
+}
 
 
 Write-Host @"
@@ -140,10 +168,23 @@ if (-not [IO.Directory]::Exists($BackupsPath)) {
 ##
 $ProgressPreference = 'SilentlyContinue'
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;
-$releases = "https://api.github.com/repos/$GitHubRepo/releases/latest"
-$latest = (Invoke-WebRequest -Uri $releases -UseBasicParsing -ErrorAction Stop | ConvertFrom-Json)[0]
-$tagName = $latest.tag_name
-$latestAssets = $latest.assets
+  $ReleaseUrl = if ($Version -eq "latest" -or [String]::IsNullOrEmpty($Version)) {
+    "https://api.github.com/repos/$GitHubRepo/releases/latest"
+  } else {
+    "https://api.github.com/repos/$GitHubRepo/releases/tags/$Version"
+  }
+
+  $releaseData = Invoke-WebRequest -Uri $ReleaseUrl -UseBasicParsing -ErrorAction Stop
+  if ($null -eq $?) {
+    Write-Host "Failed to identify release for tag: $Version" -f Red
+    Exit 1
+  }
+
+  $latest = ($releaseData | ConvertFrom-Json)
+  if ($latest -is [array]) { $latest = $latest[0] }
+
+  $tagName = $latest.tag_name
+  $latestAssets = $latest.assets
 $sha256Sums = $latestAssets | Where-Object { $_.name.ToLower().EndsWith("sha256sums.txt") } | Select-Object -First 1 | Select-Object -ExpandProperty browser_download_url
 $latestZip = $latestAssets | Where-Object { $_.name.ToLower().EndsWith("$($HostOS)-$($HostArch).zip") -or $_.name.ToLower().EndsWith("$($HostOS)-$($HostArch)_v1.zip") }
 $matchedAsset = @($latestZip).Where({ ![String]::IsNullOrEmpty($_) }, "First")
@@ -166,7 +207,11 @@ The latest available version is always downloaded." -f Yellow
 Write-Host "`n-> Press any key to continue <-`n" -f Cyan
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 
-$ZippedRelease = [IO.Path]::Combine($MemospotPath, $matchedAsset.name)
+Stop-MemospotProcesses
+
+$tempRoot = [IO.Path]::Combine([IO.Path]::GetTempPath(), "memospot-updater-$([Guid]::NewGuid().ToString('N'))")
+New-Item -Path $tempRoot -ItemType Directory -Force -ErrorAction Stop | Out-Null
+$ZippedRelease = [IO.Path]::Combine($tempRoot, $matchedAsset.name)
 Remove-Item -Path $ZippedRelease -Force -ErrorAction SilentlyContinue
 
 Write-Host "Downloading release ``$tagName``... This can take a while." -f Green
@@ -242,7 +287,7 @@ if ($hash.ToLower().Equals($downloadedZipHash)) {
 }
 else {
   Write-Host "Hashes do not match!" -f Red
-  Write-Host "Expected: $($hash[0])" -f Red
+  Write-Host "Expected: $hash" -f Red
   Write-Host "Actual:   $downloadedZipHash" -f Red
   Write-Host "Try to run this script again." -f Yellow
   Exit 1
@@ -254,7 +299,7 @@ $databasePath = [IO.Path]::Combine($DataPath, "memos_prod.db")
 $databasePathWAL = [IO.Path]::Combine($DataPath, "memos_prod.db-wal")
 $databasePathSHM = [IO.Path]::Combine($DataPath, "memos_prod.db-shm")
 if ([IO.File]::Exists($databasePath)) {
-  $databaseBackup = [IO.Path]::Combine($BackupsPath, "db_${dateString}_before_${tagName}.zip")
+  $databaseBackup = [IO.Path]::Combine($BackupsPath, "memos_db_${dateString}_before_${tagName}.zip")
   Write-Host "Backing up current database"
 
   $fileList = [System.Collections.ArrayList]@($databasePath)
@@ -266,15 +311,15 @@ if ([IO.File]::Exists($databasePath)) {
   }
 
   Compress-Archive -Path $fileList -DestinationPath "$databaseBackup" -Force -ErrorAction Stop
-  if ($null -eq $?) {
-    Write-Host "Failed to backup file. Make sure Memos is stopped and that you have write permissions to: $databaseBackup" -f Red
+  if (-not [IO.File]::Exists($databaseBackup)) {
+    Write-Host "Failed to backup database files. Make sure Memos is stopped and that you have write permissions to: $databaseBackup" -f Red
     Exit 1
   }
 }
 
 $distPath = [IO.Path]::Combine($MemospotPath, "dist");
 $memosBin = [IO.Path]::Combine($MemospotPath, "memos.exe")
-$memosBinBackup = [IO.Path]::Combine($BackupsPath, "memos_${dateString}_before_${tagName}.zip");
+$memosBinBackup = [IO.Path]::Combine($BackupsPath, "memos_binary_${dateString}_before_${tagName}.zip");
 if ([IO.File]::Exists($memosBin)) {
   Write-Host "Backing up current memos.exe"
   if ([IO.Directory]::Exists($distPath)) {
@@ -285,26 +330,38 @@ if ([IO.File]::Exists($memosBin)) {
   }
 
   Compress-Archive -Path $fileList -DestinationPath "$memosBinBackup" -Force -ErrorAction Stop
-  if ($null -eq $?) {
+  if (-not [IO.File]::Exists($memosBinBackup)) {
     Write-Host "Failed to backup file. Make sure Memos is stopped and that you have write permissions to: $BackupsPath" -f Red
     Exit 1
   }
 }
 
-Remove-Item -Path $distPath -Recurse -Force -ErrorAction SilentlyContinue
+$stagingPath = [IO.Path]::Combine($tempRoot, "staging")
+Remove-Item -Path $stagingPath -Recurse -Force -ErrorAction SilentlyContinue
 
-Write-Host "Extracting Memos to: $MemospotPath"
-Expand-Archive -Path $ZippedRelease -DestinationPath $MemospotPath -Force
-if ($null -eq $?) {
-  Write-Host "Failed to extract file." -f Red
-  if ([IO.File]::Exists($memosBinBackup)) {
-    Write-Host "Restoring Memos backup" -f Cyan
-    Remove-Item -Path $distPath -Recurse -Force -ErrorAction SilentlyContinue
-    Expand-Archive -Path $memosBinBackup -DestinationPath $MemospotPath -Force
-  }
+Write-Host "Extracting Memos package to staging folder: $stagingPath"
+Expand-Archive -Path $ZippedRelease -DestinationPath $stagingPath -Force -ErrorAction Stop
+
+$stagedMemosBin = [IO.Path]::Combine($stagingPath, "memos.exe")
+if (-not [IO.File]::Exists($stagedMemosBin)) {
+  Write-Host "Extracted package does not contain memos.exe" -f Red
   Exit 1
 }
-Remove-Item -Path $ZippedRelease -Force -ErrorAction SilentlyContinue
+
+$stagedDistPath = [IO.Path]::Combine($stagingPath, "dist")
+$newMemosBin = [IO.Path]::Combine($MemospotPath, "memos.exe.new")
+Copy-Item -Path $stagedMemosBin -Destination $newMemosBin -Force -ErrorAction Stop
+Move-Item -Path $newMemosBin -Destination $memosBin -Force -ErrorAction Stop
+
+if ([IO.Directory]::Exists($stagedDistPath)) {
+  $distTempPath = [IO.Path]::Combine($MemospotPath, "dist.new")
+  Remove-Item -Path $distTempPath -Recurse -Force -ErrorAction SilentlyContinue
+  Copy-Item -Path $stagedDistPath -Destination $distTempPath -Recurse -Force -ErrorAction Stop
+  Remove-Item -Path $distPath -Recurse -Force -ErrorAction SilentlyContinue
+  Move-Item -Path $distTempPath -Destination $distPath -Force -ErrorAction Stop
+}
+
+Remove-Item -Path $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
 
 # If MSI installer was used, copy dist folder to LocalAppData
 # This should increase compatibility with multiple versions of Memospot
@@ -331,5 +388,13 @@ Unblock-File -Path $memosBin -ErrorAction SilentlyContinue
 
 Write-Host "`nMemos server successfully updated to $tagName" -f Green
 
-Write-Host "`n-> Press any key to exit <-`n" -f Cyan
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+  Write-Host "`n-> Press any key to exit <-`n" -f Cyan
+  $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+}
+
+if ($args.Count -gt 0) {
+  main -Version $args[0]
+}
+else {
+  main
+}
