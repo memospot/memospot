@@ -1,6 +1,7 @@
 //! Tauri event handler.
 use std::str::FromStr;
 use std::sync::LazyLock;
+use std::sync::atomic::{AtomicU32, Ordering};
 
 use crate::memos;
 use crate::memos_version::MemosVersionStore;
@@ -28,6 +29,22 @@ use uuid::Uuid;
 
 pub static PREVENT_EXIT: LazyLock<std::sync::Mutex<bool>> =
     LazyLock::new(|| std::sync::Mutex::new(true));
+
+/// Zoom factor stored as `(factor * 100)` to avoid floating-point atomics.
+pub(crate) static ZOOM_LEVEL: AtomicU32 = AtomicU32::new(100);
+
+pub(crate) const ZOOM_STEP: f64 = 0.1;
+const ZOOM_MIN: f64 = 0.2;
+const ZOOM_MAX: f64 = 5.0;
+
+/// Apply the current zoom level to all open webview windows.
+pub(crate) fn apply_zoom<R: Runtime>(app: &AppHandle<R>, zoom: f64) {
+    let zoom = zoom.clamp(ZOOM_MIN, ZOOM_MAX);
+    ZOOM_LEVEL.store((zoom * 100.0) as u32, Ordering::Relaxed);
+    for (_, window) in app.webview_windows() {
+        window.set_zoom(zoom).ok();
+    }
+}
 
 /// Handles Tauri events.
 pub fn handle_run_events(app: &AppHandle, run_event: RunEvent) {
@@ -241,6 +258,17 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) -> Res
             let url = Url::parse("tauri://localhost").ok();
 
             url.map(|u| main_window.navigate(u).ok());
+        }
+        MainMenu::ViewZoomIn => {
+            let current = ZOOM_LEVEL.load(Ordering::Relaxed) as f64 / 100.0;
+            apply_zoom(app, current + ZOOM_STEP);
+        }
+        MainMenu::ViewZoomOut => {
+            let current = ZOOM_LEVEL.load(Ordering::Relaxed) as f64 / 100.0;
+            apply_zoom(app, current - ZOOM_STEP);
+        }
+        MainMenu::ViewResetZoom => {
+            apply_zoom(app, 1.0);
         }
         MainMenu::HelpMemospotDocumentation => {
             open_link("https://memospot.github.io/");

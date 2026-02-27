@@ -22,6 +22,15 @@ Security: in case of vulnerabilities.
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+
+- (Memos) Bundled version: v0.26.2.
+- Updated translations.
+
+### Added
+
+- Complete support for zoom shortcuts (`CmdOrCtrl+=`, `CmdOrCtrl+-`, `CmdOrCtrl+0`, `NumLock+Add`, `NumLock+Subtract`, `NumLock+0`).
+
 <!-- next-header -->
 
 ## [1.0.2] - 2025-12-14

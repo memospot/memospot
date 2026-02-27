@@ -13,6 +13,9 @@ viewmenu = &View
 viewmenu-developer-tools = &Developer Tools
 viewmenu-hide-menu-bar = &Hide menu bar
 viewmenu-new-window = &New Window
+viewmenu-zoom-in = Zoom &In
+viewmenu-zoom-out = Zoom &Out
+viewmenu-reset-zoom = &Reset Zoom
 viewmenu-refresh = &Refresh
 viewmenu-reload-view = Re&load
 

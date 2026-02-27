@@ -189,3 +189,22 @@ pub async fn set_config(patch: String) -> Result<bool, String> {
 pub async fn path_exists(path: String) -> Result<bool, String> {
     Ok(std::path::Path::new(&path).exists())
 }
+
+#[command]
+pub fn zoom_in<R: Runtime>(app: AppHandle<R>) {
+    use std::sync::atomic::Ordering;
+    let current = crate::event::ZOOM_LEVEL.load(Ordering::Relaxed) as f64 / 100.0;
+    crate::event::apply_zoom(&app, current + crate::event::ZOOM_STEP);
+}
+
+#[command]
+pub fn zoom_out<R: Runtime>(app: AppHandle<R>) {
+    use std::sync::atomic::Ordering;
+    let current = crate::event::ZOOM_LEVEL.load(Ordering::Relaxed) as f64 / 100.0;
+    crate::event::apply_zoom(&app, current - crate::event::ZOOM_STEP);
+}
+
+#[command]
+pub fn reset_zoom<R: Runtime>(app: AppHandle<R>) {
+    crate::event::apply_zoom(&app, 1.0);
+}

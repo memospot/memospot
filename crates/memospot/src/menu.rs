@@ -40,6 +40,12 @@ pub enum MainMenu {
     ViewDevTools,
     #[strum(serialize = "viewmenu-hide-menu-bar")]
     ViewHideMenuBar,
+    #[strum(serialize = "viewmenu-zoom-in")]
+    ViewZoomIn,
+    #[strum(serialize = "viewmenu-zoom-out")]
+    ViewZoomOut,
+    #[strum(serialize = "viewmenu-reset-zoom")]
+    ViewResetZoom,
     #[strum(serialize = "viewmenu-refresh")]
     ViewRefresh,
     #[strum(serialize = "viewmenu-reload-view")]
@@ -172,6 +178,20 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
             )
             .accelerator("CmdOrCtrl+H")
             .build(handle)?,
+            &PredefinedMenuItem::separator(handle)?,
+            &MenuItemBuilder::with_id(MainMenu::ViewZoomIn.id(), MainMenu::ViewZoomIn.text())
+                .accelerator("CmdOrCtrl+=")
+                .build(handle)?,
+            &MenuItemBuilder::with_id(MainMenu::ViewZoomOut.id(), MainMenu::ViewZoomOut.text())
+                .accelerator("CmdOrCtrl+-")
+                .build(handle)?,
+            &MenuItemBuilder::with_id(
+                MainMenu::ViewResetZoom.id(),
+                MainMenu::ViewResetZoom.text(),
+            )
+            .accelerator("CmdOrCtrl+0")
+            .build(handle)?,
+            &PredefinedMenuItem::separator(handle)?,
             &MenuItemBuilder::with_id(MainMenu::ViewRefresh.id(), MainMenu::ViewRefresh.text())
                 .accelerator("F5")
                 .build(handle)?,

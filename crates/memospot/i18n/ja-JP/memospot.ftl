@@ -12,6 +12,9 @@ viewmenu = 表示(&V)
 viewmenu-developer-tools = 開発ツール(&O)
 viewmenu-hide-menu-bar = メニューバーを非表示(&H)
 viewmenu-new-window = 新しいウィンドウ(&N)
+viewmenu-zoom-in = Zoom In
+viewmenu-zoom-out = Zoom Out
+viewmenu-reset-zoom = Reset Zoom
 viewmenu-refresh = リフレッシュ(&R)
 viewmenu-reload-view = Re&load
 windowmenu = ウィンドウ(&W)
@@ -49,7 +52,7 @@ panic-unable-to-resolve-custom-data-directory =
     { $dir }
     
     パスがディレクトリとして存在することを確認するか、
-    設定の `memos を削除します。 ata` はデフォルトのデータパスを使用します。
+    設定の `memos.data` を削除してデフォルトのデータパスを使用します。
 panic-unable-to-create-backup-directory =
     バックアップディレクトリを作成できません！
     { $dir }

@@ -72,7 +72,8 @@
   },
   "markdownlint.config": {
     "MD028": false,
-    "MD033": false
+    "MD033": false,
+    "MD041": false
   },
   "prettier.enable": false,
   "rust-analyzer.checkOnSave": true,

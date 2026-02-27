@@ -420,7 +420,7 @@ async function downloadMemos(downloadFilesGlob: string[], tag: string) {
             await decompress(filePath, extractDir)
                 .then((files: any[]) => {
                     console.log(
-                        `$\x1b[32m[OK]\x1b[0m \x1b[36m${fileName}\x1b[0m Extracted ${files.length} files.`
+                        `\x1b[32m[OK]\x1b[0m \x1b[36m${fileName}\x1b[0m Extracted ${files.length} files.`
                     );
                 })
                 .catch((error: any) => {

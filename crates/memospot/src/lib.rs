@@ -169,8 +169,8 @@ pub fn run() {
             // The frontend code calls getCurrentWebviewWindow().show() after configuring the theme.
             visible: cfg!(debug_assertions),
             // Doesn't work as it relies on injecting a polyfill, and we are redirecting to the server.
-            // TODO: register global hotkeys to change the webview zoom level.
-            zoom_hotkeys_enabled: true,
+            // The zoom hotkeys are handled via menu accelerators instead.
+            zoom_hotkeys_enabled: false,
             ..Default::default()
         }
         .restore_window_state();
@@ -228,8 +228,20 @@ pub fn run() {
             cmd::get_config,
             cmd::get_default_config,
             cmd::set_config,
-            cmd::path_exists
+            cmd::path_exists,
+            cmd::zoom_in,
+            cmd::zoom_out,
+            cmd::reset_zoom
         ])
+        // Register numpad zoom shortcuts via JS injected on each page load.
+        //
+        // Regular zoom shortcuts (Ctrl+=/Ctrl+-/Ctrl+0) are handled by menu accelerators.
+        .on_page_load(|webview, payload| {
+            if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished) {
+                static POLYFILL: &str = include_str!("polyfills/pageload.js");
+                webview.eval(POLYFILL).ok();
+            }
+        })
         .setup(move |app| {
             let app_handle = app.handle();
 

@@ -12,6 +12,9 @@ viewmenu = &查看
 viewmenu-developer-tools = &開發者工具
 viewmenu-hide-menu-bar = &隱藏菜單欄
 viewmenu-new-window = 新視窗
+viewmenu-zoom-in = Zoom In
+viewmenu-zoom-out = Zoom Out
+viewmenu-reset-zoom = Reset Zoom
 viewmenu-refresh = &刷新
 viewmenu-reload-view = 重新&加載
 windowmenu = &窗口
@@ -22,18 +25,21 @@ helpmenu-documentation = &文檔
 helpmenu-release-notes = &發佈說明
 helpmenu-report-issue = &報告問題…
 # Dialogs
-dialog-generic-error = Error
-dialog-generic-info = Information
+dialog-generic-error = 錯誤
+dialog-generic-info = 資訊
 dialog-update-title = 有可用的更新
 dialog-update-no-update = 沒有可用的更新。
-dialog-update-message = 版本 { $version } 可供下載。您想下載它嗎？
-dialog-update-failed-title = Auto-update failed
+dialog-update-message =
+    版本 { $version } 可供下載。
+    
+    您想下載嗎？
+dialog-update-failed-title = 自動更新失敗
 dialog-update-manually-prompt =
-    Failed to auto update to version { $version }:
+    自動更新到版本 { $version } 失敗：
     
     { $error }
     
-    Would you like to update manually?
+    您想手動更新嗎？
 panic-failed-to-spawn-memos = 無法啟動備忘錄
 panic-failed-to-create-data-directory = 無法創建數據目錄！ { $dir }
 panic-data-directory-is-not-writable = 數據目錄不可寫！ { $dir }
