@@ -10,11 +10,11 @@ appmenu-quit = &Quitter
 appmenu-settings = &Paramètres
 viewmenu = &Voir
 viewmenu-developer-tools = Outils de développement
-viewmenu-toggle-menu-bar = &Cacher la barre de menu
+viewmenu-toggle-menu-bar = &Barre de menu
 viewmenu-new-window = &Nouvelle fenêtre
-viewmenu-zoom-in = Zoom In
-viewmenu-zoom-out = Zoom Out
-viewmenu-reset-zoom = Reset Zoom
+viewmenu-zoom-in = Zoom &avant
+viewmenu-zoom-out = Zoom &arrière
+viewmenu-reset-zoom = &Reset Zoom
 viewmenu-refresh = Rafraîchir
 viewmenu-reload-view = Re&load
 windowmenu = &Fenêtre
@@ -52,7 +52,7 @@ panic-unable-to-resolve-custom-data-directory =
     { $dir }
     
     Assurez-vous que le chemin existe en tant que répertoire, ou supprimez le paramètre
-    `memos.data` pour utiliser le chemin de données par défaut.
+    `memos. ata` pour utiliser le chemin de données par défaut.
 panic-unable-to-create-backup-directory =
     Impossible de créer le répertoire de sauvegarde!
     { $dir }
