@@ -18,6 +18,10 @@ use tauri::{
 };
 use tokio::time::{self, Duration, Instant};
 
+mod accelerator {
+    include!(concat!(env!("OUT_DIR"), "/shortcut_accelerators.rs"));
+}
+
 #[derive(AsRefStr, FromRepr, Clone, Copy)]
 pub enum MainMenu {
     #[strum(serialize = "appmenu")]
@@ -96,7 +100,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
 
     let settings =
         MenuItemBuilder::with_id(MainMenu::AppSettings.id(), MainMenu::AppSettings.text())
-            .accelerator("CmdOrCtrl+,")
+            .accelerator(accelerator::OPEN_SETTINGS)
             .build(handle)?;
 
     let browse_data_directory = MenuItemBuilder::with_id(
@@ -176,20 +180,20 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
                 MainMenu::ViewToggleMenuBar.id(),
                 MainMenu::ViewToggleMenuBar.text(),
             )
-            .accelerator("CmdOrCtrl+H")
+            .accelerator(accelerator::TOGGLE_MENU_BAR)
             .build(handle)?,
             &PredefinedMenuItem::separator(handle)?,
             &MenuItemBuilder::with_id(MainMenu::ViewZoomIn.id(), MainMenu::ViewZoomIn.text())
-                .accelerator("CmdOrCtrl+=")
+                .accelerator(accelerator::ZOOM_IN)
                 .build(handle)?,
             &MenuItemBuilder::with_id(MainMenu::ViewZoomOut.id(), MainMenu::ViewZoomOut.text())
-                .accelerator("CmdOrCtrl+-")
+                .accelerator(accelerator::ZOOM_OUT)
                 .build(handle)?,
             &MenuItemBuilder::with_id(
                 MainMenu::ViewResetZoom.id(),
                 MainMenu::ViewResetZoom.text(),
             )
-            .accelerator("CmdOrCtrl+0")
+            .accelerator(accelerator::RESET_ZOOM)
             .build(handle)?,
             &PredefinedMenuItem::separator(handle)?,
             &MenuItemBuilder::with_id(MainMenu::ViewRefresh.id(), MainMenu::ViewRefresh.text())

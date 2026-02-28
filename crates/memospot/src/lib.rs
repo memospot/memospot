@@ -26,6 +26,7 @@ use log::{debug, info, warn};
 use std::env;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
+use tauri::webview::PageLoadEvent;
 use tauri::{Manager, async_runtime};
 use tauri_utils::config::WindowConfig;
 use window_ext::WindowConfigExt;
@@ -235,13 +236,14 @@ pub fn run() {
             cmd::toggle_menu_bar,
             cmd::open_settings
         ])
-        // Register fallback shortcuts via JS injected on each page load.
-        //
-        // This ensures shortcuts like Ctrl+H, Ctrl+, and Numpad zoom still work
-        // even when the native menu bar (and its hardware accelerators) is hidden.
-        .on_page_load(|webview, payload| {
-            if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished) {
-                static POLYFILL: &str = include_str!("polyfills/pageload.js");
+        .on_page_load(move |webview, payload| {
+            // Register shortcuts via JS injected on each page load.
+            //
+            // This ensures shortcuts like Ctrl+H, Ctrl+, and Numpad zoom still work
+            // even when the native menu bar and its accelerators are hidden.
+            if matches!(payload.event(), PageLoadEvent::Finished) {
+                static POLYFILL: &str =
+                    include_str!(concat!(env!("OUT_DIR"), "/shortcut_polyfill.js"));
                 webview.eval(POLYFILL).ok();
             }
         })

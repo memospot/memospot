@@ -213,11 +213,11 @@ pub fn reset_zoom<R: Runtime>(app: AppHandle<R>) {
 pub fn toggle_menu_bar<R: Runtime>(app: AppHandle<R>) {
     use tauri::Manager;
     if let Some(main_window) = app.get_webview_window(crate::window::Window::Main.into()) {
-        if let Ok(true) = main_window.is_menu_visible() {
-            let _ = main_window.hide_menu();
-        } else if let Ok(false) = main_window.is_menu_visible() {
-            let _ = main_window.show_menu();
-        }
+        match main_window.is_menu_visible() {
+            Ok(true) => main_window.hide_menu().ok(),
+            Ok(false) => main_window.show_menu().ok(),
+            Err(_) => None,
+        };
     }
 }
 
