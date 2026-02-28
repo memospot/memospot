@@ -12,7 +12,7 @@
   "settingsConfigSaveFail": "保存配置失败。",
   "settingsErrPathDoesNotExist": "指定的路径不存在。",
   "settingsLoadDefaults": "默认值",
-  "settingsReloadCurrent": "Reload",
+  "settingsReloadCurrent": "重新加载",
   "settingsSave": "保存",
   "settingsOverview": "将字段留空为默认值。您必须重新启动应用才能使更改生效。",
   "settingsViewDark": "深色",
@@ -70,7 +70,7 @@
   "settingsMemosDataDirectoryDescription": "Memos 数据目录的路径。",
   "settingsMemosBindAddress": "绑定IP地址",
   "settingsMemosBindAddressDescription": "绑定到 <em>0.0.0.0</em> 将允许从网络访问，并且不建议。",
-  "settingsMemosBindPort": "Bind port",
+  "settingsMemosBindPort": "绑定端口",
   "settingsMemosBindPortDescription": "这里指定的端口是首选的，但如果它已经被使用，它将被Memospot覆盖。",
   "settingsMemosEnvironmentVariables": "环境变量",
   "settingsMemosEnvironmentVariablesDescription": "要传递到Memos二进制的环境变量。<br />格式是 <code>VARIABLE=VALUE</code>, 用换行符分隔变量。<br />警告：将忽略 <code>MEMOS_MODE</code> 等管理变量。"

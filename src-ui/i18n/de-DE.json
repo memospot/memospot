@@ -12,7 +12,7 @@
   "settingsConfigSaveFail": "Fehler beim Speichern der Konfiguration.",
   "settingsErrPathDoesNotExist": "Der angegebene Pfad existiert nicht.",
   "settingsLoadDefaults": "Standardwerte",
-  "settingsReloadCurrent": "Reload",
+  "settingsReloadCurrent": "Neu laden",
   "settingsSave": "Speichern",
   "settingsOverview": "Felder leer lassen für Standardwerte. Sie müssen die App neu starten, damit die Änderungen wirksam werden.",
   "settingsViewDark": "Dunkel",
@@ -70,7 +70,7 @@
   "settingsMemosDataDirectoryDescription": "Pfad zum Memos Datenverzeichnis.",
   "settingsMemosBindAddress": "IP-Adresse binden",
   "settingsMemosBindAddressDescription": "Die Bindung an <em>0.0.0.0</em> erlaubt Zugriff aus dem Netzwerk und wird nicht empfohlen.",
-  "settingsMemosBindPort": "Bind port",
+  "settingsMemosBindPort": "Bindungsport",
   "settingsMemosBindPortDescription": "Der hier angegebene Port wird bevorzugt, aber er wird von Memospot transparent überschrieben, wenn er bereits verwendet wird.",
   "settingsMemosEnvironmentVariables": "Umgebungsvariablen",
   "settingsMemosEnvironmentVariablesDescription": "Umgebungsvariablen, die an die Memos-Binärdatei übergeben werden sollen.<br />Format ist <code>VARIABLE=VALUE</code> und trennt Variablen durch Zeilenumbrüche.<br />WARNUNG: verwaltete Variablen wie <code>MEMOS_MODE</code> werden ignoriert."

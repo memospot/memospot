@@ -12,7 +12,7 @@
   "settingsConfigSaveFail": "Échec de l'enregistrement de la configuration.",
   "settingsErrPathDoesNotExist": "Le chemin spécifié n'existe pas.",
   "settingsLoadDefaults": "Valeurs par défaut",
-  "settingsReloadCurrent": "Reload",
+  "settingsReloadCurrent": "Recharger",
   "settingsSave": "Enregistrer",
   "settingsOverview": "Laissez les champs vides pour les valeurs par défaut. Vous devez redémarrer l'application pour que les modifications prennent effet.",
   "settingsViewDark": "Sombre",
@@ -70,7 +70,7 @@
   "settingsMemosDataDirectoryDescription": "Chemin vers le répertoire des données Memos.",
   "settingsMemosBindAddress": "Lier l'adresse IP",
   "settingsMemosBindAddressDescription": "Lier à <em>0.0.0.0</em> permettra l'accès depuis le réseau et est déconseillé.",
-  "settingsMemosBindPort": "Bind port",
+  "settingsMemosBindPort": "Port de liaison",
   "settingsMemosBindPortDescription": "Le port spécifié ici est préférable, mais il sera remplacé de manière transparente par Memospot s'il est déjà utilisé.",
   "settingsMemosEnvironmentVariables": "Variables d'environnement",
   "settingsMemosEnvironmentVariablesDescription": "Variables d'environnement à passer au binaire Memos.<br />Format est <code>VARIABLE=VALUE</code>, séparant les variables par des nouvelles lignes.<br />ATTENTION : les variables gérées comme <code>MEMOS_MODE</code> seront ignorées."
