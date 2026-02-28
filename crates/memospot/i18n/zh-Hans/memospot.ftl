@@ -10,11 +10,11 @@ appmenu-quit = &退出
 appmenu-settings = &设置
 viewmenu = &查看
 viewmenu-developer-tools = 开发者工具
-viewmenu-toggle-menu-bar = 隐藏菜单栏(&O)
+viewmenu-toggle-menu-bar = T&oggle菜单栏
 viewmenu-new-window = 新建窗口
-viewmenu-zoom-in = Zoom In
-viewmenu-zoom-out = Zoom Out
-viewmenu-reset-zoom = Reset Zoom
+viewmenu-zoom-in = 缩放
+viewmenu-zoom-out = 缩放
+viewmenu-reset-zoom = &Reset Zoom
 viewmenu-refresh = &刷新
 viewmenu-reload-view = Re&load
 windowmenu = 窗口
@@ -52,7 +52,7 @@ panic-unable-to-resolve-custom-data-directory =
     { $dir }
     
     确保路径作为目录存在，或删除
-    设置 `memos.data` 以使用默认数据路径。
+    设置 `memos'。 使用默认数据路径的 ata` 。
 panic-unable-to-create-backup-directory =
     无法创建备份目录！
     { $dir }
