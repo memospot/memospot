@@ -215,6 +215,18 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         ])
         .build()?;
 
+    #[cfg(target_os = "macos")]
+    let edit_menu = &SubmenuBuilder::new(handle, "Edit")
+        .undo()
+        .redo()
+        .separator()
+        .cut()
+        .copy()
+        .paste()
+        .separator()
+        .select_all()
+        .build()?;
+
     let help_menu = &SubmenuBuilder::new(handle, MainMenu::Help.text())
         .items(&[
             &MenuItemBuilder::with_id(
@@ -259,7 +271,10 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .build()?;
 
     #[cfg(target_os = "macos")]
-    let menu = Menu::with_items(handle, &[mac_menu, view_menu, window_menu, help_menu])?;
+    let menu = Menu::with_items(
+        handle,
+        &[mac_menu, edit_menu, view_menu, window_menu, help_menu],
+    )?;
 
     #[cfg(not(target_os = "macos"))]
     let menu = Menu::with_items(handle, &[app_menu, view_menu, help_menu])?;
