@@ -7,5 +7,22 @@ version: 2
 updates:
   - package-ecosystem: "github-actions"
     directory: "/" # Location of package manifests
+    cooldown:
+      default-days: 30
     schedule:
       interval: "monthly"
+    open-pull-requests-limit: 1
+  - package-ecosystem: "cargo"
+    directory: "/"
+    cooldown:
+      default-days: 30
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 1
+  - package-ecosystem: "bun"
+    directory: "/"
+    cooldown:
+      default-days: 30
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 1
