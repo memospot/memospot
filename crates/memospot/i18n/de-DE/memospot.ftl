@@ -10,7 +10,7 @@ appmenu-quit = &Beenden
 appmenu-settings = &Einstellungen
 viewmenu = &Ansicht
 viewmenu-developer-tools = &Entwicklerwerkzeuge
-viewmenu-toggle-menu-bar = &Menüleiste ausblenden
+viewmenu-toggle-menu-bar = &Menüleiste umschalten
 viewmenu-new-window = &Neues Fenster
 viewmenu-zoom-in = Zoom In
 viewmenu-zoom-out = Zoom Out
@@ -76,7 +76,7 @@ warn-failed-to-backup-database =
     { $error }
 prompt-install-webview-title = WebView-Fehler
 prompt-install-webview-message =
-    Eine WebView ist *erforderlich* für diese Anwendung zum Arbeiten mit
+    Eine WebView ist *erforderlich*, damit diese Anwendung funktioniert,
     und sie ist auf diesem System nicht verfügbar!
     
     Möchten Sie sie installieren?
