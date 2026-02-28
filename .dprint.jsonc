@@ -24,12 +24,20 @@
   "lineWidth": 96,
   "indentWidth": 4,
   "plugins": [
+    // DO NOT USE PRETTIER WASM. It bypasses the include rules and will mess things up.
+    //
     // https://github.com/dprint/dprint-plugin-biome/releases
-    "https://plugins.dprint.dev/biome-0.11.6.wasm@57c957c064561af97f836923a8bf048b537b5749ee4cfd9670b15626f0bb0fe0",
+    "https://plugins.dprint.dev/biome-0.12.0.wasm@bc70abf7c8bb61dc26e2aa08cc880385cea8d7f12f1bc184a2010bd441f3a226",
+    // https://github.com/dprint/dprint-plugin-exec/releases
     "https://plugins.dprint.dev/exec-0.6.0.json@a054130d458f124f9b5c91484833828950723a5af3f8ff2bd1523bd47b83b364",
+    // https://github.com/g-plane/malva/releases
+    "https://plugins.dprint.dev/g-plane/malva-v0.15.2.wasm@15a1a8a6cb05c60f9518b4d8326c8a03681f4c4533b9392c8353a54082b3691e",
+    // https://github.com/dprint/dprint-plugin-markdown/releases
+    "https://plugins.dprint.dev/markdown-0.21.1.wasm@064467750514c9ce5192b375582d762ec64cb3ba99673413fa86645d50406279",
     // https://github.com/g-plane/markup_fmt/releases
-    "https://plugins.dprint.dev/g-plane/markup_fmt-v0.25.1.wasm@67010908b5d8219a0826e94206b750d4ab74b2170460b4926458f2b9c6e338ab",
-    "https://plugins.dprint.dev/prettier-0.58.2.json@2fd8cc9c9773364848dc93735b01a00d55fcfa78a56a9230b4b63c014964c82d",
+    "https://plugins.dprint.dev/g-plane/markup_fmt-v0.26.0.wasm",
+    // https://github.com/g-plane/pretty_yaml/releases
+    "https://plugins.dprint.dev/g-plane/pretty_yaml-v0.6.0.wasm@40a2fdda7040317eb1b23520f3a00769a5571eedb049c4ca9175c1b9eeba01ae",
     // https://github.com/dprint/dprint-plugin-toml/releases
     "https://plugins.dprint.dev/toml-0.7.0.wasm@0126c8112691542d30b52a639076ecc83e07bace877638cee7c6915fd36b8629"
   ],
@@ -42,7 +50,7 @@
     ]
   },
   "biome": {
-    "associations": ["**/*.{json,jsonc}", "**/*.{js,ts}"],
+    "associations": ["**/*.{js,json,jsonc,ts}"],
     "indentStyle": "space",
     "indentSize": 4,
     "lineEnding": "lf",
@@ -52,6 +60,16 @@
     "json.indentStyle": "space",
     "json.lineWidth": 96
   },
+  "malva": {
+    // https://dprint.dev/plugins/malva/config/
+    "associations": ["**/*.css"],
+    "indentWidth": 4,
+    "printWidth": 96
+  },
+  "markdown": {
+    "associations": ["**/*.md"],
+    "lineWidth": 96
+  },
   "markup": {
     "associations": ["**/*.{html,svelte}"],
     "indentWidth": 2,
@@ -59,21 +77,11 @@
     "svelte.scriptIndent": false,
     "scriptFormatter": "biome"
   },
-  "prettier": {
-    "associations": ["**/*.css", "**/*.md", "**/*.{yaml,yml}"],
-    "eol": "lf",
-    "printWidth": 96,
-    "useTabs": false,
-    "tabWidth": 4,
-    "proseWrap": "preserve",
-    "singleQuote": false,
-    "trailingComma": "none",
-    "plugin.jsDoc": true,
-    "css.tabWidth": 4,
-    "html.tabWidth": 4,
-    "md.tabWidth": 2,
-    "yaml.tabWidth": 2,
-    "yml.tabWidth": 2
+  "yaml": {
+    // https://dprint.dev/plugins/pretty_yaml/config/
+    "associations": ["**/*.yml"],
+    "indentWidth": 2,
+    "printWidth": 96
   },
   "toml": {
     "associations": ["**/*.toml"],

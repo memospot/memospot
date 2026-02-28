@@ -206,9 +206,7 @@ img {
 .logo-glow {
     padding: 3.5em; /* Prevent square box on webkit */
     animation: glow 2s ease-in-out infinite;
-    transition:
-        filter 1s ease-in-out,
-        transform 0.3s ease-in-out;
+    transition: filter 1s ease-in-out, transform 0.3s ease-in-out;
     will-change: filter, transform;
 }
 .logo-glow.error {

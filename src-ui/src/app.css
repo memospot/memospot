@@ -5,8 +5,12 @@
 @font-face {
     font-family: "color-emoji";
     src:
-        local("Apple Color Emoji"), local("Twemoji Mozilla"), local("Noto Color Emoji"),
-        local("Segoe UI Emoji"), local("Segoe UI Symbol"), local("EmojiOne Color"),
+        local("Apple Color Emoji"),
+        local("Twemoji Mozilla"),
+        local("Noto Color Emoji"),
+        local("Segoe UI Emoji"),
+        local("Segoe UI Symbol"),
+        local("EmojiOne Color"),
         local("Android Emoji");
 }
 

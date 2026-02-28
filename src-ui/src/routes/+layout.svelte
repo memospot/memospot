@@ -53,7 +53,7 @@ onMount(async () => {
 <!--
 The "invisible" anchor tags allow SvelteKit to generate all pages during build time.
 -->
-<div style="display: none;">
+<div style="display: none">
   {#each locales as locale}
     <a href={localizeHref(page.url.pathname, { locale })}>{locale}</a>
   {/each}

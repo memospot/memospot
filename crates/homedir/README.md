@@ -4,8 +4,7 @@
 
 This crate provides a function to expand tilde notation, for referring to home directories, in paths.
 
-For example, `~/foo` would be expanded to something like `/home/johndoe/foo
-`
+For example, `~/foo` would be expanded to something like `/home/johndoe/foo`
 
 if the current user's home directory is `/home/johndoe`.
 

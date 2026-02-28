@@ -54,7 +54,6 @@ page.
 > - On macOS, you may need to
 >   [allow the app to run](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac)
 >   first.
->
 >   ```bash
 >   # Remove the quarantine attribute:
 >   xattr -dr com.apple.quarantine /Applications/Memospot.app
@@ -99,7 +98,7 @@ This project is made possible by the following open-source projects:
 
 [![Homepage](https://img.shields.io/badge/Home-blue)](https://www.usememos.com) [![Blog](https://img.shields.io/badge/Blog-gray)](https://www.usememos.com/blog) [![Docs](https://img.shields.io/badge/Docs-blue)](https://www.usememos.com/docs) [![Live Demo](https://img.shields.io/badge/Live-Demo-blue)](https://demo.usememos.com/) [![Memos Discord](https://img.shields.io/badge/Discord-chat-5865f2?logo=discord&logoColor=f5f5f5)](https://discord.gg/tfPJa4UmAv) [![GitHub Stars](https://img.shields.io/github/stars/usememos/memos?logo=github)](https://github.com/usememos/memos)
 
-  <a href="https://tauri.app/">
+<a href="https://tauri.app/">
     <picture>
       <source
         media="(prefers-color-scheme: dark)"
