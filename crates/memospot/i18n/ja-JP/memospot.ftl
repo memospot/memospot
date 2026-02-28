@@ -10,7 +10,7 @@ appmenu-quit = 終了(&Q)
 appmenu-settings = 設定(&S)
 viewmenu = 表示(&V)
 viewmenu-developer-tools = 開発ツール(&O)
-viewmenu-hide-menu-bar = メニューバーを非表示(&H)
+viewmenu-toggle-menu-bar = メニューバーを非表示(&H)
 viewmenu-new-window = 新しいウィンドウ(&N)
 viewmenu-zoom-in = Zoom In
 viewmenu-zoom-out = Zoom Out
@@ -101,7 +101,7 @@ prompt-config-error-message =
     { $error }
     
     設定ファイルをリセットしますか?
-    (バックアップが作成されます。
+    (バックアップが作成されます。)
 panic-config-error = 設定ファイルを手動で修正して、アプリケーションを再起動してください。
 panic-config-unable-to-backup = 現在の設定ファイルのバックアップに失敗しました
 panic-config-unable-to-reset = 設定ファイルをリセットできません
