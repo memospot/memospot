@@ -12,9 +12,9 @@ viewmenu = &Exibição
 viewmenu-developer-tools = &Ferramentas do desenvolvedor…
 viewmenu-toggle-menu-bar = &Esconder barra de menu
 viewmenu-new-window = &Nova Janela
-viewmenu-zoom-in = Zoom In
-viewmenu-zoom-out = Zoom Out
-viewmenu-reset-zoom = Reset Zoom
+viewmenu-zoom-in = &Aumentar zoom
+viewmenu-zoom-out = &Diminuir zoom
+viewmenu-reset-zoom = &Redefinir zoom
 viewmenu-refresh = &Atualizar
 viewmenu-reload-view = &Recarregar
 windowmenu = Jane&la
@@ -30,50 +30,50 @@ dialog-generic-info = Informação
 dialog-update-title = Atualização disponível
 dialog-update-no-update = Nenhuma atualização disponível.
 dialog-update-message =
-    A versão { $version } está disponível para download.
+    A versão {$version} está disponível para download.
     
     Deseja baixá-la?
 dialog-update-failed-title = Auto-atualização falhou
 dialog-update-manually-prompt =
-    Falha ao atualizar automaticamente para a versão { $version }:
+    Falha ao atualizar automaticamente para a versão {$version}:
     
-    { $error }
+    {$error}
     
     Gostaria de atualizar manualmente?
 panic-failed-to-spawn-memos = Não foi possível iniciar o Memos
 panic-failed-to-create-data-directory =
     Não foi possível criar o diretório de dados!
-    { $dir }
+    {$dir}
 panic-data-directory-is-not-writable =
     O diretório de dados não é gravável!
-    { $dir }
+    {$dir}
 panic-unable-to-resolve-custom-data-directory =
     Falha ao resolver o diretório de dados do Memos!
-    { $dir }
+    {$dir}
     
     Certifique-se de que o caminho exista como um diretório,
     ou remova o ajuste `memos.data` para usar o diretório padrão.
 panic-unable-to-create-backup-directory =
     Não foi possível criar o diretório de backup!
-    { $dir }
+    {$dir}
 panic-backup-directory-is-a-file =
     O diretório de backup existe como um arquivo!
-    { $dir }
+    {$dir}
 panic-backup-directory-is-not-writable =
     O diretório de backup não é gravável!
-    { $dir }
+    {$dir}
 panic-database-file-is-not-writable =
     O arquivo de banco de dados não é gravável!
-    { $file }
+    {$file}
 panic-failed-to-connect-to-database = Falha ao conectar ao banco de dados
 panic-failed-to-run-database-migrations =
     Falha ao executar migrações do banco de dados:
-    { $error }
+    {$error}
 panic-failed-to-close-database-connection = Falha ao fechar a conexão com o banco de dados
 warn-failed-to-backup-database =
     Falha ao fazer backup do banco de dados:
     
-    { $error }
+    {$error}
 prompt-install-webview-title = Erro no WebView
 prompt-install-webview-message =
     O WebView é *obrigatório* para o funcionamento deste
@@ -83,22 +83,22 @@ prompt-install-webview-message =
 error-failed-to-install-webview =
     Falha ao instalar o WebView:
     
-    { $error }
+    {$error}
     
     Por favor, instale-o manualmente.
 panic-config-unable-to-create = Não foi possível criar o arquivo de configuração
 panic-config-is-not-a-file =
     O caminho fornecido para a configuração é um diretório.
     Deve ser um arquivo!
-    { $path }
+    {$path}
 panic-config-is-not-writable =
     O arquivo de configuração não é gravável!
-    { $file }
+    {$file}
 prompt-config-error-title = Erro na configuração
 prompt-config-error-message =
     Erro ao ler o arquivo de configuração:
     
-    { $error }
+    {$error}
     
     Redefinir o arquivo de configuração?
     (Será criado um backup.)
@@ -111,7 +111,7 @@ panic-config-parse-error = Erro fatal ao ler o arquivo de configuração
 error-config-write-error =
     Falha ao gravar o arquivo de configuração:
     
-    { $error }
+    {$error}
 panic-portpicker-error = Falha ao encontrar uma porta livre para o Memos escutar!
 error-invalid-server-url =
     URL do servidor inválida:
@@ -122,8 +122,8 @@ error-invalid-server-url =
 panic-unable-to-find-memos-binary = Não foi possível encontrar o binário do servidor do Memos!
 panic-log-config-write-error =
     Falha ao gravar o arquivo de configuração de log:
-    { $file }
+    {$file}
 panic-log-config-reset-error =
     Falha ao redefinir o arquivo de configuração de log:
-    { $file }
+    {$file}
     Por favor, exclua este arquivo e reinicie o aplicativo.
