@@ -10,11 +10,11 @@ appmenu-quit = 終了(&Q)
 appmenu-settings = 設定(&S)
 viewmenu = 表示(&V)
 viewmenu-developer-tools = 開発ツール(&O)
-viewmenu-toggle-menu-bar = メニューバーを非表示(&H)
+viewmenu-toggle-menu-bar = トグルメニューバー(&O)
 viewmenu-new-window = 新しいウィンドウ(&N)
-viewmenu-zoom-in = Zoom In
-viewmenu-zoom-out = Zoom Out
-viewmenu-reset-zoom = Reset Zoom
+viewmenu-zoom-in = ズームイン(&I)
+viewmenu-zoom-out = ズームアウト(&O)
+viewmenu-reset-zoom = &Reset Zoom
 viewmenu-refresh = リフレッシュ(&R)
 viewmenu-reload-view = Re&load
 windowmenu = ウィンドウ(&W)
@@ -52,7 +52,7 @@ panic-unable-to-resolve-custom-data-directory =
     { $dir }
     
     パスがディレクトリとして存在することを確認するか、
-    設定の `memos.data` を削除してデフォルトのデータパスを使用します。
+    設定の `memos を削除します。 ata` はデフォルトのデータパスを使用します。
 panic-unable-to-create-backup-directory =
     バックアップディレクトリを作成できません！
     { $dir }
@@ -101,7 +101,7 @@ prompt-config-error-message =
     { $error }
     
     設定ファイルをリセットしますか?
-    (バックアップが作成されます。)
+    (バックアップが作成されます。
 panic-config-error = 設定ファイルを手動で修正して、アプリケーションを再起動してください。
 panic-config-unable-to-backup = 現在の設定ファイルのバックアップに失敗しました
 panic-config-unable-to-reset = 設定ファイルをリセットできません
