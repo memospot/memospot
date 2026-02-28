@@ -10,11 +10,11 @@ appmenu-quit = &Beenden
 appmenu-settings = &Einstellungen
 viewmenu = &Ansicht
 viewmenu-developer-tools = &Entwicklerwerkzeuge
-viewmenu-toggle-menu-bar = &Menüleiste umschalten
+viewmenu-toggle-menu-bar = &Menüleiste
 viewmenu-new-window = &Neues Fenster
-viewmenu-zoom-in = Zoom In
-viewmenu-zoom-out = Zoom Out
-viewmenu-reset-zoom = Reset Zoom
+viewmenu-zoom-in = &Zoom in
+viewmenu-zoom-out = &Verkleinern
+viewmenu-reset-zoom = &Reset Zoom
 viewmenu-refresh = &Aktualisieren
 viewmenu-reload-view = Re&load
 windowmenu = &Fenster
@@ -52,7 +52,7 @@ panic-unable-to-resolve-custom-data-directory =
     { $dir }
     
     Stellen Sie sicher, dass der Pfad als Verzeichnis existiert, oder entfernen Sie die
-    Einstellung `memos.data` um den Standard-Datenpfad zu verwenden.
+    Einstellung `memos. ata` um den Standard-Datenpfad zu verwenden.
 panic-unable-to-create-backup-directory =
     Sicherungsverzeichnis kann nicht erstellt werden!
     { $dir }
@@ -76,7 +76,7 @@ warn-failed-to-backup-database =
     { $error }
 prompt-install-webview-title = WebView-Fehler
 prompt-install-webview-message =
-    Eine WebView ist *erforderlich*, damit diese Anwendung funktioniert,
+    Eine WebView ist *erforderlich* für diese Anwendung zum Arbeiten mit
     und sie ist auf diesem System nicht verfügbar!
     
     Möchten Sie sie installieren?
