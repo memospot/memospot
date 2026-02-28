@@ -36,10 +36,10 @@ log4rs = { version = "1.4.0" }
 # Newer versions of `native-dialog` were causing issues with some dialogues
 # not displaying on KDE and other platforms, so the version is pinned.
 native-dialog = { version = "0.6.4", default-features = false }
-nix = { version = "0.30.1", default-features = false }
+nix = { version = "0.31.2", default-features = false }
 os_pipe = "1.2.3"
 path-clean = "1.0.1"
-rand = { version = "0.9.2", default-features = false }
+rand = { version = "0.10.0", default-features = false }
 sea-orm = { version = "1.1.19", default-features = false }
 sea-orm-migration = { version = "1.1.19", default-features = false }
 semver = "1.0.27"
@@ -47,14 +47,14 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 serde_yaml = "0.9.34"
 shared_child = "1.1.1"
-strum = "0.27.2"
-strum_macros = "0.27.2"
-sysinfo = "0.37.2"
-tauri = { version = "2.9.5" }
+strum = "0.28.0"
+strum_macros = "0.28.0"
+sysinfo = "0.38.2"
+tauri = { version = "2.10.2" }
 tauri-build = { version = "2.5.3", default-features = false }
 tauri-plugin-dialog = { version = "2.4.2" }
 tauri-plugin-fs = { version = "2.4.4" }
-tauri-plugin-http = { version = "2.5.4", features = ["gzip", "rustls-tls"] }
+tauri-plugin-http = { version = "2.5.4", features = ["gzip", "json", "rustls-tls"] }
 tauri-plugin-opener = { version = "2.5.2" }
 tauri-plugin-process = { version = "2.3.1" }
 tauri-plugin-shell = { version = "2.3.3" }
@@ -64,7 +64,7 @@ tauri-utils = { version = "2.8.1" }
 tempfile = { version = "3.23.0" }
 thiserror = { version = "2.0.17" }
 tokio = { version = "1.48.0" }
-ts-rs = { version = "11.1.0" }
+ts-rs = { version = "12.0.1" }
 url = { version = "2.5.7", default-features = false }
 uuid = { version = "1.19.0", default-features = false }
 windows-sys = { version = "0.61.2", default-features = false }
@@ -96,7 +96,7 @@ lto = true
 opt-level = "s"
 
 # - none: debuginfo and symbols (if they exist) are copied to the produced binary or
-# separate files depending on the target (e.g. .pdb files in case of MSVC).
+# separate files depending on the target (e.g. pdb files in case of MSVC).
 #
 # - debuginfo: debuginfo sections and debuginfo symbols from the symbol table section are
 # stripped at link time and are not copied to the produced binary or separate files.

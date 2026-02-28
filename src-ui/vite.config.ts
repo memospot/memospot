@@ -9,7 +9,7 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
     plugins: [
         paraglideVitePlugin({
-            project: "./i18n",
+            project: "./project.inlang",
             outdir: "./src/lib/paraglide",
             strategy: ["localStorage", "preferredLanguage", "baseLocale"]
         }),
