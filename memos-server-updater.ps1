@@ -99,8 +99,22 @@ if (-not $IsWindows) {
 }
 
 $HostArch = {
+  # Prefer OS architecture from .NET runtime since PowerShell process
+  # architecture can differ from the native OS architecture on Windows ARM64.
+  try {
+    $osArch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLower()
+    switch ($osArch) {
+      "x64" { return "x86_64" }
+      "arm64" { return "arm64" }
+    }
+  }
+  catch {
+    # fallback below
+  }
+
   $archMap = @{
-    "x86_64" = "amd64", "i386_64"
+    "x86_64" = @("amd64", "x64", "i386_64", "x86_64")
+    "arm64" = @("arm64", "aarch64")
   }
 
   $platform = {
@@ -155,6 +169,51 @@ if ([String]::IsNullOrEmpty($HostOS)) {
   Exit 1
 }
 
+function Get-WindowsX64BuildTier {
+  $avx2Supported = $false
+  $popcntSupported = $false
+
+  try {
+    if (-not ("CpuFeatureProbe" -as [type])) {
+      Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+
+public static class CpuFeatureProbe {
+  [DllImport("kernel32.dll")]
+  public static extern bool IsProcessorFeaturePresent(uint processorFeature);
+}
+"@ -ErrorAction SilentlyContinue | Out-Null
+    }
+    $PF_AVX2_INSTRUCTIONS_AVAILABLE = 40
+    $avx2Supported = [CpuFeatureProbe]::IsProcessorFeaturePresent($PF_AVX2_INSTRUCTIONS_AVAILABLE)
+  }
+  catch {
+    $avx2Supported = $false
+  }
+
+  try {
+    $popcntType = [Type]::GetType("System.Runtime.Intrinsics.X86.Popcnt, System.Runtime.Intrinsics")
+    if ($null -ne $popcntType) {
+      $isSupported = $popcntType.GetProperty("IsSupported")
+      if ($null -ne $isSupported) {
+        $popcntSupported = [bool]$isSupported.GetValue($null, $null)
+      }
+    }
+  }
+  catch {
+    $popcntSupported = $false
+  }
+
+  if ($avx2Supported) {
+    return "x86_64_v3"
+  }
+  if ($popcntSupported) {
+    return "x86_64_v2"
+  }
+  return "x86_64_v1"
+}
+
 $BackupsPath = [IO.Path]::Combine($DataPath, "server-updater-backups")
 if (-not [IO.Directory]::Exists($BackupsPath)) {
   Write-Host "Creating backups directory: $BackupsPath" -f Cyan
@@ -186,12 +245,75 @@ $ProgressPreference = 'SilentlyContinue'
   $tagName = $latest.tag_name
   $latestAssets = $latest.assets
 $sha256Sums = $latestAssets | Where-Object { $_.name.ToLower().EndsWith("sha256sums.txt") } | Select-Object -First 1 | Select-Object -ExpandProperty browser_download_url
-$latestZip = $latestAssets | Where-Object { $_.name.ToLower().EndsWith("$($HostOS)-$($HostArch).zip") -or $_.name.ToLower().EndsWith("$($HostOS)-$($HostArch)_v1.zip") }
-$matchedAsset = @($latestZip).Where({ ![String]::IsNullOrEmpty($_) }, "First")
+$assetNameCandidates = @(
+  "$($HostOS)-$($HostArch).zip",
+  "$($HostOS)-$($HostArch)_v1.zip"
+)
+if ($HostArch -eq "arm64") {
+  $assetNameCandidates += @(
+    "$($HostOS)-aarch64.zip",
+    "$($HostOS)-aarch64_v1.zip"
+  )
+}
+if ($HostArch -eq "x86_64") {
+  $x64BuildTier = Get-WindowsX64BuildTier
+  Write-Host "Detected x86_64 CPU tier: $x64BuildTier" -f Cyan
+
+  switch ($x64BuildTier) {
+    "x86_64_v3" {
+      $assetNameCandidates = @(
+        "$($HostOS)-x86_64_v3.zip",
+        "$($HostOS)-amd64_v3.zip",
+        "$($HostOS)-x64_v3.zip",
+        "$($HostOS)-x86_64_v2.zip",
+        "$($HostOS)-amd64_v2.zip",
+        "$($HostOS)-x64_v2.zip",
+        "$($HostOS)-x86_64_v1.zip",
+        "$($HostOS)-amd64_v1.zip",
+        "$($HostOS)-x64_v1.zip"
+      ) + $assetNameCandidates
+    }
+    "x86_64_v2" {
+      $assetNameCandidates = @(
+        "$($HostOS)-x86_64_v2.zip",
+        "$($HostOS)-amd64_v2.zip",
+        "$($HostOS)-x64_v2.zip",
+        "$($HostOS)-x86_64_v1.zip",
+        "$($HostOS)-amd64_v1.zip",
+        "$($HostOS)-x64_v1.zip"
+      ) + $assetNameCandidates
+    }
+    default {
+      $assetNameCandidates = @(
+        "$($HostOS)-x86_64_v1.zip",
+        "$($HostOS)-amd64_v1.zip",
+        "$($HostOS)-x64_v1.zip"
+      ) + $assetNameCandidates
+    }
+  }
+
+  $assetNameCandidates += @(
+    "$($HostOS)-amd64.zip",
+    "$($HostOS)-amd64_v1.zip",
+    "$($HostOS)-x64.zip",
+    "$($HostOS)-x64_v1.zip"
+  )
+}
+$assetNameCandidates = $assetNameCandidates | ForEach-Object { $_.ToLower() } | Select-Object -Unique
+
+$matchedAsset = $null
+foreach ($suffix in $assetNameCandidates) {
+  $candidate = $latestAssets | Where-Object { $_.name.ToLower().EndsWith($suffix) } | Select-Object -First 1
+  if ($null -ne $candidate) {
+    $matchedAsset = $candidate
+    break
+  }
+}
 $downloadUrl = $matchedAsset.browser_download_url
 if ([String]::IsNullOrEmpty($downloadUrl)) {
   Write-Host "Unable to find a valid release URL!" -f Magenta
   Write-Host "Unable to match OS: $HostOS, CPU: $HostArch" -f Magenta
+  Write-Host "Tried assets suffixes: $($assetNameCandidates -join ', ')" -f Magenta
   Write-Host "Please open an issue at: https://github.com/$GitHubRepo/issues" -f Magenta
   Write-Host "Remember to provide your OS version, CPU details and Powershell version." -f Magenta
   Exit 1
