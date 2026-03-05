@@ -25,7 +25,7 @@
   "settingsMemosEnvironmentVariablesDescription": "Variáveis de ambiente para passar ao binário do Memos.<br />O formato é <code>VARIÁVEL=VALOR</code>, separando variáveis por novas linhas.<br />AVISO: variáveis geradas automaticamente como <code>MEMOS_MODE</code> serão ignoradas.",
   "settingsMemosMode": "Modo",
   "settingsMemosModeDemonstration": "Demonstração",
-  "settingsMemosModeDescription": "Banco de dados a ser usado.<br />Importante: esse ajuste foi depreciado na versão v0.26.0 e funcionará em modo de compatibilidade, ignorando a opção `Desenvolvimento`.",
+  "settingsMemosModeDescription": "Database to use.<br />Important: this setting was deprecated in v0.26.0 and will work in compatibility mode, ignoring the `Development` option.",
   "settingsMemosModeDevelopment": "Desenvolvimento",
   "settingsMemosModeProduction": "Produção",
   "settingsMemosWorkingDirectory": "Diretório de trabalho",
