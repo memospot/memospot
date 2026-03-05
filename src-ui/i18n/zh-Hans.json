@@ -25,7 +25,7 @@
   "settingsMemosEnvironmentVariablesDescription": "要传递到Memos二进制的环境变量。<br />格式是 <code>VARIABLE=VALUE</code>, 用换行符分隔变量。<br />警告：将忽略 <code>MEMOS_MODE</code> 等管理变量。",
   "settingsMemosMode": "模式",
   "settingsMemosModeDemonstration": "演示",
-  "settingsMemosModeDescription": "Database to use.<br />Important: this setting was deprecated in v0.26.0 and will work in compatibility mode, ignoring the `Development` option.",
+  "settingsMemosModeDescription": "要使用的数据库。<br />重要：此设置在 v0.26.0中被废弃，并将在兼容模式下工作，忽略`Development` 选项。",
   "settingsMemosModeDevelopment": "开发",
   "settingsMemosModeProduction": "生产",
   "settingsMemosWorkingDirectory": "工作目录",
