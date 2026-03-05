@@ -396,6 +396,10 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
     let memos_data = rtcfg.paths.memos_data.to_string_lossy();
     let yaml = rtcfg.yaml.memos.clone();
     let managed_vars: HashMap<&str, String> = HashMap::from_iter(vec![
+        (
+            "demo",
+            (yaml.mode.as_deref() == Some("demo") || yaml.demo.unwrap_or_default()).to_string(),
+        ),
         ("mode", yaml.mode.unwrap_or_default()),
         ("addr", yaml.addr.unwrap_or_default()),
         ("port", yaml.port.unwrap_or_default().to_string()),

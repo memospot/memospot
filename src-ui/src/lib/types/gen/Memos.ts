@@ -18,6 +18,14 @@ working_dir: string | null,
  */
 data: string | null, 
 /**
+ * Use demo mode with pre-seeded data. This is intended for development and testing purposes,
+ * and should not be used in production, as data is purged on each run.
+ */
+demo: boolean | null, 
+/**
+ * DEPRECATED: `MEMOS_MODE` is now retired starting from v0.26.0.
+ * Database is always in `prod` mode unless `MEMOS_DEMO=true` is set.
+ *
  * Server mode. Each mode uses a different database file.
  *
  * Can be one of:

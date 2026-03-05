@@ -27,6 +27,12 @@ pub struct Memos {
     pub working_dir: Option<String>,
     /// Directory where Memos will store its database and assets.
     pub data: Option<String>,
+    /// Use demo mode with pre-seeded data. This is intended for development and testing purposes,
+    /// and should not be used in production, as data is purged on each run.
+    pub demo: Option<bool>,
+    /// DEPRECATED: `MEMOS_MODE` is now retired starting from v0.26.0.
+    /// Database is always in `prod` mode unless `MEMOS_DEMO=true` is set.
+    ///
     /// Server mode. Each mode uses a different database file.
     ///
     /// Can be one of:
@@ -57,6 +63,7 @@ impl Default for Memos {
             binary_path: None,
             working_dir: None,
             data: None,
+            demo: Some(false),
             mode: Some("prod".to_string()),
             addr: Some("127.0.0.1".to_string()),
             port: Some(5230),

@@ -58,7 +58,7 @@
   "settingsMemos": "Memos",
   "settingsMemosDescription": "Built-in Memos server",
   "settingsMemosMode": "Mode",
-  "settingsMemosModeDescription": "Database to use.",
+  "settingsMemosModeDescription": "Database to use.<br />Important: this setting was deprecated in v0.26.0 and will work in compatibility mode, ignoring the `Development` option.",
   "settingsMemosModeProduction": "Production",
   "settingsMemosModeDevelopment": "Development",
   "settingsMemosModeDemonstration": "Demonstration",

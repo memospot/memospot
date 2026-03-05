@@ -72,9 +72,11 @@ pub fn run() {
 
     #[cfg(debug_assertions)]
     {
+        // ! `MEMOS_MODE` is retired from v0.26.0. Database is always in `prod` mode unless `MEMOS_DEMO=true` is set.
         // Use Memos in demo mode during development,
         // as it's already seeded with some data.
         config.yaml.memos.mode = Some("demo".to_string());
+        config.yaml.memos.demo = Some(true);
         // Use an upper port to use a dedicated WebView cache for development.
         config.yaml.memos.port = Some(config.yaml.memos.port.unwrap_or_default() + 1);
     }

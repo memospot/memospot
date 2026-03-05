@@ -58,7 +58,7 @@
   "settingsMemos": "Memos",
   "settingsMemosDescription": "Servidor Memos integrado",
   "settingsMemosMode": "Modo",
-  "settingsMemosModeDescription": "Banco de dados a ser usado.",
+  "settingsMemosModeDescription": "Banco de dados a ser usado.<br />Importante: esse ajuste foi depreciado na versão v0.26.0 e funcionará em modo de compatibilidade, ignorando a opção `Desenvolvimento`.",
   "settingsMemosModeProduction": "Produção",
   "settingsMemosModeDevelopment": "Desenvolvimento",
   "settingsMemosModeDemonstration": "Demonstração",

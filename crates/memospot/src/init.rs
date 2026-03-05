@@ -143,7 +143,10 @@ pub fn database(rtcfg: &RuntimeConfig) -> PathBuf {
         }
         // Remove demo database in dev/debug mode. Demo database is not handled by
         // migrations and can prevent Memos from starting if the model is outdated.
-        if cfg!(debug_assertions) && rtcfg.yaml.memos.mode.as_deref() == Some("demo") {
+        if cfg!(debug_assertions)
+            && (rtcfg.yaml.memos.demo.unwrap_or(false)
+                || rtcfg.yaml.memos.mode.as_deref() == Some("demo"))
+        {
             match std::fs::remove_file(&file) {
                 Ok(_) => warn!(
                     "Demo database \"{}\" removed.",
