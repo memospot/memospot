@@ -25,7 +25,7 @@
   "settingsMemosEnvironmentVariablesDescription": "Umgebungsvariablen, die an die Memos-Binärdatei übergeben werden sollen.<br />Format ist <code>VARIABLE=VALUE</code> und trennt Variablen durch Zeilenumbrüche.<br />WARNUNG: verwaltete Variablen wie <code>MEMOS_MODE</code> werden ignoriert.",
   "settingsMemosMode": "Modus",
   "settingsMemosModeDemonstration": "Demonstration",
-  "settingsMemosModeDescription": "Database to use.<br />Important: this setting was deprecated in v0.26.0 and will work in compatibility mode, ignoring the `Development` option.",
+  "settingsMemosModeDescription": "Zu verwendende Datenbank.<br />Wichtig: Diese Einstellung wurde in v0.26.0 veraltet und wird im Kompatibilitätsmodus funktionieren und die `Development` Option ignorieren.",
   "settingsMemosModeDevelopment": "Entwicklung",
   "settingsMemosModeProduction": "Produktion",
   "settingsMemosWorkingDirectory": "Arbeitsverzeichnis",
