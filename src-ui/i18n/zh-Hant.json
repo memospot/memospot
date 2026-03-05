@@ -25,7 +25,7 @@
   "settingsMemosEnvironmentVariablesDescription": "要傳遞給 Memos 二進位檔案的環境變數。<br />格式為 <code>VARIABLE=VALUE</code>，以換行符分隔變數。<br />警告：受管理的變數（如 <code>MEMOS_MODE</code>）將被忽略。",
   "settingsMemosMode": "模式",
   "settingsMemosModeDemonstration": "示範環境",
-  "settingsMemosModeDescription": "要使用的資料庫。<br />重要：此設定已在 v0.26.0 中棄用，將以相容模式執行，忽略`開發`選項。",
+  "settingsMemosModeDescription": "Database to use.<br />Important: this setting was deprecated in v0.26.0 and will work in compatibility mode, ignoring the `Development` option.",
   "settingsMemosModeDevelopment": "開發環境",
   "settingsMemosModeProduction": "正式環境",
   "settingsMemosWorkingDirectory": "工作目錄",
