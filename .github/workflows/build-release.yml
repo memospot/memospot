@@ -55,6 +55,7 @@ jobs:
           - { runner: macos-15-intel, rust_target: x86_64-apple-darwin }
           - { runner: ubuntu-24.04, rust_target: x86_64-unknown-linux-gnu }
           - { runner: windows-2022, rust_target: x86_64-pc-windows-msvc }
+          - { runner: windows-2022, rust_target: aarch64-pc-windows-msvc }
 
     runs-on: ${{ matrix.platform.runner }}
     steps:
@@ -95,6 +96,9 @@ jobs:
         uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
+
+      - name: Add Rust target
+        run: rustup target add ${{ matrix.platform.rust_target }}
 
       - name: Setup Cargo cache
         uses: swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5

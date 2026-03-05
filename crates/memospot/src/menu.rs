@@ -18,6 +18,11 @@ use tauri::{
 };
 use tokio::time::{self, Duration, Instant};
 
+const GIT_SHORT_HASH: &str = match option_env!("GIT_SHORT_HASH") {
+    Some(hash) => hash,
+    None => "unknown",
+};
+
 mod accelerator {
     include!(concat!(env!("OUT_DIR"), "/shortcut_accelerators.rs"));
 }
@@ -226,12 +231,13 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .separator()
         .select_all()
         .build()?;
+    let version = handle.package_info().version.clone();
 
     let help_menu = &SubmenuBuilder::new(handle, MainMenu::Help.text())
         .items(&[
             &MenuItemBuilder::with_id(
                 MainMenu::HelpMemospotVersion.id(),
-                format!("Memospot v{}", handle.package_info().version),
+                format!("Memospot v{version}-{GIT_SHORT_HASH}"),
             )
             .enabled(false)
             .build(handle)?,

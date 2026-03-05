@@ -30,6 +30,7 @@ Security: in case of vulnerabilities.
 ### Added
 
 - Complete support for zoom shortcuts (`CmdOrCtrl+=`, `CmdOrCtrl+-`, `CmdOrCtrl+0`, `NumLock+Add`, `NumLock+Subtract`, `NumLock+0`).
+- Support for Windows ARM64.
 
 ### Fixed
 

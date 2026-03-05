@@ -2,7 +2,7 @@ use build_utils::{find_target_dir, find_workspace_root};
 
 #[cfg(unix)]
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
-use std::{env, fs, path::PathBuf};
+use std::{env, fs, path::PathBuf, process::Command};
 
 struct ShortcutBinding {
     /// The name of the shortcut, used for generating accelerator constants.
@@ -175,6 +175,12 @@ fn cleanup_dummy_deps() {
 }
 
 fn main() {
+    if let Ok(output) = Command::new("git").args(["rev-parse", "HEAD"]).output() {
+        let hash = String::from_utf8(output.stdout).unwrap();
+        let short_hash = &hash[..7];
+        println!("cargo:rustc-env=GIT_SHORT_HASH={short_hash}");
+        println!("cargo:rustc-env=GIT_HASH={}", hash);
+    }
     println!(
         "cargo:rustc-env=TARGET_TRIPLE={}",
         std::env::var("TARGET").unwrap_or_default()

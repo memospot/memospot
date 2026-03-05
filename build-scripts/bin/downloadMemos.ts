@@ -551,7 +551,8 @@ async function main() {
 
 if (import.meta.main) {
     // This script can download (with --all) about 52 MB of data for the main supported platforms
-    // (aarch64-apple-darwin, x86_64-apple-darwin, x86_64-pc-windows-msvc and x86_64-unknown-linux-gnu).
+    // (aarch64-apple-darwin, x86_64-apple-darwin, aarch64-pc-windows-msvc,
+    // x86_64-pc-windows-msvc and x86_64-unknown-linux-gnu).
     // It will take around 7 minutes on a slow 1 Mbps connection.
     //
     // The timeout prevents the script from running forever if something goes wrong on the CI.
