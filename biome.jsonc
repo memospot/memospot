@@ -18,6 +18,9 @@
     "rules": {
       // https://biomejs.dev/linter/rules/
       "recommended": true,
+      "a11y": {
+        "useValidLang": "off"
+      },
       "correctness": {
         "noUndeclaredVariables": "error",
         "noUnusedImports": { "level": "error", "fix": "safe" },
