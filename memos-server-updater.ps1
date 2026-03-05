@@ -324,7 +324,7 @@ Write-Host "`nRelease URL: $downloadUrl"
 Write-Host "Release SHA256SUMS: $($sha256Sums)"
 
 Write-Host "`nNote that this script will not check whether you actually need to update the Memos server.
-The latest available version is always downloaded." -f Yellow
+Version $tagName will be downloaded and installed regardless." -f Yellow
 
 Write-Host "`n-> Press any key to continue <-`n" -f Cyan
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
