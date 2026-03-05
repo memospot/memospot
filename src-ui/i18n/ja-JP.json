@@ -25,7 +25,7 @@
   "settingsMemosEnvironmentVariablesDescription": "Memos バイナリに渡す環境変数。<br />\n形式は <code>VARIABLE=VALUE</code> で、変数は改行で区切ります。<br />\n警告: <code>MEMOS_MODE</code> のような管理対象の変数は無視されます。",
   "settingsMemosMode": "モード",
   "settingsMemosModeDemonstration": "デモ",
-  "settingsMemosModeDescription": "Database to use.<br />Important: this setting was deprecated in v0.26.0 and will work in compatibility mode, ignoring the `Development` option.",
+  "settingsMemosModeDescription": "使用するデータベース。<br />重要: この設定は v0.26.0 で廃止され、`Development` オプションを無視して互換モードで動作します。",
   "settingsMemosModeDevelopment": "開発",
   "settingsMemosModeProduction": "Production",
   "settingsMemosWorkingDirectory": "作業ディレクトリ",
