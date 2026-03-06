@@ -5,16 +5,16 @@ on:
   push:
     paths:
       - "**/audit-codeql.yml"
-      - "**/*.{cts,mts,ts,tsx}"
       - "**/bun.lock"
-      - "**/package.json"
+      - "**/*.{ts,svelte}"
   pull_request:
     paths:
       - "**/audit-codeql.yml"
-      - "**/*.{cts,mts,ts,tsx}"
       - "**/bun.lock"
-      - "**/package.json"
-  schedule: [{ cron: "0 9 */15 * *" }] # 9 AM, every 15 days
+      - "**/*.{ts,svelte}"
+
+  schedule:
+    - cron: "0 9 */15 * *" # 9 AM, every 15 days
   workflow_dispatch:
 
 concurrency:
@@ -25,11 +25,16 @@ jobs:
   analyze:
     name: Analyze with CodeQL
     runs-on: ubuntu-slim
-    permissions: { actions: read, contents: read, security-events: write }
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
 
     strategy:
       fail-fast: false
-      matrix: { language: ["javascript-typescript"] }
+      matrix:
+        language:
+          - "javascript-typescript"
 
     steps:
       - name: Checkout repository
@@ -37,7 +42,8 @@ jobs:
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
-        with: { languages: "${{matrix.language}}" }
+        with:
+          languages: "${{matrix.language}}"
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v4

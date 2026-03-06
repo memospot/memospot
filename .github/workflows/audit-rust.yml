@@ -5,12 +5,13 @@ on:
   pull_request:
     paths:
       - "**/audit-rust.yml"
-      - "**/Cargo.{lock,toml}"
+      - "**/Cargo.lock"
   push:
     paths:
       - "**/audit-rust.yml"
-      - "**/Cargo.{lock,toml}"
-  schedule: [{ cron: "0 0 * * *" }]
+      - "**/Cargo.lock"
+  schedule:
+    - cron: "0 0 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -28,8 +29,10 @@ jobs:
 
       - name: "Install cargo-audit"
         uses: taiki-e/install-action@650c5ca14212efbbf3e580844b04bdccf68dac31
-        with: { tool: "cargo-audit@0.22.0" }
+        with:
+          tool: "cargo-audit@0.22.0"
 
       - name: Rust audit
         uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998
-        with: { token: "${{ secrets.GITHUB_TOKEN }}" }
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"

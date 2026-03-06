@@ -44,15 +44,7 @@ jobs:
         with: { toolchain: "${{ env.RUST_TOOLCHAIN }}", components: rustfmt }
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with: { bun-version: latest }
-
-      - name: Cache Bun dependencies
-        uses: actions/cache@v5
-        with:
-          key: bundeps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
-          restore-keys: bundeps-${{ runner.os }}
-          path: ~/.bun
+        uses: ./.github/actions/setup-bun
 
       - name: Install dprint
         uses: jaxxstorm/action-install-gh-release@0591a75036154a375b4fea771cabfbe05e4423f7

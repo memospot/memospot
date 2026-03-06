@@ -4,16 +4,19 @@ on:
   merge_group:
   pull_request:
     paths:
-      - "**/*.{cts,mts,ts,tsx}"
-      - "**/bun.lock"
       - "**/check-typescript.yml"
-      - "**/package.json"
+      - "**/bun.lock"
+      - "**/bunfig.toml"
+      - "**/biome.jsonc"
+      - "**/*.{ts,svelte}"
   push:
     paths:
-      - "**/*.{cts,mts,ts,tsx}"
-      - "**/bun.lock"
       - "**/check-typescript.yml"
-      - "**/package.json"
+      - "**/bun.lock"
+      - "**/bunfig.toml"
+      - "**/biome.jsonc"
+      - "**/*.{ts,svelte}"
+
   workflow_dispatch:
 
 concurrency:
@@ -50,28 +53,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-        # Bun
-      - uses: oven-sh/setup-bun@v2
-        with: { bun-version: latest }
-
-      - # node_modules is not cached on Windows as it breaks subsequent runs.
-        if: ${{ runner.os != 'Windows' }}
-        name: Cache node_modules
-        uses: actions/cache@v5
-        with:
-          key: node_modules-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
-          restore-keys: node_modules-${{ runner.os }}
-          path: |
-            ${{github.workspace}}/node_modules
-            ${{github.workspace}}/**/node_modules
-
-      - name: Cache Bun dependencies
-        uses: actions/cache@v5
-        with:
-          key: bundeps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
-          restore-keys: bundeps-${{ runner.os }}
-          path: ~/.bun/install
-      # /Bun
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
 
       - name: Install dependencies with Bun
         shell: bash
