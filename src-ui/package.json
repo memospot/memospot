@@ -12,7 +12,7 @@
     "test": "vitest --run",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "postinstall": "svelte-kit sync"
+    "postinstall": "bunx --bun svelte-kit sync"
   },
   "license": "MIT",
   "devDependencies": {

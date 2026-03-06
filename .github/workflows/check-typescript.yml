@@ -63,9 +63,9 @@ jobs:
           pushd ./src-ui; bun install; popd
 
       - name: Run Bun tests
-        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
           pushd ./build-scripts; bun test; popd
           pushd ./src-ui; bun test; popd
