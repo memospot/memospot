@@ -30,50 +30,50 @@ dialog-generic-info = Information
 dialog-update-title = Mise à jour disponible
 dialog-update-no-update = Aucune mise à jour disponible.
 dialog-update-message =
-    La version {$version} est disponible en téléchargement.
+    La version { $version } est disponible en téléchargement.
     
     Voulez-vous la télécharger ?
 dialog-update-failed-title = La mise à jour automatique a échoué
 dialog-update-manually-prompt =
-    Échec de la mise à jour automatique vers la version {$version}:
+    Échec de la mise à jour automatique vers la version { $version }:
     
-    {$error}
+    { $error }
     
     Souhaitez-vous mettre à jour manuellement ?
 panic-failed-to-spawn-memos = Échec de l'apparition des mémos
 panic-failed-to-create-data-directory =
     Impossible de créer le répertoire des données!
-    {$dir}
+    { $dir }
 panic-data-directory-is-not-writable =
     Le répertoire des données n'est pas accessible en écriture !
-    {$dir}
+    { $dir }
 panic-unable-to-resolve-custom-data-directory =
     Échec de la résolution du répertoire de données des mémos personnalisés!
-    {$dir}
+    { $dir }
     
     Assurez-vous que le chemin existe en tant que répertoire, ou supprimez le paramètre
     `memos.data` pour utiliser le chemin de données par défaut.
 panic-unable-to-create-backup-directory =
     Impossible de créer le répertoire de sauvegarde!
-    {$dir}
+    { $dir }
 panic-backup-directory-is-a-file =
     Le répertoire de sauvegarde existe en tant que fichier !
-    {$dir}
+    { $dir }
 panic-backup-directory-is-not-writable =
     Le répertoire de sauvegarde n'est pas accessible en écriture !
-    {$dir}
+    { $dir }
 panic-database-file-is-not-writable =
     Le fichier de la base de données n'est pas accessible en écriture !
-    {$file}
+    { $file }
 panic-failed-to-connect-to-database = Impossible de se connecter à la base de données
 panic-failed-to-run-database-migrations =
     Impossible d'exécuter les migrations de la base de données :
-    {$error}
+    { $error }
 panic-failed-to-close-database-connection = Impossible de fermer la connexion à la base de données
 warn-failed-to-backup-database =
     Échec de la sauvegarde de la base de données :
     
-    {$error}
+    { $error }
 prompt-install-webview-title = Erreur WebView
 prompt-install-webview-message =
     Une WebView est *nécessaire* pour que cette application fonctionne sur
@@ -83,22 +83,22 @@ prompt-install-webview-message =
 error-failed-to-install-webview =
     Impossible d'installer WebView :
     
-    {$error}
+    { $error }
     
     Veuillez l'installer manuellement.
 panic-config-unable-to-create = Impossible de créer le fichier de configuration
 panic-config-is-not-a-file =
     Le chemin de configuration fourni est un répertoire.
     Ce doit être un fichier !
-    {$path}
+    { $path }
 panic-config-is-not-writable =
     Le fichier de configuration n'est pas accessible en écriture !
-    {$file}
+    { $file }
 prompt-config-error-title = Erreur de configuration
 prompt-config-error-message =
     Impossible d'analyser le fichier de configuration :
     
-    {$error}
+    { $error }
     
     Réinitialiser le fichier de configuration ?
     (Une sauvegarde sera créée.)
@@ -111,7 +111,7 @@ panic-config-parse-error = Erreur fatale lors de l'analyse du fichier de configu
 error-config-write-error =
     Impossible d'écrire le fichier de configuration :
     
-    {$error}
+    { $error }
 panic-portpicker-error = Impossible de trouver un port libre auquel lier les mémos !
 error-invalid-server-url =
     URL de serveur distant invalide :
@@ -122,8 +122,8 @@ error-invalid-server-url =
 panic-unable-to-find-memos-binary = Impossible de trouver le binaire du serveur Memos !
 panic-log-config-write-error =
     Impossible d'écrire le fichier de configuration du journal :
-    {$file}
+    { $file }
 panic-log-config-reset-error =
     Impossible de réinitialiser le fichier de configuration du journal :
-    {$file}
+    { $file }
     Veuillez le supprimer et redémarrer l'application.
