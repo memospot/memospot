@@ -21,7 +21,7 @@ concurrency:
 jobs:
   audit-rust:
     name: Audit with RustSec
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     permissions: { issues: read, checks: write }
     steps:
       - name: Checkout repository
