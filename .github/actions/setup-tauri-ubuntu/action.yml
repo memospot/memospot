@@ -1,0 +1,42 @@
+name: "Setup Ubuntu for Tauri builds"
+description: "Installs Linux Tauri dependencies with pinned WebKit2GTK 2.48 packages."
+inputs:
+  ubuntu-runner:
+    description: |
+      Ubuntu runner. used by the WebKit2GTK snapshot source.
+
+      Can be:
+        - ubuntu-22.04 (jammy/22.04)
+        - ubuntu-24.04 (noble/24.04)
+    required: false
+    default: "ubuntu-24.04"
+runs:
+  using: "composite"
+  steps:
+    - name: Disable initramfs and man-db update
+      shell: bash
+      continue-on-error: true
+      run: |
+        sudo mkdir -p /etc/initramfs-tools/
+        echo -e 'update_initramfs=no\nbackup_initramfs=no' | sudo tee /etc/initramfs-tools/update-initramfs.conf
+        sudo rm -f /var/lib/man-db/auto-update
+
+    - name: Install pinned WebKit2GTK 2.48 packages
+      shell: bash
+      run: |
+        sudo bash "${{ github.action_path }}/install-webkit2gtk-2.48.sh" "${{ contains(inputs.ubuntu-runner, '22.04') && 'jammy' || 'noble' }}"
+
+    - name: Install platform dependencies
+      uses: awalsh128/cache-apt-pkgs-action@acb598e5ddbc6f68a970c5da0688d2f3a9f04d05
+      with:
+        packages: >-
+          curl
+          file
+          wget
+          patchelf
+          build-essential
+          libayatana-appindicator3-dev
+          libgtk-3-dev
+          librsvg2-dev
+          libssl-dev
+          libxdo-dev

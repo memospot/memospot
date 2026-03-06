@@ -6,12 +6,12 @@ on:
     paths:
       - "**/audit-codeql.yml"
       - "**/bun.lock"
-      - "**/*.{ts,svelte}"
+      - "**/*.{svelte,ts}"
   pull_request:
     paths:
       - "**/audit-codeql.yml"
       - "**/bun.lock"
-      - "**/*.{ts,svelte}"
+      - "**/*.{svelte,ts}"
 
   schedule:
     - cron: "0 9 */15 * *" # 9 AM, every 15 days

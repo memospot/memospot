@@ -6,7 +6,6 @@ on:
   issues:
     types:
       - opened
-  workflow_dispatch:
 
 jobs:
   build:

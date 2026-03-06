@@ -3,19 +3,19 @@ name: Check (formatting)
 on:
   merge_group:
   pull_request:
-    paths-ignore:
-      - "**/gen/schemas/*.json"
-      - "**/*.{icns,ico,png,svg,webp}"
-      - "**/*.{dll,nsi,nsh,wxs,xml}"
-      - "**/*.lock"
-      - "**/justfile"
+    paths:
+      - "**/check-formatting.yml"
+      - "**/*.{css,html,md}"
+      - "**/*.{rs,svelte,ts}"
+      - "**/*.{json,jsonc,toml,yml,yaml}"
+      - "!**/gen/schemas/*.json"
   push:
-    paths-ignore:
-      - "**/gen/schemas/*.json"
-      - "**/*.{icns,ico,png,svg,webp}"
-      - "**/*.{dll,nsi,nsh,wxs,xml}"
-      - "**/*.lock"
-      - "**/justfile"
+    paths:
+      - "**/check-formatting.yml"
+      - "**/*.{css,html,md}"
+      - "**/*.{rs,svelte,ts}"
+      - "**/*.{json,jsonc,toml,yml,yaml}"
+      - "!**/gen/schemas/*.json"
   workflow_dispatch:
 
 concurrency:
@@ -24,7 +24,6 @@ concurrency:
 
 env:
   DPRINT_CACHE_DIR: ${{github.workspace}}/.dprint
-  RUST_TOOLCHAIN: stable
 
 jobs:
   dprint:
@@ -41,7 +40,9 @@ jobs:
 
       - name: Setup rustfmt
         uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
-        with: { toolchain: "${{ env.RUST_TOOLCHAIN }}", components: rustfmt }
+        with:
+          toolchain: stable
+          components: rustfmt
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
@@ -58,6 +59,5 @@ jobs:
         with:
           path: ${{ env.DPRINT_CACHE_DIR }}
           key: cache-dprint-${{ hashFiles('**/.dprint.jsonc','.dprint/plugin-cache-manifest.json') }}
-          restore-keys: cache-dprint-plugins
 
       - run: dprint check

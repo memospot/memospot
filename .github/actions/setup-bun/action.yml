@@ -11,5 +11,5 @@ runs:
       uses: actions/cache@v5
       with:
         key: bun-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/bun.lock') }}
-        restore-keys: bundeps-${{ runner.os }}-${{ runner.arch }}-
+        restore-keys: bun-${{ runner.os }}-${{ runner.arch }}
         path: ~/.bun/install/cache

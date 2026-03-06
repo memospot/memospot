@@ -8,14 +8,14 @@ on:
       - "**/bun.lock"
       - "**/bunfig.toml"
       - "**/biome.jsonc"
-      - "**/*.{ts,svelte}"
+      - "**/*.{svelte,ts}"
   push:
     paths:
       - "**/check-typescript.yml"
       - "**/bun.lock"
       - "**/bunfig.toml"
       - "**/biome.jsonc"
-      - "**/*.{ts,svelte}"
+      - "**/*.{svelte,ts}"
 
   workflow_dispatch:
 
