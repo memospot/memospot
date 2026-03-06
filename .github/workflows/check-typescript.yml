@@ -24,7 +24,7 @@ jobs:
   biome:
     name: TypeScript lint
     continue-on-error: true
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -41,7 +41,7 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - runner: ubuntu-latest
+          - runner: ubuntu-slim
           - runner: macos-15
           - runner: windows-2022
 

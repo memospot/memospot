@@ -24,7 +24,7 @@ concurrency:
 jobs:
   analyze:
     name: Analyze with CodeQL
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions: { actions: read, contents: read, security-events: write }
 
     strategy:

@@ -29,7 +29,7 @@ env:
 jobs:
   dprint:
     name: Check formatting with dprint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: Ensure LF line endings
         run: |
