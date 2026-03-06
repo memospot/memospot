@@ -6,12 +6,18 @@ on:
     paths:
       - "**/audit-codeql.yml"
       - "**/bun.lock"
-      - "**/*.{svelte,ts}"
+      - "**/bunfig.toml"
+      - "**/Cargo.lock"
+      - "**/*.{rs,svelte,ts}"
+      - "**/workflows/*.yml"
   pull_request:
     paths:
       - "**/audit-codeql.yml"
       - "**/bun.lock"
-      - "**/*.{svelte,ts}"
+      - "**/bunfig.toml"
+      - "**/Cargo.lock"
+      - "**/*.{rs,svelte,ts}"
+      - "**/workflows/*.yml"
 
   schedule:
     - cron: "0 9 */15 * *" # 9 AM, every 15 days
@@ -34,7 +40,9 @@ jobs:
       fail-fast: false
       matrix:
         language:
-          - "javascript-typescript"
+          - actions
+          - javascript-typescript
+          - rust
 
     steps:
       - name: Checkout repository
