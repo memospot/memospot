@@ -79,7 +79,7 @@ jobs:
         uses: swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
         with:
           prefix-key: cargo
-          shared-key: ${{ matrix.platform.runner }}-${{ runner.arch }}${{ runner.os == 'Linux' && '-glibc' + env.GLIBC_VERSION || '' }}
+          shared-key: ${{ matrix.platform.runner }}-${{ runner.arch }}${{ runner.os == 'Linux' && format('-glibc{0}', env.GLIBC_VERSION) || '' }}
           key: ${{ matrix.platform.rust_target }}-${{ hashFiles('**/Cargo.lock') }}
       # /Rust
 
