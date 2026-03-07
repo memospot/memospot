@@ -82,7 +82,10 @@ dev-ui: deps-ts
 
 [private]
 download-memos: deps-ts
-    bun run ./build-scripts/bin/downloadMemos.ts
+    #!{{bash}}
+    for i in 1 2 3; do
+        bun run ./build-scripts/bin/downloadMemos.ts && break || sleep 10
+    done
 
 # Tauri hooks
 [private]
