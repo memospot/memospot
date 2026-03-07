@@ -1,1 +1,9 @@
 blank_issues_enabled: false
+contact_links:
+  - name: Documentation and guides
+    url: https://memospot.github.io/
+    about: Setup, troubleshooting, and advanced usage docs.
+
+  - name: Memos community (upstream)
+    url: https://discord.gg/tfPJa4UmAv
+    about: General Memos usage questions and upstream discussions.

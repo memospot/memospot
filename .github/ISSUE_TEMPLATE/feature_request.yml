@@ -1,28 +1,67 @@
-name: Feature Request
-description: Suggest an idea for this project
+name: Feature request
+description: Suggest an improvement for Memospot
+title: "feat: "
 labels: [enhancement]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to suggest an idea!
-  - type: textarea
+        Thanks for sharing an idea.
+
+        Strong requests usually include:
+        - The user problem and why it matters.
+        - How this fits Memospot.
+        - Any alternatives or upstream Memos considerations.
+  - type: checkboxes
+    id: checks
     attributes:
-      label: Is your feature request related to a problem?
-      description: |
-        A clear and concise description of what the problem is.
-      placeholder: |
-        I'm always frustrated when [...]
+      label: Pre-flight checklist
+      options:
+        - label: I searched existing issues and did not find a duplicate request.
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What pain point are you trying to solve?
+      placeholder: I want to ... because ...
     validations:
       required: true
   - type: textarea
+    id: proposal
     attributes:
-      label: Describe the solution you'd like
-      description: |
-        A clear and concise description of what you want to happen.
+      label: Proposed solution
+      description: Describe what you want to happen in Memospot.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Desktop app UX
+        - Local server/runtime
+        - Client mode (remote server)
+        - Installer/packaging
+        - Performance
+        - Security/privacy
+        - Localization/i18n
+        - Developer workflow/CI
+        - Other
     validations:
       required: true
   - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What alternatives or workarounds did you try?
+  - type: textarea
+    id: impact
+    attributes:
+      label: User impact
+      description: Who benefits and how often this is needed.
+  - type: textarea
+    id: extra
     attributes:
       label: Additional context
-      description: Add any other context or screenshots about the feature request.
+      description: Mockups, examples, related links, or upstream Memos issues.

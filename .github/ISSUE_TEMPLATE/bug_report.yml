@@ -1,31 +1,108 @@
-name: Bug Report
-description: Create a report to help us improve
+name: Bug report
+description: Report a Memospot issue
+title: "bug: "
 labels: [bug]
 body:
   - type: markdown
     attributes:
       value: |
-        If you are reporting a new issue, make sure that we do not have any duplicates already open. You can ensure this by searching the issue list for this repository. If there is a duplicate, please close your issue and add a comment to the existing issue instead.
-  - type: textarea
+        Thanks for reporting this.
+
+        Before submitting:
+        - Search existing issues to avoid duplicates.
+        - If the behavior is from upstream Memos itself, add that context so that it can be routed correctly.
+  - type: checkboxes
+    id: checks
     attributes:
-      label: Describe the bug
-      description: |
-        Briefly describe the problem you are having in a few paragraphs.
+      label: Pre-flight checklist
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: I tested with the latest Memospot release.
+          required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: Memospot version
+      description: Include the app version (and commit SHA if using a test build).
+      placeholder: v1.0.0
+    validations:
+      required: true
+  - type: input
+    id: memos-version
+    attributes:
+      label: Bundled Memos version
+      description: If visible in the UI/logs, provide the embedded Memos version.
+      placeholder: v0.25.2
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows (x86_64)
+        - Windows (ARM64)
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Linux (x86_64)
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: bundle
+    attributes:
+      label: Installation package
+      options:
+        - Executable installer (e.g. .exe, .dmg)
+        - System package (e.g. .msi, .deb, .rpm)
+        - AppImage
+        - Archive (e.g. .zip, .tar.gz)
+        - Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Usage mode
+      description: Where the issue happens.
+      options:
+        - Local bundled server mode
+        - Client mode (remote Memos server)
+        - Both
+        - Not sure
     validations:
       required: true
   - type: textarea
+    id: bug-description
+    attributes:
+      label: What happened?
+      description: Clear description of the actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
     attributes:
       label: Steps to reproduce
-      description: |
-        Provide the steps to reproduce the issue.
       placeholder: |
-        1. Go to '...'
-        2. Click on '....'
-        3. See error
+        1. Open Memospot
+        2. ...
+        3. ...
+        4. Observe issue
     validations:
       required: true
   - type: textarea
+    id: logs
+    attributes:
+      label: Logs and diagnostics
+      description: Paste relevant app logs, console output, or stack traces.
+      render: shell
+  - type: textarea
+    id: context
     attributes:
       label: Screenshots or additional context
-      description: |
-        Add screenshots or any other context about the problem.
+      description: Add screenshots, recordings, or anything else useful.
