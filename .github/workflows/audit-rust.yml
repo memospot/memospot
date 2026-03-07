@@ -23,8 +23,9 @@ jobs:
     name: Audit with RustSec
     runs-on: ubuntu-latest
     permissions:
-      issues: read
+      issues: write
       checks: write
+      security-events: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6

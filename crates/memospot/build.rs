@@ -87,7 +87,7 @@ document.addEventListener("keydown", (e) => {{
     let mut accel = String::new();
     for binding in &bindings {
         accel.push_str(&format!(
-            "pub const {}: &str = \"{}\";\n",
+            "#[allow(dead_code)]\npub const {}: &str = \"{}\";\n",
             binding.name, binding.accelerator
         ));
     }
