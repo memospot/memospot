@@ -9,6 +9,7 @@ on:
         description: Memos version to bundle.
         required: false
         type: string
+        default: latest
 
 concurrency:
   cancel-in-progress: true
@@ -68,7 +69,7 @@ jobs:
         with:
           tool: just@1.45.0
 
-      # Rust
+      #> Rust
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
@@ -81,28 +82,31 @@ jobs:
           prefix-key: cargo
           shared-key: ${{ matrix.platform.runner }}-${{ runner.arch }}${{ runner.os == 'Linux' && format('-glibc{0}', env.GLIBC_VERSION) || '' }}
           key: ${{ matrix.platform.rust_target }}-${{ hashFiles('**/Cargo.lock') }}
-      # /Rust
+      #/ Rust
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
 
-      - name: Cache Memos builds
-        uses: actions/cache@v5
-        with:
-          key: memos-${{ matrix.platform.runner }}-${{ matrix.platform.rust_target }}-${{ hashFiles('**/MEMOS_VERSION.txt') }}
-          restore-keys: memos-${{ matrix.platform.runner }}-${{ matrix.platform.rust_target }}
-          path: ./server-dist
-
+      #> Memos
       # Allows to bundle a specific Memos version when running the workflow manually.
       - if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.memos-version != ''  }}
         name: Set desired Memos version to ${{ inputs.memos-version }}
         shell: bash
         run: |
           echo "MEMOS_VERSION=${{ inputs.memos-version }}" >> $GITHUB_ENV
-      # This is ran before building the Tauri app so that the MEMOS_VERSION
+
+      - name: Cache Memos builds
+        uses: actions/cache@v5
+        with:
+          key: memos-${{ matrix.platform.runner }}-${{ matrix.platform.rust_target }}-${{ env.MEMOS_VERSION != 'latest' && env.MEMOS_VERSION || env.CACHE_KEY }}
+          restore-keys: memos-${{ matrix.platform.runner }}-${{ matrix.platform.rust_target }}
+          path: ./server-dist
+
+      # This is run before building the Tauri app so that the MEMOS_VERSION
       # is set by the downloadMemos script if it was not set via workflow inputs.
       - name: Download Memos
         run: just download-memos
+      #/ Memos
 
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@73fb865345c54760d875b94642314f8c0c894afa
