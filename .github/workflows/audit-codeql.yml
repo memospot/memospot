@@ -2,14 +2,6 @@ name: Audit (CodeQL)
 
 on:
   merge_group:
-  push:
-    paths:
-      - "**/audit-codeql.yml"
-      - "**/bun.lock"
-      - "**/bunfig.toml"
-      - "**/Cargo.lock"
-      - "**/*.{rs,svelte,ts}"
-      - "**/workflows/*.yml"
   pull_request:
     paths:
       - "**/audit-codeql.yml"
@@ -18,7 +10,14 @@ on:
       - "**/Cargo.lock"
       - "**/*.{rs,svelte,ts}"
       - "**/workflows/*.yml"
-
+  push:
+    paths:
+      - "**/audit-codeql.yml"
+      - "**/bun.lock"
+      - "**/bunfig.toml"
+      - "**/Cargo.lock"
+      - "**/*.{rs,svelte,ts}"
+      - "**/workflows/*.yml"
   schedule:
     - cron: "0 9 */15 * *" # 9 AM, every 15 days
   workflow_dispatch:
