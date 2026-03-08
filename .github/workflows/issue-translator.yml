@@ -10,6 +10,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-slim
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: usthe/issues-translate-action@b41f55ddc81d7d54bd542a4f289fe28ec081898e
         with:
