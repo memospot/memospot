@@ -10,7 +10,7 @@ let { class: className = undefined, children, ...rest }: Props = $props();
 </script>
 
 <SelectPrimitive.Label
-  class={cn("px-2 py-1.5 text-sm font-semibold", className)}
+  class={cn("px-2 py-1 text-sm font-semibold", className)}
   {...rest}
 >
   {@render children?.()}

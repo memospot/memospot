@@ -28,7 +28,7 @@ const commonProps: Record<string, any> = $derived(restProps);
 <div
   {...commonProps}
   class={cn(
-    "w-full grid sm:grid-flow-row-dense md:grid-flow-col-dense md:grid-cols-2 rounded-xl p-4 border border-opacity-0 hover:border-opacity-100",
+    "w-full grid sm:grid-flow-row-dense md:grid-flow-col-dense md:grid-cols-2 rounded-xl p-3 border border-opacity-0 hover:border-opacity-100",
     className,
     bg,
     disabled && "opacity-50 cursor-not-allowed",
@@ -37,7 +37,7 @@ const commonProps: Record<string, any> = $derived(restProps);
   {#if name || desc}
     <div class="w-full h-full break-words self-center">
       {#if name}
-        <h1 class="font-semibold tracking-tight text-md leading-none text-foreground">
+        <h1 class="font-semibold tracking-tight text-base leading-tight text-foreground">
           {@html name}
         </h1>
       {/if}

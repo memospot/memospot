@@ -30,7 +30,7 @@ const commonProps: Record<string, any> = $derived(restProps);
 <div
   {...commonProps}
   class={cn(
-    "w-full h-full flex flex-col rounded-xl p-5 space-y-4 border border-opacity-0 hover:border-opacity-100",
+    "w-full h-full flex flex-col rounded-xl p-4 space-y-3 border border-opacity-0 hover:border-opacity-100",
     className,
     bg,
   )}
@@ -39,7 +39,7 @@ const commonProps: Record<string, any> = $derived(restProps);
     {#if name || desc}
       <div class="w-full h-full break-words self-center mr-4">
         {#if name}
-          <h1 class="font-semibold tracking-tight text-md leading-none text-foreground">
+          <h1 class="font-semibold tracking-tight text-base leading-tight text-foreground">
             {@html name}
           </h1>
         {/if}
@@ -56,7 +56,7 @@ const commonProps: Record<string, any> = $derived(restProps);
     </div>
   </div>
   {#if children}
-    <div class={cn("w-full space-y-3", !state && "opacity-50 cursor-not-allowed")}>
+    <div class={cn("w-full space-y-2", !state && "opacity-50 cursor-not-allowed")}>
       {@render children()}
     </div>
   {/if}

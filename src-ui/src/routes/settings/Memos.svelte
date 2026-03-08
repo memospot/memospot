@@ -159,7 +159,7 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
 }
 </script>
 
-<div class="space-y-4">
+<div class="space-y-3">
   <div>
     <h3 class="text-lg font-medium flex flex-row">
       {m.settingsMemosDescription()}<a

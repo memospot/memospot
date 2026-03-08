@@ -158,7 +158,7 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
 }
 </script>
 
-<div class="space-y-4 w-full">
+<div class="space-y-3 w-full">
   <div>
     <h3 class="text-lg font-medium">
       {m.settingsViewDescription()}
@@ -210,7 +210,7 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
         <SelectItem value="system">
           {m.settingsViewSystem()} <LightningBolt class="h-[1.2rem] w-[1.2rem] ml-auto" />
         </SelectItem>
-        {#each Object.entries(localeDisplayNames) as [code, displayName]}
+        {#each Object.entries(localeDisplayNames) as [code, displayName] (code)}
           <SelectItem value={code}>
             {displayName}
           </SelectItem>
