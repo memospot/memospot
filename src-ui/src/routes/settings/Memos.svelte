@@ -19,11 +19,19 @@ import { debouncePromise } from "$lib/debounce";
 import { envFromKV, envToKV } from "$lib/environmentVariables";
 import { m } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
+import {
+    aliasesFromLocale,
+    buildSectionActions,
+    type SectionActionsProps
+} from "$lib/settingsUi";
 import { getAppConfig, getDefaultAppConfig, pathExists } from "$lib/tauri";
 import type { Config } from "$lib/types/gen/Config";
 
+let { onActionsChange }: SectionActionsProps = $props();
+
 let initialConfig = $state({}) as Config;
 let currentConfig = $state({}) as Config;
+let isInitialized = $state(false);
 let input = $state({
     mode: "",
     binaryPath: "",
@@ -51,6 +59,7 @@ onMount(async () => {
     initialConfig = JSON.parse(initialJSON);
     currentConfig = jsonpatch.deepClone(initialConfig);
     await setPageToInitialConfig();
+    isInitialized = true;
 });
 
 async function setPageToInitialConfig() {
@@ -82,6 +91,17 @@ async function setPageToDefaultConfig() {
     };
 
     currentConfig.memos = jsonpatch.deepClone(defaultJSON.memos);
+}
+
+function syncCurrentConfigFromInput() {
+    currentConfig.memos.mode = input.mode;
+    currentConfig.memos.binary_path = input.binaryPath;
+    currentConfig.memos.working_dir = input.workingDir;
+    currentConfig.memos.data = input.dataDir;
+    currentConfig.memos.addr = input.bindAddr;
+    currentConfig.memos.port = input.bindPort;
+    currentConfig.memos.env.enabled = input.envVarsEnabled;
+    currentConfig.memos.env.vars = envToKV(input.envVars);
 }
 
 async function setMemosMode(s: Selected<string> | undefined) {
@@ -157,6 +177,31 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
         );
     })();
 }
+
+$effect(() => {
+    if (!currentConfig.memos) return;
+    syncCurrentConfigFromInput();
+});
+
+const hasPendingChanges = $derived(
+    (isInitialized &&
+        (input.mode !== (initialConfig.memos?.mode ?? "prod") ||
+        input.binaryPath !== (initialConfig.memos?.binary_path ?? "") ||
+        input.workingDir !== (initialConfig.memos?.working_dir ?? "") ||
+        input.dataDir !== (initialConfig.memos?.data ?? "") ||
+        input.bindAddr !== (initialConfig.memos?.addr ?? "") ||
+        input.bindPort !== (initialConfig.memos?.port ?? 0) ||
+        input.envVarsEnabled !== (initialConfig.memos?.env?.enabled ?? false) ||
+        input.envVars !==
+            envFromKV((initialConfig.memos?.env?.vars ?? {}) as Record<string, string>)))
+        || false
+);
+
+$effect(() => {
+    onActionsChange?.(
+        buildSectionActions(setPageToDefaultConfig, setPageToInitialConfig, updateSetting, hasPendingChanges)
+    );
+});
 </script>
 
 <div class="space-y-3">
@@ -173,7 +218,12 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
     <p class="text-sm text-muted-foreground">{m.settingsOverview()}</p>
   </div>
 
-  <Setting name={m.settingsMemosMode()} desc={m.settingsMemosModeDescription()}>
+  <Setting
+    name={m.settingsMemosMode()}
+    desc={m.settingsMemosModeDescription()}
+    searchId="memos-mode"
+    searchAliases={aliasesFromLocale(m.settingsMemosModeSearchAliases())}
+  >
     <Select selected={selectedMode} onSelectedChange={setMemosMode}>
       <SelectTrigger class="ml-1 min-w-max md:w-64">
         <SelectValue placeholder={m.settingsMemosMode()} />
@@ -195,6 +245,8 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
   <Setting
     name={m.settingsMemosDataDirectory()}
     desc={m.settingsMemosDataDirectoryDescription()}
+    searchId="memos-data-directory"
+    searchAliases={aliasesFromLocale(m.settingsMemosDataDirectorySearchAliases())}
   >
     <input
       id="dataDirectory"
@@ -209,6 +261,8 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
   <Setting
     name={m.settingsMemosBinaryPath()}
     desc={m.settingsMemosBinaryPathDescription()}
+    searchId="memos-binary-path"
+    searchAliases={aliasesFromLocale(m.settingsMemosBinarySearchAliases())}
   >
     <input
       id="binaryPath"
@@ -223,6 +277,8 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
   <Setting
     name={m.settingsMemosWorkingDirectory()}
     desc={m.settingsMemosWorkingDirectoryDescription()}
+    searchId="memos-working-directory"
+    searchAliases={aliasesFromLocale(m.settingsMemosWorkingDirectorySearchAliases())}
   >
     <input
       id="workingDirectory"
@@ -237,6 +293,8 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
   <Setting
     name={m.settingsMemosBindAddress()}
     desc={m.settingsMemosBindAddressDescription()}
+    searchId="memos-bind-address"
+    searchAliases={aliasesFromLocale(m.settingsMemosBindAddressSearchAliases())}
   >
     <input
       id="bindAddress"
@@ -252,6 +310,8 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
   <Setting
     name={m.settingsMemosBindPort()}
     desc={m.settingsMemosBindPortDescription()}
+    searchId="memos-bind-port"
+    searchAliases={aliasesFromLocale(m.settingsMemosBindPortSearchAliases())}
   >
     <input
       id="bindPort"
@@ -269,6 +329,8 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
   <SettingToggle
     name={m.settingsMemosEnvironmentVariables()}
     desc={m.settingsMemosEnvironmentVariablesDescription()}
+    searchId="memos-env-vars"
+    searchAliases={aliasesFromLocale(m.settingsMemosEnvironmentVariablesSearchAliases())}
     bind:state={input.envVarsEnabled}
     onclick={() => {
       currentConfig.memos.env.enabled = input.envVarsEnabled;
@@ -286,30 +348,4 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
     </textarea>
   </SettingToggle>
 
-  <div class="flex flex-row space-x-1 justify-end">
-    <button
-      tabindex="-1"
-      class="border-box inline-flex items-center justify-center rounded-md bg-secondary text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px]"
-      type="button"
-      onclick={async () => await setPageToDefaultConfig()}
-    >
-      {m.settingsLoadDefaults()}
-    </button>
-    <button
-      tabindex="-1"
-      class="border-box inline-flex items-center justify-center rounded-md bg-secondary text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px]"
-      type="button"
-      onclick={async () => await setPageToInitialConfig()}
-    >
-      {m.settingsReloadCurrent()}
-    </button>
-    <button
-      tabindex="0"
-      class="border-box inline-flex items-center justify-center rounded-md bg-primary text-zinc-50 text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px] [text-shadow:_1px_1px_0_rgb(0_0_0_/_90%)]"
-      type="button"
-      onclick={async () => await updateSetting()}
-    >
-      {m.settingsSave()}
-    </button>
-  </div>
 </div>

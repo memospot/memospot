@@ -28,6 +28,7 @@
     "bits-ui": "0.22.0",
     "clsx": "2.1.1",
     "fast-json-patch": "3.1.1",
+    "fuse.js": "7.1.0",
     "lucide-svelte": "0.469.0",
     "mode-watcher": "1.1.0",
     "postcss": "8.5.8",
@@ -45,5 +46,8 @@
     "vite": "7.3.1",
     "vitest": "4.0.18"
   },
-  "trustedDependencies": ["@biomejs/biome", "esbuild"]
+  "trustedDependencies": [
+    "@biomejs/biome",
+    "esbuild"
+  ]
 }

@@ -11,6 +11,9 @@ export interface Props extends HTMLAttributes<HTMLDivElement> {
     children?: Snippet;
     disabled?: boolean;
     bg?: string;
+    searchId?: string;
+    searchLabel?: string;
+    searchAliases?: string[] | string;
 }
 
 let {
@@ -20,15 +23,33 @@ let {
     children,
     disabled,
     bg = "bg-card",
+    searchId,
+    searchLabel,
+    searchAliases,
     class: className,
     ...restProps
 }: Props = $props();
 
 const commonProps: Record<string, any> = $derived(restProps);
+const normalizedSearchLabel = $derived(
+    (searchLabel ?? name ?? "")
+        .replace(/<[^>]*>/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+);
+const normalizedSearchAliases = $derived(
+    Array.isArray(searchAliases)
+        ? searchAliases.join("|")
+        : (searchAliases ?? "").trim().replace(/\s*\|\s*/g, "|")
+);
 </script>
 
 <div
   {...commonProps}
+  data-setting-row="true"
+  data-setting-id={searchId}
+  data-setting-label={normalizedSearchLabel}
+  data-setting-aliases={normalizedSearchAliases}
   class={cn(
     "w-full h-full flex flex-col rounded-xl p-4 space-y-3 border border-opacity-0 hover:border-opacity-100",
     className,
@@ -37,7 +58,7 @@ const commonProps: Record<string, any> = $derived(restProps);
 >
   <div class="w-full flex flex-row">
     {#if name || desc}
-      <div class="w-full h-full break-words self-center mr-4">
+      <div class="w-full h-full wrap-break-word self-center mr-4">
         {#if name}
           <h1 class="font-semibold tracking-tight text-base leading-tight text-foreground">
             {@html name}

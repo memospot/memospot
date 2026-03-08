@@ -18,10 +18,17 @@ import { Switch } from "$lib/components/ui/switch/index";
 import { debouncePromise } from "$lib/debounce";
 import { type Locale, locales, m, setLocale } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
+import {
+    aliasesFromLocale,
+    buildSectionActions,
+    type SectionActionsProps
+} from "$lib/settingsUi";
 import { getAppConfig, getDefaultAppConfig, setAppLocale } from "$lib/tauri";
 import type { Config } from "$lib/types/gen/Config";
 
 type Theme = "system" | "light" | "dark";
+
+let { onActionsChange }: SectionActionsProps = $props();
 
 let initialConfig = $state({}) as Config;
 let currentConfig = $state({}) as Config;
@@ -156,6 +163,28 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
         window.location.reload();
     }
 }
+
+$effect(() => {
+    if (!currentConfig.memospot?.window) return;
+    currentConfig.memospot.window.resizable = input.resizable;
+    currentConfig.memospot.window.maximized = input.maximized;
+    currentConfig.memospot.window.fullscreen = input.fullscreen;
+    currentConfig.memospot.window.center = input.centered;
+    currentConfig.memospot.window.locale = input.locale;
+    currentConfig.memospot.window.reduce_animation = input.reduce_animation;
+    currentConfig.memospot.window.theme = input.theme;
+});
+
+const hasPendingChanges = $derived(
+    JSON.stringify(currentConfig.memospot?.window ?? {}) !==
+        JSON.stringify(initialConfig.memospot?.window ?? {})
+);
+
+$effect(() => {
+    onActionsChange?.(
+        buildSectionActions(setPageToDefaultConfig, setPageToInitialConfig, updateSetting, hasPendingChanges)
+    );
+});
 </script>
 
 <div class="space-y-3 w-full">
@@ -167,7 +196,12 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
     <p class="text-sm text-muted-foreground">{m.settingsOverview()}</p>
   </div>
 
-  <Setting name={m.settingsViewTheme()} desc={m.settingsViewThemeDescription()}>
+  <Setting
+    name={m.settingsViewTheme()}
+    desc={m.settingsViewThemeDescription()}
+    searchId="view-theme"
+    searchAliases={aliasesFromLocale(m.settingsViewThemeSearchAliases())}
+  >
     <Select selected={selectedTheme} onSelectedChange={updateTheme}>
       <SelectTrigger class="ml-1 w-52">
         <SelectValue placeholder={m.settingsViewTheme()} />
@@ -189,6 +223,8 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
   <Setting
     name={m.settingsViewReduceAnimation()}
     desc={m.settingsViewReduceAnimationDescription()}
+    searchId="view-reduce-animation"
+    searchAliases={aliasesFromLocale(m.settingsViewReduceAnimationSearchAliases())}
   >
     <Switch
       bind:checked={input.reduce_animation}
@@ -201,6 +237,8 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
   <Setting
     name={m.settingsViewLocale()}
     desc={m.settingsViewLocaleDescription()}
+    searchId="view-locale"
+    searchAliases={aliasesFromLocale(m.settingsViewLocaleSearchAliases())}
   >
     <Select selected={selectedLocale} onSelectedChange={updateLocale}>
       <SelectTrigger class="ml-2 w-64">
@@ -222,6 +260,8 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
   <Setting
     name={m.settingsViewResizable()}
     desc={m.settingsViewResizableDescription()}
+    searchId="view-resizable"
+    searchAliases={aliasesFromLocale(m.settingsViewResizableSearchAliases())}
   >
     <Switch
       bind:checked={input.resizable}
@@ -234,6 +274,8 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
   <Setting
     name={m.settingsViewCentered()}
     desc={m.settingsViewCenteredDescription()}
+    searchId="view-centered"
+    searchAliases={aliasesFromLocale(m.settingsViewCenteredSearchAliases())}
   >
     <Switch
       bind:checked={input.centered}
@@ -246,6 +288,8 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
   <Setting
     name={m.settingsViewMaximized()}
     desc={m.settingsViewMaximizedDescription()}
+    searchId="view-maximized"
+    searchAliases={aliasesFromLocale(m.settingsViewMaximizedSearchAliases())}
   >
     <Switch
       bind:checked={input.maximized}
@@ -258,6 +302,8 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
   <Setting
     name={m.settingsViewFullscreen()}
     desc={m.settingsViewFullscreenDescription()}
+    searchId="view-fullscreen"
+    searchAliases={aliasesFromLocale(m.settingsViewFullscreenSearchAliases())}
   >
     <Switch
       bind:checked={input.fullscreen}
@@ -267,27 +313,4 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
     />
   </Setting>
 
-  <div class="flex flex-row space-x-1 justify-end">
-    <button
-      class="border-box inline-flex items-center justify-center rounded-md bg-secondary text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px]"
-      type="button"
-      onclick={async () => await setPageToDefaultConfig()}
-    >
-      {m.settingsLoadDefaults()}
-    </button>
-    <button
-      class="border-box inline-flex items-center justify-center rounded-md bg-secondary text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px]"
-      type="button"
-      onclick={async () => await setPageToInitialConfig()}
-    >
-      {m.settingsReloadCurrent()}
-    </button>
-    <button
-      class="border-box inline-flex items-center justify-center rounded-md bg-primary text-zinc-50 text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px] [text-shadow:_1px_1px_0_rgb(0_0_0_/_90%)]"
-      type="button"
-      onclick={async () => await updateSetting()}
-    >
-      {m.settingsSave()}
-    </button>
-  </div>
 </div>

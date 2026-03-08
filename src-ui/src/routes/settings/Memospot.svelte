@@ -8,8 +8,15 @@ import { debouncePromise } from "$lib/debounce";
 import { envFromKV, envToKV } from "$lib/environmentVariables";
 import { m } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
+import {
+    aliasesFromLocale,
+    buildSectionActions,
+    type SectionActionsProps
+} from "$lib/settingsUi";
 import { getAppConfig, getDefaultAppConfig, pingMemos } from "$lib/tauri";
 import type { Config } from "$lib/types/gen/Config";
+
+let { onActionsChange }: SectionActionsProps = $props();
 
 let initialConfig = $state({}) as Config;
 let currentConfig = $state({}) as Config;
@@ -66,6 +73,19 @@ async function setPageToDefaultConfig() {
     };
 
     currentConfig.memospot = jsonpatch.deepClone(defaultJSON.memospot);
+}
+
+function syncCurrentConfigFromInput() {
+    currentConfig.memospot.remote.enabled = input.remoteEnabled;
+    currentConfig.memospot.remote.url = input.remoteURL;
+    currentConfig.memospot.remote.user_agent = input.remoteUserAgent;
+    currentConfig.memospot.updater.enabled = input.updaterEnabled;
+    currentConfig.memospot.updater.check_interval = input.updaterCheckInterval;
+    currentConfig.memospot.migrations.enabled = input.migrationsEnabled;
+    currentConfig.memospot.backups.enabled = input.backupsEnabled;
+    currentConfig.memospot.log.enabled = input.loggingEnabled;
+    currentConfig.memospot.env.enabled = input.envVarsEnabled;
+    currentConfig.memospot.env.vars = envToKV(input.envVars);
 }
 
 async function updateEnvVars(_: Event) {
@@ -132,6 +152,31 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
         );
     })();
 }
+
+$effect(() => {
+    if (!currentConfig.memospot) return;
+    syncCurrentConfigFromInput();
+});
+
+const hasPendingChanges = $derived(
+    input.remoteEnabled !== (initialConfig.memospot?.remote?.enabled ?? false) ||
+        input.remoteURL !== (initialConfig.memospot?.remote?.url ?? "") ||
+        input.remoteUserAgent !== (initialConfig.memospot?.remote?.user_agent ?? "") ||
+        input.updaterEnabled !== (initialConfig.memospot?.updater?.enabled ?? false) ||
+        input.updaterCheckInterval !== (initialConfig.memospot?.updater?.check_interval ?? "") ||
+        input.migrationsEnabled !== (initialConfig.memospot?.migrations?.enabled ?? false) ||
+        input.backupsEnabled !== (initialConfig.memospot?.backups?.enabled ?? false) ||
+        input.loggingEnabled !== (initialConfig.memospot?.log?.enabled ?? false) ||
+        input.envVarsEnabled !== (initialConfig.memospot?.env?.enabled ?? false) ||
+        input.envVars !==
+            envFromKV((initialConfig.memospot?.env?.vars ?? {}) as Record<string, string>)
+);
+
+$effect(() => {
+    onActionsChange?.(
+        buildSectionActions(setPageToDefaultConfig, setPageToInitialConfig, updateSetting, hasPendingChanges)
+    );
+});
 </script>
 
 <div class="space-y-3">
@@ -146,6 +191,8 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
   <SettingToggle
     name={m.settingsMemospotRemoteServer()}
     desc={m.settingsMemospotRemoteServerDescription()}
+    searchId="memospot-remote-server"
+    searchAliases={aliasesFromLocale(m.settingsMemospotRemoteServerSearchAliases())}
     bind:state={input.remoteEnabled}
     onclick={() => {
       currentConfig.memospot.remote.enabled = input.remoteEnabled;
@@ -154,6 +201,8 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
     <Setting
       name={m.settingsMemospotRemoteServerURL()}
       desc={m.settingsMemospotRemoteServerURLDescription()}
+      searchId="memospot-remote-url"
+      searchAliases={aliasesFromLocale(m.settingsMemospotRemoteServerURLSearchAliases())}
     >
       <input
         id="url"
@@ -169,6 +218,8 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
     <Setting
       name={m.settingsMemospotUserAgent()}
       desc={m.settingsMemospotUserAgentDescription()}
+      searchId="memospot-user-agent"
+      searchAliases={aliasesFromLocale(m.settingsMemospotUserAgentSearchAliases())}
     >
       <input
         id="userAgent"
@@ -186,6 +237,8 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
   <SettingToggle
     name={m.settingsMemospotUpdater()}
     desc={m.settingsMemospotUpdaterDescription()}
+    searchId="memospot-updater"
+    searchAliases={aliasesFromLocale(m.settingsMemospotUpdaterSearchAliases())}
     bind:state={input.updaterEnabled}
     onclick={() => {
       currentConfig.memospot.updater.enabled = input.updaterEnabled;
@@ -194,6 +247,8 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
     <Setting
       name={m.settingsMemospotUpdaterInterval()}
       desc={m.settingsMemospotUpdaterIntervalDescription()}
+      searchId="memospot-updater-interval"
+      searchAliases={aliasesFromLocale(m.settingsMemospotUpdaterIntervalSearchAliases())}
     >
       <input
         id="updaterCheckInterval"
@@ -211,6 +266,8 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
   <Setting
     name={m.settingsMemospotMigrations()}
     desc={m.settingsMemospotMigrationsDescription()}
+    searchId="memospot-migrations"
+    searchAliases={aliasesFromLocale(m.settingsMemospotMigrationsSearchAliases())}
   >
     <Switch
       bind:checked={input.migrationsEnabled}
@@ -223,6 +280,8 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
   <Setting
     name={m.settingsMemospotBackups()}
     desc={m.settingsMemospotBackupsDescription()}
+    searchId="memospot-backups"
+    searchAliases={aliasesFromLocale(m.settingsMemospotBackupsSearchAliases())}
   >
     <Switch
       bind:checked={input.backupsEnabled}
@@ -235,6 +294,8 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
   <Setting
     name={m.settingsMemospotLogging()}
     desc={m.settingsMemospotLoggingDescription()}
+    searchId="memospot-logging"
+    searchAliases={aliasesFromLocale(m.settingsMemospotLoggingSearchAliases())}
   >
     <Switch
       bind:checked={input.loggingEnabled}
@@ -247,6 +308,8 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
   <SettingToggle
     name={m.settingsMemospotEnvironmentVariables()}
     desc={m.settingsMemospotEnvironmentVariablesDescription()}
+    searchId="memospot-env-vars"
+    searchAliases={aliasesFromLocale(m.settingsMemospotEnvironmentVariablesSearchAliases())}
     bind:state={input.envVarsEnabled}
     onclick={() => {
       currentConfig.memospot.env.enabled = input.envVarsEnabled;
@@ -264,30 +327,4 @@ async function updateSetting(updateFn?: () => void): Promise<boolean> {
     </textarea>
   </SettingToggle>
 
-  <div class="flex flex-row space-x-1 justify-end">
-    <button
-      tabindex="-1"
-      class="border-box inline-flex items-center justify-center rounded-md bg-secondary text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px]"
-      type="button"
-      onclick={async () => await setPageToDefaultConfig()}
-    >
-      {m.settingsLoadDefaults()}
-    </button>
-    <button
-      tabindex="-1"
-      class="border-box inline-flex items-center justify-center rounded-md bg-secondary text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px]"
-      type="button"
-      onclick={async () => await setPageToInitialConfig()}
-    >
-      {m.settingsReloadCurrent()}
-    </button>
-    <button
-      tabindex="0"
-      class="border-box inline-flex items-center justify-center rounded-md bg-primary text-zinc-50 text-base px-4 py-2 h-10 cursor-pointer hover:opacity-80 hover:translate-y-[-1px] [text-shadow:_1px_1px_0_rgb(0_0_0_/_90%)]"
-      type="button"
-      onclick={async () => await updateSetting()}
-    >
-      {m.settingsSave()}
-    </button>
-  </div>
 </div>
