@@ -19,6 +19,9 @@ concurrency:
   cancel-in-progress: true
   group: ${{ github.workflow }}-${{ github.ref }}
 
+permissions:
+  contents: read
+
 env:
   CACHE_KEY: NOT_SET
   CARGO_INCREMENTAL: 1
