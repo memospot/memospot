@@ -25,7 +25,6 @@ jobs:
     permissions:
       issues: write
       checks: write
-      security-events: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -33,9 +32,23 @@ jobs:
       - name: "Install cargo-audit"
         uses: taiki-e/install-action@4a136ceac97fe29b942ff3b6c749a46c7950d853
         with:
-          tool: "cargo-audit@0.22.0"
+          tool: "cargo-audit@0.22.1"
 
       - name: Rust audit
         uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
+          # Unmaintained:
+          #   - fxhash
+          #   - unic-char-range
+          #   - unic-common
+          #   - unic-char-property
+          #   -	unic-ucd-version
+          #   - unic-ucd-ident
+          ignore: >-
+            RUSTSEC-2025-0057,
+            RUSTSEC-2025-0075,
+            RUSTSEC-2025-0080,
+            RUSTSEC-2025-0081,
+            RUSTSEC-2025-0098,
+            RUSTSEC-2025-0100
