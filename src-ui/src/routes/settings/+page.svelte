@@ -40,6 +40,41 @@ let highlightTimer: ReturnType<typeof setTimeout> | undefined;
 let hasPreloadedSearchEntries = $state(false);
 let searchInputElement: HTMLInputElement | undefined = $state(undefined);
 
+const PREFERRED_FOCUS_SELECTORS = [
+    "input[type='text']:not([disabled]):not([readonly])",
+    "input[type='search']:not([disabled]):not([readonly])",
+    "input[type='url']:not([disabled]):not([readonly])",
+    "input[type='email']:not([disabled]):not([readonly])",
+    "input[type='tel']:not([disabled]):not([readonly])",
+    "input[type='password']:not([disabled]):not([readonly])",
+    "input:not([type]):not([disabled]):not([readonly])",
+    "textarea:not([disabled]):not([readonly])",
+    "select:not([disabled])",
+    "[contenteditable='true']",
+    "button:not([disabled])",
+    "input:not([type='hidden']):not([disabled])",
+    "[tabindex]:not([tabindex='-1'])"
+];
+
+function getPreferredFocusTarget(container: HTMLElement): HTMLElement | null {
+    for (const selector of PREFERRED_FOCUS_SELECTORS) {
+        const candidate = container.querySelector<HTMLElement>(selector);
+        if (candidate) return candidate;
+    }
+    return null;
+}
+
+function findSettingRowById(settingId: string): HTMLElement | null {
+    if (!contentPane) return null;
+    const rows = contentPane.querySelectorAll<HTMLElement>("[data-setting-row='true']");
+    for (const row of rows) {
+        if ((row.dataset.settingId ?? "") === settingId) {
+            return row;
+        }
+    }
+    return null;
+}
+
 const allSearchEntries = $derived(Object.values(sectionSearchEntries).flat());
 
 const fuzzyResults = $derived.by(() => {
@@ -99,9 +134,10 @@ async function animateSectionTransition() {
     const mainSelector = document.querySelector("main");
 
     mainSelector?.classList.add(sectionAnimation);
-    await new Promise(() => {
+    await new Promise<void>((resolve) => {
         setTimeout(() => {
             mainSelector?.classList.remove(sectionAnimation);
+            resolve();
         }, 800);
     });
 }
@@ -152,13 +188,52 @@ function collectSearchEntriesForSection(sectionId: string) {
 }
 
 async function navigateToSearchResult(entry: SettingSearchEntry) {
-    await updateSectionWithOptions(entry.sectionId, { scrollTop: false });
+    await updateSectionWithOptions(entry.sectionId, { scrollTop: false, animate: false });
     await tick();
-    const selector = `[data-setting-id='${entry.id}']`;
-    const target = contentPane?.querySelector<HTMLElement>(selector);
+
+    let target = findSettingRowById(entry.id);
+    if (!target) {
+        for (let attempt = 0; attempt < 6 && !target; attempt += 1) {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            await tick();
+            target = findSettingRowById(entry.id);
+        }
+    }
     if (!target) return;
 
-    target.scrollIntoView({ block: "center", behavior: reduceAnimation ? "auto" : "smooth" });
+    if (contentPane) {
+        const paneRect = contentPane.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        const offsetWithinPane = targetRect.top - paneRect.top;
+        const centeredTop =
+            contentPane.scrollTop +
+            offsetWithinPane -
+            (contentPane.clientHeight / 2 - targetRect.height / 2);
+
+        contentPane.scrollTo({
+            top: Math.max(0, centeredTop),
+            behavior: reduceAnimation ? "auto" : "smooth"
+        });
+    } else {
+        target.scrollIntoView({ block: "center", behavior: reduceAnimation ? "auto" : "smooth" });
+    }
+
+    const focusTarget = getPreferredFocusTarget(target);
+    if (focusTarget) {
+        focusTarget.focus({ preventScroll: true });
+        if (focusTarget instanceof HTMLInputElement) {
+            const isTextualInput =
+                focusTarget.type === "text" ||
+                focusTarget.type === "search" ||
+                focusTarget.type === "url" ||
+                focusTarget.type === "tel" ||
+                focusTarget.type === "password";
+            if (isTextualInput) {
+                focusTarget.select();
+            }
+        }
+    }
+
     if (highlightedElement) {
         highlightedElement.classList.remove("settings-search-highlight");
     }
@@ -436,19 +511,21 @@ $effect(() => {
 />
 
 <style>
-.settings-search-highlight {
-    animation: settings-search-highlight 1.4s ease-out;
-    outline: 2px solid hsl(var(--primary));
-    outline-offset: 2px;
+:global(.settings-search-highlight) {
+    border-color: hsl(var(--primary)) !important;
+    animation: settings-search-highlight 1s ease-out;
 }
 
 @keyframes settings-search-highlight {
     0% {
-        background-color: hsl(var(--primary) / 0.2);
+        box-shadow:
+            0 0 0 1px hsl(var(--primary) / 0.85),
+            0 0 0 4px hsl(var(--primary) / 0.35),
+            0 0 18px hsl(var(--primary) / 0.5);
     }
 
     100% {
-        background-color: transparent;
+        box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
     }
 }
 </style>
