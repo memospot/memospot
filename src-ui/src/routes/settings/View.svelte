@@ -200,7 +200,7 @@ $effect(() => {
     name={m.settingsViewTheme()}
     desc={m.settingsViewThemeDescription()}
     searchId="view-theme"
-    searchAliases={aliasesFromLocale(m.settingsViewThemeSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsViewThemeSearchAliases)}
   >
     <Select selected={selectedTheme} onSelectedChange={updateTheme}>
       <SelectTrigger class="ml-1 w-52">
@@ -224,7 +224,7 @@ $effect(() => {
     name={m.settingsViewReduceAnimation()}
     desc={m.settingsViewReduceAnimationDescription()}
     searchId="view-reduce-animation"
-    searchAliases={aliasesFromLocale(m.settingsViewReduceAnimationSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsViewReduceAnimationSearchAliases)}
   >
     <Switch
       bind:checked={input.reduce_animation}
@@ -238,7 +238,7 @@ $effect(() => {
     name={m.settingsViewLocale()}
     desc={m.settingsViewLocaleDescription()}
     searchId="view-locale"
-    searchAliases={aliasesFromLocale(m.settingsViewLocaleSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsViewLocaleSearchAliases)}
   >
     <Select selected={selectedLocale} onSelectedChange={updateLocale}>
       <SelectTrigger class="ml-2 w-64">
@@ -261,7 +261,7 @@ $effect(() => {
     name={m.settingsViewResizable()}
     desc={m.settingsViewResizableDescription()}
     searchId="view-resizable"
-    searchAliases={aliasesFromLocale(m.settingsViewResizableSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsViewResizableSearchAliases)}
   >
     <Switch
       bind:checked={input.resizable}
@@ -275,7 +275,7 @@ $effect(() => {
     name={m.settingsViewCentered()}
     desc={m.settingsViewCenteredDescription()}
     searchId="view-centered"
-    searchAliases={aliasesFromLocale(m.settingsViewCenteredSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsViewCenteredSearchAliases)}
   >
     <Switch
       bind:checked={input.centered}
@@ -289,7 +289,7 @@ $effect(() => {
     name={m.settingsViewMaximized()}
     desc={m.settingsViewMaximizedDescription()}
     searchId="view-maximized"
-    searchAliases={aliasesFromLocale(m.settingsViewMaximizedSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsViewMaximizedSearchAliases)}
   >
     <Switch
       bind:checked={input.maximized}
@@ -303,7 +303,7 @@ $effect(() => {
     name={m.settingsViewFullscreen()}
     desc={m.settingsViewFullscreenDescription()}
     searchId="view-fullscreen"
-    searchAliases={aliasesFromLocale(m.settingsViewFullscreenSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsViewFullscreenSearchAliases)}
   >
     <Switch
       bind:checked={input.fullscreen}

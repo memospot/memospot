@@ -192,7 +192,7 @@ $effect(() => {
     name={m.settingsMemospotRemoteServer()}
     desc={m.settingsMemospotRemoteServerDescription()}
     searchId="memospot-remote-server"
-    searchAliases={aliasesFromLocale(m.settingsMemospotRemoteServerSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsMemospotRemoteServerSearchAliases)}
     bind:state={input.remoteEnabled}
     onclick={() => {
       currentConfig.memospot.remote.enabled = input.remoteEnabled;
@@ -202,7 +202,7 @@ $effect(() => {
       name={m.settingsMemospotRemoteServerURL()}
       desc={m.settingsMemospotRemoteServerURLDescription()}
       searchId="memospot-remote-url"
-      searchAliases={aliasesFromLocale(m.settingsMemospotRemoteServerURLSearchAliases())}
+      searchAliases={aliasesFromLocale(m.settingsMemospotRemoteServerURLSearchAliases)}
     >
       <input
         id="url"
@@ -219,7 +219,7 @@ $effect(() => {
       name={m.settingsMemospotUserAgent()}
       desc={m.settingsMemospotUserAgentDescription()}
       searchId="memospot-user-agent"
-      searchAliases={aliasesFromLocale(m.settingsMemospotUserAgentSearchAliases())}
+      searchAliases={aliasesFromLocale(m.settingsMemospotUserAgentSearchAliases)}
     >
       <input
         id="userAgent"
@@ -238,7 +238,7 @@ $effect(() => {
     name={m.settingsMemospotUpdater()}
     desc={m.settingsMemospotUpdaterDescription()}
     searchId="memospot-updater"
-    searchAliases={aliasesFromLocale(m.settingsMemospotUpdaterSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsMemospotUpdaterSearchAliases)}
     bind:state={input.updaterEnabled}
     onclick={() => {
       currentConfig.memospot.updater.enabled = input.updaterEnabled;
@@ -248,7 +248,7 @@ $effect(() => {
       name={m.settingsMemospotUpdaterInterval()}
       desc={m.settingsMemospotUpdaterIntervalDescription()}
       searchId="memospot-updater-interval"
-      searchAliases={aliasesFromLocale(m.settingsMemospotUpdaterIntervalSearchAliases())}
+      searchAliases={aliasesFromLocale(m.settingsMemospotUpdaterIntervalSearchAliases)}
     >
       <input
         id="updaterCheckInterval"
@@ -267,7 +267,7 @@ $effect(() => {
     name={m.settingsMemospotMigrations()}
     desc={m.settingsMemospotMigrationsDescription()}
     searchId="memospot-migrations"
-    searchAliases={aliasesFromLocale(m.settingsMemospotMigrationsSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsMemospotMigrationsSearchAliases)}
   >
     <Switch
       bind:checked={input.migrationsEnabled}
@@ -281,7 +281,7 @@ $effect(() => {
     name={m.settingsMemospotBackups()}
     desc={m.settingsMemospotBackupsDescription()}
     searchId="memospot-backups"
-    searchAliases={aliasesFromLocale(m.settingsMemospotBackupsSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsMemospotBackupsSearchAliases)}
   >
     <Switch
       bind:checked={input.backupsEnabled}
@@ -295,7 +295,7 @@ $effect(() => {
     name={m.settingsMemospotLogging()}
     desc={m.settingsMemospotLoggingDescription()}
     searchId="memospot-logging"
-    searchAliases={aliasesFromLocale(m.settingsMemospotLoggingSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsMemospotLoggingSearchAliases)}
   >
     <Switch
       bind:checked={input.loggingEnabled}
@@ -309,7 +309,7 @@ $effect(() => {
     name={m.settingsMemospotEnvironmentVariables()}
     desc={m.settingsMemospotEnvironmentVariablesDescription()}
     searchId="memospot-env-vars"
-    searchAliases={aliasesFromLocale(m.settingsMemospotEnvironmentVariablesSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsMemospotEnvironmentVariablesSearchAliases)}
     bind:state={input.envVarsEnabled}
     onclick={() => {
       currentConfig.memospot.env.enabled = input.envVarsEnabled;

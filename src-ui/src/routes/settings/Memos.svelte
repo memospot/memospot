@@ -222,7 +222,7 @@ $effect(() => {
     name={m.settingsMemosMode()}
     desc={m.settingsMemosModeDescription()}
     searchId="memos-mode"
-    searchAliases={aliasesFromLocale(m.settingsMemosModeSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsMemosModeSearchAliases)}
   >
     <Select selected={selectedMode} onSelectedChange={setMemosMode}>
       <SelectTrigger class="ml-1 min-w-max md:w-64">
@@ -246,7 +246,7 @@ $effect(() => {
     name={m.settingsMemosDataDirectory()}
     desc={m.settingsMemosDataDirectoryDescription()}
     searchId="memos-data-directory"
-    searchAliases={aliasesFromLocale(m.settingsMemosDataDirectorySearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsMemosDataDirectorySearchAliases)}
   >
     <input
       id="dataDirectory"
@@ -262,7 +262,7 @@ $effect(() => {
     name={m.settingsMemosBinaryPath()}
     desc={m.settingsMemosBinaryPathDescription()}
     searchId="memos-binary-path"
-    searchAliases={aliasesFromLocale(m.settingsMemosBinarySearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsMemosBinarySearchAliases)}
   >
     <input
       id="binaryPath"
@@ -278,7 +278,7 @@ $effect(() => {
     name={m.settingsMemosWorkingDirectory()}
     desc={m.settingsMemosWorkingDirectoryDescription()}
     searchId="memos-working-directory"
-    searchAliases={aliasesFromLocale(m.settingsMemosWorkingDirectorySearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsMemosWorkingDirectorySearchAliases)}
   >
     <input
       id="workingDirectory"
@@ -294,7 +294,7 @@ $effect(() => {
     name={m.settingsMemosBindAddress()}
     desc={m.settingsMemosBindAddressDescription()}
     searchId="memos-bind-address"
-    searchAliases={aliasesFromLocale(m.settingsMemosBindAddressSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsMemosBindAddressSearchAliases)}
   >
     <input
       id="bindAddress"
@@ -311,7 +311,7 @@ $effect(() => {
     name={m.settingsMemosBindPort()}
     desc={m.settingsMemosBindPortDescription()}
     searchId="memos-bind-port"
-    searchAliases={aliasesFromLocale(m.settingsMemosBindPortSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsMemosBindPortSearchAliases)}
   >
     <input
       id="bindPort"
@@ -330,7 +330,7 @@ $effect(() => {
     name={m.settingsMemosEnvironmentVariables()}
     desc={m.settingsMemosEnvironmentVariablesDescription()}
     searchId="memos-env-vars"
-    searchAliases={aliasesFromLocale(m.settingsMemosEnvironmentVariablesSearchAliases())}
+    searchAliases={aliasesFromLocale(m.settingsMemosEnvironmentVariablesSearchAliases)}
     bind:state={input.envVarsEnabled}
     onclick={() => {
       currentConfig.memos.env.enabled = input.envVarsEnabled;

@@ -11,6 +11,8 @@ export type SectionActionsProps = {
     onActionsChange?: OnSectionActionsChange;
 };
 
+type AliasMessage = (inputs?: Record<string, never>, options?: { locale?: string }) => string;
+
 export function buildSectionActions(
     loadDefaults: SectionActions["loadDefaults"],
     reloadCurrent: SectionActions["reloadCurrent"],
@@ -25,9 +27,16 @@ export function buildSectionActions(
     };
 }
 
-export function aliasesFromLocale(value: string): string[] {
+function parseAliases(value: string): string[] {
     return value
         .split(",")
         .map((entry) => entry.trim())
         .filter((entry) => entry.length > 0);
+}
+
+export function aliasesFromLocale(message: AliasMessage): string[] {
+    const currentAliases = parseAliases(message());
+    const englishAliases = parseAliases(message({}, { locale: "en" }));
+
+    return Array.from(new Set([...currentAliases, ...englishAliases]));
 }
