@@ -20,8 +20,8 @@ import { envFromKV, envToKV } from "$lib/environmentVariables";
 import { m } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
 import {
-    keywordsFromLocale,
     buildSectionActions,
+    keywordsFromLocale,
     type SectionActionsProps
 } from "$lib/settingsUi";
 import { getAppConfig, getDefaultAppConfig, pathExists } from "$lib/tauri";

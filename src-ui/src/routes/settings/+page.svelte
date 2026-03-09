@@ -8,7 +8,6 @@ import { Toaster } from "$lib/components/ui/sonner";
 import { m } from "$lib/i18n";
 import { collectSettingsEntries, type SettingSearchEntry } from "$lib/settingsSearch";
 import type { SectionActions } from "$lib/settingsUi";
-import { cn } from "$lib/utils";
 import Memos from "./Memos.svelte";
 import Memospot from "./Memospot.svelte";
 import type { Section } from "./Navbar.svelte";
@@ -225,12 +224,9 @@ async function navigateToSearchResult(entry: SettingSearchEntry) {
     if (focusTarget) {
         focusTarget.focus({ preventScroll: true });
         if (focusTarget instanceof HTMLInputElement) {
-            const isTextualInput =
-                focusTarget.type === "text" ||
-                focusTarget.type === "search" ||
-                focusTarget.type === "url" ||
-                focusTarget.type === "tel" ||
-                focusTarget.type === "password";
+            const isTextualInput = ["text", "search", "url", "tel", "password"].includes(
+                focusTarget.type
+            );
             if (isTextualInput) {
                 focusTarget.select();
             }
@@ -344,10 +340,10 @@ $effect(() => {
 </script>
 
 <div
-  class={cn(
-    "container p-4 min-w-screen",
-    reduceAnimation ? "" : "motion-preset-fade",
-  )}
+  class={{
+    "container p-4 min-w-screen":true,
+    "motion-preset-fade": !reduceAnimation,
+  }}
 >
   <div class="flex h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] flex-col">
     <header class="sticky top-0 z-20 rounded-xl border bg-card/95 p-3 backdrop-blur supports-backdrop-filter:bg-card/70">
@@ -402,12 +398,11 @@ $effect(() => {
                       {#each group.items as result (result.id)}
                         <button
                           type="button"
-                          class={cn(
-                            "block w-full rounded-md px-2 py-1.5 text-left text-sm",
-                            flatFuzzyResults[highlightedResultIndex]?.id === result.id
-                                ? "bg-accent text-accent-foreground"
-                                : "hover:bg-secondary/70",
-                          )}
+                          class={{
+                            "block w-full rounded-md px-2 py-1.5 text-left text-sm":true,
+                             "bg-accent text-accent-foreground": flatFuzzyResults[highlightedResultIndex]?.id === result.id,
+                             "hover:bg-secondary/70": !flatFuzzyResults[highlightedResultIndex]?.id === result.id
+                          }}
                           onmousedown={async (event) => {
                             event.preventDefault();
                             await navigateToSearchResult(result);
@@ -434,37 +429,27 @@ $effect(() => {
         </form>
 
         <div class="flex items-center gap-2 justify-self-end">
-          <span
-            class={cn(
-              "rounded-full border px-2 py-1 text-xs",
-              activeSectionActions.hasPendingChanges
-                ? "border-amber-600/80 bg-amber-200/70 text-amber-900 dark:border-amber-500/70 dark:bg-amber-500/15 dark:text-amber-300"
-                : "border-border text-muted-foreground",
-            )}
-          >
-            {
-              activeSectionActions.hasPendingChanges
-              ? m.settingsSearchStateUnsaved()
-              : m.settingsSearchStateSaved()
-            }
-          </span>
           <button
             type="button"
-            class="border-box inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-secondary px-3 py-1.5 text-sm hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
+            class="border border-box inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-secondary px-3 py-1.5 text-sm hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
             onclick={async () => await activeSectionActions.loadDefaults?.()}
           >
             {m.settingsLoadDefaults()}
           </button>
           <button
             type="button"
-            class="border-box inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-secondary px-3 py-1.5 text-sm hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
+            class="border border-box inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-secondary px-3 py-1.5 text-sm hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
             onclick={async () => await activeSectionActions.reloadCurrent?.()}
           >
             {m.settingsReloadCurrent()}
           </button>
           <button
             type="button"
-            class="border-box inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-primary px-3 py-1.5 text-sm text-zinc-50 hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
+            class={{
+              "border-box inline-flex h-9 cursor-pointer items-center justify-center rounded-md px-3 py-1.5 text-sm  hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50" : true,
+              "border-box inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-primary px-3 py-1.5 text-sm text-zinc-50 hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50":!activeSectionActions.hasPendingChanges,
+             "border-amber-600/80 bg-amber-200/70 text-amber-900 dark:border-amber-500/70 dark:bg-amber-500/15 dark:text-amber-300": activeSectionActions.hasPendingChanges
+            }}
             disabled={!activeSectionActions.hasPendingChanges}
             onclick={async () => await activeSectionActions.save?.()}
           >

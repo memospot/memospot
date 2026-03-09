@@ -19,8 +19,8 @@ import { debouncePromise } from "$lib/debounce";
 import { type Locale, locales, m, setLocale } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
 import {
-    keywordsFromLocale,
     buildSectionActions,
+    keywordsFromLocale,
     type SectionActionsProps
 } from "$lib/settingsUi";
 import { getAppConfig, getDefaultAppConfig, setAppLocale } from "$lib/tauri";

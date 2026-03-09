@@ -1,3 +1,5 @@
+import type { Locale } from "./i18n";
+
 export type SectionActions = {
     loadDefaults?: () => Promise<void> | void;
     reloadCurrent?: () => Promise<void> | void;
@@ -11,7 +13,7 @@ export type SectionActionsProps = {
     onActionsChange?: OnSectionActionsChange;
 };
 
-type AliasMessage = (inputs?: Record<string, never>, options?: { locale?: string }) => string;
+type AliasMessage = (inputs?: Record<string, never>, options?: { locale?: Locale }) => string;
 
 export function buildSectionActions(
     loadDefaults: SectionActions["loadDefaults"],
