@@ -365,7 +365,7 @@ $effect(() => {
               bind:this={searchInputElement}
               bind:value={searchQuery}
               placeholder={m.settingsSearchPlaceholder()}
-              class="w-full rounded-md border bg-background px-3 py-2 pr-14 text-sm placeholder:text-center md:min-w-72"
+              class="w-full rounded-md border bg-background px-3 py-2 text-sm placeholder:text-center md:min-w-72"
               aria-label={m.settingsSearchPlaceholder()}
               onfocus={() => {
                 isSearchDropdownOpen = searchQuery.trim().length > 0;
@@ -375,7 +375,7 @@ $effect(() => {
             {#if searchQuery.trim().length > 0}
               <button
                 type="button"
-                class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border px-2 py-1 text-xs hover:bg-secondary"
+                class="bg-background absolute right-2 top-1/2 -translate-y-1/2 rounded-md border px-3 py-1 text-xs hover:bg-secondary"
                 onclick={() => {
                   searchQuery = "";
                   isSearchDropdownOpen = false;

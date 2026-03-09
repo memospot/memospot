@@ -78,7 +78,8 @@ deps-ts:
 
 [private]
 dev-ui: deps-ts
-    cd "src-ui"; bun x vite
+    #!{{bash}}
+    cd "src-ui" && bunx --bun svelte-kit sync && bunx vite dev
 
 [private]
 download-memos: deps-ts
