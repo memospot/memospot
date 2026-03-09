@@ -5,7 +5,6 @@ import { onMount } from "svelte";
 import Update from "svelte-radix/Update.svelte";
 import { m } from "$lib/i18n";
 import { getEnv, getMemosURL, pingMemos } from "$lib/tauri";
-import { cn } from "$lib/utils";
 
 const CONFIG = {
     MAX_RETRIES: 10,
@@ -96,10 +95,11 @@ onMount(async () => {
 </script>
 
 <main
-  class={cn(
-    "absolute h-full w-full flex flex-col items-center justify-center text-zinc-700 dark:text-zinc-300",
-    reduceAnimation ? "" : "motion-preset-fade",
-  )}
+  class={{
+    "absolute h-full w-full flex flex-col items-center justify-center text-zinc-700 dark:text-zinc-300":
+        true,
+    "motion-preset-fade": !reduceAnimation
+  }}
 >
   <div>
     <h1 id="status" class="text-xl">
@@ -119,11 +119,12 @@ onMount(async () => {
     >
       <img
         src={logoImg}
-        class={cn(
-          "!h-60 p-6 logo",
-          reduceAnimation ? "logo-glow-static" : "logo-glow",
-          redirectDetails.isError ? "error" : "",
-        )}
+        class={{
+          "!h-60 p-6 logo": true,
+          "logo-glow-static": reduceAnimation,
+          "logo-glow": !reduceAnimation,
+          error: redirectDetails.isError
+        }}
         alt="Memos"
       />
     </a>
@@ -153,26 +154,23 @@ onMount(async () => {
           onclick={() => window.location.replace(window.location.href)}
         >
           <Update
-            class={cn(
-              "h-[1.2rem] w-[1.2rem] m-1",
-              reduceAnimation
-                ? ""
-                : "motion-safe:animate-pulse hover:animate-none",
-            )}
+            class={{
+              "h-[1.2rem] w-[1.2rem] m-1": true,
+              "motion-safe:animate-pulse hover:animate-none": !reduceAnimation
+            }}
           />
         </button>
       </div>
     {/if}
     <p
-      class={cn(
-        "mt-2",
-        redirectDetails.replyMs > 0 ? "opacity-70" : "opacity-0",
-        redirectDetails.retries === 0
-          ? "text-primary"
-          : redirectDetails.isError
-            ? "text-destructive"
-            : "text-amber-600",
-      )}
+      class={{
+        "mt-2": true,
+        "opacity-70": redirectDetails.replyMs > 0,
+        "opacity-0": redirectDetails.replyMs <= 0,
+        "text-primary": redirectDetails.retries === 0,
+        "text-destructive": redirectDetails.retries !== 0 && redirectDetails.isError,
+        "text-amber-600": redirectDetails.retries !== 0 && !redirectDetails.isError
+      }}
     >
       {redirectDetails.replyMs} ms
     </p>

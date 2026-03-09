@@ -1,9 +1,11 @@
 <script lang="ts">
 import { Select as SelectPrimitive } from "bits-ui";
+import type { ClassValue } from "svelte/elements";
 import { scale } from "svelte/transition";
-import { cn, flyAndScale } from "$lib/utils.js";
+import { flyAndScale } from "$lib/utils.js";
 
 interface Props extends SelectPrimitive.ContentProps {
+    class?: ClassValue;
     [key: string]: any;
 }
 
@@ -29,10 +31,10 @@ let {
   {outTransition}
   {outTransitionConfig}
   {sideOffset}
-  class={cn(
-    "bg-popover text-popover-foreground relative z-50 min-w-[8rem] overflow-hidden rounded-md border shadow-md focus:outline-none",
-    className,
-  )}
+  class={[
+    "bg-popover text-popover-foreground relative z-50 min-w-32 overflow-hidden rounded-md border shadow-md focus:outline-none",
+    className
+  ]}
   {...rest}
 >
   <div class="w-full p-1">

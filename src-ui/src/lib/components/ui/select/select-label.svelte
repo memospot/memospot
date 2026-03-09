@@ -1,8 +1,9 @@
 <script lang="ts">
 import { Select as SelectPrimitive } from "bits-ui";
-import { cn } from "$lib/utils.js";
+import type { ClassValue } from "svelte/elements";
 
 interface Props extends SelectPrimitive.LabelProps {
+    class?: ClassValue;
     [key: string]: any;
 }
 
@@ -10,7 +11,7 @@ let { class: className = undefined, children, ...rest }: Props = $props();
 </script>
 
 <SelectPrimitive.Label
-  class={cn("px-2 py-1 text-sm font-semibold", className)}
+  class={["px-2 py-1 text-sm font-semibold", className]}
   {...rest}
 >
   {@render children?.()}

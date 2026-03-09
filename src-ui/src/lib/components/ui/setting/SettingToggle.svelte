@@ -6,7 +6,6 @@ import {
     normalizeSettingSearchKeywords,
     normalizeSettingSearchLabel
 } from "$lib/settingsSearchMetadata";
-import { cn } from "$lib/utils.js";
 
 export interface Props extends HTMLAttributes<HTMLDivElement> {
     name?: string;
@@ -45,11 +44,11 @@ const normalizedSearchKeywords = $derived(normalizeSettingSearchKeywords(searchK
   data-setting-id={searchId}
   data-setting-label={normalizedSearchLabel}
   data-setting-keywords={normalizedSearchKeywords}
-  class={cn(
+  class={[
     "w-full h-full flex flex-col rounded-xl p-4 space-y-3 border border-opacity-0 hover:border-opacity-100",
     className,
-    bg,
-  )}
+    bg
+  ]}
 >
   <div class="w-full flex flex-row">
     {#if name || desc}
@@ -72,7 +71,7 @@ const normalizedSearchKeywords = $derived(normalizeSettingSearchKeywords(searchK
     </div>
   </div>
   {#if children}
-    <div class={cn("w-full space-y-2", !state && "opacity-50 cursor-not-allowed")}>
+    <div class={["w-full space-y-2", !state && "opacity-50 cursor-not-allowed"]}>
       {@render children()}
     </div>
   {/if}
