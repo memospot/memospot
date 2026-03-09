@@ -9,8 +9,8 @@ import { envFromKV, envToKV } from "$lib/environmentVariables";
 import { m } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
 import {
-    aliasesFromLocale,
     buildSectionActions,
+    keywordsFromLocale,
     type SectionActionsProps
 } from "$lib/settingsUi";
 import { getAppConfig, getDefaultAppConfig, pingMemos } from "$lib/tauri";
@@ -163,7 +163,8 @@ const hasPendingChanges = $derived(
         input.remoteURL !== (initialConfig.memospot?.remote?.url ?? "") ||
         input.remoteUserAgent !== (initialConfig.memospot?.remote?.user_agent ?? "") ||
         input.updaterEnabled !== (initialConfig.memospot?.updater?.enabled ?? false) ||
-        input.updaterCheckInterval !== (initialConfig.memospot?.updater?.check_interval ?? "") ||
+        input.updaterCheckInterval !==
+            (initialConfig.memospot?.updater?.check_interval ?? "") ||
         input.migrationsEnabled !== (initialConfig.memospot?.migrations?.enabled ?? false) ||
         input.backupsEnabled !== (initialConfig.memospot?.backups?.enabled ?? false) ||
         input.loggingEnabled !== (initialConfig.memospot?.log?.enabled ?? false) ||
@@ -174,7 +175,12 @@ const hasPendingChanges = $derived(
 
 $effect(() => {
     onActionsChange?.(
-        buildSectionActions(setPageToDefaultConfig, setPageToInitialConfig, updateSetting, hasPendingChanges)
+        buildSectionActions(
+            setPageToDefaultConfig,
+            setPageToInitialConfig,
+            updateSetting,
+            hasPendingChanges
+        )
     );
 });
 </script>
@@ -192,7 +198,7 @@ $effect(() => {
     name={m.settingsMemospotRemoteServer()}
     desc={m.settingsMemospotRemoteServerDescription()}
     searchId="memospot-remote-server"
-    searchAliases={aliasesFromLocale(m.settingsMemospotRemoteServerSearchAliases)}
+    searchKeywords={keywordsFromLocale(m.settingsMemospotRemoteServerSearchKeywords)}
     bind:state={input.remoteEnabled}
     onclick={() => {
       currentConfig.memospot.remote.enabled = input.remoteEnabled;
@@ -202,7 +208,7 @@ $effect(() => {
       name={m.settingsMemospotRemoteServerURL()}
       desc={m.settingsMemospotRemoteServerURLDescription()}
       searchId="memospot-remote-url"
-      searchAliases={aliasesFromLocale(m.settingsMemospotRemoteServerURLSearchAliases)}
+      searchKeywords={keywordsFromLocale(m.settingsMemospotRemoteServerURLSearchKeywords)}
     >
       <input
         id="url"
@@ -219,7 +225,7 @@ $effect(() => {
       name={m.settingsMemospotUserAgent()}
       desc={m.settingsMemospotUserAgentDescription()}
       searchId="memospot-user-agent"
-      searchAliases={aliasesFromLocale(m.settingsMemospotUserAgentSearchAliases)}
+      searchKeywords={keywordsFromLocale(m.settingsMemospotUserAgentSearchKeywords)}
     >
       <input
         id="userAgent"
@@ -238,7 +244,7 @@ $effect(() => {
     name={m.settingsMemospotUpdater()}
     desc={m.settingsMemospotUpdaterDescription()}
     searchId="memospot-updater"
-    searchAliases={aliasesFromLocale(m.settingsMemospotUpdaterSearchAliases)}
+    searchKeywords={keywordsFromLocale(m.settingsMemospotUpdaterSearchKeywords)}
     bind:state={input.updaterEnabled}
     onclick={() => {
       currentConfig.memospot.updater.enabled = input.updaterEnabled;
@@ -248,7 +254,7 @@ $effect(() => {
       name={m.settingsMemospotUpdaterInterval()}
       desc={m.settingsMemospotUpdaterIntervalDescription()}
       searchId="memospot-updater-interval"
-      searchAliases={aliasesFromLocale(m.settingsMemospotUpdaterIntervalSearchAliases)}
+      searchKeywords={keywordsFromLocale(m.settingsMemospotUpdaterIntervalSearchKeywords)}
     >
       <input
         id="updaterCheckInterval"
@@ -267,7 +273,7 @@ $effect(() => {
     name={m.settingsMemospotMigrations()}
     desc={m.settingsMemospotMigrationsDescription()}
     searchId="memospot-migrations"
-    searchAliases={aliasesFromLocale(m.settingsMemospotMigrationsSearchAliases)}
+    searchKeywords={keywordsFromLocale(m.settingsMemospotMigrationsSearchKeywords)}
   >
     <Switch
       bind:checked={input.migrationsEnabled}
@@ -281,7 +287,7 @@ $effect(() => {
     name={m.settingsMemospotBackups()}
     desc={m.settingsMemospotBackupsDescription()}
     searchId="memospot-backups"
-    searchAliases={aliasesFromLocale(m.settingsMemospotBackupsSearchAliases)}
+    searchKeywords={keywordsFromLocale(m.settingsMemospotBackupsSearchKeywords)}
   >
     <Switch
       bind:checked={input.backupsEnabled}
@@ -295,7 +301,7 @@ $effect(() => {
     name={m.settingsMemospotLogging()}
     desc={m.settingsMemospotLoggingDescription()}
     searchId="memospot-logging"
-    searchAliases={aliasesFromLocale(m.settingsMemospotLoggingSearchAliases)}
+    searchKeywords={keywordsFromLocale(m.settingsMemospotLoggingSearchKeywords)}
   >
     <Switch
       bind:checked={input.loggingEnabled}
@@ -309,7 +315,7 @@ $effect(() => {
     name={m.settingsMemospotEnvironmentVariables()}
     desc={m.settingsMemospotEnvironmentVariablesDescription()}
     searchId="memospot-env-vars"
-    searchAliases={aliasesFromLocale(m.settingsMemospotEnvironmentVariablesSearchAliases)}
+    searchKeywords={keywordsFromLocale(m.settingsMemospotEnvironmentVariablesSearchKeywords)}
     bind:state={input.envVarsEnabled}
     onclick={() => {
       currentConfig.memospot.env.enabled = input.envVarsEnabled;
@@ -326,5 +332,4 @@ $effect(() => {
     >
     </textarea>
   </SettingToggle>
-
 </div>

@@ -1,12 +1,12 @@
 export type SettingSearchEntry = {
     id: string;
     label: string;
-    aliases: string[];
+    keywords: string[];
     sectionId: string;
     sectionLabel: string;
 };
 
-function parseAliases(raw: string | undefined): string[] {
+function parseKeywords(raw: string | undefined): string[] {
     if (!raw) return [];
     return raw
         .split("|")
@@ -47,7 +47,7 @@ export function collectSettingsEntries(
         entries.push({
             id,
             label,
-            aliases: parseAliases(row.dataset.settingAliases),
+            keywords: parseKeywords(row.dataset.settingKeywords),
             sectionId,
             sectionLabel
         });

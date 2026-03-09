@@ -19,7 +19,7 @@ import { debouncePromise } from "$lib/debounce";
 import { type Locale, locales, m, setLocale } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
 import {
-    aliasesFromLocale,
+    keywordsFromLocale,
     buildSectionActions,
     type SectionActionsProps
 } from "$lib/settingsUi";
@@ -182,7 +182,12 @@ const hasPendingChanges = $derived(
 
 $effect(() => {
     onActionsChange?.(
-        buildSectionActions(setPageToDefaultConfig, setPageToInitialConfig, updateSetting, hasPendingChanges)
+        buildSectionActions(
+            setPageToDefaultConfig,
+            setPageToInitialConfig,
+            updateSetting,
+            hasPendingChanges
+        )
     );
 });
 </script>
@@ -200,7 +205,7 @@ $effect(() => {
     name={m.settingsViewTheme()}
     desc={m.settingsViewThemeDescription()}
     searchId="view-theme"
-    searchAliases={aliasesFromLocale(m.settingsViewThemeSearchAliases)}
+    searchKeywords={keywordsFromLocale(m.settingsViewThemeSearchKeywords)}
   >
     <Select selected={selectedTheme} onSelectedChange={updateTheme}>
       <SelectTrigger class="ml-1 w-52">
@@ -224,7 +229,7 @@ $effect(() => {
     name={m.settingsViewReduceAnimation()}
     desc={m.settingsViewReduceAnimationDescription()}
     searchId="view-reduce-animation"
-    searchAliases={aliasesFromLocale(m.settingsViewReduceAnimationSearchAliases)}
+    searchKeywords={keywordsFromLocale(m.settingsViewReduceAnimationSearchKeywords)}
   >
     <Switch
       bind:checked={input.reduce_animation}
@@ -238,7 +243,7 @@ $effect(() => {
     name={m.settingsViewLocale()}
     desc={m.settingsViewLocaleDescription()}
     searchId="view-locale"
-    searchAliases={aliasesFromLocale(m.settingsViewLocaleSearchAliases)}
+    searchKeywords={keywordsFromLocale(m.settingsViewLocaleSearchKeywords)}
   >
     <Select selected={selectedLocale} onSelectedChange={updateLocale}>
       <SelectTrigger class="ml-2 w-64">
@@ -261,7 +266,7 @@ $effect(() => {
     name={m.settingsViewResizable()}
     desc={m.settingsViewResizableDescription()}
     searchId="view-resizable"
-    searchAliases={aliasesFromLocale(m.settingsViewResizableSearchAliases)}
+    searchKeywords={keywordsFromLocale(m.settingsViewResizableSearchKeywords)}
   >
     <Switch
       bind:checked={input.resizable}
@@ -275,7 +280,7 @@ $effect(() => {
     name={m.settingsViewCentered()}
     desc={m.settingsViewCenteredDescription()}
     searchId="view-centered"
-    searchAliases={aliasesFromLocale(m.settingsViewCenteredSearchAliases)}
+    searchKeywords={keywordsFromLocale(m.settingsViewCenteredSearchKeywords)}
   >
     <Switch
       bind:checked={input.centered}
@@ -289,7 +294,7 @@ $effect(() => {
     name={m.settingsViewMaximized()}
     desc={m.settingsViewMaximizedDescription()}
     searchId="view-maximized"
-    searchAliases={aliasesFromLocale(m.settingsViewMaximizedSearchAliases)}
+    searchKeywords={keywordsFromLocale(m.settingsViewMaximizedSearchKeywords)}
   >
     <Switch
       bind:checked={input.maximized}
@@ -303,7 +308,7 @@ $effect(() => {
     name={m.settingsViewFullscreen()}
     desc={m.settingsViewFullscreenDescription()}
     searchId="view-fullscreen"
-    searchAliases={aliasesFromLocale(m.settingsViewFullscreenSearchAliases)}
+    searchKeywords={keywordsFromLocale(m.settingsViewFullscreenSearchKeywords)}
   >
     <Switch
       bind:checked={input.fullscreen}
@@ -312,5 +317,4 @@ $effect(() => {
       }}
     />
   </Setting>
-
 </div>

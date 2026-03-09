@@ -86,7 +86,7 @@ const fuzzyResults = $derived.by(() => {
         ignoreLocation: true,
         keys: [
             { name: "label", weight: 0.75 },
-            { name: "aliases", weight: 0.25 }
+            { name: "keywords", weight: 0.25 }
         ]
     });
 
@@ -215,7 +215,10 @@ async function navigateToSearchResult(entry: SettingSearchEntry) {
             behavior: reduceAnimation ? "auto" : "smooth"
         });
     } else {
-        target.scrollIntoView({ block: "center", behavior: reduceAnimation ? "auto" : "smooth" });
+        target.scrollIntoView({
+            block: "center",
+            behavior: reduceAnimation ? "auto" : "smooth"
+        });
     }
 
     const focusTarget = getPreferredFocusTarget(target);
@@ -411,9 +414,9 @@ $effect(() => {
                           }}
                         >
                           <div class="font-medium">{result.label}</div>
-                          {#if result.aliases.length > 0}
+                          {#if result.keywords.length > 0}
                             <div class="text-xs text-muted-foreground">
-                              {result.aliases.slice(0, 2).join(" · ")}
+                              {result.keywords.slice(0, 2).join(" · ")}
                             </div>
                           {/if}
                         </button>

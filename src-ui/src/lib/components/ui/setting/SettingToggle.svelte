@@ -2,6 +2,7 @@
 import type { Snippet } from "svelte";
 import type { HTMLAttributes } from "svelte/elements";
 import { Switch } from "$lib/components/ui/switch/index";
+import { normalizeSettingSearchKeywords, normalizeSettingSearchLabel } from "$lib/settingsSearchMetadata";
 import { cn } from "$lib/utils.js";
 
 export interface Props extends HTMLAttributes<HTMLDivElement> {
@@ -13,7 +14,7 @@ export interface Props extends HTMLAttributes<HTMLDivElement> {
     bg?: string;
     searchId?: string;
     searchLabel?: string;
-    searchAliases?: string[] | string;
+    searchKeywords?: string[] | string;
 }
 
 let {
@@ -25,23 +26,14 @@ let {
     bg = "bg-card",
     searchId,
     searchLabel,
-    searchAliases,
+    searchKeywords,
     class: className,
     ...restProps
 }: Props = $props();
 
 const commonProps: Record<string, any> = $derived(restProps);
-const normalizedSearchLabel = $derived(
-    (searchLabel ?? name ?? "")
-        .replace(/<[^>]*>/g, "")
-        .replace(/\s+/g, " ")
-        .trim()
-);
-const normalizedSearchAliases = $derived(
-    Array.isArray(searchAliases)
-        ? searchAliases.join("|")
-        : (searchAliases ?? "").trim().replace(/\s*\|\s*/g, "|")
-);
+const normalizedSearchLabel = $derived(normalizeSettingSearchLabel(searchLabel ?? name));
+const normalizedSearchKeywords = $derived(normalizeSettingSearchKeywords(searchKeywords));
 </script>
 
 <div
@@ -49,7 +41,7 @@ const normalizedSearchAliases = $derived(
   data-setting-row="true"
   data-setting-id={searchId}
   data-setting-label={normalizedSearchLabel}
-  data-setting-aliases={normalizedSearchAliases}
+  data-setting-keywords={normalizedSearchKeywords}
   class={cn(
     "w-full h-full flex flex-col rounded-xl p-4 space-y-3 border border-opacity-0 hover:border-opacity-100",
     className,

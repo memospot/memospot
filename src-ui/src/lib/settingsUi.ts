@@ -1,7 +1,7 @@
 export type SectionActions = {
     loadDefaults?: () => Promise<void> | void;
     reloadCurrent?: () => Promise<void> | void;
-    save?: () => Promise<boolean | void> | boolean | void;
+    save?: () => Promise<boolean | undefined> | boolean | undefined;
     hasPendingChanges?: boolean;
 };
 
@@ -27,16 +27,16 @@ export function buildSectionActions(
     };
 }
 
-function parseAliases(value: string): string[] {
+function parseKeywords(value: string): string[] {
     return value
-        .split(",")
+        .split(";")
         .map((entry) => entry.trim())
         .filter((entry) => entry.length > 0);
 }
 
-export function aliasesFromLocale(message: AliasMessage): string[] {
-    const currentAliases = parseAliases(message());
-    const englishAliases = parseAliases(message({}, { locale: "en" }));
+export function keywordsFromLocale(message: AliasMessage): string[] {
+    const currentKeywords = parseKeywords(message());
+    const englishKeywords = parseKeywords(message({}, { locale: "en" }));
 
-    return Array.from(new Set([...currentAliases, ...englishAliases]));
+    return Array.from(new Set([...currentKeywords, ...englishKeywords]));
 }
