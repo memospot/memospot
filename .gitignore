@@ -1,6 +1,5 @@
 ### Project-specific ###
 .dprint
-.sccache
 build/
 server-dist/
 .env
@@ -20,43 +19,20 @@ vite.config.ts.timestamp-*
 **/project.inlang/cache
 **/lib/paraglide
 
-# Task
-.task
-
 # Logs
 logs/
 *.log
 
 ### Node / npm / react ###
-.npm
-.pnp.*
-.pnpm-debug.log*
-.stylelintcache
 .vite
-.webpack/
-*.local
-*.tsbuildinfo
-**/*.back.*
-**/*.backup.*
 build/Release
 dist
 dist-ssr
 node_modules
-npm-debug.log*
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-web_modules/
 
 ### Rust ###
 **/target/**
-**/*.rs.bk
 *.pdb
-rust-project.json
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
 
 # OS-generated files #
 .DS_Store
@@ -88,12 +64,3 @@ Sessionx.vim
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
-
-### Zed
-.zed
-
-# Ignore all local history of files
-.history
-.ionide
-
-# Generated with https://www.toptal.com/developers/gitignore?templates=vim,rust,clion+all,sublimetext,rust-analyzer,visualstudiocode,node,react

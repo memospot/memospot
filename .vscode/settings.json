@@ -86,5 +86,9 @@
     "**/node_modules/**": true,
     "**/target/**": true
   },
+  "files.exclude": {
+    "**/.dprint": true,
+    "**/node_modules": true
+  },
   "svelte.enable-ts-plugin": true
 }

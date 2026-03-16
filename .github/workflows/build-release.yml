@@ -121,9 +121,7 @@ jobs:
             Bundled Memos version: **${{ env.MEMOS_VERSION }}**
             Updating from previous versions is transparent.
 
-            Note for Windows users:
-            The auto-updater will use the `exe` installer (per-user install).
-            For the MSI package, check the GitHub releases page.
+            [Installation & Safety notes](https://memospot.github.io/guides/installation/)
           releaseDraft: true
           prerelease: false
           args: --target ${{ matrix.platform.rust_target }}

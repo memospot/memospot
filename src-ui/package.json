@@ -7,8 +7,8 @@
   "private": true,
   "scripts": {
     "dev": "bunx --bun svelte-kit sync && bunx vite dev",
-    "build": "bunx --bun vite build",
-    "preview": "bunx --bun vite preview",
+    "build": "bunx vite build",
+    "preview": "bunx vite preview",
     "test": "bunx --bun vitest --run",
     "check": "bunx --bun svelte-kit sync && bunx --bun svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "bunx --bun svelte-kit sync && bunx --bun svelte-check --tsconfig ./tsconfig.json --watch",

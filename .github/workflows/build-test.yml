@@ -26,13 +26,13 @@ concurrency:
 
 env:
   CACHE_KEY: NOT_SET
-  CARGO_INCREMENTAL: 1
+  CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   GLIBC_VERSION: NOT_SET
   MEMOS_VERSION: NOT_SET
   RUST_TARGET: NOT_SET
-  RUST_BACKTRACE: full
+  RUST_BACKTRACE: short
   RUSTFLAGS: -Copt-level=1 -Cstrip=symbols -Ccodegen-units=16
 
 jobs:
@@ -127,8 +127,9 @@ jobs:
           tagName: v__VERSION__-pre
           releaseName: "Memospot v__VERSION__-pre"
           releaseBody: |
-            > [!TIP]
-            > Bundled Memos version: **${{ env.MEMOS_VERSION }}**
+            Bundled Memos version: **${{ env.MEMOS_VERSION }}**
+
+            [Installation & Safety notes](https://memospot.github.io/guides/installation/)
 
             > [!WARNING]
             > Things may break.
