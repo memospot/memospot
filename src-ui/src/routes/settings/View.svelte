@@ -130,7 +130,7 @@ async function updateLocale(s: Selected<string> | undefined) {
     await setAppLocale(input.locale);
 }
 
-async function updateSetting(updateFn?: () => void): Promise<void> {
+async function updateSetting(updateFn?: () => void): Promise<boolean> {
     const reduceAnimationChanged =
         initialConfig.memospot.window.reduce_animation !==
         currentConfig.memospot.window.reduce_animation;
@@ -141,14 +141,16 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
     const localeChanged =
         initialConfig.memospot.window.locale !== currentConfig.memospot.window.locale;
 
-    await debouncePromise(async () => {
+    const saved = await debouncePromise(async () => {
         updateFn?.();
         return await patchConfig(initialConfig, currentConfig).then(
-            (_ok) => {
+            () => {
                 initialConfig = jsonpatch.deepClone(currentConfig);
+                return true;
             },
-            (_err) => {
+            () => {
                 currentConfig = jsonpatch.deepClone(initialConfig);
+                return false;
             }
         );
     })();
@@ -159,9 +161,11 @@ async function updateSetting(updateFn?: () => void): Promise<void> {
         setMode(input.theme);
     }
 
-    if (localeChanged) {
+    if (localeChanged && saved) {
         window.location.reload();
     }
+
+    return saved;
 }
 
 $effect(() => {

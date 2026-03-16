@@ -401,7 +401,7 @@ $effect(() => {
                           class={{
                             "block w-full rounded-md px-2 py-1.5 text-left text-sm":true,
                              "bg-accent text-accent-foreground": flatFuzzyResults[highlightedResultIndex]?.id === result.id,
-                             "hover:bg-secondary/70": !flatFuzzyResults[highlightedResultIndex]?.id === result.id
+                             "hover:bg-secondary/70": flatFuzzyResults[highlightedResultIndex]?.id !== result.id
                           }}
                           onmousedown={async (event) => {
                             event.preventDefault();
