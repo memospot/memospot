@@ -22,7 +22,7 @@ ARG NO_BUNDLE
 #*   Other bundles will also crash if the target machine is using this runtime version.
 
 # Prepare base image with all necessary system packages for a Tauri build.
-FROM ubuntu:24.04 AS tauri-base
+FROM ubuntu:24.04@sha256:0d39fcc8335d6d74d5502f6df2d30119ff4790ebbb60b364818d5112d9e3e932 AS tauri-base
 ENV PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig/:/usr/share/pkgconfig"
 ENV DEBIAN_FRONTEND=noninteractive
 ENV HOME=/root
