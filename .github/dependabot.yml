@@ -17,6 +17,14 @@ updates:
       interval: "monthly"
     open-pull-requests-limit: 0
 
+  - package-ecosystem: docker
+    directory: /
+    cooldown:
+      default-days: 30
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+
   - package-ecosystem: "bun"
     directory: "/"
     cooldown:
@@ -24,3 +32,20 @@ updates:
     schedule:
       interval: "monthly"
     open-pull-requests-limit: 0
+
+  - package-ecosystem: "bun"
+    directory: "/build-scripts"
+    cooldown:
+      default-days: 30
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+
+  - package-ecosystem: "bun"
+    directory: "/src-ui"
+    cooldown:
+      default-days: 30
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+

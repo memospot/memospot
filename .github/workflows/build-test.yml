@@ -35,6 +35,9 @@ env:
   RUST_BACKTRACE: short
   RUSTFLAGS: -Copt-level=1 -Cstrip=symbols -Ccodegen-units=16
 
+permissions:
+  contents: read
+
 jobs:
   build-test:
     name: Build (Test)
@@ -51,8 +54,13 @@ jobs:
 
     runs-on: ${{ matrix.platform.runner }}
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
+
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: "Set env vars"
         shell: bash
@@ -106,7 +114,7 @@ jobs:
           echo "MEMOS_VERSION=${{ inputs.memos-version }}" >> $GITHUB_ENV
 
       - name: Cache Memos builds
-        uses: actions/cache@v5
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           key: memos-${{ matrix.platform.runner }}-${{ matrix.platform.rust_target }}-${{ env.MEMOS_VERSION != 'latest' && env.MEMOS_VERSION || env.CACHE_KEY }}
           restore-keys: memos-${{ matrix.platform.runner }}-${{ matrix.platform.rust_target }}
@@ -150,7 +158,7 @@ jobs:
           args: --verbose --target ${{ matrix.platform.rust_target }}
           includeUpdaterJson: false
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: memospot-${{ matrix.platform.rust_target }}
           path: |
