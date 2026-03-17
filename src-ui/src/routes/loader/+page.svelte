@@ -120,7 +120,7 @@ onMount(async () => {
       <img
         src={logoImg}
         class={{
-          "!h-60 p-6 logo": true,
+          "h-60! p-6 logo": true,
           "logo-glow-static": reduceAnimation,
           "logo-glow": !reduceAnimation,
           error: redirectDetails.isError
@@ -150,7 +150,7 @@ onMount(async () => {
       <div class="mt-4 flex flex-row gap-2 justify-center">
         <button
           title={m.loaderCheckAgainIfServerStarted()}
-          class="w-fit px-4 py-2 text-lg rounded-2xl transition-colors hover:bg-secondary/80 text-muted-foreground border hover:translate-y-[-1px] hover:drop-shadow"
+          class="w-fit px-4 py-2 text-lg rounded-2xl transition-colors hover:bg-secondary/80 text-muted-foreground border hover:-translate-y-px hover:drop-shadow"
           onclick={() => window.location.replace(window.location.href)}
         >
           <Update

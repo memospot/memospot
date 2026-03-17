@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "@fontsource-variable/open-sans";
-@import "@fontsource/bebas-neue";
 @config "../tailwind.config.ts";
 @custom-variant dark (&:where(.dark, .dark *));
 
