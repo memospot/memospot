@@ -198,7 +198,7 @@ $effect(() => {
 
 <div class="space-y-3 w-full">
   <div>
-    <h3 class="font-semibold text-lg">
+    <h3 class="text-lg mb-1">
       {m.settingsViewDescription()}
     </h3>
 

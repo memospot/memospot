@@ -211,9 +211,9 @@ $effect(() => {
 
 <div class="space-y-3">
   <div>
-    <h3 class="font-semibold text-lg flex flex-row">
+    <h3 class="text-lg flex flex-row mb-1">
       {m.settingsMemosDescription()}<a
-        href="https://www.usememos.com/docs/install/runtime-options"
+        href="https://usememos.com/docs/configuration#common-options"
         target="_blank"
       >
         <ExternalLink class="ml-1 mt-1 h-[1.2rem] w-[1.2rem]" />
@@ -344,7 +344,7 @@ $effect(() => {
     <textarea
       id="env"
       rows="5"
-      class="p-2 rounded-md border bg-background min-w-max w-full leading-tight"
+      class="p-2 rounded-md border bg-background min-w-max w-full font-mono leading-tight"
       bind:value={input.envVars}
       onfocusout={updateEnvVars}
       onkeypress={async (e) => e.key === "Enter" && (await updateEnvVars(e))}

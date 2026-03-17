@@ -1,7 +1,5 @@
 name: Build (Test)
 on:
-  merge_group:
-  pull_request:
   push:
     tags:
       - "v*.*.*-*"

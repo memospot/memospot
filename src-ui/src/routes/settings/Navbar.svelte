@@ -36,7 +36,7 @@ const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "
       onkeypress={async (e) =>
       ["Enter", " "].includes(e.key) && onSectionChange(section.id)}
       class={{
-        "font-semibold text-md cursor-pointer w-full rounded-xl border border-transparent px-3 py-2 text-left text-base whitespace-nowrap transition-colors active:translate-y-px hover:border-border hover:drop-shadow data-[active=true]:border-border":
+        "text-lg cursor-pointer w-full rounded-xl border border-transparent px-3 py-2 text-left whitespace-nowrap transition-colors active:translate-y-px hover:border-border hover:drop-shadow data-[active=true]:border-border":
             true,
         "bg-secondary text-secondary-foreground": activeSection === section.id,
         "hover:bg-secondary/80 text-muted-foreground": activeSection !== section.id
