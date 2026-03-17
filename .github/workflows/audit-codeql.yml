@@ -4,20 +4,18 @@ on:
   merge_group:
   pull_request:
     paths:
-      - "**/audit-codeql.yml"
+      - "**/workflows/*.yml"
       - "**/bun.lock"
       - "**/bunfig.toml"
       - "**/Cargo.lock"
       - "**/*.{rs,svelte,ts}"
-      - "**/workflows/*.yml"
   push:
     paths:
-      - "**/audit-codeql.yml"
+      - "**/workflows/*.yml"
       - "**/bun.lock"
       - "**/bunfig.toml"
       - "**/Cargo.lock"
       - "**/*.{rs,svelte,ts}"
-      - "**/workflows/*.yml"
   schedule:
     - cron: "0 9 */15 * *" # 9 AM, every 15 days
   workflow_dispatch:

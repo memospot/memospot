@@ -30,7 +30,7 @@ jobs:
   biome:
     name: TypeScript lint
     continue-on-error: true
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
@@ -52,7 +52,7 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - runner: ubuntu-slim
+          - runner: ubuntu-latest
           - runner: macos-15
           - runner: windows-2022
 
