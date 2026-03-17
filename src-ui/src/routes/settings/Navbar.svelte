@@ -31,13 +31,14 @@ const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "
     <div
       role="button"
       tabindex="0"
+      data-active={activeSection === section.id}
       onclick={() => onSectionChange(section.id)}
       onkeypress={async (e) =>
       ["Enter", " "].includes(e.key) && onSectionChange(section.id)}
       class={{
-        "font-semibold text-md cursor-pointer w-full rounded-xl px-3 py-2 text-left text-base whitespace-nowrap transition-colors active:translate-y-px hover:border hover:drop-shadow":
+        "font-semibold text-md cursor-pointer w-full rounded-xl border border-transparent px-3 py-2 text-left text-base whitespace-nowrap transition-colors active:translate-y-px hover:border-border hover:drop-shadow data-[active=true]:border-border":
             true,
-        "bg-secondary text-secondary-foreground border": activeSection === section.id,
+        "bg-secondary text-secondary-foreground": activeSection === section.id,
         "hover:bg-secondary/80 text-muted-foreground": activeSection !== section.id
       }}
     >
