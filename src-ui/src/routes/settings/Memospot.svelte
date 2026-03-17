@@ -187,7 +187,7 @@ $effect(() => {
 
 <div class="space-y-3">
   <div>
-    <h3 class="text-lg font-medium">
+    <h3 class="font-semibold text-lg">
       {m.settingsMemospotDescription()}
     </h3>
 

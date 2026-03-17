@@ -211,7 +211,7 @@ $effect(() => {
 
 <div class="space-y-3">
   <div>
-    <h3 class="text-lg font-medium flex flex-row">
+    <h3 class="font-semibold text-lg flex flex-row">
       {m.settingsMemosDescription()}<a
         href="https://www.usememos.com/docs/install/runtime-options"
         target="_blank"

@@ -23,14 +23,6 @@ onMount(async () => {
 
     // Apply the initial theme
     setMode(initialAppTheme);
-    // document.documentElement.setAttribute(
-    //     "data-theme",
-    //     initialAppTheme === "system"
-    //         ? window.matchMedia("(prefers-color-scheme: dark)").matches
-    //             ? "dark"
-    //             : "light"
-    //         : initialAppTheme
-    // );
 
     // Handle reduce motion preference
     await getReduceAnimationStatus().then(async (reduceAnimation) => {

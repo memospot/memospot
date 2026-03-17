@@ -1,22 +1,9 @@
 {
   "name": "memospot",
   "version": "1.0.3",
-  "packageManager": "bun@1.3.10",
-  "description": "",
-  "type": "module",
-  "private": true,
-  "scripts": {
-    "dev": "bunx --bun svelte-kit sync && bunx vite dev",
-    "build": "bunx vite build",
-    "preview": "bunx vite preview",
-    "test": "bunx --bun vitest --run",
-    "check": "bunx --bun svelte-kit sync && bunx --bun svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "bunx --bun svelte-kit sync && bunx --bun svelte-check --tsconfig ./tsconfig.json --watch",
-    "postinstall": "bunx --bun svelte-kit sync"
-  },
-  "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "2.4.7",
+    "@fontsource-variable/open-sans": "5.2.7",
     "@inlang/paraglide-js": "2.15.0",
     "@sveltejs/adapter-static": "3.0.10",
     "@sveltejs/kit": "2.55.0",
@@ -44,5 +31,19 @@
     "vite": "7.3.1",
     "vitest": "4.1.0"
   },
-  "trustedDependencies": ["@biomejs/biome", "esbuild"]
+  "description": "",
+  "license": "MIT",
+  "packageManager": "bun@1.3.10",
+  "private": true,
+  "scripts": {
+    "dev": "bunx --bun svelte-kit sync && bunx vite dev",
+    "build": "bunx vite build",
+    "preview": "bunx vite preview",
+    "test": "bunx --bun vitest --run",
+    "check": "bunx --bun svelte-kit sync && bunx --bun svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "bunx --bun svelte-kit sync && bunx --bun svelte-check --tsconfig ./tsconfig.json --watch",
+    "postinstall": "bunx --bun svelte-kit sync"
+  },
+  "trustedDependencies": ["@biomejs/biome", "esbuild"],
+  "type": "module"
 }

@@ -431,14 +431,14 @@ $effect(() => {
         <div class="flex items-center gap-2 justify-self-end">
           <button
             type="button"
-            class="border border-box inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-secondary px-3 py-1.5 text-sm hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
+            class="border border-box inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-secondary px-3 py-1.5 text-sm active:translate-y-px hover:drop-shadow hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
             onclick={async () => await activeSectionActions.loadDefaults?.()}
           >
             {m.settingsLoadDefaults()}
           </button>
           <button
             type="button"
-            class="border border-box inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-secondary px-3 py-1.5 text-sm hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
+            class="border border-box inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-secondary px-3 py-1.5 text-sm active:translate-y-px hover:drop-shadow hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
             onclick={async () => await activeSectionActions.reloadCurrent?.()}
           >
             {m.settingsReloadCurrent()}
@@ -448,7 +448,7 @@ $effect(() => {
             class={{
               "border-box inline-flex h-9 cursor-pointer items-center justify-center rounded-md px-3 py-1.5 text-sm  hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50" : true,
               "border-box inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-primary px-3 py-1.5 text-sm text-zinc-50 hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50":!activeSectionActions.hasPendingChanges,
-             "border-amber-600/80 bg-amber-200/70 text-amber-900 dark:border-amber-500/70 dark:bg-amber-500/15 dark:text-amber-300": activeSectionActions.hasPendingChanges
+             "border-amber-600/80 bg-amber-200/70 text-amber-900 dark:border-amber-500/70 dark:bg-amber-500/15 dark:text-amber-300 active:translate-y-px hover:drop-shadow": activeSectionActions.hasPendingChanges
             }}
             disabled={!activeSectionActions.hasPendingChanges}
             onclick={async () => await activeSectionActions.save?.()}
@@ -493,7 +493,7 @@ $effect(() => {
     class: "[text-shadow:_1px_1px_1px_rgb(0_0_0_/_60%)] text-zinc-50",
     classes: {
       error: "bg-destructive",
-      success: "bg-primary",
+      success: "bg-[var(--glow)] text-zinc-950 border-[var(--glow)]",
     },
   }}
 />

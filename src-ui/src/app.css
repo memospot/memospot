@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "@fontsource-variable/open-sans";
+@import "@fontsource/bebas-neue";
 @config "../tailwind.config.ts";
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -79,8 +81,8 @@ bg-primary-darker: 177 74.8% 20.2%;
         --radius: 0.4rem;
 
         font-family:
-            -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-            Arial, sans-serif, color-emoji;
+            "Open Sans Variable", "Open Sans", -apple-system, system-ui, BlinkMacSystemFont,
+            "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, color-emoji;
         font-synthesis: none;
         text-rendering: optimizeLegibility;
         -webkit-font-smoothing: antialiased;
