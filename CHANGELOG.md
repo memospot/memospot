@@ -26,6 +26,7 @@ Security: in case of vulnerabilities.
 
 - (Memos) Bundled version: v0.26.2.
 - Updated translations.
+- License is now Blue Oak.
 
 ### Added
 
