@@ -44,9 +44,5 @@
     "postinstall": "bunx --bun svelte-kit sync"
   },
   "trustedDependencies": ["@biomejs/biome", "esbuild"],
-  "type": "module",
-  "dependencies": {
-    "@fontsource-variable/geist": "5.2.8",
-    "@fontsource-variable/geist-mono": "5.2.7"
-  }
+  "type": "module"
 }

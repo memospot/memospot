@@ -1,6 +1,18 @@
 import type { Config } from "tailwindcss";
-import { fontFamily } from "tailwindcss/defaultTheme";
+import { fontFamily, fontSize } from "tailwindcss/defaultTheme";
 import tailwindcssMotion from "tailwindcss-motion";
+
+const FONT_SIZE_MULTIPLIER = 1.025;
+const scaledFontSize = Object.fromEntries(
+    Object.entries(fontSize).map(([key, value]) => {
+        if (typeof value === "string") {
+            return [key, `calc(${value} * ${FONT_SIZE_MULTIPLIER})`];
+        }
+
+        const [size, options] = value;
+        return [key, [`calc(${size} * ${FONT_SIZE_MULTIPLIER})`, options]];
+    })
+);
 
 const config: Config = {
     darkMode: ["class"],
@@ -56,9 +68,39 @@ const config: Config = {
                 sm: "calc(var(--radius) - 4px)"
             },
             fontFamily: {
-                sans: [...fontFamily.sans],
-                mono: ["Geist Mono Variable", "Geist Mono", ...fontFamily.mono]
-            }
+                sans: [
+                    "var(--font-sans)",
+                    "system-ui",
+                    "-apple-system",
+                    "BlinkMacSystemFont",
+                    "Segoe UI",
+                    "Roboto",
+                    "Noto Sans",
+                    "Ubuntu",
+                    "Cantarell",
+                    "DejaVu Sans",
+                    "Liberation Sans",
+                    "Helvetica Neue",
+                    "Arial",
+                    ...fontFamily.sans
+                ],
+                mono: [
+                    "ui-monospace",
+                    "SFMono-Regular",
+                    "SF Mono",
+                    "Cascadia Code",
+                    "Cascadia Mono",
+                    "Consolas",
+                    "Menlo",
+                    "Monaco",
+                    "Noto Sans Mono",
+                    "DejaVu Sans Mono",
+                    "Liberation Mono",
+                    "Courier New",
+                    ...fontFamily.mono
+                ]
+            },
+            fontSize: scaledFontSize
         }
     },
     plugins: [tailwindcssMotion]
