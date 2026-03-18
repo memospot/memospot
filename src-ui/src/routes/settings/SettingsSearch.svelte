@@ -1,5 +1,6 @@
 <script lang="ts">
 import Fuse from "fuse.js";
+import { tick } from "svelte";
 import type { SettingSearchEntry } from "$lib/settingsSearch";
 
 type Props = {
@@ -16,6 +17,7 @@ let searchQuery = $state("");
 let highlightedResultIndex = $state(0);
 let isSearchDropdownOpen = $state(false);
 let searchInputElement: HTMLInputElement | undefined = $state(undefined);
+let searchDropdownElement: HTMLDivElement | undefined = $state(undefined);
 
 const fuzzyResults = $derived.by(() => {
     const query = searchQuery.trim();
@@ -110,12 +112,59 @@ function handleSearchKeydown(event: KeyboardEvent) {
     if (event.key === "ArrowDown") {
         event.preventDefault();
         highlightedResultIndex = (highlightedResultIndex + 1) % flatFuzzyResults.length;
+        void scrollHighlightedResultIntoView();
     }
 
     if (event.key === "ArrowUp") {
         event.preventDefault();
         highlightedResultIndex =
             (highlightedResultIndex - 1 + flatFuzzyResults.length) % flatFuzzyResults.length;
+        void scrollHighlightedResultIntoView();
+    }
+}
+
+function getResultKey(result: Pick<SettingSearchEntry, "sectionId" | "id">): string {
+    return `${result.sectionId}::${result.id}`;
+}
+
+function isHighlightedResult(result: SettingSearchEntry): boolean {
+    const activeResult = flatFuzzyResults[highlightedResultIndex];
+    if (!activeResult) return false;
+    return getResultKey(activeResult) === getResultKey(result);
+}
+
+function handleResultHover(result: SettingSearchEntry) {
+    const hoveredResultKey = getResultKey(result);
+    const nextIndex = flatFuzzyResults.findIndex(
+        (candidate) => getResultKey(candidate) === hoveredResultKey
+    );
+    if (nextIndex >= 0) {
+        highlightedResultIndex = nextIndex;
+    }
+}
+
+async function scrollHighlightedResultIntoView() {
+    await tick();
+    if (!isSearchDropdownOpen || !searchDropdownElement) return;
+
+    const resultButtons = searchDropdownElement.querySelectorAll<HTMLButtonElement>(
+        "button[data-search-result='true']"
+    );
+    const activeElement = resultButtons[highlightedResultIndex];
+    if (!activeElement) return;
+
+    const viewTop = searchDropdownElement.scrollTop;
+    const viewBottom = viewTop + searchDropdownElement.clientHeight;
+    const itemTop = activeElement.offsetTop;
+    const itemBottom = itemTop + activeElement.offsetHeight;
+
+    if (itemTop < viewTop) {
+        searchDropdownElement.scrollTop = itemTop;
+        return;
+    }
+
+    if (itemBottom > viewBottom) {
+        searchDropdownElement.scrollTop = itemBottom - searchDropdownElement.clientHeight;
     }
 }
 
@@ -133,6 +182,7 @@ async function handleSearchSubmit(event: SubmitEvent) {
         await selectResult(flatFuzzyResults[highlightedResultIndex] ?? flatFuzzyResults[0]);
     }
 }
+
 </script>
 
 <svelte:window onkeydown={handleGlobalKeydown} />
@@ -160,6 +210,9 @@ async function handleSearchSubmit(event: SubmitEvent) {
       }}
       onfocus={() => {
         isSearchDropdownOpen = searchQuery.trim().length > 0;
+        if (isSearchDropdownOpen) {
+            void scrollHighlightedResultIntoView();
+        }
       }}
       onkeydown={handleSearchKeydown}
     />
@@ -179,7 +232,10 @@ async function handleSearchSubmit(event: SubmitEvent) {
   </div>
 
   {#if isSearchDropdownOpen && searchQuery.trim().length > 0}
-    <div class="absolute left-0 top-full z-30 mt-2 max-h-[60vh] w-full overflow-y-auto rounded-lg border bg-popover p-2 shadow-lg md:min-w-md">
+    <div
+      bind:this={searchDropdownElement}
+      class="absolute left-0 top-full z-30 mt-2 max-h-[60vh] w-full overflow-y-auto rounded-lg border bg-popover p-2 shadow-lg md:min-w-md"
+    >
       {#if groupedFuzzyResults.length > 0}
         {#each groupedFuzzyResults as group (group.sectionId)}
           <div class="mb-2 border-t border-border/60 pt-1 first:border-t-0 first:pt-0 last:mb-0">
@@ -187,17 +243,22 @@ async function handleSearchSubmit(event: SubmitEvent) {
               {group.sectionLabel}
             </p>
             <div class="space-y-1">
-              {#each group.items as result (result.id)}
+              {#each group.items as result (getResultKey(result))}
                 <button
                   type="button"
+                  data-search-result="true"
+                  data-search-result-key={getResultKey(result)}
                   class={{
                     "block w-full rounded-md px-2 py-1.5 text-left text-sm": true,
-                    "bg-accent text-accent-foreground": flatFuzzyResults[highlightedResultIndex]?.id === result.id,
-                    "hover:bg-secondary/70": flatFuzzyResults[highlightedResultIndex]?.id !== result.id
+                    "bg-accent text-accent-foreground": isHighlightedResult(result),
+                    "hover:bg-secondary/70": !isHighlightedResult(result)
                   }}
                   onmousedown={async (event) => {
                     event.preventDefault();
                     await selectResult(result);
+                  }}
+                  onmouseenter={() => {
+                    handleResultHover(result);
                   }}
                 >
                   <div class="font-medium">{result.label}</div>
