@@ -1,6 +1,6 @@
 import * as Bun from "bun";
 import type { GitHubRelease } from "../types/github";
-import { RESET } from "./terminal";
+import { CYAN, RESET, YELLOW } from "./terminal";
 /**
  * Get the default headers for GitHub API requests.
  *
@@ -44,7 +44,10 @@ async function rateLimit(response: Response, retryFunc: () => Promise<any>): Pro
 
         const waitTime = Math.max(0, resetTimeSeconds * 1000 - Date.now());
         const waitSecs = Math.ceil(waitTime / 1000);
-        console.log(`$YELLOWRate limit exceeded, waiting for ${waitSecs}s${RESET}`);
+        console.log(`${YELLOW}Rate limit exceeded, waiting for ${waitSecs}s${RESET}`);
+        if (!process.env.GITHUB_TOKEN) {
+            console.log(`${CYAN}You can set a GITHUB_TOKEN for greater limits${RESET}`);
+        }
         await new Promise((resolve) => setTimeout(resolve, waitTime));
         return retryFunc();
     }
