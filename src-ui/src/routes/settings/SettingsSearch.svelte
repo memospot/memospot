@@ -16,6 +16,7 @@ let { entries, placeholder, clearLabel, noResultsLabel, onSelect }: Props = $pro
 let searchQuery = $state("");
 let highlightedResultIndex = $state(0);
 let isSearchDropdownOpen = $state(false);
+let searchFormElement: HTMLFormElement | undefined = $state(undefined);
 let searchInputElement: HTMLInputElement | undefined = $state(undefined);
 let searchDropdownElement: HTMLDivElement | undefined = $state(undefined);
 
@@ -80,6 +81,25 @@ function setSearchInput(node: HTMLInputElement) {
             searchInputElement = undefined;
         }
     };
+}
+
+function setSearchForm(node: HTMLFormElement) {
+    searchFormElement = node;
+    return () => {
+        if (searchFormElement === node) {
+            searchFormElement = undefined;
+        }
+    };
+}
+
+function blurFocusedSearchElement() {
+    const activeElement = document.activeElement;
+    if (
+        activeElement instanceof HTMLElement &&
+        searchFormElement?.contains(activeElement)
+    ) {
+        activeElement.blur();
+    }
 }
 
 function handleGlobalKeydown(event: KeyboardEvent) {
@@ -169,10 +189,11 @@ async function scrollHighlightedResultIntoView() {
 }
 
 async function selectResult(entry: SettingSearchEntry) {
+    isSearchDropdownOpen = false;
     try {
         await onSelect(entry);
     } finally {
-        isSearchDropdownOpen = false;
+        blurFocusedSearchElement();
     }
 }
 
@@ -188,6 +209,7 @@ async function handleSearchSubmit(event: SubmitEvent) {
 <svelte:window onkeydown={handleGlobalKeydown} />
 
 <form
+  {@attach setSearchForm}
   class="relative mx-auto flex w-full max-w-xl items-center gap-2"
   onsubmit={handleSearchSubmit}
   onfocusout={(event) => {
@@ -253,8 +275,7 @@ async function handleSearchSubmit(event: SubmitEvent) {
                     "bg-accent text-accent-foreground": isHighlightedResult(result),
                     "hover:bg-secondary/70": !isHighlightedResult(result)
                   }}
-                  onmousedown={async (event) => {
-                    event.preventDefault();
+                  onclick={async () => {
                     await selectResult(result);
                   }}
                   onmouseenter={() => {

@@ -33,13 +33,7 @@ const PREFERRED_FOCUS_SELECTORS = [
     "[tabindex]:not([tabindex='-1'])"
 ];
 
-function getPreferredFocusTarget(container: HTMLElement): HTMLElement | null {
-    for (const selector of PREFERRED_FOCUS_SELECTORS) {
-        const candidate = container.querySelector<HTMLElement>(selector);
-        if (candidate) return candidate;
-    }
-    return null;
-}
+const TEXTUAL_INPUT_TYPES = new Set(["text", "search", "url", "email", "tel", "password"]);
 
 function findSettingRowById(
     contentPane: HTMLElement | undefined,
@@ -51,6 +45,14 @@ function findSettingRowById(
         if ((row.dataset.settingId ?? "") === settingId) {
             return row;
         }
+    }
+    return null;
+}
+
+function getPreferredFocusTarget(container: HTMLElement): HTMLElement | null {
+    for (const selector of PREFERRED_FOCUS_SELECTORS) {
+        const candidate = container.querySelector<HTMLElement>(selector);
+        if (candidate) return candidate;
     }
     return null;
 }
@@ -81,16 +83,34 @@ function scrollTargetIntoPaneCenter(
 }
 
 function focusTarget(target: HTMLElement) {
-    const focusTarget = getPreferredFocusTarget(target);
-    if (!focusTarget) return;
+    const needsTemporaryTabIndex = !target.hasAttribute("tabindex") && target.tabIndex < 0;
+    if (needsTemporaryTabIndex) {
+        target.setAttribute("tabindex", "-1");
+    }
 
-    focusTarget.focus({ preventScroll: true });
+    target.focus({ preventScroll: true });
 
-    if (focusTarget instanceof HTMLInputElement) {
-        const isTextualInput = ["text", "search", "url", "tel", "password"].includes(focusTarget.type);
-        if (isTextualInput) {
-            focusTarget.select();
+    if (needsTemporaryTabIndex) {
+        queueMicrotask(() => {
+            target.removeAttribute("tabindex");
+        });
+    }
+}
+
+function focusPreferredTarget(settingRow: HTMLElement) {
+    const preferredTarget = getPreferredFocusTarget(settingRow);
+    const targetToFocus = preferredTarget ?? settingRow;
+    focusTarget(targetToFocus);
+
+    if (preferredTarget instanceof HTMLInputElement) {
+        if (TEXTUAL_INPUT_TYPES.has(preferredTarget.type)) {
+            preferredTarget.select();
         }
+        return;
+    }
+
+    if (preferredTarget instanceof HTMLTextAreaElement) {
+        preferredTarget.select();
     }
 }
 
@@ -151,7 +171,7 @@ export async function navigateToSearchResult(
     }
 
     scrollTargetIntoPaneCenter(contentPane, target, reduceAnimation);
-    focusTarget(target);
+    focusPreferredTarget(target);
 
     return applyTargetHighlight(
         target,
