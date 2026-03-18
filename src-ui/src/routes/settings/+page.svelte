@@ -1,6 +1,5 @@
 <script lang="ts">
-import Fuse from "fuse.js";
-import { onMount, tick } from "svelte";
+import { tick } from "svelte";
 import EyeOpen from "svelte-radix/EyeOpen.svelte";
 import Gear from "svelte-radix/Gear.svelte";
 import Pencil2 from "svelte-radix/Pencil2.svelte";
@@ -13,6 +12,7 @@ import Memos from "./Memos.svelte";
 import Memospot from "./Memospot.svelte";
 import type { Section } from "./Navbar.svelte";
 import Navbar from "./Navbar.svelte";
+import SettingsSearch from "./SettingsSearch.svelte";
 import View from "./View.svelte";
 
 const sections: Section[] = [
@@ -29,16 +29,12 @@ const sections: Section[] = [
 let activeSection: string = $state(
     sections.find((s) => s.id === window.location.hash.slice(1))?.id ?? sections[0].id
 );
-let searchQuery = $state("");
 let contentPane: HTMLElement | undefined = $state(undefined);
 let sectionActions: Record<string, SectionActions> = $state({});
 let sectionSearchEntries: Record<string, SettingSearchEntry[]> = $state({});
-let highlightedResultIndex = $state(0);
-let isSearchDropdownOpen = $state(false);
 let highlightedElement: HTMLElement | null = null;
 let highlightTimer: ReturnType<typeof setTimeout> | undefined;
 let hasPreloadedSearchEntries = $state(false);
-let searchInputElement: HTMLInputElement | undefined = $state(undefined);
 
 const PREFERRED_FOCUS_SELECTORS = [
     "input[type='text']:not([disabled]):not([readonly])",
@@ -77,54 +73,6 @@ function findSettingRowById(settingId: string): HTMLElement | null {
 
 const allSearchEntries = $derived(Object.values(sectionSearchEntries).flat());
 
-const fuzzyResults = $derived.by(() => {
-    const query = searchQuery.trim();
-    if (query.length === 0 || allSearchEntries.length === 0) return [];
-
-    const fuse = new Fuse(allSearchEntries, {
-        threshold: 0.35,
-        ignoreLocation: true,
-        keys: [
-            { name: "label", weight: 0.75 },
-            { name: "keywords", weight: 0.25 }
-        ]
-    });
-
-    return fuse
-        .search(query, { limit: 25 })
-        .map((result: { item: SettingSearchEntry }) => result.item);
-});
-
-const groupedFuzzyResults = $derived.by(() => {
-    const grouped = new Map<string, { sectionLabel: string; items: SettingSearchEntry[] }>();
-
-    for (const result of fuzzyResults) {
-        const group = grouped.get(result.sectionId);
-        if (!group) {
-            grouped.set(result.sectionId, {
-                sectionLabel: result.sectionLabel,
-                items: [result]
-            });
-            continue;
-        }
-        if (group.items.length < 5) {
-            group.items.push(result);
-        }
-    }
-
-    return Array.from(grouped.entries()).map(([sectionId, group]) => ({
-        sectionId,
-        sectionLabel: group.sectionLabel,
-        items: group.items
-    }));
-});
-
-const flatFuzzyResults = $derived(groupedFuzzyResults.flatMap((group) => group.items));
-
-const showNoResults = $derived(
-    searchQuery.trim().length > 0 && groupedFuzzyResults.length === 0
-);
-
 const activeSectionActions = $derived(sectionActions[activeSection] ?? {});
 
 const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "false");
@@ -160,15 +108,6 @@ async function updateSectionWithOptions(
     await tick();
     collectSearchEntriesForSection(sectionId);
     if ((options.animate ?? true) && !reduceAnimation) await animateSectionTransition();
-}
-
-async function handleSearchSubmit(event: SubmitEvent) {
-    event.preventDefault();
-    if (flatFuzzyResults.length > 0) {
-        await navigateToSearchResult(
-            flatFuzzyResults[highlightedResultIndex] ?? flatFuzzyResults[0]
-        );
-    }
 }
 
 function registerSectionActions(sectionId: string, actions: SectionActions) {
@@ -247,45 +186,7 @@ async function navigateToSearchResult(entry: SettingSearchEntry) {
         highlightedElement?.classList.remove("settings-search-highlight");
         highlightedElement = null;
     }, 1400);
-
-    isSearchDropdownOpen = false;
 }
-
-function handleSearchKeydown(event: KeyboardEvent) {
-    if (!isSearchDropdownOpen && event.key !== "Escape") {
-        isSearchDropdownOpen = searchQuery.trim().length > 0;
-    }
-
-    if (event.key === "Escape") {
-        isSearchDropdownOpen = false;
-        return;
-    }
-
-    if (flatFuzzyResults.length === 0) {
-        return;
-    }
-
-    if (event.key === "ArrowDown") {
-        event.preventDefault();
-        highlightedResultIndex = (highlightedResultIndex + 1) % flatFuzzyResults.length;
-    }
-
-    if (event.key === "ArrowUp") {
-        event.preventDefault();
-        highlightedResultIndex =
-            (highlightedResultIndex - 1 + flatFuzzyResults.length) % flatFuzzyResults.length;
-    }
-}
-
-$effect(() => {
-    searchQuery;
-    highlightedResultIndex = 0;
-});
-
-$effect(() => {
-    if (!contentPane) return;
-    collectSearchEntriesForSection(activeSection);
-});
 
 async function preloadSearchEntriesInBackground() {
     const originalSection = activeSection;
@@ -307,37 +208,21 @@ async function preloadSearchEntriesInBackground() {
     });
 }
 
-function focusSearchInput() {
-    searchInputElement?.focus();
-    searchInputElement?.select();
-    isSearchDropdownOpen = searchQuery.trim().length > 0;
-}
+function setContentPane(node: HTMLElement) {
+    contentPane = node;
+    collectSearchEntriesForSection(activeSection);
 
-onMount(() => {
-    const onGlobalKeydown = (event: KeyboardEvent) => {
-        const key = event.key.toLowerCase();
-        const isCtrlOrMeta = event.ctrlKey || event.metaKey;
-        const isSearchShortcut = key === "f3" || (isCtrlOrMeta && (key === "f" || key === "k"));
+    if (!hasPreloadedSearchEntries) {
+        hasPreloadedSearchEntries = true;
+        void preloadSearchEntriesInBackground();
+    }
 
-        if (!isSearchShortcut) {
-            return;
-        }
-
-        event.preventDefault();
-        focusSearchInput();
-    };
-
-    window.addEventListener("keydown", onGlobalKeydown);
     return () => {
-        window.removeEventListener("keydown", onGlobalKeydown);
+        if (contentPane === node) {
+            contentPane = undefined;
+        }
     };
-});
-
-$effect(() => {
-    if (!contentPane || hasPreloadedSearchEntries) return;
-    hasPreloadedSearchEntries = true;
-    void preloadSearchEntriesInBackground();
-});
+}
 </script>
 
 <div
@@ -350,84 +235,13 @@ $effect(() => {
     <header class="sticky top-0 z-20 rounded-xl border bg-card/95 p-3 backdrop-blur supports-backdrop-filter:bg-card/70">
       <div class="grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_1fr] md:items-center">
         <div class="hidden md:block" aria-hidden="true"></div>
-        <form
-          class="relative mx-auto flex w-full max-w-xl items-center gap-2"
-          onsubmit={handleSearchSubmit}
-          onfocusout={(event) => {
-            const nextTarget = event.relatedTarget as Node | null;
-            if (!nextTarget || !event.currentTarget.contains(nextTarget)) {
-              isSearchDropdownOpen = false;
-            }
-          }}
-        >
-          <div class="relative w-full">
-            <input
-              type="search"
-              bind:this={searchInputElement}
-              bind:value={searchQuery}
-              placeholder={m.settingsSearchPlaceholder()}
-              class="w-full rounded-md border bg-background px-3 py-2 text-sm placeholder:text-center md:min-w-72"
-              aria-label={m.settingsSearchPlaceholder()}
-              onfocus={() => {
-                isSearchDropdownOpen = searchQuery.trim().length > 0;
-              }}
-              onkeydown={handleSearchKeydown}
-            />
-            {#if searchQuery.trim().length > 0}
-              <button
-                type="button"
-                class="bg-background absolute right-2 top-1/2 -translate-y-1/2 rounded-md border px-3 py-1 text-xs hover:bg-secondary"
-                onclick={() => {
-                  searchQuery = "";
-                  isSearchDropdownOpen = false;
-                }}
-              >
-                {m.settingsSearchClear()}
-              </button>
-            {/if}
-          </div>
-
-          {#if isSearchDropdownOpen && searchQuery.trim().length > 0}
-            <div class="absolute left-0 top-full z-30 mt-2 max-h-[60vh] w-full overflow-y-auto rounded-lg border bg-popover p-2 shadow-lg md:min-w-md">
-              {#if groupedFuzzyResults.length > 0}
-                {#each groupedFuzzyResults as group (group.sectionId)}
-                  <div class="mb-2 border-t border-border/60 pt-1 first:border-t-0 first:pt-0 last:mb-0">
-                    <p class="mb-1 mt-1 px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground first:mt-0">
-                      {group.sectionLabel}
-                    </p>
-                    <div class="space-y-1">
-                      {#each group.items as result (result.id)}
-                        <button
-                          type="button"
-                          class={{
-                            "block w-full rounded-md px-2 py-1.5 text-left text-sm":true,
-                             "bg-accent text-accent-foreground": flatFuzzyResults[highlightedResultIndex]?.id === result.id,
-                             "hover:bg-secondary/70": flatFuzzyResults[highlightedResultIndex]?.id !== result.id
-                          }}
-                          onmousedown={async (event) => {
-                            event.preventDefault();
-                            await navigateToSearchResult(result);
-                          }}
-                        >
-                          <div class="font-medium">{result.label}</div>
-                          {#if result.keywords.length > 0}
-                            <div class="text-xs text-muted-foreground">
-                              {result.keywords.slice(0, 2).join(" · ")}
-                            </div>
-                          {/if}
-                        </button>
-                      {/each}
-                    </div>
-                  </div>
-                {/each}
-              {:else if showNoResults}
-                <p class="px-2 py-2 text-sm text-muted-foreground">
-                  {m.settingsSearchNoResults()}
-                </p>
-              {/if}
-            </div>
-          {/if}
-        </form>
+        <SettingsSearch
+          entries={allSearchEntries}
+          placeholder={m.settingsSearchPlaceholder()}
+          clearLabel={m.settingsSearchClear()}
+          noResultsLabel={m.settingsSearchNoResults()}
+          onSelect={async (entry: SettingSearchEntry) => await navigateToSearchResult(entry)}
+        />
 
         <div class="flex items-center gap-2 justify-self-end">
           <Button onclick={async () => await activeSectionActions.loadDefaults?.()}>
@@ -459,7 +273,7 @@ $effect(() => {
       </aside>
 
       <main
-        bind:this={contentPane}
+        {@attach setContentPane}
         class="min-h-0 overflow-y-auto rounded-xl border bg-card p-3"
       >
         {#each sections as section (section.id)}
