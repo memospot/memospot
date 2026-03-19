@@ -23,7 +23,7 @@ const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "
 
 <nav
   class={{
-    "flex flex-col gap-1 pt-1 md:gap-2": true,
+    "flex md:flex-col sm:flex-row pt-1 ": true,
     "motion-preset-fade": !reduceAnimation
   }}
 >
@@ -36,7 +36,7 @@ const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "
       onkeypress={async (e) =>
       ["Enter", " "].includes(e.key) && onSectionChange(section.id)}
       class={{
-        "text-lg cursor-pointer w-full rounded-xl border border-transparent px-3 py-2 text-left whitespace-nowrap transition-colors active:translate-y-px hover:border-border hover:drop-shadow data-[active=true]:border-border":
+        "font-semibold uppercase tracking-[0.09rem] text-xs text-foreground mb-1 cursor-pointer w-full rounded-xl border border-transparent px-3 py-2 text-left whitespace-nowrap transition-colors active:translate-y-px hover:border-border hover:drop-shadow data-[active=true]:border-border":
             true,
         "bg-secondary text-secondary-foreground": activeSection === section.id,
         "hover:bg-secondary/80 text-muted-foreground": activeSection !== section.id

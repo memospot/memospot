@@ -210,13 +210,13 @@ $effect(() => {
 </script>
 
 <div class="space-y-3">
-  <div>
-    <h3 class="text-lg flex flex-row mb-1">
+  <div class="mb-4">
+    <h3 class="font-semibold uppercase tracking-[0.09rem] text-sm text-foreground flex flex-row mb-1">
       {m.settingsMemosDescription()}<a
         href="https://usememos.com/docs/configuration#common-options"
         target="_blank"
       >
-        <ExternalLink class="ml-1 mt-1 h-[1.2rem] w-[1.2rem]" />
+        <ExternalLink class="ml-1 h-[1.2rem] w-[1.2rem]" />
       </a>
     </h3>
 
@@ -259,7 +259,7 @@ $effect(() => {
       bind:value={input.dataDir}
       onfocusout={validateMemosDataDir}
       onkeypress={validateMemosDataDir}
-      class="p-2 rounded-md border bg-background min-w-max md:w-96"
+      class="font-mono p-2 rounded-md border bg-background min-w-max md:w-96"
     />
   </Setting>
 
@@ -275,7 +275,7 @@ $effect(() => {
       bind:value={input.binaryPath}
       onfocusout={validateMemosBinaryPath}
       onkeypress={validateMemosBinaryPath}
-      class="p-2 rounded-md border bg-background min-w-max md:w-96"
+      class="font-mono p-2 rounded-md border bg-background min-w-max md:w-96"
     />
   </Setting>
 
@@ -291,7 +291,7 @@ $effect(() => {
       bind:value={input.workingDir}
       onfocusout={validateMemosWorkingDir}
       onkeypress={validateMemosWorkingDir}
-      class="p-2 rounded-md border bg-background min-w-max md:w-96"
+      class="font-mono p-2 rounded-md border bg-background min-w-max md:w-96"
     />
   </Setting>
 
@@ -308,7 +308,7 @@ $effect(() => {
       onfocusout={() => {
         currentConfig.memos.addr = input.bindAddr;
       }}
-      class="p-2 rounded-md border bg-background min-w-max md:w-96"
+      class="font-mono p-2 rounded-md border bg-background min-w-max md:w-96"
     />
   </Setting>
 
@@ -327,7 +327,7 @@ $effect(() => {
       onfocusout={() => {
         currentConfig.memos.port = input.bindPort;
       }}
-      class="p-2 rounded-md border bg-background min-w-max w-40"
+      class="font-mono p-2 rounded-md border bg-background min-w-max w-40"
     />
   </Setting>
 

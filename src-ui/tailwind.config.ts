@@ -1,18 +1,6 @@
 import type { Config } from "tailwindcss";
-import { fontFamily, fontSize } from "tailwindcss/defaultTheme";
+import { fontFamily } from "tailwindcss/defaultTheme";
 import tailwindcssMotion from "tailwindcss-motion";
-
-const FONT_SIZE_MULTIPLIER = 1.025;
-const scaledFontSize = Object.fromEntries(
-    Object.entries(fontSize).map(([key, value]) => {
-        if (typeof value === "string") {
-            return [key, `calc(${value} * ${FONT_SIZE_MULTIPLIER})`];
-        }
-
-        const [size, options] = value;
-        return [key, [`calc(${size} * ${FONT_SIZE_MULTIPLIER})`, options]];
-    })
-);
 
 const config: Config = {
     darkMode: ["class"],
@@ -99,8 +87,7 @@ const config: Config = {
                     "Courier New",
                     ...fontFamily.mono
                 ]
-            },
-            fontSize: scaledFontSize
+            }
         }
     },
     plugins: [tailwindcssMotion]

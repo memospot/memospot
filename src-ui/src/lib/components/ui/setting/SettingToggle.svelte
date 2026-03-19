@@ -54,12 +54,12 @@ const normalizedSearchKeywords = $derived(normalizeSettingSearchKeywords(searchK
     {#if name || desc}
       <div class="w-full h-full wrap-break-word self-center mr-4">
         {#if name}
-          <h2 class="font-semibold text-md text-foreground mb-1">
+          <h2 class="font-semibold uppercase tracking-[0.09rem] text-xs text-foreground mb-1">
             {@html name}
           </h2>
         {/if}
         {#if desc}
-          <span class="text-muted-foreground text-sm text-justify">
+          <span class="text-muted-foreground/90 text-sm text-justify wrap-break-word mr-10">
             {@html desc}
           </span>
         {/if}

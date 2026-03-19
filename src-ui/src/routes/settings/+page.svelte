@@ -197,7 +197,7 @@ function setContentPane(node: HTMLElement) {
 
       <main
         {@attach setContentPane}
-        class="min-h-0 overflow-y-auto rounded-xl border bg-card p-3"
+        class="min-h-0 overflow-y-auto pl-1 pr-4"
       >
         {#each sections as section (section.id)}
           {#if activeSection === section.id}

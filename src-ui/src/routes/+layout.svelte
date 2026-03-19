@@ -32,10 +32,9 @@ onMount(async () => {
         }
     });
 
-    // Initialize i18n
     await initI18n();
 
-    // Show the window after everything is initialized
+    // Show the window after everything is initialized.
     await getCurrentWebviewWindow().show();
 });
 </script>

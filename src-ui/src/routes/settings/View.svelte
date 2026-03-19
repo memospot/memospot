@@ -196,9 +196,9 @@ $effect(() => {
 });
 </script>
 
-<div class="space-y-3 w-full">
-  <div>
-    <h3 class="text-lg mb-1">
+<div class="space-y-3">
+  <div class="mb-4">
+    <h3 class="font-semibold uppercase tracking-[0.09rem] text-sm text-foreground mb-1">
       {m.settingsViewDescription()}
     </h3>
 

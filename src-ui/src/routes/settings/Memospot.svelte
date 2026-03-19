@@ -186,8 +186,8 @@ $effect(() => {
 </script>
 
 <div class="space-y-3">
-  <div>
-    <h3 class="text-lg mb-1">
+  <div class="mb-4">
+    <h3 class="font-semibold uppercase tracking-[0.09rem] text-sm text-foreground mb-1">
       {m.settingsMemospotDescription()}
     </h3>
 
@@ -217,7 +217,7 @@ $effect(() => {
         onfocusout={updateRemoteServerUrl}
         onkeypress={async (e) =>
         e.key === "Enter" && (await updateRemoteServerUrl(e))}
-        class="p-2 rounded-md border bg-input min-w-max md:w-96"
+        class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
         disabled={!input.remoteEnabled}
       />
     </Setting>
@@ -234,7 +234,7 @@ $effect(() => {
         onfocusout={() => {
           currentConfig.memospot.remote.user_agent = input.remoteUserAgent;
         }}
-        class="p-2 rounded-md border bg-input min-w-max md:w-96"
+        class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
         disabled={!input.remoteEnabled}
       />
     </Setting>
@@ -263,7 +263,7 @@ $effect(() => {
         onfocusout={() => {
           currentConfig.memospot.updater.check_interval = input.updaterCheckInterval;
         }}
-        class="p-2 rounded-md border bg-input min-w-max md:w-96"
+        class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
         disabled={!input.updaterEnabled}
       />
     </Setting>

@@ -29,7 +29,7 @@ const BUTTON_VARIANT_CLASSES: Record<ButtonVariant, string> = {
 
 <button
   {type}
-  class={["border-box inline-flex h-9 cursor-pointer items-center justify-center rounded-md px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50", BUTTON_VARIANT_CLASSES[variant], className]}
+  class={["border-box inline-flex h-9 cursor-pointer items-center justify-center rounded-md px-3 py-1.5 font-semibold uppercase tracking-[0.05rem] text-xs disabled:cursor-not-allowed disabled:opacity-50", BUTTON_VARIANT_CLASSES[variant], className]}
   {...rest}
 >
   {@render children?.()}
