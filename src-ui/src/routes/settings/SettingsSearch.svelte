@@ -225,7 +225,7 @@ async function handleSearchSubmit(event: SubmitEvent) {
       bind:value={searchQuery}
       {@attach setSearchInput}
       {placeholder}
-      class="w-full rounded-md border bg-background px-3 py-2 text-sm placeholder:text-center md:min-w-72"
+      class="w-full appearance-none rounded-md border bg-input px-3 py-2 text-sm placeholder:text-center focus:outline-none md:min-w-72"
       aria-label={placeholder}
       oninput={() => {
         highlightedResultIndex = 0;
@@ -241,7 +241,7 @@ async function handleSearchSubmit(event: SubmitEvent) {
     {#if searchQuery.trim().length > 0}
       <button
         type="button"
-        class="bg-background absolute right-2 top-1/2 -translate-y-1/2 rounded-md border px-3 py-1 text-xs hover:bg-secondary"
+        class="bg-input absolute right-2 top-1/2 -translate-y-1/2 rounded-md border px-3 py-1 text-xs hover:bg-secondary"
         onclick={() => {
           searchQuery = "";
           highlightedResultIndex = 0;

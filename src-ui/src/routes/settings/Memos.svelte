@@ -259,7 +259,7 @@ $effect(() => {
       bind:value={input.dataDir}
       onfocusout={validateMemosDataDir}
       onkeypress={validateMemosDataDir}
-      class="font-mono p-2 rounded-md border bg-background min-w-max md:w-96"
+      class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
     />
   </Setting>
 
@@ -275,7 +275,7 @@ $effect(() => {
       bind:value={input.binaryPath}
       onfocusout={validateMemosBinaryPath}
       onkeypress={validateMemosBinaryPath}
-      class="font-mono p-2 rounded-md border bg-background min-w-max md:w-96"
+      class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
     />
   </Setting>
 
@@ -291,7 +291,7 @@ $effect(() => {
       bind:value={input.workingDir}
       onfocusout={validateMemosWorkingDir}
       onkeypress={validateMemosWorkingDir}
-      class="font-mono p-2 rounded-md border bg-background min-w-max md:w-96"
+      class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
     />
   </Setting>
 
@@ -308,7 +308,7 @@ $effect(() => {
       onfocusout={() => {
         currentConfig.memos.addr = input.bindAddr;
       }}
-      class="font-mono p-2 rounded-md border bg-background min-w-max md:w-96"
+      class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
     />
   </Setting>
 
@@ -327,7 +327,7 @@ $effect(() => {
       onfocusout={() => {
         currentConfig.memos.port = input.bindPort;
       }}
-      class="font-mono p-2 rounded-md border bg-background min-w-max w-40"
+      class="font-mono p-2 rounded-md border bg-input min-w-max w-40"
     />
   </Setting>
 
@@ -344,7 +344,7 @@ $effect(() => {
     <textarea
       id="env"
       rows="5"
-      class="p-2 rounded-md border bg-background min-w-max w-full font-mono leading-tight"
+      class="p-2 rounded-md border bg-input min-w-max w-full font-mono leading-tight"
       bind:value={input.envVars}
       onfocusout={updateEnvVars}
       onkeypress={async (e) => e.key === "Enter" && (await updateEnvVars(e))}

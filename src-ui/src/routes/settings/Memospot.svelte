@@ -324,7 +324,7 @@ $effect(() => {
     <textarea
       id="env"
       rows="5"
-      class="p-2 rounded-md border bg-background min-w-max w-full font-mono leading-tight"
+      class="p-2 rounded-md border bg-input min-w-max w-full font-mono leading-tight"
       bind:value={input.envVars}
       onfocusout={updateEnvVars}
       onkeypress={async (e) => e.key === "Enter" && (await updateEnvVars(e))}

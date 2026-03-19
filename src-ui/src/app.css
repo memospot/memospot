@@ -49,36 +49,36 @@ bg-primary-darker: 177 74.8% 20.2%;
             "Ubuntu", "Cantarell", "DejaVu Sans", "Liberation Sans", "Helvetica Neue", Arial,
             sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", color-emoji;
         --font-sans: var(--font-sans-default);
-        --background: 240 4.8% 95.9%;
-        --foreground: 215 27.9% 16.9%;
+        --background: 48 33.4% 97.1%;
+        --foreground: 47.9 35.7% 10.4%;
 
-        --muted: 218 10.6% 64.9%;
-        --muted-foreground: 220 8.9% 46.1%;
+        --muted: 44 29.4% 90%;
+        --muted-foreground: 50 2.6% 44.5%;
 
         --popover: 0 0% 100%;
-        --popover-foreground: 224 71.4% 4.1%;
+        --popover-foreground: 50.8 19.4% 13.1%;
 
         --card: 0 0% 100%;
-        --card-foreground: 224 71.4% 4.1%;
+        --card-foreground: 60 2.6% 7.6%;
 
-        --border: 220 13% 91%;
-        --input: 240 4.8% 95.9%;
+        --border: 50 7.5% 84.3%;
+        --input: 46.2 22.9% 92%;
 
-        --primary: 192 91.4% 36.5%;
-        --primary-foreground: 210 20% 98%;
+        --primary: 210 45.4% 34.5%;
+        --primary-foreground: 48 33.4% 97.1%;
 
-        --secondary: 0 0% 100%;
-        --secondary-foreground: 220.9 39.3% 11%;
+        --secondary: 46.2 22.9% 88.8%;
+        --secondary-foreground: 50.8 8.5% 30%;
 
-        --accent: 220 14.3% 95.9%;
-        --accent-foreground: 220.9 39.3% 11%;
+        --accent: 46.2 22.9% 88.8%;
+        --accent-foreground: 50.8 19.4% 13.1%;
 
-        --destructive: 0 72.2% 50.6%;
-        --destructive-foreground: 210 20% 98%;
+        --destructive: 2.6 42.5% 43%;
+        --destructive-foreground: 0 0% 100%;
 
-        --ring: 224 71.4% 4.1%;
+        --ring: 210 45.4% 34.5%;
 
-        --glow: #0891b2; /* theme(colors.cyan.600) */
+        --glow: #305880;
         --glow-error: #991b1b; /* theme(colors.red.800) */
 
         --radius: 0.4rem;
@@ -153,6 +153,40 @@ bg-primary-darker: 177 74.8% 20.2%;
 @layer base {
     * {
         @apply border-border;
+    }
+
+    input:is(
+            [type="text"],
+            [type="search"],
+            [type="url"],
+            [type="email"],
+            [type="tel"],
+            [type="password"],
+            [type="number"],
+            :not([type])
+        ):not([disabled]):not([readonly]),
+    textarea:not([disabled]):not([readonly]) {
+        transition:
+            border-color 150ms ease,
+            box-shadow 150ms ease;
+    }
+
+    input:is(
+            [type="text"],
+            [type="search"],
+            [type="url"],
+            [type="email"],
+            [type="tel"],
+            [type="password"],
+            [type="number"],
+            :not([type])
+        ):not([disabled]):not([readonly]):focus,
+    textarea:not([disabled]):not([readonly]):focus {
+        border-color: hsl(var(--primary));
+        outline: none;
+        box-shadow:
+            0 0 0 1px hsl(var(--primary) / 0.75),
+            0 0 0 3px hsl(var(--primary) / 0.2);
     }
 
     body {
