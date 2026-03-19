@@ -160,13 +160,15 @@ pub async fn set_config(patch: String) -> Result<bool, String> {
         error!("failed to apply configuration patch: {e}");
     });
 
-    let new_config: Config = match serde_json::from_value(deserialized_config) {
+    let mut new_config: Config = match serde_json::from_value(deserialized_config) {
         Ok(c) => c,
         Err(e) => {
             error!("failed to deserialize configuration: {e}");
             return Ok(false);
         }
     };
+
+    crate::memos::sync_mode_demo_compat(&mut new_config.memos);
 
     runtime_config.yaml = new_config.clone();
     RuntimeConfig::to_global_store(&runtime_config);

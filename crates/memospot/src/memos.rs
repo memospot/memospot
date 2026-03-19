@@ -19,6 +19,18 @@ use tauri_plugin_http::reqwest;
 use tauri_utils::PackageInfo;
 use tokio::io::AsyncWriteExt;
 
+pub fn sync_mode_demo_compat(memos: &mut config::Memos) {
+    let mode = match memos.mode.as_deref() {
+        Some("prod") => "prod",
+        Some("dev") => "dev",
+        Some("demo") => "demo",
+        _ => "prod",
+    };
+
+    memos.mode = Some(mode.to_string());
+    memos.demo = Some(mode == "demo");
+}
+
 /// Cleanup orphaned Memos processes.
 ///
 /// NOTE: there's a serious bug that prevents the `ExitRequested` event from
@@ -394,11 +406,12 @@ fn make_env_key(key: &str) -> String {
 pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
     // Use the runtime-checked memos_data variable instead of the one from the yaml file.
     let memos_data = rtcfg.paths.memos_data.to_string_lossy();
-    let yaml = rtcfg.yaml.memos.clone();
+    let mut yaml = rtcfg.yaml.memos.clone();
+    sync_mode_demo_compat(&mut yaml);
     let managed_vars: HashMap<&str, String> = HashMap::from_iter(vec![
         (
             "demo",
-            (yaml.mode.as_deref() == Some("demo") || yaml.demo.unwrap_or_default()).to_string(),
+            (yaml.mode.as_deref() == Some("demo") || yaml.demo == Some(true)).to_string(),
         ),
         ("mode", yaml.mode.unwrap_or_default()),
         ("addr", yaml.addr.unwrap_or_default()),
@@ -429,6 +442,51 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
         env_vars.insert(make_env_key(key), value);
     }
     env_vars
+}
+
+#[cfg(test)]
+mod tests {
+    use super::sync_mode_demo_compat;
+
+    #[test]
+    fn sync_mode_demo_compat_sets_demo_for_legacy_mode() {
+        let mut memos = config::Memos {
+            mode: Some("demo".to_string()),
+            demo: Some(false),
+            ..Default::default()
+        };
+
+        sync_mode_demo_compat(&mut memos);
+
+        assert_eq!(memos.demo, Some(true));
+    }
+
+    #[test]
+    fn sync_mode_demo_compat_disables_demo_for_non_demo_modes() {
+        let mut memos = config::Memos {
+            mode: Some("prod".to_string()),
+            demo: Some(true),
+            ..Default::default()
+        };
+
+        sync_mode_demo_compat(&mut memos);
+
+        assert_eq!(memos.demo, Some(false));
+    }
+
+    #[test]
+    fn sync_mode_demo_compat_defaults_unknown_mode_to_prod() {
+        let mut memos = config::Memos {
+            mode: Some("staging".to_string()),
+            demo: Some(true),
+            ..Default::default()
+        };
+
+        sync_mode_demo_compat(&mut memos);
+
+        assert_eq!(memos.mode, Some("prod".to_string()));
+        assert_eq!(memos.demo, Some(false));
+    }
 }
 
 /// Query Memos version via API.

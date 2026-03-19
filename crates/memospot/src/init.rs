@@ -141,11 +141,12 @@ pub fn database(rtcfg: &RuntimeConfig) -> PathBuf {
         if !file.exists() {
             continue;
         }
-        // Remove demo database in dev/debug mode. Demo database is not handled by
-        // migrations and can prevent Memos from starting if the model is outdated.
-        if cfg!(debug_assertions)
-            && (rtcfg.yaml.memos.demo.unwrap_or(false)
-                || rtcfg.yaml.memos.mode.as_deref() == Some("demo"))
+        // Remove demo database.
+        //
+        // Demo database is not handled by
+        // migrations and can prevent Memos from starting if the schema is outdated.
+        if rtcfg.yaml.memos.demo == Some(true)
+            || rtcfg.yaml.memos.mode.as_deref() == Some("demo")
         {
             match std::fs::remove_file(&file) {
                 Ok(_) => warn!(
@@ -323,7 +324,9 @@ pub fn config(config_path: &PathBuf) -> Config {
 
         cfg_reader = Ok(Config::default());
     }
-    cfg_reader.expect_dialog(fl!("panic-config-parse-error"))
+    let mut cfg = cfg_reader.expect_dialog(fl!("panic-config-parse-error"));
+    crate::memos::sync_mode_demo_compat(&mut cfg.memos);
+    cfg
 }
 
 /// Ensure that Memos port is available.

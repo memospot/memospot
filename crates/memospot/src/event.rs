@@ -94,7 +94,7 @@ fn on_exit_cleanup<R: Runtime>(app: &AppHandle<R>) {
     debug!("running before exit cleanup code…");
 
     #[cfg(not(debug_assertions))]
-    let final_config = RuntimeConfig::from_global_store();
+    let mut final_config = RuntimeConfig::from_global_store();
     #[cfg(debug_assertions)]
     let mut final_config = RuntimeConfig::from_global_store();
 
@@ -104,6 +104,8 @@ fn on_exit_cleanup<R: Runtime>(app: &AppHandle<R>) {
         final_config.yaml.memos.mode = final_config.__yaml__.memos.mode.clone();
         final_config.yaml.memos.port = final_config.__yaml__.memos.port;
     }
+
+    memos::sync_mode_demo_compat(&mut final_config.yaml.memos);
 
     if final_config.yaml != final_config.__yaml__ {
         info!("configuration has changed. Saving…");
