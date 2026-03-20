@@ -1,6 +1,8 @@
 <script lang="ts">
 import Fuse from "fuse.js";
+import { onMount } from "svelte";
 import { tick } from "svelte";
+import MagnifyingGlass from "svelte-radix/MagnifyingGlass.svelte";
 import type { SettingSearchEntry } from "$lib/settingsSearch";
 
 type Props = {
@@ -11,14 +13,29 @@ type Props = {
     onSelect: (entry: SettingSearchEntry) => void | Promise<void>;
 };
 
+type NavigatorWithUserAgentData = Navigator & {
+    userAgentData?: {
+        platform?: string;
+    };
+};
+
 let { entries, placeholder, clearLabel, noResultsLabel, onSelect }: Props = $props();
 
 let searchQuery = $state("");
 let highlightedResultIndex = $state(0);
 let isSearchDropdownOpen = $state(false);
+let shortcutLabel = $state("CTRL F");
 let searchFormElement: HTMLFormElement | undefined = $state(undefined);
 let searchInputElement: HTMLInputElement | undefined = $state(undefined);
 let searchDropdownElement: HTMLDivElement | undefined = $state(undefined);
+
+onMount(() => {
+    const platform =
+        (navigator as NavigatorWithUserAgentData).userAgentData?.platform ??
+        navigator.platform ??
+        "";
+    shortcutLabel = /mac/i.test(platform) ? "CMD F" : "CTRL F";
+});
 
 const fuzzyResults = $derived.by(() => {
     const query = searchQuery.trim();
@@ -220,12 +237,17 @@ async function handleSearchSubmit(event: SubmitEvent) {
   }}
 >
   <div class="relative w-full">
+    <span
+      class="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-muted-foreground"
+    >
+      <MagnifyingGlass class="size-4" />
+    </span>
     <input
       type="search"
       bind:value={searchQuery}
       {@attach setSearchInput}
       {placeholder}
-      class="w-full appearance-none rounded-md border bg-input px-3 py-2 text-sm placeholder:text-center focus:outline-none md:min-w-72"
+      class="w-full appearance-none rounded-md border bg-input py-2 pl-10 pr-20 text-sm focus:outline-none md:min-w-72"
       aria-label={placeholder}
       oninput={() => {
         highlightedResultIndex = 0;
@@ -250,6 +272,12 @@ async function handleSearchSubmit(event: SubmitEvent) {
       >
         {clearLabel}
       </button>
+    {:else}
+      <span
+        class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-md border bg-input px-3 py-1 text-xs text-muted-foreground"
+      >
+        {shortcutLabel}
+      </span>
     {/if}
   </div>
 
