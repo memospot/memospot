@@ -288,6 +288,29 @@ build TARGET='all':
     fi
     just postbuild
 
+# Install Memospot to the system (requires sudo)
+[group('install from source')]
+[linux]
+install: (build "no-bundle")
+    sudo install -Dm 755 build/memospot /usr/bin/memospot
+    sudo install -Dm 755 server-dist/memos-x86_64-unknown-linux-gnu /usr/bin/memos
+    sudo install -Dm 644 crates/memospot/icons/32x32.png /usr/share/icons/hicolor/32x32/apps/memospot.png
+    sudo install -Dm 644 crates/memospot/icons/128x128.png /usr/share/icons/hicolor/128x128/apps/memospot.png
+    sudo install -Dm 644 crates/memospot/icons/128x128@2x.png /usr/share/icons/hicolor/256x256@2/apps/memospot.png
+    sudo bash -c 'printf "%s\n" "[Desktop Entry]" "Categories=Utility;" "Comment=Memospot - a note-taking application" "Exec=memospot" "Icon=memospot" "Name=Memospot" "Terminal=false" "Type=Application" > /usr/share/applications/Memospot.desktop'
+    if command -v update-desktop-database >/dev/null 2>&1; then sudo update-desktop-database /usr/share/applications; fi
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then sudo gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor; fi
+
+[group('install from source')]
+[linux]
+uninstall:
+    sudo rm -f /usr/bin/memospot /usr/bin/memos
+    sudo rm -f /usr/share/applications/Memospot.desktop
+    sudo rm -f /usr/share/icons/hicolor/32x32/apps/memospot.png
+    sudo rm -f /usr/share/icons/hicolor/128x128/apps/memospot.png
+    sudo rm -f /usr/share/icons/hicolor/256x256@2/apps/memospot.png
+    if command -v update-desktop-database >/dev/null 2>&1; then sudo update-desktop-database /usr/share/applications; fi
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then sudo gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor; fi
 
 [doc('Actions: prune, lint, test, linux, windows, linux-no-bundle, windows-no-bundle.')]
 [group('Docker Bake')]
