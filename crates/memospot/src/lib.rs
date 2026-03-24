@@ -9,6 +9,7 @@ mod menu;
 mod route;
 mod runtime_config;
 mod sqlite;
+mod tests;
 mod updater;
 mod utils;
 mod webview;

@@ -444,61 +444,14 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
     env_vars
 }
 
-#[cfg(test)]
-mod tests {
-    use super::sync_mode_demo_compat;
-
-    #[test]
-    fn sync_mode_demo_compat_sets_demo_for_legacy_mode() {
-        let mut memos = config::Memos {
-            mode: Some("demo".to_string()),
-            demo: Some(false),
-            ..Default::default()
-        };
-
-        sync_mode_demo_compat(&mut memos);
-
-        assert_eq!(memos.demo, Some(true));
-    }
-
-    #[test]
-    fn sync_mode_demo_compat_disables_demo_for_non_demo_modes() {
-        let mut memos = config::Memos {
-            mode: Some("prod".to_string()),
-            demo: Some(true),
-            ..Default::default()
-        };
-
-        sync_mode_demo_compat(&mut memos);
-
-        assert_eq!(memos.demo, Some(false));
-    }
-
-    #[test]
-    fn sync_mode_demo_compat_defaults_unknown_mode_to_prod() {
-        let mut memos = config::Memos {
-            mode: Some("staging".to_string()),
-            demo: Some(true),
-            ..Default::default()
-        };
-
-        sync_mode_demo_compat(&mut memos);
-
-        assert_eq!(memos.mode, Some("prod".to_string()));
-        assert_eq!(memos.demo, Some(false));
-    }
-}
-
 /// Query Memos version via API.
 ///
 /// Supports:
 ///     - v0.23.0+ (/api/v1/workspace)
 ///     - v0.26.0+ (/api/v1/instance)
-///
-/// TODO: invert the endpoint priority when Memos v0.26.0 is out.
 pub async fn query_version(memos_url: &str) -> Result<String, anyhow::Error> {
     const TIMEOUT_MS: u64 = 1_000;
-    const ENDPOINTS: [&str; 2] = ["api/v1/workspace/profile", "api/v1/instance/profile"];
+    const ENDPOINTS: [&str; 2] = ["api/v1/instance/profile", "api/v1/workspace/profile"];
 
     let mut last_error = anyhow!("failed to query server version via API");
 
