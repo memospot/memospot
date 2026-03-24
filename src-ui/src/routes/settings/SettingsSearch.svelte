@@ -111,10 +111,7 @@ function setSearchForm(node: HTMLFormElement) {
 
 function blurFocusedSearchElement() {
     const activeElement = document.activeElement;
-    if (
-        activeElement instanceof HTMLElement &&
-        searchFormElement?.contains(activeElement)
-    ) {
+    if (activeElement instanceof HTMLElement && searchFormElement?.contains(activeElement)) {
         activeElement.blur();
     }
 }
@@ -220,7 +217,6 @@ async function handleSearchSubmit(event: SubmitEvent) {
         await selectResult(flatFuzzyResults[highlightedResultIndex] ?? flatFuzzyResults[0]);
     }
 }
-
 </script>
 
 <svelte:window onkeydown={handleGlobalKeydown} />

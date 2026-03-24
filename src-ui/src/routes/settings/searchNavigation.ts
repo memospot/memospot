@@ -67,7 +67,9 @@ function scrollTargetIntoPaneCenter(
         const targetRect = target.getBoundingClientRect();
         const offsetWithinPane = targetRect.top - paneRect.top;
         const centeredTop =
-            contentPane.scrollTop + offsetWithinPane - (contentPane.clientHeight / 2 - targetRect.height / 2);
+            contentPane.scrollTop +
+            offsetWithinPane -
+            (contentPane.clientHeight / 2 - targetRect.height / 2);
 
         contentPane.scrollTo({
             top: Math.max(0, centeredTop),
