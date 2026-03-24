@@ -7,39 +7,37 @@ set shell := ['bash', '-c']
 set windows-shell := ['powershell', '-Command']
 set dotenv-load := true
 
-bash := if os() == 'windows' { 'env -S bash -euo pipefail' } else { '/usr/bin/env -S bash -euo pipefail' }
-powershell := if os() == 'windows' {'powershell.exe'} else {'/usr/bin/env pwsh'}
-bun := if os() == 'windows' { 'bun.exe' } else { '/usr/bin/env bun' }
-RUST_TOOLCHAIN := env('RUST_TOOLCHAIN', 'stable')
-RUSTFLAGS := env('RUSTFLAGS','')
-CI := env('CI', 'false')
-GITHUB_ENV := env('GITHUB_ENV', '.GITHUB_ENV')
+export bash := if os() == 'windows' { 'env -S bash -euo pipefail' } else { '/usr/bin/env -S bash -euo pipefail' }
+export powershell := if os() == 'windows' {'powershell.exe'} else {'/usr/bin/env pwsh'}
+export bun := if os() == 'windows' { 'bun.exe' } else { '/usr/bin/env bun' }
+export RUST_TOOLCHAIN := env('RUST_TOOLCHAIN', 'stable')
+export RUSTFLAGS := env('RUSTFLAGS','')
+export CI := env('CI', 'false')
+export GITHUB_ENV := env('GITHUB_ENV', '.GITHUB_ENV')
 
 KEY_FILE := join(home_directory(), ".tauri", "memospot_updater.key")
 KEY_FILE_CONTENTS :=  if path_exists(KEY_FILE)=="true" { trim_end(read(KEY_FILE))} else {""}
-TAURI_SIGNING_PRIVATE_KEY := env('TAURI_SIGNING_PRIVATE_KEY', KEY_FILE_CONTENTS)
+export TAURI_SIGNING_PRIVATE_KEY := env('TAURI_SIGNING_PRIVATE_KEY', KEY_FILE_CONTENTS)
 
-TAURI_SIGNING_PRIVATE_KEY_PASSWORD := env('TAURI_SIGNING_PRIVATE_KEY_PASSWORD', '')
+export TAURI_SIGNING_PRIVATE_KEY_PASSWORD := env('TAURI_SIGNING_PRIVATE_KEY_PASSWORD', '')
 
 GIT_WIN := join(env('PROGRAMFILES',''), 'Git','usr','bin')
-PATH := if os() == 'windows' { GIT_WIN +';'+ env('PATH') } else { env('PATH') }
+export PATH := if os() == 'windows' { GIT_WIN +';'+ env('PATH') } else { env('PATH') }
 
 REPO_ROOT := justfile_directory()
-BIOME_CONFIG_PATH := join(REPO_ROOT,'biome.jsonc')
-DPRINT_CACHE_DIR := join(REPO_ROOT,'.dprint')
-RUST_BACKTRACE := 'full'
-RUST_TARGETS := if os() == 'windows' {
+export BIOME_CONFIG_PATH := join(REPO_ROOT,'biome.jsonc')
+export DPRINT_CACHE_DIR := join(REPO_ROOT,'.dprint')
+export RUST_BACKTRACE := 'full'
+export RUST_TARGETS := if os() == 'windows' {
     'x86_64-pc-windows-msvc'
 } else if os() == "macos" {
     'aarch64-apple-darwin x86_64-apple-darwin'
 } else {
     'x86_64-unknown-linux-gnu'
 }
-RUSTC_WRAPPER := env('RUSTC_WRAPPER', '')
-CARGO_INCREMENTAL := if RUSTC_WRAPPER == '' { '1' } else { '0' }
-TS_RS_EXPORT_DIR:= join(REPO_ROOT,'src-ui','src','lib','types','gen')
-
-set export
+export RUSTC_WRAPPER := env('RUSTC_WRAPPER', '')
+export CARGO_INCREMENTAL := if RUSTC_WRAPPER == '' { '1' } else { '0' }
+export TS_RS_EXPORT_DIR := join(REPO_ROOT,'src-ui','src','lib','types','gen')
 
 [private]
 default:
@@ -292,14 +290,14 @@ build TARGET='all':
 [group('install from source')]
 [linux]
 install: (build "no-bundle")
-    sudo install -Dm 755 build/memospot /usr/bin/memospot
+    sudo install -Dm 755 target/release/memospot /usr/bin/memospot
     sudo install -Dm 755 server-dist/memos-x86_64-unknown-linux-gnu /usr/bin/memos
     sudo install -Dm 644 crates/memospot/icons/32x32.png /usr/share/icons/hicolor/32x32/apps/memospot.png
     sudo install -Dm 644 crates/memospot/icons/128x128.png /usr/share/icons/hicolor/128x128/apps/memospot.png
     sudo install -Dm 644 crates/memospot/icons/128x128@2x.png /usr/share/icons/hicolor/256x256@2/apps/memospot.png
     sudo bash -c 'printf "%s\n" "[Desktop Entry]" "Categories=Utility;" "Comment=Memospot - a note-taking application" "Exec=memospot" "Icon=memospot" "Name=Memospot" "Terminal=false" "Type=Application" > /usr/share/applications/Memospot.desktop'
     if command -v update-desktop-database >/dev/null 2>&1; then sudo update-desktop-database /usr/share/applications; fi
-    if command -v gtk-update-icon-cache >/dev/null 2>&1; then sudo gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor; fi
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then sudo gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true; fi
 
 [group('install from source')]
 [linux]
@@ -310,7 +308,7 @@ uninstall:
     sudo rm -f /usr/share/icons/hicolor/128x128/apps/memospot.png
     sudo rm -f /usr/share/icons/hicolor/256x256@2/apps/memospot.png
     if command -v update-desktop-database >/dev/null 2>&1; then sudo update-desktop-database /usr/share/applications; fi
-    if command -v gtk-update-icon-cache >/dev/null 2>&1; then sudo gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor; fi
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then sudo gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true; fi
 
 [doc('Actions: prune, lint, test, linux, windows, linux-no-bundle, windows-no-bundle.')]
 [group('Docker Bake')]
@@ -371,7 +369,7 @@ postbuild:
     )
     for artifact in "${artifacts[@]}"; do
         resolved_path="$(find ./target/release/$artifact -type f 2>&1 | head -n 1)"
-        test -f "$resolved_path" && mv -f "$resolved_path" ./build/. 2>/dev/null
+        test -f "$resolved_path" && cp -f "$resolved_path" ./build/. 2>/dev/null
     done
     pushd "./build"
         appimages=($(find *.AppImage -type f 2>&1))
