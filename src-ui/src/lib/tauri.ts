@@ -52,11 +52,19 @@ export async function getReduceAnimationStatus(): Promise<boolean> {
 }
 
 /**
- * Get the current application locale.
- * @returns the current locale
+ * Get the stored locale preference.
+ *
+ * Returns user preference, which can be an explicit locale or `system`.
  */
-export async function getAppLocale(): Promise<string> {
-    return (await invoke("get_locale")) as string;
+export async function getLocalePreference(): Promise<string> {
+    return (await invoke("get_locale_preference")) as string;
+}
+
+/**
+ * Get the currently active backend locale.
+ */
+export async function getEffectiveLocale(): Promise<string> {
+    return (await invoke("get_effective_locale")) as string;
 }
 
 /**

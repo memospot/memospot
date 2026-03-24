@@ -9,6 +9,7 @@ mod menu;
 mod route;
 mod runtime_config;
 mod sqlite;
+#[cfg(test)]
 mod tests;
 mod updater;
 mod utils;
@@ -225,7 +226,8 @@ pub fn run() {
             cmd::get_memos_url,
             cmd::get_theme,
             cmd::get_reduce_animation_status,
-            cmd::get_locale,
+            cmd::get_locale_preference,
+            cmd::get_effective_locale,
             cmd::set_locale,
             cmd::ping_memos,
             cmd::get_env,

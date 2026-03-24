@@ -7,6 +7,7 @@
 
 use config::Config;
 use dialog::error_dialog;
+use i18n_embed::LanguageLoader;
 use json_patch::Patch;
 use log::{debug, error, info};
 use serde_json::json;
@@ -14,7 +15,7 @@ use tauri::{AppHandle, Runtime, State, command};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tokio::sync::Mutex;
 
-use crate::{fl, memos, runtime_config::RuntimeConfig};
+use crate::{fl, i18n, memos, menu, runtime_config::RuntimeConfig};
 
 pub struct MemosURL(pub Mutex<String>);
 impl MemosURL {
@@ -52,8 +53,13 @@ impl Locale {
     }
 }
 #[command]
-pub async fn get_locale(locale: State<'_, Locale>) -> Result<String, String> {
+pub async fn get_locale_preference(locale: State<'_, Locale>) -> Result<String, String> {
     Ok(locale.0.lock().await.clone())
+}
+
+#[command]
+pub async fn get_effective_locale() -> Result<String, String> {
+    Ok(i18n::LOCALE_LOADER.current_language().to_string())
 }
 
 #[command]
@@ -82,6 +88,23 @@ pub async fn set_locale<R: Runtime>(
 
     let current_locale = locale.0.lock().await.clone();
     debug!("current locale set to {current_locale}");
+
+    if current_locale.is_empty() || current_locale == "system" {
+        i18n::localize();
+    } else {
+        i18n::reload(current_locale.as_str());
+    }
+
+    match menu::build(&app) {
+        Ok(menu_bar) => {
+            if let Err(error) = app.set_menu(menu_bar) {
+                error!("failed to update menu locale: {error}");
+            } else {
+                menu::update_memos_version_entry(&app);
+            }
+        }
+        Err(error) => error!("failed to rebuild menu after locale change: {error}"),
+    }
 
     Ok(true)
 }

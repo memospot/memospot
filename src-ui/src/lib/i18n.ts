@@ -1,6 +1,13 @@
 import * as messages from "$lib/paraglide/messages.js";
-import { baseLocale, getLocale, isLocale, locales, setLocale } from "$lib/paraglide/runtime.js";
-import { getAppLocale } from "./tauri";
+import {
+    baseLocale,
+    getLocale,
+    isLocale,
+    locales,
+    localStorageKey,
+    setLocale
+} from "$lib/paraglide/runtime.js";
+import { getEffectiveLocale, getLocalePreference } from "./tauri";
 
 export type Locale = (typeof locales)[number];
 
@@ -87,6 +94,35 @@ export function detectLocale(preferredLocale?: string | Locale): Locale {
     return baseLocale;
 }
 
+function hasExplicitLocale(locale?: string): locale is Locale {
+    return Boolean(locale && locale !== "system" && isLocale(locale));
+}
+
+export async function applyLocalePreference(
+    preferredLocale?: string | Locale
+): Promise<Locale> {
+    const explicitLocale = hasExplicitLocale(preferredLocale) ? preferredLocale : undefined;
+    let detectedLocale = detectLocale(explicitLocale);
+
+    if (!explicitLocale && typeof window !== "undefined") {
+        localStorage.removeItem(localStorageKey);
+
+        getEffectiveLocale()
+            .then((backendLocale) => {
+                detectedLocale = detectLocale(backendLocale);
+            })
+            .catch((error) => {
+                console.warn("Failed to read effective backend locale:", error);
+            });
+    }
+
+    if (detectedLocale !== getLocale()) {
+        setLocale(detectedLocale, { reload: false });
+    }
+
+    return detectedLocale;
+}
+
 /**
  * Initialize internationalization settings for the application.
  *
@@ -101,17 +137,10 @@ export function detectLocale(preferredLocale?: string | Locale): Locale {
 export async function initI18n(): Promise<void> {
     if (typeof window === "undefined") return;
 
-    try {
-        const storedLocale = await getAppLocale();
-        const detectedLocale = detectLocale(storedLocale);
-
-        if (detectedLocale === getLocale()) {
-            return;
-        }
-
-        setLocale(detectedLocale);
-    } catch (err) {
-        console.warn("Failed to load stored app locale:", err);
-        setLocale(getLocale());
-    }
+    getLocalePreference()
+        .then((storedLocale) => applyLocalePreference(storedLocale))
+        .catch((err) => {
+            console.warn("Failed to load stored app locale:", err);
+            return applyLocalePreference();
+        });
 }

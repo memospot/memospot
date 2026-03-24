@@ -16,7 +16,7 @@ import {
 import { Setting } from "$lib/components/ui/setting/index";
 import { Switch } from "$lib/components/ui/switch/index";
 import { debouncePromise } from "$lib/debounce";
-import { type Locale, locales, m, setLocale } from "$lib/i18n";
+import { applyLocalePreference, type Locale, locales, m } from "$lib/i18n";
 import { patchConfig } from "$lib/settings";
 import {
     buildSectionActions,
@@ -124,10 +124,8 @@ async function updateLocale(s: Selected<string> | undefined) {
     input.locale = (s?.value ?? "system") as Locale;
     currentConfig.memospot.window.locale = input.locale;
 
-    if (input.locale !== ("system" as Locale)) {
-        setLocale(input.locale);
-    }
     await setAppLocale(input.locale);
+    await applyLocalePreference(input.locale);
 }
 
 async function updateSetting(updateFn?: () => void): Promise<boolean> {
