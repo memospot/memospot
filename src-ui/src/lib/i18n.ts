@@ -107,7 +107,7 @@ export async function applyLocalePreference(
     if (!explicitLocale && typeof window !== "undefined") {
         localStorage.removeItem(localStorageKey);
 
-        getEffectiveLocale()
+        await getEffectiveLocale()
             .then((backendLocale) => {
                 detectedLocale = detectLocale(backendLocale);
             })
@@ -137,7 +137,7 @@ export async function applyLocalePreference(
 export async function initI18n(): Promise<void> {
     if (typeof window === "undefined") return;
 
-    getLocalePreference()
+    await getLocalePreference()
         .then((storedLocale) => applyLocalePreference(storedLocale))
         .catch((err) => {
             console.warn("Failed to load stored app locale:", err);
