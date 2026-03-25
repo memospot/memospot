@@ -167,24 +167,97 @@ fn cleanup_dummy_deps() {
     if !memos_bin.exists() {
         return;
     }
-    if let Ok(meta) = memos_bin.metadata()
-        && meta.len() == 0
-    {
-        fs::remove_file(memos_bin).ok();
+
+    memos_bin
+        .metadata()
+        .map(|meta| meta.len() == 0 && fs::remove_file(memos_bin).is_ok())
+        .ok();
+}
+
+// Ask git for the real metadata paths so rebuilds also follow linked worktrees.
+fn emit_git_rerun_hints() {
+    let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap_or_default());
+    if manifest_dir.as_os_str().is_empty() {
+        return;
     }
+
+    let git_path = |path: &str| -> Option<String> {
+        Command::new("git")
+            .args(["rev-parse", "--git-path", path])
+            .current_dir(&manifest_dir)
+            .output()
+            .map_or(None, |output| {
+                if !output.status.success() {
+                    return None;
+                }
+                let path = String::from_utf8_lossy(&output.stdout).trim().to_owned();
+                if path.is_empty() {
+                    return None;
+                }
+
+                Some(path)
+            })
+    };
+
+    let Some(head_path) = git_path("HEAD") else {
+        return;
+    };
+    println!("cargo:rerun-if-changed={head_path}");
+
+    if let Some(packed_refs_path) = git_path("packed-refs") {
+        println!("cargo:rerun-if-changed={packed_refs_path}");
+    }
+
+    Command::new("git")
+        .args(["symbolic-ref", "-q", "HEAD"])
+        .current_dir(&manifest_dir)
+        .output()
+        .map(|head_ref_output| {
+            if !head_ref_output.status.success() {
+                return;
+            }
+
+            let head_ref = String::from_utf8_lossy(&head_ref_output.stdout)
+                .trim()
+                .to_owned();
+            if let Some(head_ref_path) = (!head_ref.is_empty())
+                .then(|| git_path(&head_ref))
+                .flatten()
+            {
+                println!("cargo:rerun-if-changed={head_ref_path}");
+            }
+        })
+        .ok();
 }
 
 fn main() {
-    if let Ok(output) = Command::new("git").args(["rev-parse", "HEAD"]).output() {
-        let hash = String::from_utf8(output.stdout).unwrap();
-        let short_hash = &hash[..7];
-        println!("cargo:rustc-env=GIT_SHORT_HASH={short_hash}");
-        println!("cargo:rustc-env=GIT_HASH={}", hash);
-    }
-    println!(
-        "cargo:rustc-env=TARGET_TRIPLE={}",
-        std::env::var("TARGET").unwrap_or_default()
-    );
+    emit_git_rerun_hints();
+
+    env::var("CARGO_MANIFEST_DIR")
+        .map(|manifest_dir| {
+            if manifest_dir.is_empty() {
+                return;
+            }
+            Command::new("git")
+                .args(["rev-parse", "--verify", "HEAD"])
+                .current_dir(&manifest_dir)
+                .output()
+                .map(|output| {
+                    let hash = String::from_utf8_lossy(&output.stdout).trim().to_owned();
+                    if hash.len() >= 7 {
+                        let short_hash = &hash[..7];
+                        println!("cargo:rustc-env=GIT_SHORT_HASH={short_hash}");
+                        println!("cargo:rustc-env=GIT_HASH={hash}");
+                    }
+                })
+                .ok();
+        })
+        .ok();
+
+    std::env::var("TARGET")
+        .map(|t| println!("cargo:rustc-env=TARGET_TRIPLE={t}"))
+        .ok();
+
     ensure_deps();
     generate_shortcut_artifacts();
     // Runs only on dev and release builds.
