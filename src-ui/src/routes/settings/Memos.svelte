@@ -229,7 +229,7 @@ $effect(() => {
     searchId="memos-mode"
     searchKeywords={keywordsFromLocale(m.settingsMemosModeSearchKeywords)}
   >
-    <Select selected={selectedMode} onSelectedChange={setMemosMode}>
+    <Select portal={null} selected={selectedMode} onSelectedChange={setMemosMode}>
       <SelectTrigger class="ml-1 min-w-max md:w-64">
         <SelectValue placeholder={m.settingsMemosMode()} />
       </SelectTrigger>

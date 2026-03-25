@@ -12,6 +12,11 @@ interface Props extends SelectPrimitive.ContentProps {
 let {
     class: className = undefined,
     sideOffset = 4,
+    sameWidth = false,
+    collisionPadding = 8,
+    avoidCollisions = true,
+    fitViewport = true,
+    strategy = "absolute",
     inTransition = flyAndScale,
     inTransitionConfig = undefined,
     outTransition = scale,
@@ -31,8 +36,13 @@ let {
   {outTransition}
   {outTransitionConfig}
   {sideOffset}
+  {sameWidth}
+  {collisionPadding}
+  {avoidCollisions}
+  {fitViewport}
+  {strategy}
   class={[
-    "bg-popover text-popover-foreground relative z-50 min-w-32 overflow-hidden rounded-md border shadow-md focus:outline-none",
+    "select-content-scroll bg-popover text-popover-foreground relative isolate z-1000 min-w-32 w-max max-w-[calc(100vw-1rem)] max-h-[80svh] overflow-x-auto overflow-y-auto overscroll-contain rounded-md border shadow-md focus:outline-none",
     className
   ]}
   {...rest}
@@ -41,3 +51,26 @@ let {
     {@render children?.()}
   </div>
 </SelectPrimitive.Content>
+
+<style>
+:global(.select-content-scroll) {
+    background-color: hsl(var(--popover));
+    scrollbar-color: hsl(var(--border)) hsl(var(--popover));
+    scrollbar-width: thin;
+}
+
+:global(.select-content-scroll::-webkit-scrollbar) {
+    width: 0.75rem;
+    height: 0.75rem;
+}
+
+:global(.select-content-scroll::-webkit-scrollbar-track) {
+    background-color: hsl(var(--popover));
+}
+
+:global(.select-content-scroll::-webkit-scrollbar-thumb) {
+    border: 3px solid hsl(var(--popover));
+    border-radius: 9999px;
+    background-color: hsl(var(--border));
+}
+</style>

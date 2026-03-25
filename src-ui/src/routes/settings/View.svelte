@@ -209,7 +209,7 @@ $effect(() => {
     searchId="view-theme"
     searchKeywords={keywordsFromLocale(m.settingsViewThemeSearchKeywords)}
   >
-    <Select selected={selectedTheme} onSelectedChange={updateTheme}>
+    <Select portal={null} selected={selectedTheme} onSelectedChange={updateTheme}>
       <SelectTrigger class="ml-1 w-52">
         <SelectValue placeholder={m.settingsViewTheme()} />
       </SelectTrigger>
@@ -247,7 +247,7 @@ $effect(() => {
     searchId="view-locale"
     searchKeywords={keywordsFromLocale(m.settingsViewLocaleSearchKeywords)}
   >
-    <Select selected={selectedLocale} onSelectedChange={updateLocale}>
+    <Select portal={null} selected={selectedLocale} onSelectedChange={updateLocale}>
       <SelectTrigger class="ml-2 w-64">
         <SelectValue placeholder={m.settingsViewLocale()} />
       </SelectTrigger>
