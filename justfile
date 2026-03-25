@@ -24,7 +24,7 @@ export TAURI_SIGNING_PRIVATE_KEY_PASSWORD := env('TAURI_SIGNING_PRIVATE_KEY_PASS
 GIT_WIN := join(env('PROGRAMFILES',''), 'Git','usr','bin')
 export PATH := if os() == 'windows' { GIT_WIN +';'+ env('PATH') } else { env('PATH') }
 
-REPO_ROOT := justfile_directory()
+export REPO_ROOT := justfile_directory()
 export BIOME_CONFIG_PATH := join(REPO_ROOT,'biome.jsonc')
 export DPRINT_CACHE_DIR := join(REPO_ROOT,'.dprint')
 export RUST_BACKTRACE := 'full'

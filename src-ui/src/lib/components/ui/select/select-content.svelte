@@ -6,6 +6,7 @@ import { flyAndScale } from "$lib/utils.js";
 
 interface Props extends SelectPrimitive.ContentProps {
     class?: ClassValue;
+    reduceAnimation?: boolean;
     [key: string]: any;
 }
 
@@ -17,6 +18,7 @@ let {
     avoidCollisions = true,
     fitViewport = true,
     strategy = "absolute",
+    reduceAnimation = false,
     inTransition = flyAndScale,
     inTransitionConfig = undefined,
     outTransition = scale,
@@ -28,13 +30,18 @@ let {
     children,
     ...rest
 }: Props = $props();
+
+const resolvedInTransition = $derived(reduceAnimation ? undefined : inTransition);
+const resolvedInTransitionConfig = $derived(reduceAnimation ? undefined : inTransitionConfig);
+const resolvedOutTransition = $derived(reduceAnimation ? undefined : outTransition);
+const resolvedOutTransitionConfig = $derived(reduceAnimation ? undefined : outTransitionConfig);
 </script>
 
 <SelectPrimitive.Content
-  {inTransition}
-  {inTransitionConfig}
-  {outTransition}
-  {outTransitionConfig}
+  inTransition={resolvedInTransition}
+  inTransitionConfig={resolvedInTransitionConfig}
+  outTransition={resolvedOutTransition}
+  outTransitionConfig={resolvedOutTransitionConfig}
   {sideOffset}
   {sameWidth}
   {collisionPadding}

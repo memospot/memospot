@@ -213,7 +213,7 @@ $effect(() => {
       <SelectTrigger class="ml-1 w-52">
         <SelectValue placeholder={m.settingsViewTheme()} />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent reduceAnimation={input.reduce_animation}>
         <SelectItem value="system">
           {themeNames.system}<LightningBolt class="h-[1.2rem] w-[1.2rem] ml-auto" />
         </SelectItem>
@@ -251,7 +251,7 @@ $effect(() => {
       <SelectTrigger class="ml-2 w-64">
         <SelectValue placeholder={m.settingsViewLocale()} />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent reduceAnimation={input.reduce_animation}>
         <SelectItem value="system">
           {m.settingsViewSystem()} <LightningBolt class="h-[1.2rem] w-[1.2rem] ml-auto" />
         </SelectItem>

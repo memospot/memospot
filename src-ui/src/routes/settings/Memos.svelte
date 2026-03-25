@@ -54,6 +54,8 @@ let selectedMode: Selected<string> = $derived({
     value: input.mode
 });
 
+const reduceAnimation = $derived(currentConfig.memospot?.window?.reduce_animation ?? false);
+
 onMount(async () => {
     const initialJSON = await getAppConfig();
     initialConfig = JSON.parse(initialJSON);
@@ -233,7 +235,7 @@ $effect(() => {
       <SelectTrigger class="ml-1 min-w-max md:w-64">
         <SelectValue placeholder={m.settingsMemosMode()} />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent {reduceAnimation}>
         <SelectItem value="prod">
           {memosModeNames.prod} <LightningBolt class="h-[1.2rem] w-[1.2rem] ml-auto" />
         </SelectItem>
