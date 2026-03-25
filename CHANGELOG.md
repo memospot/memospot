@@ -33,7 +33,7 @@ Security: in case of vulnerabilities.
 
 - Complete support for zoom shortcuts (`CmdOrCtrl+=`, `CmdOrCtrl+-`, `CmdOrCtrl+0`, `NumLock+Add`, `NumLock+Subtract`, `NumLock+0`).
 - Support for Windows ARM64.
-- Support `MEMOS_DEMO=true`. `MEMOS_MODE` will be retired in a future release.
+- Internal support for `MEMOS_DEMO=true`. `MEMOS_MODE` is deprecated and will be retired in a future release.
 - Search feature on settings screen.
 
 ### Fixed
