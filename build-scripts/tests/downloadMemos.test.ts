@@ -10,10 +10,17 @@ import {
 import { makeTripletFromFileName } from "../lib/util";
 
 describe("match assets according to environment", async () => {
-    test("dev machine", () => {
-        Object.defineProperty(process.env, "CI", {
-            value: "false"
+    const setEnvValue = (key: string, value: string | undefined) => {
+        Object.defineProperty(process.env, key, {
+            value,
+            configurable: true,
+            writable: true,
+            enumerable: true
         });
+    };
+
+    test("dev machine", () => {
+        setEnvValue("CI", "false");
 
         const platformExpectations: Record<string, string[]> = {
             darwin: SUPPORTED_BUILDS.filter((p) => p.includes("darwin")),
@@ -55,7 +62,7 @@ describe("match assets according to environment", async () => {
         };
 
         try {
-            process.env.CI = "true";
+            setEnvValue("CI", "true");
 
             const mockArchitectures = ["arm64", "x86_64"];
             const mockPlatforms = ["darwin", "win32", "linux"];
@@ -92,7 +99,7 @@ describe("match assets according to environment", async () => {
                 }
             }
         } finally {
-            process.env.CI = originalCI;
+            setEnvValue("CI", originalCI);
             overrideProcessProp("arch", originalArch);
             overrideProcessProp("platform", originalPlatform);
         }
