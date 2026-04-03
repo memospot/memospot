@@ -72,6 +72,42 @@ function runCli(args: string[], cwd: string, env?: Record<string, string | undef
 }
 
 describe("getTaskStaleness", () => {
+    test("ignores inherited git worktree env and resolves repository from cwd", async () => {
+        const cwd = await makeFixture();
+        const hostRepoRoot = path.resolve(import.meta.dir, "..", "..");
+        const previousGitDir = process.env.GIT_DIR;
+        const previousGitWorkTree = process.env.GIT_WORK_TREE;
+
+        process.env.GIT_DIR = path.join(hostRepoRoot, ".git");
+        process.env.GIT_WORK_TREE = hostRepoRoot;
+
+        try {
+            const result = await getTaskStaleness({
+                cwd,
+                generates: ["src-ui/build"],
+                sources: ["src-ui/src"],
+                stampFile: ".build-stamps/src-ui.task"
+            });
+
+            expect(result).toEqual({
+                isStale: true,
+                stampInitialized: true
+            });
+        } finally {
+            if (previousGitDir === undefined) {
+                delete process.env.GIT_DIR;
+            } else {
+                process.env.GIT_DIR = previousGitDir;
+            }
+
+            if (previousGitWorkTree === undefined) {
+                delete process.env.GIT_WORK_TREE;
+            } else {
+                process.env.GIT_WORK_TREE = previousGitWorkTree;
+            }
+        }
+    });
+
     test("returns stale and bootstraps task metadata when the stamp file is missing", async () => {
         const cwd = await makeFixture();
 

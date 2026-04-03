@@ -1,8 +1,6 @@
 import * as fs from "node:fs/promises";
-import * as os from "node:os";
 import * as path from "node:path";
 import * as Bun from "bun";
-import { $ } from "bun";
 import { sha256File } from "./util";
 
 type EntryKind = "directory" | "file";
@@ -100,14 +98,44 @@ async function runGit(
     args: string[],
     cwd: string,
     acceptedExitCodes = [0],
-    stdinFilePath?: string
+    stdinData?: string
 ): Promise<GitCommandResult> {
-    const command = stdinFilePath
-        ? $`git ${args} < ${stdinFilePath}`.cwd(cwd)
-        : $`git ${args}`.cwd(cwd);
-    const result = await command.nothrow().quiet();
+    const env = { ...process.env };
+    delete env.GIT_ALTERNATE_OBJECT_DIRECTORIES;
+    delete env.GIT_CEILING_DIRECTORIES;
+    delete env.GIT_COMMON_DIR;
+    delete env.GIT_DIR;
+    delete env.GIT_INDEX_FILE;
+    delete env.GIT_OBJECT_DIRECTORY;
+    delete env.GIT_WORK_TREE;
+
+    const gitExecutable = Bun.which("git", {
+        PATH: env.PATH ?? ""
+    });
+    if (!gitExecutable) {
+        const gitResult = {
+            exitCode: 127,
+            stderr: "git executable not found in PATH.\n",
+            stdout: ""
+        };
+
+        if (!acceptedExitCodes.includes(gitResult.exitCode)) {
+            throw new GitCliError(args, cwd, gitResult);
+        }
+
+        return gitResult;
+    }
+
+    const result = Bun.spawnSync([gitExecutable, ...args], {
+        cwd,
+        env,
+        stderr: "pipe",
+        stdin: stdinData === undefined ? undefined : Buffer.from(stdinData),
+        stdout: "pipe"
+    });
+
     const gitResult = {
-        exitCode: result.exitCode,
+        exitCode: result.exitCode ?? 1,
         stderr: result.stderr.toString(),
         stdout: result.stdout.toString()
     };
@@ -172,25 +200,18 @@ async function getIgnoredRepoRelativePaths(
         return new Set();
     }
 
-    const tempDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "memospot-is-stale-"));
-    const stdinFilePath = path.join(tempDirectory, "paths.txt");
     const repoRelativePaths = entries.map((entry) =>
         toRepoRelativePath(entry.absolutePath, repositoryRoot)
     );
 
-    try {
-        await fs.writeFile(stdinFilePath, `${repoRelativePaths.join("\0")}\0`);
-        const result = await runGit(
-            ["check-ignore", "-z", "--stdin"],
-            repositoryRoot,
-            [0, 1],
-            stdinFilePath
-        );
+    const result = await runGit(
+        ["check-ignore", "-z", "--stdin"],
+        repositoryRoot,
+        [0, 1],
+        `${repoRelativePaths.join("\0")}\0`
+    );
 
-        return new Set(result.stdout.split("\0").filter(Boolean));
-    } finally {
-        await fs.rm(tempDirectory, { force: true, recursive: true });
-    }
+    return new Set(result.stdout.split("\0").filter(Boolean));
 }
 
 async function listWorkspaceEntries(cwd: string, noGitignore = false): Promise<Entry[]> {
