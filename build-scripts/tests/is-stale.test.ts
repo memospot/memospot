@@ -75,37 +75,36 @@ describe("getTaskStaleness", () => {
     test("ignores inherited git worktree env and resolves repository from cwd", async () => {
         const cwd = await makeFixture();
         const hostRepoRoot = path.resolve(import.meta.dir, "..", "..");
-        const previousGitDir = process.env.GIT_DIR;
-        const previousGitWorkTree = process.env.GIT_WORK_TREE;
 
-        process.env.GIT_DIR = path.join(hostRepoRoot, ".git");
-        process.env.GIT_WORK_TREE = hostRepoRoot;
+        const script = [
+            'import { getTaskStaleness } from "./build-scripts/lib/taskStamps";',
+            'const result = await getTaskStaleness({',
+            '  cwd: process.env.FIXTURE_CWD,',
+            '  generates: ["src-ui/build"],',
+            '  sources: ["src-ui/src"],',
+            '  stampFile: ".build-stamps/src-ui.task"',
+            '});',
+            'process.stdout.write(JSON.stringify(result));'
+        ].join("\n");
 
-        try {
-            const result = await getTaskStaleness({
-                cwd,
-                generates: ["src-ui/build"],
-                sources: ["src-ui/src"],
-                stampFile: ".build-stamps/src-ui.task"
-            });
+        const result = Bun.spawnSync([process.execPath, "--eval", script], {
+            cwd: hostRepoRoot,
+            env: {
+                ...process.env,
+                FIXTURE_CWD: cwd,
+                GIT_DIR: path.join(hostRepoRoot, ".git"),
+                GIT_WORK_TREE: hostRepoRoot
+            },
+            stderr: "pipe",
+            stdout: "pipe"
+        });
 
-            expect(result).toEqual({
-                isStale: true,
-                stampInitialized: true
-            });
-        } finally {
-            if (previousGitDir === undefined) {
-                delete process.env.GIT_DIR;
-            } else {
-                process.env.GIT_DIR = previousGitDir;
-            }
-
-            if (previousGitWorkTree === undefined) {
-                delete process.env.GIT_WORK_TREE;
-            } else {
-                process.env.GIT_WORK_TREE = previousGitWorkTree;
-            }
-        }
+        expect(result.exitCode).toBe(0);
+        expect(result.stderr.toString()).toBe("");
+        expect(JSON.parse(result.stdout.toString())).toEqual({
+            isStale: true,
+            stampInitialized: true
+        });
     });
 
     test("returns stale and bootstraps task metadata when the stamp file is missing", async () => {
