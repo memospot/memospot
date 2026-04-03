@@ -119,7 +119,7 @@ jobs:
           path: ./server-dist
 
       # This is run before building the Tauri app so that the MEMOS_VERSION
-      # is set by the downloadMemos script if it was not set via workflow inputs.
+      # is set by the download-memos script if it was not set via workflow inputs.
       - name: Download Memos
         run: just download-memos
       #/ Memos

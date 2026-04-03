@@ -6,7 +6,7 @@ import {
     getRequestedTag,
     RUST2GO,
     SUPPORTED_BUILDS
-} from "../bin/downloadMemos";
+} from "../bin/download-memos";
 import { makeTripletFromFileName } from "../lib/util";
 
 describe("match assets according to environment", async () => {

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { RELEASE_REPOSITORY } from "../bin/downloadMemos";
+import { RELEASE_REPOSITORY } from "../bin/download-memos";
 import { getDefaultGithubHeaders, getLatestReleaseTag } from "../lib/github";
 
 describe("getDefaultGithubHeaders", () => {
