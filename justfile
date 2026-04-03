@@ -226,7 +226,7 @@ gen-icons:
             cp -f "./crates/memospot/icons/icon.ico" "./src-ui/static/favicon.ico"
             {{IS_STALE}} $task --update
             git add "$src_icon" "crates/memospot/icons/**.png" "*.ico" "*.icns" "$task"
-            # git commit -m "chore: regenerate icons"
+            git commit -m "chore: regenerate icons"
         fi
     else
         echo -e "{{GREEN}}App icons are up to date.{{NORMAL}}"

@@ -1,0 +1,13 @@
+{
+  "generates": [
+    "crates/memospot/icons/**/*.{icns,ico,png}",
+    "src-ui/static/favicon.ico"
+  ],
+  "generatedDigest": "f1f61d9b8340e057a75f17ba05e848c5be03e54587e8a789395bcbddc2a0257b",
+  "noGitignore": false,
+  "sourceDigest": "73ae19cf0f08d726670cc2738e4abf17af3443aa9bed53cb77cd713307123433",
+  "sources": [
+    "assets/app-icon-lossless.webp"
+  ],
+  "updatedAt": "2026-04-03T09:50:26.076Z"
+}
