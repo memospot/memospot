@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 /**
  * This script runs before `Tauri build` step.
  *
@@ -11,7 +12,7 @@
  * - Retries with backoff on rate limit errors.
  *
  * Usage:
- *  bun run ./build-scripts/bin/downloadMemos.ts [--all]
+ *  bun run ./build-scripts/bin/download-memos.ts [--all]
  */
 
 import fs from "node:fs";

@@ -156,7 +156,7 @@ describe("test getRequestedTag", async () => {
     });
 
     test("argv prefixed", () => {
-        const mockArgs = ["downloadMemos.ts", "--tag=v1.2.3"];
+        const mockArgs = ["download-memos.ts", "--tag=v1.2.3"];
         Object.defineProperty(Bun, "argv", {
             value: mockArgs
         });
@@ -167,7 +167,7 @@ describe("test getRequestedTag", async () => {
     });
 
     test("argv no prefix", () => {
-        const mockArgs = ["downloadMemos.ts", "--tag=1.2.3"];
+        const mockArgs = ["download-memos.ts", "--tag=1.2.3"];
         Object.defineProperty(Bun, "argv", {
             value: mockArgs
         });
@@ -178,7 +178,7 @@ describe("test getRequestedTag", async () => {
     });
 
     test("argv undefined", () => {
-        const mockArgs = ["downloadMemos.ts"];
+        const mockArgs = ["download-memos.ts"];
         Object.defineProperty(Bun, "argv", {
             value: mockArgs
         });
