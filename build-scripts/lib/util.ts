@@ -1,5 +1,17 @@
 import * as Bun from "bun";
 
+function sanitizedGitEnv(): NodeJS.ProcessEnv {
+    const env = { ...process.env };
+    delete env.GIT_ALTERNATE_OBJECT_DIRECTORIES;
+    delete env.GIT_CEILING_DIRECTORIES;
+    delete env.GIT_COMMON_DIR;
+    delete env.GIT_DIR;
+    delete env.GIT_INDEX_FILE;
+    delete env.GIT_OBJECT_DIRECTORY;
+    delete env.GIT_WORK_TREE;
+    return env;
+}
+
 /**
  * Run a command synchronously and return the output.
  *
@@ -17,7 +29,8 @@ export function runSync(command: string, args: string[], cwd?: string) {
         cmd = Bun.spawnSync([command, ...args], {
             stdout: "pipe",
             stderr: "pipe",
-            cwd: cwd
+            cwd: cwd,
+            env: command === "git" ? sanitizedGitEnv() : process.env
         });
     } catch (error) {
         throw new Error(`ERROR: Failed to execute \`${fullCommand}\`: ${error}`);

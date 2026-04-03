@@ -8,8 +8,18 @@ import { getTaskStaleness, updateTaskStamp } from "../lib/taskStamps";
 const CLI_PATH = path.resolve(import.meta.dir, "..", "bin", "is-stale.ts");
 
 async function runGit(args: string[], cwd: string) {
+    const env = { ...process.env };
+    delete env.GIT_ALTERNATE_OBJECT_DIRECTORIES;
+    delete env.GIT_CEILING_DIRECTORIES;
+    delete env.GIT_COMMON_DIR;
+    delete env.GIT_DIR;
+    delete env.GIT_INDEX_FILE;
+    delete env.GIT_OBJECT_DIRECTORY;
+    delete env.GIT_WORK_TREE;
+
     const result = Bun.spawnSync(["git", ...args], {
         cwd,
+        env,
         stderr: "pipe",
         stdout: "pipe"
     });
