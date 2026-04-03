@@ -9,6 +9,11 @@ server-dist/
 *.gz
 crates/memospot/bindings/
 
+# is-stale build script
+*.task
+**/.build-stamps
+!**/icons/gen-icons.task
+
 ### SvelteKit ###
 **/build
 **/.svelte-kit

@@ -21,6 +21,7 @@
     "crypto": "1.0.1",
     "decompress": "4.2.1",
     "fs": "0.0.1-security",
+    "ignore": "7.0.5",
     "minimatch": "10.2.4",
     "os": "0.1.2",
     "path": "0.12.7"

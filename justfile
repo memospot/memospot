@@ -6,10 +6,10 @@
 set shell := ['bash', '-c']
 set windows-shell := ['powershell', '-Command']
 set dotenv-load := true
-
+set script-interpreter := ['bash']
 export bash := if os() == 'windows' { 'env -S bash -euo pipefail' } else { '/usr/bin/env -S bash -euo pipefail' }
 export powershell := if os() == 'windows' {'powershell.exe'} else {'/usr/bin/env pwsh'}
-export bun := if os() == 'windows' { 'bun.exe' } else { '/usr/bin/env bun' }
+export BUN := if os() == 'windows' { 'bun.exe' } else { '/usr/bin/env bun' }
 export RUST_TOOLCHAIN := env('RUST_TOOLCHAIN', 'stable')
 export RUSTFLAGS := env('RUSTFLAGS','')
 export CI := env('CI', 'false')
@@ -25,11 +25,12 @@ GIT_WIN := join(env('PROGRAMFILES',''), 'Git','usr','bin')
 export PATH := if os() == 'windows' { GIT_WIN +';'+ env('PATH') } else { env('PATH') }
 
 export REPO_ROOT := justfile_directory()
+export IS_STALE := BUN + ' run ' + join(REPO_ROOT, 'build-scripts/bin/is-stale.ts')
 export BIOME_CONFIG_PATH := join(REPO_ROOT,'biome.jsonc')
 export DPRINT_CACHE_DIR := join(REPO_ROOT,'.dprint')
 export RUST_BACKTRACE := 'full'
 export RUST_TARGETS := if os() == 'windows' {
-    'x86_64-pc-windows-msvc'
+    'x86_64-pc-windows-msvc aarch64-pc-windows-msvc'
 } else if os() == "macos" {
     'aarch64-apple-darwin x86_64-apple-darwin'
 } else {
@@ -40,14 +41,14 @@ export CARGO_INCREMENTAL := if RUSTC_WRAPPER == '' { '1' } else { '0' }
 export TS_RS_EXPORT_DIR := join(REPO_ROOT,'src-ui','src','lib','types','gen')
 
 [private]
+[script('bash')]
 default:
-    #!{{bash}}
     echo "REPO_ROOT is ${REPO_ROOT}"
     echo -e "{{BOLD}}This justfile contains recipes for building {{UNDERLINE}}https://github.com/memospot/memospot{{NORMAL}}.\n"
     if [[ "{{os()}}" == "windows" ]]; then
         git_win="{{replace(GIT_WIN, '\\', '\\\\')}}"
         echo -e "To use this justfile on Windows, make sure Git is installed under {{BOLD}}{{UNDERLINE}}$git_win{{NORMAL}}."
-        echo -e "{{BOLD}}{{UNDERLINE}}https://git-scm.com/download/win{{NORMAL}}"
+        echo -e "{{BOLD}}{{UNDERLINE}}winget install --id Git.Git -e --source winget{{NORMAL}}"
         echo ""
     fi
     deps=(
@@ -61,7 +62,6 @@ default:
     for dep in "${deps[@]}"; do
         if ! command -v "$dep" &> /dev/null; then
             echo -e "{{RED}}ERROR:{{NORMAL}} Please install {{MAGENTA}}{{BOLD}}{{UNDERLINE}}$dep{{NORMAL}}."
-            echo -e "Try running {{BOLD}}{{UNDERLINE}}just setup{{NORMAL}}."
             exit 1
         fi
     done
@@ -71,17 +71,17 @@ default:
 
 [private]
 deps-ts:
-    pushd "src-ui"; bun install; popd
-    pushd "build-scripts"; bun install; popd
+    bun --cwd=src-ui install
+    bun --cwd=build-scripts install
 
 [private]
+[script]
 dev-ui: deps-ts
-    #!{{bash}}
     cd "src-ui" && bunx --bun svelte-kit sync && bunx vite dev
 
 [private]
+[script]
 download-memos: deps-ts
-    #!{{bash}}
     for i in 1 2 3; do
         bun run ./build-scripts/bin/downloadMemos.ts && break || sleep 10
     done
@@ -108,8 +108,8 @@ test-crates:
 
 [group('test')]
 [doc('Run all Rust tests')]
+[script]
 test-rs:
-    #!{{bash}}
     export CARGO_PROFILE_TEST_BUILD_OVERRIDE_DEBUG=true
     cargo test --workspace --lib -- --nocapture
 
@@ -120,8 +120,8 @@ test-tauri:
 
 [group('test')]
 [doc('Run all TypeScript tests')]
+[script('bun')]
 test-ts: deps-ts
-    #!{{bun}}
     import fs from "node:fs";
     const dirs = ["./build-scripts", "./src-ui"];
     let results = [];
@@ -151,15 +151,15 @@ dev: dev-killprocesses
 [private]
 [linux]
 [macos]
+[script]
 dev-killprocesses:
-    #!{{bash}}
     for process in "memospot" "memos"; do
         killall $process > /dev/null 2>&1 || true
     done
 [private]
 [windows]
+[script('powershell')]
 dev-killprocesses:
-    #!{{powershell}}
     [System.Diagnostics.Process]::GetProcesses() | Where-Object {
         $_.ProcessName -in "memospot", "memos"
     } | Stop-Process -Force -ErrorAction SilentlyContinue
@@ -181,18 +181,17 @@ update-rs:
 
 [group('update')]
 [doc('Update npm packages')]
+[script]
 update-ts:
-    #!{{bash}}
-    pushd "./src-ui"; bun update; popd
-    pushd "./build-scripts"; bun update; popd
+    bun update
     just fmt
 
 [group('update')]
 [doc('Show outdated npm packages')]
+[script]
 outdated-ts:
-    #!{{bash}}
-    pushd "./src-ui"; bun outdated; popd
-    pushd "./build-scripts"; bun outdated; popd
+    bun --cwd="./src-ui" outdated
+    bun --cwd="./build-scripts" outdated
     just fmt
 
 [group('upgrade')]
@@ -211,34 +210,30 @@ upgrade-rust:
 upgrade-bun:
     bun upgrade
 
-gen-icons-force:
-    #!{{bash}}
-    cargo tauri icon "assets/app-icon-lossless.webp"
-    cp -f "./crates/memospot/icons/icon.ico" "./src-ui/static/favicon.ico"
-    git add "assets/app-icon-lossless.webp" "crates/memospot/icons/*"
-    # git commit -m "chore: regenerate icons"
-
 [doc('Generate app icons, if needed')]
+[script]
 gen-icons:
-    #!{{bash}}
-    if [ "$CI" = "true" ]; then exit 0; fi
-    check_files=(
-        "assets/app-icon-lossless.webp"
-        "crates/memospot/icons/**.png"
-        "crates/memospot/icons/icon.ico"
-        "src-ui/static/favicon.ico"
-    )
-    for file in "${check_files[@]}"; do
-        if ! git diff --quiet --exit-code HEAD -- "$file"; then
-            echo "{{YELLOW}}$file was modified since last commit, regenerating icons…{{NORMAL}}"
-            just gen-icons-force
-            exit 0
+    [ "$CI" = "true" ] && exit 0
+    src_icon="assets/app-icon-lossless.webp"
+    task="crates/memospot/icons/gen-icons.task"
+    if {{IS_STALE}} $task \
+        -s "$src_icon" \
+        -g "crates/memospot/icons/**/*.{icns,ico,png}" \
+        -g src-ui/static/favicon.ico \
+        ; then
+        echo "{{YELLOW}}Source icon changed, regenerating icons…{{NORMAL}}"
+        if cargo tauri icon "$src_icon"; then
+            cp -f "./crates/memospot/icons/icon.ico" "./src-ui/static/favicon.ico"
+            {{IS_STALE}} $task --update
+            git add "$src_icon" "crates/memospot/icons/**.png" "*.ico" "*.icns" "$task"
+            # git commit -m "chore: regenerate icons"
         fi
-    done
-    echo -e "{{GREEN}}App icons are up to date.{{NORMAL}}"
+    else
+        echo -e "{{GREEN}}App icons are up to date.{{NORMAL}}"
+    fi
 
+[script('bash')]
 gen-bindings:
-    #!{{bash}}
     mkdir -p "$TS_RS_EXPORT_DIR"
     # Files listed here may affect the frontend bindings.
     check_files=(
@@ -254,21 +249,26 @@ gen-bindings:
     done
     echo -e "{{CYAN}}Skipping TypeScript bindings regeneration, no changes detected.{{NORMAL}}"
 
-build-ui-force:
-    cd "src-ui"; bun run build
-
 [doc('Build UI, if needed')]
+[script('bash')]
 build-ui:
-    #!{{bash}}
-    if ! git diff --quiet --exit-code HEAD -- "src-ui/src/**" || [ ! -d "./src-ui/build/" ] || [ ! -f "./src-ui/build/index.html" ]; then
-        just build-ui-force
+    if {{IS_STALE}} .build-stamps/build-ui.task \
+        -s bun.lock \
+        -s "src-ui/**" \
+        -s "!src-ui/build/**" \
+        -g "src-ui/build/**" \
+        ; then
+
+        bun run --cwd="$REPO_ROOT/src-ui" build
+
+        {{IS_STALE}} .build-stamps/build-ui.task --update
     else
         echo -e "{{GREEN}}UI is up to date.{{NORMAL}}"
     fi
 
 [doc('Build app')]
+[script('bash')]
 build TARGET='all':
-    #!{{bash}}
     if [ "{{TARGET}}" = "no-bundle" ]; then
         cargo tauri build --no-bundle
         just postbuild
@@ -296,8 +296,8 @@ install: (build "no-bundle")
     sudo install -Dm 644 crates/memospot/icons/128x128.png /usr/share/icons/hicolor/128x128/apps/memospot.png
     sudo install -Dm 644 crates/memospot/icons/128x128@2x.png /usr/share/icons/hicolor/256x256@2/apps/memospot.png
     sudo bash -c 'printf "%s\n" "[Desktop Entry]" "Categories=Utility;" "Comment=Memospot - a note-taking application" "Exec=memospot" "Icon=memospot" "Name=Memospot" "Terminal=false" "Type=Application" > /usr/share/applications/Memospot.desktop'
-    if command -v update-desktop-database >/dev/null 2>&1; then sudo update-desktop-database /usr/share/applications; fi
-    if command -v gtk-update-icon-cache >/dev/null 2>&1; then sudo gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true; fi
+    [[ -x "$(command -v update-desktop-database)" ]] && sudo update-desktop-database /usr/share/applications
+    [[ -x "$(command -v gtk-update-icon-cache)" ]] && sudo gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
 
 [group('install from source')]
 [linux]
@@ -307,13 +307,13 @@ uninstall:
     sudo rm -f /usr/share/icons/hicolor/32x32/apps/memospot.png
     sudo rm -f /usr/share/icons/hicolor/128x128/apps/memospot.png
     sudo rm -f /usr/share/icons/hicolor/256x256@2/apps/memospot.png
-    if command -v update-desktop-database >/dev/null 2>&1; then sudo update-desktop-database /usr/share/applications; fi
-    if command -v gtk-update-icon-cache >/dev/null 2>&1; then sudo gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true; fi
+    [[ -x "$(command -v update-desktop-database)" ]] && sudo update-desktop-database /usr/share/applications
+    [[ -x "$(command -v gtk-update-icon-cache)" ]] && sudo gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
 
 [doc('Actions: prune, lint, test, linux, windows, linux-no-bundle, windows-no-bundle.')]
 [group('Docker Bake')]
+[script]
 bake ACTION='':
-    #!{{bash}}
     if [ "{{ACTION}}" = "prune" ]; then
         docker builder du
         docker builder prune -a
@@ -323,8 +323,8 @@ bake ACTION='':
     fi
 
 [linux]
+[script]
 flatpak-lint:
-    #!{{bash}}
     flatpak install -y flathub org.flatpak.Builder
     shopt -s expand_aliases
     alias flatpak-builder-lint="flatpak run --command=flatpak-builder-lint org.flatpak.Builder"
@@ -333,8 +333,8 @@ flatpak-lint:
     flatpak-builder-lint repo ./target/flatpak-repo
 
 [linux]
+[script]
 flatpak-build:
-    #!{{bash}}
     just build deb
     flatpak-builder --force-clean --user --install-deps-from=flathub --repo=./target/flatpak-repo --install ./target/flatpak ./installer/flatpak/io.github.memospot.Memospot.yml
 
@@ -342,16 +342,17 @@ flatpak-build:
 flatpak-run:
     flatpak run io.github.memospot.Memospot
 
+[doc('Debug environment variables of the running Memospot process')]
 [linux]
+[script]
 debug-env:
-    #!{{bash}}
     pid="$(pidof memospot)"
     test -z $pid && echo -e "{{RED}}Memospot is not running.{{NORMAL}}" && exit 1
     tr '\0' '\n' < /proc/$pid/environ | sort
 
 [private]
+[script]
 postbuild:
-    #!{{bash}}
     set +e
     echo -e "{{CYAN}}Moving relevant build files to ./build directory…{{NORMAL}}"
     ! test -d "./build" && mkdir -p "./build"
@@ -384,12 +385,12 @@ postbuild:
     fi
     popd
 
-[doc('Clean project artifacts')]
-clean:
-    #!{{bash}}
+[doc('Clean project artifacts. Use --deep or -d to clean cargo cache as well.')]
+[script]
+clean deep='':
     set +e
     for d in "./src-ui" "./build-scripts"; do
-        pushd "$d" && bun pm cache rm && popd
+        bun --cwd="$d" pm cache rm
     done
     cargo cache -a || true
     dirs=(
@@ -406,6 +407,9 @@ clean:
     for item in "${dirs[@]}"; do
         test -d "$item" && rm -rf "$item"
     done
+    if [ "{{ deep }}" = "--deep" ] || [ "{{ deep }}" = "-d" ]; then
+        cargo cache -a || true
+    fi
     exit 0
 
 [group('lint')]
@@ -444,12 +448,11 @@ fix-rs-dirty:
 
 [group('fix')]
 [doc('Run BiomeJS safe fixes')]
+[script]
 fix-ts:
-    #!{{bash}}
     for d in "./build-scripts" "./src-ui"; do
-        cd "$REPO_ROOT/$d"
         if ls *.ts 1> /dev/null 2>&1; then
-            bun x @biomejs/biome lint --apply .
+            bunx --bun @biomejs/biome lint --write "$REPO_ROOT/$d"
         fi
     done
 
@@ -466,29 +469,23 @@ pre-commit: fmt lint test
 gh-clean-cache:
     gh cache delete --all
 
-[group('maintainer')]
-repo-status:
-    #!{{bash}}
-    if ! git diff-index --quiet HEAD --; then
-        echo -e "{{MAGENTA}}There are unstaged changes.{{NORMAL}}"
-    elif ! git diff-files --quiet; then
-        echo -e "{{MAGENTA}}There are unstaged changes.{{NORMAL}}"
-    elif ! git status; then
-        echo -e "{{MAGENTA}}There are untracked files.{{NORMAL}}"
-    elif ! [ -z "$(git ls-files --deleted)" ]; then
-        echo -e "{{MAGENTA}}There are deleted files.{{NORMAL}}"
-    elif ! [ -z "$(git ls-files --modified)" ]; then
-        echo -e "{{MAGENTA}}There are modified files.{{NORMAL}}"
-    else
-        echo -e "{{GREEN}}Repository is clean.{{NORMAL}}"
-        exit 0
-    fi
-    exit 1
+# Delete all GitHub Actions workflow runs for the current repository.
+[group('project maintainer')]
+[script]
+gh-purge-workflow-runs:
+    repo=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+    run_count=$(gh api "repos/$repo/actions/runs" --paginate --jq '.workflow_runs[].id' | wc -l)
+    echo "Repo: $repo"
+    echo "Workflow runs found: $run_count"
+    gh api "repos/$repo/actions/runs" --paginate --jq '.workflow_runs[].id' | while read -r id; do gh api -X DELETE "repos/$repo/actions/runs/$id" >/dev/null
+    echo "deleted $id"; done && remaining=$(gh api "repos/$repo/actions/runs" --paginate --jq '.workflow_runs[].id' | wc -l)
+    echo "Remaining runs: $remaining"
+    echo "Done!"
 
 [group('maintainer')]
 [doc('Bump version in Cargo.toml and crates/memospot/Cargo.toml')]
+[script]
 bumpversion VERSION:
-    #!{{bash}}
     clean="{{trim_start_match(VERSION, "v")}}"
     cargo set-version --locked "$clean"
     cargo generate-lockfile
@@ -497,14 +494,21 @@ bumpversion VERSION:
     done
     just fmt
     bun install --lockfile-only
-    git add ./crates/memospot/Cargo.toml ./crates/memospot/Tauri.toml ./Cargo.lock ./Cargo.toml \
-        ./build-scripts/package.json ./src-ui/package.json ./package.json ./bun.lock
+    git add \
+        ./crates/memospot/Cargo.toml \
+        ./crates/memospot/Tauri.toml \
+        ./Cargo.lock \
+        ./Cargo.toml \
+        ./build-scripts/package.json \
+        ./src-ui/package.json \
+        ./package.json \
+        ./bun.lock
     git commit -m "chore: bump version to v$clean"
 
 [group('maintainer')]
 [doc('Push a new tag to the repository')]
+[script]
 pushtag TAG:
-    #!{{bash}}
     clean="{{trim_start_match(TAG, "v")}}"
     git tag -a "v$clean" -m "chore: push v$clean"
     git push origin --tags
