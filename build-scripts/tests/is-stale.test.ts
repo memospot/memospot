@@ -133,6 +133,24 @@ describe("getTaskStaleness", () => {
         });
     });
 
+    test("accepts a symlinked cwd when git reports the canonical repository path", async () => {
+        const actualCwd = await makeFixture();
+        const symlinkCwd = `${actualCwd}-link`;
+        await fs.symlink(actualCwd, symlinkCwd, "dir");
+
+        const result = await getTaskStaleness({
+            cwd: symlinkCwd,
+            generates: ["src-ui/build"],
+            sources: ["src-ui/src"],
+            stampFile: ".build-stamps/src-ui.task"
+        });
+
+        expect(result).toEqual({
+            isStale: true,
+            stampInitialized: true
+        });
+    });
+
     test("returns stale when sources change while generates still match the stored state", async () => {
         const cwd = await makeFixture();
         await bootstrapTask({

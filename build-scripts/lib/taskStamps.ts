@@ -83,6 +83,17 @@ function normalizeRelativePath(relativePath: string): string {
     return relativePath.split(path.sep).join(path.posix.sep);
 }
 
+async function resolveExistingPath(targetPath: string): Promise<string> {
+    try {
+        return await fs.realpath(targetPath);
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+            return path.resolve(targetPath);
+        }
+        throw error;
+    }
+}
+
 function toRepoRelativePath(targetPath: string, repositoryRoot: string): string {
     const relativePath = normalizeRelativePath(path.relative(repositoryRoot, targetPath));
     if (relativePath === "" || relativePath === ".") {
@@ -149,7 +160,7 @@ async function runGit(
 
 async function findRepositoryRoot(cwd: string): Promise<string> {
     const result = await runGit(["rev-parse", "--show-toplevel"], cwd);
-    return result.stdout.trim();
+    return resolveExistingPath(result.stdout.trim());
 }
 
 async function walkDirectory(rootDirectory: string, relativeDirectory = ""): Promise<Entry[]> {
@@ -372,7 +383,7 @@ function toTaskStampArgsFromFile(
 }
 
 async function resolveTaskEntries(args: TaskStampArgs) {
-    const cwd = path.resolve(args.cwd ?? process.cwd());
+    const cwd = await resolveExistingPath(path.resolve(args.cwd ?? process.cwd()));
     const resolvedStampPath = path.resolve(cwd, args.stampFile);
     const ignoredPaths = new Set([
         normalizeRelativePath(path.relative(cwd, resolvedStampPath))
