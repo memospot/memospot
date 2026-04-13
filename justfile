@@ -25,7 +25,7 @@ GIT_WIN := join(env('PROGRAMFILES',''), 'Git','usr','bin')
 export PATH := if os() == 'windows' { GIT_WIN +';'+ env('PATH') } else { env('PATH') }
 
 export REPO_ROOT := justfile_directory()
-export IS_STALE := BUN + ' run ' + join(REPO_ROOT, 'build-scripts/bin/is-stale.ts')
+export IS_STALE := BUN + ' run "./build-scripts/bin/is-stale.ts"'
 export BIOME_CONFIG_PATH := join(REPO_ROOT,'biome.jsonc')
 export DPRINT_CACHE_DIR := join(REPO_ROOT,'.dprint')
 export RUST_BACKTRACE := 'full'
