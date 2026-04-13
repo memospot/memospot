@@ -507,6 +507,7 @@ bumpversion VERSION:
     just fmt
     bun install --lockfile-only
     git add \
+        "./crates/memospot/gen/*" \
         ./crates/memospot/Cargo.toml \
         ./crates/memospot/Tauri.toml \
         ./Cargo.lock \
