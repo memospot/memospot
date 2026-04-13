@@ -1,5 +1,5 @@
 {
-  "name": "build-scripts",
+  "name": "@memospot/build-scripts",
   "version": "1.0.3",
   "packageManager": "bun@1.3.10",
   "license": "BlueOak-1.0.0",

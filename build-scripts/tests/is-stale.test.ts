@@ -88,13 +88,13 @@ describe("getTaskStaleness", () => {
 
         const script = [
             'import { getTaskStaleness } from "./build-scripts/lib/taskStamps";',
-            'const result = await getTaskStaleness({',
-            '  cwd: process.env.FIXTURE_CWD,',
+            "const result = await getTaskStaleness({",
+            "  cwd: process.env.FIXTURE_CWD,",
             '  generates: ["src-ui/build"],',
             '  sources: ["src-ui/src"],',
             '  stampFile: ".build-stamps/src-ui.task"',
-            '});',
-            'process.stdout.write(JSON.stringify(result));'
+            "});",
+            "process.stdout.write(JSON.stringify(result));"
         ].join("\n");
 
         const result = Bun.spawnSync([process.execPath, "--eval", script], {

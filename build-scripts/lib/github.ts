@@ -63,7 +63,7 @@ export async function getLatestReleaseTag(repository: string): Promise<string | 
     console.debug(`Fetching latest release tag from ${latestUrl}…`);
 
     const response = await fetchWithRateLimit(latestUrl);
-    if (!response || !response.ok) {
+    if (!response?.ok) {
         throw new Error(`Failed to fetch latest release: ${response?.statusText}`);
     }
     const release = (await response.json()) as GitHubRelease;

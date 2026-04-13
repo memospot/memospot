@@ -71,20 +71,25 @@ default:
 
 [private]
 deps-ts:
-    bun --cwd=src-ui install
-    bun --cwd=build-scripts install
+    bun install
 
 [private]
 [script]
 dev-ui: deps-ts
-    cd "src-ui" && bunx --bun svelte-kit sync && bunx vite dev
+    bun --cwd="src-ui" run dev
 
 [private]
 [script]
 download-memos: deps-ts
+    downloaded=false
     for i in 1 2 3; do
-        bun run ./build-scripts/bin/download-memos.ts && break || sleep 10
+        if bun run ./build-scripts/bin/download-memos.ts; then
+            downloaded=true
+            break
+        fi
+        [[ "$i" -lt 3 ]] && sleep 10
     done
+    $downloaded || exit 1
 
 # Tauri hooks
 [private]
@@ -190,9 +195,8 @@ update-ts:
 [doc('Show outdated npm packages')]
 [script]
 outdated-ts:
-    bun --cwd="./src-ui" outdated
-    bun --cwd="./build-scripts" outdated
-    just fmt
+    bun outdated --filter @memospot/build-scripts
+    bun outdated --filter @memospot/src-ui
 
 [group('upgrade')]
 [doc('Upgrade project toolchain')]
@@ -225,8 +229,8 @@ gen-icons:
         if cargo tauri icon "$src_icon"; then
             cp -f "./crates/memospot/icons/icon.ico" "./src-ui/static/favicon.ico"
             {{IS_STALE}} $task --update
-            git add "$src_icon" "crates/memospot/icons/**.png" "*.ico" "*.icns" "$task"
-            git commit -m "chore: regenerate icons"
+        else
+            exit 1
         fi
     else
         echo -e "{{GREEN}}App icons are up to date.{{NORMAL}}"
@@ -274,11 +278,11 @@ build TARGET='all':
         just postbuild
         exit 0
     fi
-    if [ -z $TAURI_SIGNING_PRIVATE_KEY ] && [ -f $HOME/.tauri/memospot_updater.key ]; then
-        export TAURI_SIGNING_PRIVATE_KEY=$(cat $HOME/.tauri/memospot_updater.key 2>/dev/null | tr -d '\n' || echo "")
+    if [ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ] && [ -f "${HOME}/.tauri/memospot_updater.key" ]; then
+        export TAURI_SIGNING_PRIVATE_KEY=$(cat "$HOME/.tauri/memospot_updater.key" 2>/dev/null | tr -d '\n' || echo "")
         echo -e "{{CYAN}}Setting TAURI_SIGNING_PRIVATE_KEY from $HOME/.tauri/memospot_updater.key{{NORMAL}}"
     fi
-    if [ -z $TAURI_SIGNING_PRIVATE_KEY ] || [ -z $TAURI_SIGNING_PRIVATE_KEY_PASSWORD ]; then
+    if [ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ] || [ -z "${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}" ]; then
         echo -e "{{YELLOW}}Environment not fully configured. Building without updater.{{NORMAL}}"
         cargo tauri build -c '{"bundle": {"targets": "{{TARGET}}" }, "plugins": {"updater": {}}}'
     else
@@ -289,9 +293,24 @@ build TARGET='all':
 # Install Memospot to the system (requires sudo)
 [group('install from source')]
 [linux]
+[script('bash')]
 install: (build "no-bundle")
+    memos_arch="$(uname -m)"
+    case "$memos_arch" in
+        x86_64) memos_target="x86_64-unknown-linux-gnu" ;;
+        aarch64|arm64) memos_target="aarch64-unknown-linux-gnu" ;;
+        *)
+            echo -e "{{RED}}Unsupported Linux architecture: $memos_arch{{NORMAL}}"
+            exit 1
+            ;;
+    esac
+    memos_bin="server-dist/memos-$memos_target"
+    if [ ! -f "$memos_bin" ]; then
+        echo -e "{{RED}}Missing server binary: $memos_bin{{NORMAL}}"
+        exit 1
+    fi
     sudo install -Dm 755 target/release/memospot /usr/bin/memospot
-    sudo install -Dm 755 server-dist/memos-x86_64-unknown-linux-gnu /usr/bin/memos
+    sudo install -Dm 755 "$memos_bin" /usr/bin/memos
     sudo install -Dm 644 crates/memospot/icons/32x32.png /usr/share/icons/hicolor/32x32/apps/memospot.png
     sudo install -Dm 644 crates/memospot/icons/128x128.png /usr/share/icons/hicolor/128x128/apps/memospot.png
     sudo install -Dm 644 crates/memospot/icons/128x128@2x.png /usr/share/icons/hicolor/256x256@2/apps/memospot.png
@@ -346,9 +365,9 @@ flatpak-run:
 [linux]
 [script]
 debug-env:
-    pid="$(pidof memospot)"
-    test -z $pid && echo -e "{{RED}}Memospot is not running.{{NORMAL}}" && exit 1
-    tr '\0' '\n' < /proc/$pid/environ | sort
+    read -r pid _ <<< "$(pidof memospot 2>/dev/null || true)"
+    [ -z "$pid" ] && echo -e "{{RED}}Memospot is not running.{{NORMAL}}" && exit 1
+    tr '\0' '\n' < "/proc/$pid/environ" | sort
 
 [private]
 [script]
@@ -389,10 +408,7 @@ postbuild:
 [script]
 clean deep='':
     set +e
-    for d in "./src-ui" "./build-scripts"; do
-        bun --cwd="$d" pm cache rm
-    done
-    cargo cache -a || true
+    bun pm cache rm || true
     dirs=(
         "./.dprint"
         "./build"
@@ -450,16 +466,12 @@ fix-rs-dirty:
 [doc('Run BiomeJS safe fixes')]
 [script]
 fix-ts:
-    for d in "./build-scripts" "./src-ui"; do
-        if ls *.ts 1> /dev/null 2>&1; then
-            bunx --bun @biomejs/biome lint --write "$REPO_ROOT/$d"
-        fi
-    done
+    bun x @biomejs/biome lint --write "$REPO_ROOT/build-scripts" "$REPO_ROOT/src-ui"
 
 [group('format')]
 [doc('Format code with dprint (json, rust, toml, yaml, html, css, typescript and markdown).')]
 fmt:
-    dprint fmt --diff
+    dprint fmt
 
 [doc('Run all recommended pre-commit checks')]
 pre-commit: fmt lint test
