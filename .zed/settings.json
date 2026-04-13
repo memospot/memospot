@@ -1,12 +1,15 @@
 // Folder-specific settings
+// See: https://zed.dev/docs/configuring-zed#settings-files
 //
-// For a full list of overridable settings, and general information on folder-specific settings,
-// see the documentation: https://zed.dev/docs/configuring-zed#settings-files
+// For the best development experience with this project, install the following extensions:
+// - biome: https://zed.dev/extensions/biome
+// - just: https://zed.dev/extensions/just
+// - svelte: https://zed.dev/extensions/svelte
 {
   "formatter": {
     "external": {
       "command": "dprint",
-      "arguments": ["fmt", "--config", ".dprint.jsonc", "--diff", "--stdin", "{buffer_path}"]
+      "arguments": ["fmt", "--config", ".dprint.jsonc", "--stdin", "{buffer_path}"]
     }
   },
   "file_types": {
@@ -14,7 +17,21 @@
   },
   "languages": {
     "TypeScript": {
-      "language_servers": ["biome", "!eslint", "!prettier"]
+      "language_servers": ["biome", "!eslint", "!prettier"],
+      "formatter": {
+        "external": {
+          "command": "biome",
+          "arguments": ["format", "--stdin-file-path", "{buffer_path}"]
+        }
+      },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true
+      }
+    },
+    "Svelte": {
+      "code_actions_on_format": {
+        "source.fixAll.biome": true
+      }
     }
   },
   "lsp": {
