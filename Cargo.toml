@@ -39,7 +39,7 @@ native-dialog = { version = "0.6.4", default-features = false }
 nix = { version = "0.31.2", default-features = false }
 os_pipe = "1.2.3"
 path-clean = "1.0.1"
-rand = { version = "0.10.0", default-features = false }
+rand = { version = "0.10.1", default-features = false }
 sea-orm = { version = "1.1.19", default-features = false }
 sea-orm-migration = { version = "1.1.19", default-features = false }
 semver = "1.0.27"
