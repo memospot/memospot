@@ -22,12 +22,16 @@ Security: in case of vulnerabilities.
 
 ## [Unreleased] - ReleaseDate
 
+## [1.0.3] - 2026-04-13
+
 ### Changed
 
 - (Memos) Bundled version: v0.26.2.
 - Updated translations with AI.
 - License is now Blue Oak.
 - Better locale fallback logic, with hot language change support.
+- Releases are now immutable, and the application will show the
+  version followed by its short commit hash in the Help menu entry.
 
 ### Added
 
