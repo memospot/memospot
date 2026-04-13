@@ -15,6 +15,7 @@ import Navbar from "./Navbar.svelte";
 import SettingsSearch from "./SettingsSearch.svelte";
 import { navigateToSearchResult } from "./searchNavigation";
 import View from "./View.svelte";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 const sections: Section[] = [
     { id: "view", label: m.settingsView(), icon: EyeOpen, component: View },
@@ -157,7 +158,11 @@ function setContentPane(node: HTMLElement) {
   <div class="flex h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] flex-col">
     <header class="sticky top-0 z-20 rounded-xl border bg-card/95 p-3 backdrop-blur supports-backdrop-filter:bg-card/70">
       <div class="grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_1fr] md:items-center">
-        <div class="hidden md:block" aria-hidden="true"></div>
+        <div class="flex items-start gap-2 justify-self-start">
+          <Button onclick={async () => await getCurrentWebviewWindow().close()}>
+            X
+          </Button>
+        </div>
         <SettingsSearch
           entries={allSearchEntries}
           placeholder={m.settingsSearchPlaceholder()}
