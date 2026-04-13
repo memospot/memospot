@@ -25,7 +25,7 @@ Security: in case of vulnerabilities.
 ### Changed
 
 - (Memos) Bundled version: v0.26.2.
-- Updated translations.
+- Updated translations with AI.
 - License is now Blue Oak.
 - Better locale fallback logic, with hot language change support.
 
@@ -35,12 +35,11 @@ Security: in case of vulnerabilities.
 - Support for Windows ARM64.
 - Internal support for `MEMOS_DEMO=true`. `MEMOS_MODE` is deprecated and will be retired in a future release.
 - Search feature on settings screen.
+- Polyfill to disable Memos transition effects when "Reduce animations" is on.
 
 ### Fixed
 
 - Hiding the menu bar now doesn't unregister keyboard shortcuts.
-
-<!-- next-header -->
 
 ## [1.0.2] - 2025-12-14
 
