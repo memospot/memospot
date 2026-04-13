@@ -16,6 +16,7 @@ on:
       - "**/*.{rs,svelte,ts}"
       - "**/*.{json,jsonc,toml,yml,yaml}"
       - "!**/gen/schemas/*.json"
+    tags-ignore: ["*"]
   workflow_dispatch:
 
 concurrency:

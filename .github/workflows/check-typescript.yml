@@ -18,7 +18,7 @@ on:
       - "**/biome.jsonc"
       - "**/*.svelte"
       - "**/*.ts"
-
+    tags-ignore: ["*"]
   workflow_dispatch:
 
 concurrency:

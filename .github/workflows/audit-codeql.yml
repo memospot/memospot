@@ -16,6 +16,7 @@ on:
       - "**/bunfig.toml"
       - "**/Cargo.lock"
       - "**/*.{rs,svelte,ts}"
+    tags-ignore: ["*"]
   schedule:
     - cron: "0 9 */15 * *" # 9 AM, every 15 days
   workflow_dispatch:
