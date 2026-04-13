@@ -250,6 +250,22 @@ pub fn run() {
                 static POLYFILL: &str =
                     include_str!(concat!(env!("OUT_DIR"), "/shortcut_polyfill.js"));
                 webview.eval(POLYFILL).ok();
+
+                let inject_reduce_animation_polyfill = config_
+                    .yaml
+                    .memospot
+                    .window
+                    .reduce_animation
+                    .unwrap_or(false);
+
+                if inject_reduce_animation_polyfill {
+                    static REDUCE_MOTION_POLYFILL: &str =
+                        include_str!("polyfills/reduce_animation.js");
+                      webview.eval(REDUCE_MOTION_POLYFILL).ok();
+                    if cfg!(debug_assertions) {
+                        webview.eval("console.warn('Memospot reduce_motion polyfill loaded successfully.');").ok();
+                    }
+                }
             }
         })
         .setup(move |app| {
