@@ -1,4 +1,5 @@
 <script lang="ts">
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { tick } from "svelte";
 import EyeOpen from "svelte-radix/EyeOpen.svelte";
 import Gear from "svelte-radix/Gear.svelte";
@@ -15,7 +16,6 @@ import Navbar from "./Navbar.svelte";
 import SettingsSearch from "./SettingsSearch.svelte";
 import { navigateToSearchResult } from "./searchNavigation";
 import View from "./View.svelte";
-import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 const sections: Section[] = [
     { id: "view", label: m.settingsView(), icon: EyeOpen, component: View },
