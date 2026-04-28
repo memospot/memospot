@@ -16,7 +16,7 @@
     "fuse.js": "7.1.0",
     "lucide-svelte": "0.469.0",
     "mode-watcher": "1.1.0",
-    "postcss": "8.5.8",
+    "postcss": "8.5.10",
     "svelte": "5.53.11",
     "svelte-5-ui-lib": "0.12.6",
     "svelte-check": "4.4.5",
