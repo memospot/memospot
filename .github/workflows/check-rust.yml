@@ -158,7 +158,7 @@ jobs:
 
       - if: ${{ github.event_name == 'pull_request' }}
         name: "[PR] Upload SARIF analysis results to GitHub"
-        uses: github/codeql-action/upload-sarif@b1bff81932f5cdfc8695c7752dcee935dcd061c8 # v4.33.0
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
         continue-on-error: true
         with:
           sarif_file: ./clippy-results.sarif
