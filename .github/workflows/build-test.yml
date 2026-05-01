@@ -82,7 +82,7 @@ jobs:
       #/ Platform deps
 
       - name: Install Just
-        uses: taiki-e/install-action@650c5ca14212efbbf3e580844b04bdccf68dac31
+        uses: taiki-e/install-action@a1df9120380005ebdc788c62449b841b205541dd
         with: { tool: just@1.45.0 }
 
       #> Rust
