@@ -50,7 +50,7 @@ shared_child = "1.1.1"
 strum = "0.28.0"
 strum_macros = "0.28.0"
 sysinfo = "0.38.2"
-tauri = { version = "2.10.2" }
+tauri = { version = "2.11.1" }
 tauri-build = { version = "2.5.3", default-features = false }
 tauri-plugin-dialog = { version = "2.4.2" }
 tauri-plugin-fs = { version = "2.4.4" }
