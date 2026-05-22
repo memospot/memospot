@@ -5,7 +5,7 @@
     "@biomejs/biome": "2.4.7",
     "@inlang/paraglide-js": "2.15.0",
     "@sveltejs/adapter-static": "3.0.10",
-    "@sveltejs/kit": "2.55.0",
+    "@sveltejs/kit": "2.60.1",
     "@sveltejs/vite-plugin-svelte": "6.2.4",
     "@tailwindcss/postcss": "4.2.1",
     "@tauri-apps/api": "2.10.1",
