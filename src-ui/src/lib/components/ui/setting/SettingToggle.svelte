@@ -45,9 +45,9 @@ const normalizedSearchKeywords = $derived(normalizeSettingSearchKeywords(searchK
   data-setting-label={normalizedSearchLabel}
   data-setting-keywords={normalizedSearchKeywords}
   class={[
-    "w-full h-full flex flex-col rounded-xl p-4 space-y-3 border border-opacity-0 hover:border-opacity-100",
-    className,
-    bg
+      "w-full h-full flex flex-col rounded-xl p-4 space-y-3 border border-opacity-0 hover:border-opacity-100",
+      className,
+      bg
   ]}
 >
   <div class="w-full flex flex-row">

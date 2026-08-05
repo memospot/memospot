@@ -23,8 +23,8 @@ let {
   {disabled}
   {label}
   class={[
-    "data-highlighted:bg-accent data-highlighted:text-accent-foreground relative flex w-full cursor-default select-none items-center whitespace-nowrap rounded-sm py-1 pl-2 pr-8 text-sm outline-none data-disabled:pointer-events-none data-disabled:opacity-50",
-    className
+      "data-highlighted:bg-accent data-highlighted:text-accent-foreground relative flex w-full cursor-default select-none items-center whitespace-nowrap rounded-sm py-1 pl-2 pr-8 text-sm outline-none data-disabled:pointer-events-none data-disabled:opacity-50",
+      className
   ]}
   {...rest}
   on:click

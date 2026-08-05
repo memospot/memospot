@@ -151,8 +151,8 @@ function setContentPane(node: HTMLElement) {
 
 <div
   class={{
-    "container p-4 min-w-screen":true,
-    "motion-preset-fade": !reduceAnimation,
+      "container p-4 min-w-screen": true,
+      "motion-preset-fade": !reduceAnimation
   }}
 >
   <div class="flex h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] flex-col">
@@ -220,11 +220,11 @@ function setContentPane(node: HTMLElement) {
   visibleToasts={1}
   position="bottom-left"
   toastOptions={{
-    class: "[text-shadow:_1px_1px_1px_rgb(0_0_0_/_60%)] text-zinc-50",
-    classes: {
-      error: "bg-destructive",
-      success: "bg-[var(--glow)] text-zinc-950 border-[var(--glow)]",
-    },
+      class: "[text-shadow:_1px_1px_1px_rgb(0_0_0_/_60%)] text-zinc-50",
+      classes: {
+          error: "bg-destructive",
+          success: "bg-[var(--glow)] text-zinc-950 border-[var(--glow)]"
+      }
   }}
 />
 

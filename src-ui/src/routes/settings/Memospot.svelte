@@ -201,7 +201,7 @@ $effect(() => {
     searchKeywords={keywordsFromLocale(m.settingsMemospotRemoteServerSearchKeywords)}
     bind:state={input.remoteEnabled}
     onclick={() => {
-      currentConfig.memospot.remote.enabled = input.remoteEnabled;
+        currentConfig.memospot.remote.enabled = input.remoteEnabled;
     }}
   >
     <Setting
@@ -215,8 +215,7 @@ $effect(() => {
         type="url"
         bind:value={input.remoteURL}
         onfocusout={updateRemoteServerUrl}
-        onkeypress={async (e) =>
-        e.key === "Enter" && (await updateRemoteServerUrl(e))}
+        onkeypress={async (e) => e.key === "Enter" && (await updateRemoteServerUrl(e))}
         class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
         disabled={!input.remoteEnabled}
       />
@@ -232,7 +231,7 @@ $effect(() => {
         type="text"
         bind:value={input.remoteUserAgent}
         onfocusout={() => {
-          currentConfig.memospot.remote.user_agent = input.remoteUserAgent;
+            currentConfig.memospot.remote.user_agent = input.remoteUserAgent;
         }}
         class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
         disabled={!input.remoteEnabled}
@@ -247,7 +246,7 @@ $effect(() => {
     searchKeywords={keywordsFromLocale(m.settingsMemospotUpdaterSearchKeywords)}
     bind:state={input.updaterEnabled}
     onclick={() => {
-      currentConfig.memospot.updater.enabled = input.updaterEnabled;
+        currentConfig.memospot.updater.enabled = input.updaterEnabled;
     }}
   >
     <Setting
@@ -261,7 +260,7 @@ $effect(() => {
         type="text"
         bind:value={input.updaterCheckInterval}
         onfocusout={() => {
-          currentConfig.memospot.updater.check_interval = input.updaterCheckInterval;
+            currentConfig.memospot.updater.check_interval = input.updaterCheckInterval;
         }}
         class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
         disabled={!input.updaterEnabled}
@@ -278,7 +277,7 @@ $effect(() => {
     <Switch
       bind:checked={input.migrationsEnabled}
       onclick={() => {
-        currentConfig.memospot.migrations.enabled = input.migrationsEnabled;
+          currentConfig.memospot.migrations.enabled = input.migrationsEnabled;
       }}
     />
   </Setting>
@@ -292,7 +291,7 @@ $effect(() => {
     <Switch
       bind:checked={input.backupsEnabled}
       onclick={() => {
-        currentConfig.memospot.backups.enabled = input.backupsEnabled;
+          currentConfig.memospot.backups.enabled = input.backupsEnabled;
       }}
     />
   </Setting>
@@ -306,7 +305,7 @@ $effect(() => {
     <Switch
       bind:checked={input.loggingEnabled}
       onclick={() => {
-        currentConfig.memospot.log.enabled = input.loggingEnabled;
+          currentConfig.memospot.log.enabled = input.loggingEnabled;
       }}
     />
   </Setting>
@@ -318,7 +317,7 @@ $effect(() => {
     searchKeywords={keywordsFromLocale(m.settingsMemospotEnvironmentVariablesSearchKeywords)}
     bind:state={input.envVarsEnabled}
     onclick={() => {
-      currentConfig.memospot.env.enabled = input.envVarsEnabled;
+        currentConfig.memospot.env.enabled = input.envVarsEnabled;
     }}
   >
     <textarea

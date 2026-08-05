@@ -96,18 +96,13 @@ onMount(async () => {
 
 <main
   class={{
-    "absolute h-full w-full flex flex-col items-center justify-center text-zinc-700 dark:text-zinc-300":
-        true,
-    "motion-preset-fade": !reduceAnimation
+      "absolute h-full w-full flex flex-col items-center justify-center text-zinc-700 dark:text-zinc-300": true,
+      "motion-preset-fade": !reduceAnimation
   }}
 >
   <div>
     <h1 id="status" class="text-xl">
-      {
-        redirectDetails.isError
-        ? m.settingsSomethingWentWrong()
-        : m.loaderWaitingForServer()
-      }
+      {redirectDetails.isError ? m.settingsSomethingWentWrong() : m.loaderWaitingForServer()}
     </h1>
   </div>
   <div>
@@ -120,10 +115,10 @@ onMount(async () => {
       <img
         src={logoImg}
         class={{
-          "h-60! p-6 logo": true,
-          "logo-glow-static": reduceAnimation,
-          "logo-glow": !reduceAnimation,
-          error: redirectDetails.isError
+            "h-60! p-6 logo": true,
+            "logo-glow-static": reduceAnimation,
+            "logo-glow": !reduceAnimation,
+            error: redirectDetails.isError
         }}
         alt="Memos"
       />
@@ -155,8 +150,8 @@ onMount(async () => {
         >
           <Update
             class={{
-              "h-[1.2rem] w-[1.2rem] m-1": true,
-              "motion-safe:animate-pulse hover:animate-none": !reduceAnimation
+                "h-[1.2rem] w-[1.2rem] m-1": true,
+                "motion-safe:animate-pulse hover:animate-none": !reduceAnimation
             }}
           />
         </button>
@@ -164,12 +159,12 @@ onMount(async () => {
     {/if}
     <p
       class={{
-        "mt-2": true,
-        "opacity-70": redirectDetails.replyMs > 0,
-        "opacity-0": redirectDetails.replyMs <= 0,
-        "text-primary": redirectDetails.retries === 0,
-        "text-destructive": redirectDetails.retries !== 0 && redirectDetails.isError,
-        "text-amber-600": redirectDetails.retries !== 0 && !redirectDetails.isError
+          "mt-2": true,
+          "opacity-70": redirectDetails.replyMs > 0,
+          "opacity-0": redirectDetails.replyMs <= 0,
+          "text-primary": redirectDetails.retries === 0,
+          "text-destructive": redirectDetails.retries !== 0 && redirectDetails.isError,
+          "text-amber-600": redirectDetails.retries !== 0 && !redirectDetails.isError
       }}
     >
       {redirectDetails.replyMs} ms

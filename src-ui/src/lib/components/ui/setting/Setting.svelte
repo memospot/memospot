@@ -43,10 +43,10 @@ const normalizedSearchKeywords = $derived(normalizeSettingSearchKeywords(searchK
   data-setting-label={normalizedSearchLabel}
   data-setting-keywords={normalizedSearchKeywords}
   class={[
-    "w-full grid sm:grid-flow-row-dense md:grid-flow-col-dense md:grid-cols-2 rounded-xl p-3 border border-opacity-0 hover:border-opacity-100",
-    className,
-    bg,
-    disabled && "opacity-50 cursor-not-allowed"
+      "w-full grid sm:grid-flow-row-dense md:grid-flow-col-dense md:grid-cols-2 rounded-xl p-3 border border-opacity-0 hover:border-opacity-100",
+      className,
+      bg,
+      disabled && "opacity-50 cursor-not-allowed"
   ]}
 >
   {#if name || desc}

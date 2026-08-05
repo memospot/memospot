@@ -49,8 +49,8 @@ const resolvedOutTransitionConfig = $derived(reduceAnimation ? undefined : outTr
   {fitViewport}
   {strategy}
   class={[
-    "select-content-scroll bg-popover text-popover-foreground relative isolate z-1000 min-w-32 w-max max-w-[calc(100vw-1rem)] max-h-[80svh] overflow-x-auto overflow-y-auto overscroll-contain rounded-md border shadow-md focus:outline-none",
-    className
+      "select-content-scroll bg-popover text-popover-foreground relative isolate z-1000 min-w-32 w-max max-w-[calc(100vw-1rem)] max-h-[80svh] overflow-x-auto overflow-y-auto overscroll-contain rounded-md border shadow-md focus:outline-none",
+      className
   ]}
   {...rest}
 >

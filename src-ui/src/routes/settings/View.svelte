@@ -236,7 +236,7 @@ $effect(() => {
     <Switch
       bind:checked={input.reduce_animation}
       onclick={() => {
-        currentConfig.memospot.window.reduce_animation = input.reduce_animation;
+          currentConfig.memospot.window.reduce_animation = input.reduce_animation;
       }}
     />
   </Setting>
@@ -273,7 +273,7 @@ $effect(() => {
     <Switch
       bind:checked={input.resizable}
       onclick={() => {
-        currentConfig.memospot.window.resizable = input.resizable;
+          currentConfig.memospot.window.resizable = input.resizable;
       }}
     />
   </Setting>
@@ -287,7 +287,7 @@ $effect(() => {
     <Switch
       bind:checked={input.centered}
       onclick={() => {
-        currentConfig.memospot.window.center = input.centered;
+          currentConfig.memospot.window.center = input.centered;
       }}
     />
   </Setting>
@@ -301,7 +301,7 @@ $effect(() => {
     <Switch
       bind:checked={input.maximized}
       onclick={() => {
-        currentConfig.memospot.window.maximized = input.maximized;
+          currentConfig.memospot.window.maximized = input.maximized;
       }}
     />
   </Setting>
@@ -315,7 +315,7 @@ $effect(() => {
     <Switch
       bind:checked={input.fullscreen}
       onclick={() => {
-        currentConfig.memospot.window.fullscreen = input.fullscreen;
+          currentConfig.memospot.window.fullscreen = input.fullscreen;
       }}
     />
   </Setting>

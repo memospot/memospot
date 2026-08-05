@@ -308,7 +308,7 @@ $effect(() => {
       type="text"
       bind:value={input.bindAddr}
       onfocusout={() => {
-        currentConfig.memos.addr = input.bindAddr;
+          currentConfig.memos.addr = input.bindAddr;
       }}
       class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
     />
@@ -327,7 +327,7 @@ $effect(() => {
       max="65535"
       bind:value={input.bindPort}
       onfocusout={() => {
-        currentConfig.memos.port = input.bindPort;
+          currentConfig.memos.port = input.bindPort;
       }}
       class="font-mono p-2 rounded-md border bg-input min-w-max w-40"
     />
@@ -340,7 +340,7 @@ $effect(() => {
     searchKeywords={keywordsFromLocale(m.settingsMemosEnvironmentVariablesSearchKeywords)}
     bind:state={input.envVarsEnabled}
     onclick={() => {
-      currentConfig.memos.env.enabled = input.envVarsEnabled;
+        currentConfig.memos.env.enabled = input.envVarsEnabled;
     }}
   >
     <textarea

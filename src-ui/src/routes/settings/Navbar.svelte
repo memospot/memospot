@@ -23,8 +23,8 @@ const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "
 
 <nav
   class={{
-    "flex md:flex-col sm:flex-row pt-1 ": true,
-    "motion-preset-fade": !reduceAnimation
+      "flex md:flex-col sm:flex-row pt-1 ": true,
+      "motion-preset-fade": !reduceAnimation
   }}
 >
   {#each sections as section (section.id)}
@@ -33,21 +33,19 @@ const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "
       tabindex="0"
       data-active={activeSection === section.id}
       onclick={() => onSectionChange(section.id)}
-      onkeypress={async (e) =>
-      ["Enter", " "].includes(e.key) && onSectionChange(section.id)}
+      onkeypress={async (e) => ["Enter", " "].includes(e.key) && onSectionChange(section.id)}
       class={{
-        "font-semibold uppercase tracking-[0.09rem] text-xs text-foreground mb-1 cursor-pointer w-full rounded-xl border border-transparent px-3 py-2 text-left whitespace-nowrap transition-colors active:translate-y-px hover:border-border hover:drop-shadow data-[active=true]:border-border":
-            true,
-        "bg-secondary text-secondary-foreground": activeSection === section.id,
-        "hover:bg-secondary/80 text-muted-foreground": activeSection !== section.id
+          "font-semibold uppercase tracking-[0.09rem] text-xs text-foreground mb-1 cursor-pointer w-full rounded-xl border border-transparent px-3 py-2 text-left whitespace-nowrap transition-colors active:translate-y-px hover:border-border hover:drop-shadow data-[active=true]:border-border": true,
+          "bg-secondary text-secondary-foreground": activeSection === section.id,
+          "hover:bg-secondary/80 text-muted-foreground": activeSection !== section.id
       }}
     >
       <div class="flex flex-row items-center">
         {#if section.icon}
           <section.icon
             class={{
-              "mr-3 w-5 shrink-0 opacity-70": true,
-              "motion-preset-pop": !reduceAnimation
+                "mr-3 w-5 shrink-0 opacity-70": true,
+                "motion-preset-pop": !reduceAnimation
             }}
           />
         {/if}

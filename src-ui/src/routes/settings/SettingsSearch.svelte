@@ -225,10 +225,10 @@ async function handleSearchSubmit(event: SubmitEvent) {
   class="relative mx-auto flex w-full max-w-xl items-center gap-2"
   onsubmit={handleSearchSubmit}
   onfocusout={(event) => {
-    const nextTarget = event.relatedTarget as Node | null;
-    if (!nextTarget || !event.currentTarget.contains(nextTarget)) {
-      isSearchDropdownOpen = false;
-    }
+      const nextTarget = event.relatedTarget as Node | null;
+      if (!nextTarget || !event.currentTarget.contains(nextTarget)) {
+          isSearchDropdownOpen = false;
+      }
   }}
 >
   <div class="relative w-full">
@@ -245,13 +245,13 @@ async function handleSearchSubmit(event: SubmitEvent) {
       class="w-full appearance-none rounded-md border bg-input py-2 pl-10 pr-20 text-sm focus:outline-none md:min-w-72"
       aria-label={placeholder}
       oninput={() => {
-        highlightedResultIndex = 0;
+          highlightedResultIndex = 0;
       }}
       onfocus={() => {
-        isSearchDropdownOpen = searchQuery.trim().length > 0;
-        if (isSearchDropdownOpen) {
-            void scrollHighlightedResultIntoView();
-        }
+          isSearchDropdownOpen = searchQuery.trim().length > 0;
+          if (isSearchDropdownOpen) {
+              void scrollHighlightedResultIntoView();
+          }
       }}
       onkeydown={handleSearchKeydown}
     />
@@ -260,9 +260,9 @@ async function handleSearchSubmit(event: SubmitEvent) {
         type="button"
         class="bg-input absolute right-2 top-1/2 -translate-y-1/2 rounded-md border px-3 py-1 text-xs hover:bg-secondary"
         onclick={() => {
-          searchQuery = "";
-          highlightedResultIndex = 0;
-          isSearchDropdownOpen = false;
+            searchQuery = "";
+            highlightedResultIndex = 0;
+            isSearchDropdownOpen = false;
         }}
       >
         {clearLabel}
@@ -294,15 +294,15 @@ async function handleSearchSubmit(event: SubmitEvent) {
                   data-search-result="true"
                   data-search-result-key={getResultKey(result)}
                   class={{
-                    "block w-full rounded-md px-2 py-1.5 text-left text-sm": true,
-                    "bg-accent text-accent-foreground": isHighlightedResult(result),
-                    "hover:bg-secondary/70": !isHighlightedResult(result)
+                      "block w-full rounded-md px-2 py-1.5 text-left text-sm": true,
+                      "bg-accent text-accent-foreground": isHighlightedResult(result),
+                      "hover:bg-secondary/70": !isHighlightedResult(result)
                   }}
                   onclick={async () => {
-                    await selectResult(result);
+                      await selectResult(result);
                   }}
                   onmouseenter={() => {
-                    handleResultHover(result);
+                      handleResultHover(result);
                   }}
                 >
                   <div class="font-medium">{result.label}</div>
