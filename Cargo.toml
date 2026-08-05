@@ -16,57 +16,57 @@ description = "Memospot is a desktop version of Memos, a beautiful, privacy-firs
 
 # Features should be listed at package level.
 [workspace.dependencies]
-anyhow = { version = "1.0.102", default-features = false }
+anyhow = { version = "1.0.104", default-features = false }
 async_zip = { version = "0.0.18", features = ["tokio-fs", "zstd"] }
-chrono = { version = "0.4.44", default-features = false }
+chrono = { version = "0.4.45", default-features = false }
 encoding_rs = "0.8.35"
 figment = { version = "0.10.19", default-features = false }
 home = { version = "0.5.12", default-features = false }
-humantime = "2.3.0"
+humantime = "2.4.0"
 
 # i18n
 i18n-embed = { version = "0.16.0", default-features = false }
-i18n-embed-fl = "0.10.0"
-rust-embed = "8.11.0"
+i18n-embed-fl = "0.10.1"
+rust-embed = "8.12.0"
 
-itertools = "0.14.0"
+itertools = "0.15.0"
 json-patch = "4.2.0"
-log = { version = "0.4.29", default-features = false }
+log = { version = "0.4.33", default-features = false }
 log4rs = { version = "1.4.0" }
 # Newer versions of `native-dialog` were causing issues with some dialogues
 # not displaying on KDE and other platforms, so the version is pinned.
 native-dialog = { version = "0.6.4", default-features = false }
-nix = { version = "0.31.2", default-features = false }
+nix = { version = "0.31.3", default-features = false }
 os_pipe = "1.2.3"
 path-clean = "1.0.1"
-rand = { version = "0.10.1", default-features = false }
-sea-orm = { version = "1.1.20", default-features = false }
-sea-orm-migration = { version = "1.1.20", default-features = false }
+rand = { version = "0.10.2", default-features = false }
+sea-orm = { version = "2.0.1", default-features = false }
+sea-orm-migration = { version = "2.0.1", default-features = false }
 semver = "1.0.28"
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.149"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
 serde_yaml = "0.9.34"
 shared_child = "1.1.1"
 strum = "0.28.0"
 strum_macros = "0.28.0"
-sysinfo = "0.38.4"
-tauri = { version = "2.11.0" }
-tauri-build = { version = "2.6.0", default-features = false }
-tauri-plugin-dialog = { version = "2.7.1" }
+sysinfo = "0.39.6"
+tauri = { version = "2.11.5" }
+tauri-build = { version = "2.6.3", default-features = false }
+tauri-plugin-dialog = { version = "2.7.2" }
 tauri-plugin-fs = { version = "2.5.1" }
 tauri-plugin-http = { version = "2.5.9", features = ["gzip", "json", "rustls-tls"] }
 tauri-plugin-opener = { version = "2.5.4" }
 tauri-plugin-process = { version = "2.3.1" }
 tauri-plugin-shell = { version = "2.3.5" }
-tauri-plugin-single-instance = "2.4.2"
+tauri-plugin-single-instance = "2.4.3"
 tauri-plugin-updater = { version = "2.10.1" }
-tauri-utils = { version = "2.9.0" }
+tauri-utils = { version = "2.9.3" }
 tempfile = { version = "3.27.0" }
-thiserror = { version = "2.0.18" }
-tokio = { version = "1.52.1" }
+thiserror = { version = "2.0.19" }
+tokio = { version = "1.53.1" }
 ts-rs = { version = "12.0.1" }
 url = { version = "2.5.8", default-features = false }
-uuid = { version = "1.23.1", default-features = false }
+uuid = { version = "1.24.0", default-features = false }
 windows-sys = { version = "0.61.2", default-features = false }
 winreg = "0.56.0"
 
