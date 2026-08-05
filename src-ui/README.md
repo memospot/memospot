@@ -40,7 +40,6 @@ just lint
 - [Tailwind CSS](https://tailwindcss.com/): styling
 - [tailwindcss-motion](https://rombo.co/tailwind/): animations
 - [shadcn-svelte](https://www.shadcn-svelte.com): UI components
-- [svelte-5-ui-lib](https://svelte-5-ui-lib.codewithshin.com): UI components
 - [svelte-radix](https://svelte-radix.codewithshin.com/icons): icons
 - [Bun](https://bun.sh/): JavaScript runtime and bundler
 - [Biome](https://biomejs.dev/): JavaScript linter and formatter

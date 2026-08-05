@@ -1,6 +1,7 @@
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 const host = process.env.TAURI_DEV_HOST;
@@ -8,6 +9,7 @@ const host = process.env.TAURI_DEV_HOST;
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
     plugins: [
+        tailwindcss(),
         paraglideVitePlugin({
             project: "./project.inlang",
             outdir: "./src/lib/paraglide",
@@ -17,7 +19,7 @@ export default defineConfig(async () => ({
     ],
     build: {
         emptyOutDir: true, // SvelteKit output is fixed at ./build
-        target: ["es2021", "chrome97", "safari13"],
+        target: ["es2022"],
         sourcemap: !!process.env.TAURI_ENV_DEBUG,
         rollupOptions: {
             output: {

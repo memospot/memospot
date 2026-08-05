@@ -17,7 +17,7 @@
     "enabled": true,
     "rules": {
       // https://biomejs.dev/linter/rules/
-      "recommended": true,
+      "preset": "recommended",
       "a11y": {
         "useValidLang": "off"
       },

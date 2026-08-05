@@ -1,9 +1,12 @@
 telemetry = false
 
 [install]
-# Only install package versions published at least 3 days ago.
-minimumReleaseAge = 259200 # seconds
 exact = true
+optional = true
+
+# Only install package versions published at least 7 days ago
+minimumReleaseAge = 604800 # seconds
+ignoreScripts = true
 
 [install.lockfile]
 save = true
