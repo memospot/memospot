@@ -1,8 +1,8 @@
-#: schema https://json.schemastore.org/cargo.json
+# : schema https://json.schemastore.org/cargo.json
 
 [workspace]
-members = ["crates/*"]
 resolver = "2"
+members = ["crates/*"]
 
 [workspace.package]
 version = "1.0.3"
@@ -16,9 +16,9 @@ description = "Memospot is a desktop version of Memos, a beautiful, privacy-firs
 
 # Features should be listed at package level.
 [workspace.dependencies]
-anyhow = { version = "1.0.100", default-features = false }
-async_zip = { version = "0.0.18", features = ["zstd", "tokio-fs"] }
-chrono = { version = "0.4.42", default-features = false }
+anyhow = { version = "1.0.102", default-features = false }
+async_zip = { version = "0.0.18", features = ["tokio-fs", "zstd"] }
+chrono = { version = "0.4.44", default-features = false }
 encoding_rs = "0.8.35"
 figment = { version = "0.10.19", default-features = false }
 home = { version = "0.5.12", default-features = false }
@@ -27,10 +27,10 @@ humantime = "2.3.0"
 # i18n
 i18n-embed = { version = "0.16.0", default-features = false }
 i18n-embed-fl = "0.10.0"
-rust-embed = "8.9.0"
+rust-embed = "8.11.0"
 
 itertools = "0.14.0"
-json-patch = "4.1.0"
+json-patch = "4.2.0"
 log = { version = "0.4.29", default-features = false }
 log4rs = { version = "1.4.0" }
 # Newer versions of `native-dialog` were causing issues with some dialogues
@@ -40,40 +40,69 @@ nix = { version = "0.31.2", default-features = false }
 os_pipe = "1.2.3"
 path-clean = "1.0.1"
 rand = { version = "0.10.1", default-features = false }
-sea-orm = { version = "1.1.19", default-features = false }
-sea-orm-migration = { version = "1.1.19", default-features = false }
-semver = "1.0.27"
+sea-orm = { version = "1.1.20", default-features = false }
+sea-orm-migration = { version = "1.1.20", default-features = false }
+semver = "1.0.28"
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.145"
+serde_json = "1.0.149"
 serde_yaml = "0.9.34"
 shared_child = "1.1.1"
 strum = "0.28.0"
 strum_macros = "0.28.0"
-sysinfo = "0.38.2"
-tauri = { version = "2.11.1" }
-tauri-build = { version = "2.5.3", default-features = false }
-tauri-plugin-dialog = { version = "2.4.2" }
-tauri-plugin-fs = { version = "2.4.4" }
-tauri-plugin-http = { version = "2.5.4", features = ["gzip", "json", "rustls-tls"] }
-tauri-plugin-opener = { version = "2.5.2" }
+sysinfo = "0.38.4"
+tauri = { version = "2.11.0" }
+tauri-build = { version = "2.6.0", default-features = false }
+tauri-plugin-dialog = { version = "2.7.1" }
+tauri-plugin-fs = { version = "2.5.1" }
+tauri-plugin-http = { version = "2.5.9", features = ["gzip", "json", "rustls-tls"] }
+tauri-plugin-opener = { version = "2.5.4" }
 tauri-plugin-process = { version = "2.3.1" }
-tauri-plugin-shell = { version = "2.3.3" }
-tauri-plugin-single-instance = "2.3.6"
-tauri-plugin-updater = { version = "2.9.0" }
-tauri-utils = { version = "2.8.1" }
-tempfile = { version = "3.23.0" }
-thiserror = { version = "2.0.17" }
-tokio = { version = "1.48.0" }
+tauri-plugin-shell = { version = "2.3.5" }
+tauri-plugin-single-instance = "2.4.2"
+tauri-plugin-updater = { version = "2.10.1" }
+tauri-utils = { version = "2.9.0" }
+tempfile = { version = "3.27.0" }
+thiserror = { version = "2.0.18" }
+tokio = { version = "1.52.1" }
 ts-rs = { version = "12.0.1" }
-url = { version = "2.5.7", default-features = false }
-uuid = { version = "1.19.0", default-features = false }
+url = { version = "2.5.8", default-features = false }
+uuid = { version = "1.23.1", default-features = false }
 windows-sys = { version = "0.61.2", default-features = false }
-winreg = "0.55.0"
+winreg = "0.56.0"
+
+[workspace.lints.clippy]
+dbg_macro = "deny"
+disallowed_methods = "deny"
+redundant_clone = "warn"
+todo = "deny"
+zombie_processes = "warn"
+# unwrap_used = "deny"
+
+[profile.dev]
+# - 0, false, or "none": no debug info at all, default for release
+#
+# - "line-directives-only": line info directives only. For the nvptx* targets this enables profiling.
+#   For other use cases, line-tables-only is the better, more compatible choice.
+#
+# - "line-tables-only": line tables only. Generates the minimal amount of debug info for backtraces with
+#   filename/line number info, but not anything else, i.e. no variable or function parameter info.
+#
+# - 1 or "limited": debug info without type or variable-level information.
+#   Generates more detailed module-level info than line-tables-only.
+#
+# - 2, true, or "full": full debug info, default for dev
+debug = 0 # Disabling debug info speeds up builds.
+
+[profile.dev.package]
+serde.opt-level = 3 # Tests depending on serde runs faster with higher optimization level.
+
+[profile.dev.build-override]
+incremental = true
 
 [profile.release]
-codegen-units = 1
-incremental = true
 panic = "abort"
+incremental = true
+codegen-units = 1
 
 # - false: Performs “thin local LTO” which performs “thin” LTO on the local crate only across
 #   its codegen units. No LTO is performed if codegen units is 1 or opt-level is 0.
@@ -85,7 +114,7 @@ panic = "abort"
 #   less time to run while still achieving performance gains similar to “fat”.
 #
 # - "off": Disables LTO.
-lto = true
+lto = "thin"
 
 # 0: no optimizations
 # 1: basic optimizations
@@ -106,33 +135,4 @@ opt-level = "s"
 # strip = true
 #
 # https://github.com/tauri-apps/tauri/issues/14186
-strip = "debuginfo" # Remove debug info but keep symbols needed for bundler.
-
-[profile.dev.build-override]
-incremental = true
-
-[profile.dev]
-# - 0, false, or "none": no debug info at all, default for release
-#
-# - "line-directives-only": line info directives only. For the nvptx* targets this enables profiling.
-#   For other use cases, line-tables-only is the better, more compatible choice.
-#
-# - "line-tables-only": line tables only. Generates the minimal amount of debug info for backtraces with
-#   filename/line number info, but not anything else, i.e. no variable or function parameter info.
-#
-# - 1 or "limited": debug info without type or variable-level information.
-#   Generates more detailed module-level info than line-tables-only.
-#
-# - 2, true, or "full": full debug info, default for dev
-debug = 0 # Disabling debug info speeds up builds.
-
-[profile.dev.package]
-serde.opt-level = 3 # Tests depending on serde runs faster with higher optimization level.
-
-[workspace.lints.clippy]
-dbg_macro = "deny"
-disallowed_methods = "deny"
-redundant_clone = "warn"
-todo = "deny"
-zombie_processes = "warn"
-# unwrap_used = "deny"
+strip = "none" # Remove debug info but keep symbols needed for bundler.

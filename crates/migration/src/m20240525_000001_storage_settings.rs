@@ -4,6 +4,7 @@
 //! - This migration does data manipulation.
 
 use log::{debug, info};
+use sea_orm::IdenStatic as _;
 use sea_orm::*;
 use sea_orm_migration::prelude::*;
 

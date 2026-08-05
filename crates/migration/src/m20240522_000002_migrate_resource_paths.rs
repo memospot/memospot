@@ -10,6 +10,7 @@
 //! - Valid from Memos v0.22.0 onwards.
 
 use log::{LevelFilter, debug, info};
+use sea_orm::IdenStatic as _;
 use sea_orm::*;
 use sea_orm_migration::prelude::*;
 
