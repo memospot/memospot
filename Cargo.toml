@@ -71,6 +71,7 @@ windows-sys = { version = "0.61.2", default-features = false }
 winreg = "0.56.0"
 
 [workspace.lints.clippy]
+complexity = { level = "warn", priority = -1 }
 dbg_macro = "deny"
 disallowed_methods = "deny"
 redundant_clone = "warn"
