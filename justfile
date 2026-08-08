@@ -531,6 +531,8 @@ bumpversion VERSION:
 [script]
 pushtag TAG:
     clean="{{trim_start_match(TAG, "v")}}"
+    git push origin :refs/tags/v$clean
+    git tag -d v$clean
     git tag -a "v$clean" -m "chore: push v$clean"
     git push origin --tags
 

@@ -154,7 +154,7 @@ jobs:
           releaseDraft: true
           prerelease: true
           args: --verbose --target ${{ matrix.platform.rust_target }}
-          includeUpdaterJson: false
+          uploadUpdaterJson: false
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:

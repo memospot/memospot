@@ -133,6 +133,6 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: --target ${{ matrix.platform.rust_target }}
-          includeUpdaterJson: true
+          uploadUpdaterJson: true
           updaterJsonPreferNsis: true
           retryAttempts: 2
