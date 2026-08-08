@@ -69,3 +69,9 @@ Sessionx.vim
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+
+# Agent-related
+!AGENTS.md
+!.agents/**
+!.github
+!.github/**/*

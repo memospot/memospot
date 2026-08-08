@@ -3,8 +3,11 @@
 # Run `just` in the root of the project to see a list of recipes relevant to manual builds.
 
 # Backtick commands and recipes without a shebang are executed with the shell set here.
+[unix]
 set shell := ['bash', '-c']
-set windows-shell := ['powershell', '-Command']
+[windows]
+set shell := ['powershell', '-Command']
+
 set dotenv-load := true
 set script-interpreter := ['bash']
 export bash := if os() == 'windows' { 'env -S bash -euo pipefail' } else { '/usr/bin/env -S bash -euo pipefail' }
@@ -68,6 +71,11 @@ default:
     echo -e "{{GREEN}}Found project dependencies: ${deps[@]}{{NORMAL}}"
     echo -e "{{YELLOW}}This quick test does not verify tool versions. If you experience any errors, consider updating the related tool.{{NORMAL}}\n"
     just --list
+
+validate: lint test
+
+@gate:
+    just validate >/dev/null 2>&1 && echo "[OK] All validations passed." || echo "[ERROR] Run 'just validate' for more details."
 
 [private]
 deps-ts:
