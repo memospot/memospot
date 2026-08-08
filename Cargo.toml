@@ -136,4 +136,10 @@ opt-level = "s"
 # strip = true
 #
 # https://github.com/tauri-apps/tauri/issues/14186
-strip = "none" # Remove debug info but keep symbols needed for bundler.
+strip = true
+
+[profile.test.build-override]
+debug = 0
+
+[profile.test]
+debug = 0
