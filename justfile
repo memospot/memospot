@@ -507,7 +507,7 @@ gh-purge-workflow-runs:
 [script]
 bumpversion VERSION:
     clean="{{trim_start_match(VERSION, "v")}}"
-    cargo set-version --locked "$clean"
+    cargo set-version "$clean"
     cargo generate-lockfile
     for d in "." "./build-scripts" "./src-ui"; do
         jq --arg version "$clean" '.version = $version' "$d/package.json" > "$d/package.json.tmp" && mv "$d/package.json.tmp" "$d/package.json"
