@@ -22,6 +22,17 @@ Security: in case of vulnerabilities.
 
 ## [Unreleased] - ReleaseDate
 
+### Fixed
+
+- Keyboard shortcuts are now working properly.
+- External links now properly open in the default browser when using a remote server.
+
+## [1.0.4] - 2026-08-08
+
+### Changed
+
+- (Memos) Bundled version: v0.30.0.
+
 ## [1.0.3] - 2026-04-13
 
 ### Changed
