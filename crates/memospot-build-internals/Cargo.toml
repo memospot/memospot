@@ -9,3 +9,6 @@ description = "Project-specific build-time helpers for the Memospot desktop app"
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+tempfile = { workspace = true }

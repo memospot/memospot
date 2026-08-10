@@ -29,7 +29,7 @@ use std::env;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::webview::PageLoadEvent;
-use tauri::{Manager, async_runtime};
+use tauri::{Listener, Manager, async_runtime};
 use tauri_utils::config::WindowConfig;
 use window_ext::WindowConfigExt;
 
@@ -273,6 +273,11 @@ pub fn run() {
 
             // Remove the updater plugin to use custom logic.
             app_handle.remove_plugin("tauri-plugin-updater");
+
+            let app_handle_ = app_handle.clone();
+            app.listen(event::SHORTCUT_EVENT, move |shortcut_event| {
+                event::handle_shortcut_event(&app_handle_, shortcut_event.payload());
+            });
 
             // The menu must be set at the application level to also work in macOS.
             app.set_menu(menu::build(app_handle)?)?;

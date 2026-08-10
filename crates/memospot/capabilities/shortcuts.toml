@@ -1,0 +1,13 @@
+#:schema ../gen/schemas/desktop-schema.json
+identifier = "shortcuts"
+description = "Allow configured Memos pages to emit shortcut events."
+windows = ["*"]
+permissions = ["core:event:allow-emit"]
+
+[remote]
+urls = [
+    "http://*",
+    "http://*:*",
+    "https://*",
+    "https://*:*",
+]

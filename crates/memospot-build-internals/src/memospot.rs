@@ -64,7 +64,9 @@ document.addEventListener("keydown", (e) => {{
     if (!cmd) return;
 
     e.preventDefault();
-    window.__TAURI_INTERNALS__.invoke(cmd);
+    void window.__TAURI__.event.emit("memospot-shortcut", cmd).catch((error) => {{
+        console.error(`Memospot shortcut "${{cmd}}" failed:`, error);
+    }});
 }});
 {debug}
 "#
@@ -83,4 +85,30 @@ document.addEventListener("keydown", (e) => {{
     fs::write(out_dir.join("shortcut_accelerators.rs"), accel)
         .expect("failed to write generated shortcut accelerators");
     println!("cargo:rerun-if-changed=src/shortcut_bindings.in.rs");
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use super::*;
+
+    #[test]
+    fn generated_polyfill_handles_numpad_commands_without_unhandled_rejections() {
+        let out_dir = tempfile::tempdir().unwrap();
+        let bindings = [ShortcutBinding::new(
+            "ZOOM_OUT",
+            "zoom_out",
+            "CmdOrCtrl+-",
+            &["NumpadSubtract"],
+        )];
+
+        generate_shortcut_artifacts(out_dir.path(), &bindings);
+
+        let polyfill = fs::read_to_string(out_dir.path().join("shortcut_polyfill.js")).unwrap();
+        assert!(polyfill.contains("case \"NumpadSubtract\":"));
+        assert!(
+            polyfill.contains("window.__TAURI__.event.emit(\"memospot-shortcut\", cmd).catch")
+        );
+    }
 }

@@ -3,6 +3,7 @@ use std::str::FromStr;
 use std::sync::LazyLock;
 use std::sync::atomic::{AtomicU32, Ordering};
 
+use crate::cmd;
 use crate::memos;
 use crate::memos_version::MemosVersionStore;
 use crate::menu;
@@ -36,6 +37,7 @@ pub(crate) static ZOOM_LEVEL: AtomicU32 = AtomicU32::new(100);
 pub(crate) const ZOOM_STEP: f64 = 0.1;
 const ZOOM_MIN: f64 = 0.2;
 const ZOOM_MAX: f64 = 5.0;
+pub(crate) const SHORTCUT_EVENT: &str = "memospot-shortcut";
 
 /// Apply the current zoom level to all open webview windows.
 pub(crate) fn apply_zoom<R: Runtime>(app: &AppHandle<R>, zoom: f64) {
@@ -43,6 +45,22 @@ pub(crate) fn apply_zoom<R: Runtime>(app: &AppHandle<R>, zoom: f64) {
     ZOOM_LEVEL.store((zoom * 100.0) as u32, Ordering::Relaxed);
     for (_, window) in app.webview_windows() {
         window.set_zoom(zoom).ok();
+    }
+}
+
+pub(crate) fn handle_shortcut_event<R: Runtime>(app: &AppHandle<R>, payload: &str) {
+    let Ok(command) = serde_json::from_str::<String>(payload) else {
+        error!("invalid shortcut event payload: {payload}");
+        return;
+    };
+
+    match command.as_str() {
+        "open_settings" => cmd::open_settings(app.clone()),
+        "reset_zoom" => cmd::reset_zoom(app.clone()),
+        "toggle_menu_bar" => cmd::toggle_menu_bar(app.clone()),
+        "zoom_in" => cmd::zoom_in(app.clone()),
+        "zoom_out" => cmd::zoom_out(app.clone()),
+        _ => error!("unrecognized shortcut command: {command}"),
     }
 }
 

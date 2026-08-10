@@ -3384,6 +3384,9 @@ dependencies = [
 [[package]]
 name = "memospot-build-internals"
 version = "1.0.4"
+dependencies = [
+ "tempfile",
+]
 
 [[package]]
 name = "migration"
