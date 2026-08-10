@@ -286,6 +286,7 @@ build TARGET='all':
         just postbuild
         exit 0
     fi
+    export NO_STRIP=1
     if [ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ] && [ -f "${HOME}/.tauri/memospot_updater.key" ]; then
         export TAURI_SIGNING_PRIVATE_KEY=$(cat "$HOME/.tauri/memospot_updater.key" 2>/dev/null | tr -d '\n' || echo "")
         echo -e "{{CYAN}}Setting TAURI_SIGNING_PRIVATE_KEY from $HOME/.tauri/memospot_updater.key{{NORMAL}}"
