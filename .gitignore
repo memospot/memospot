@@ -4,6 +4,7 @@ build/
 server-dist/
 .env
 .secret
+crates/memospot/gen/schemas/
 **/.flatpak-builder
 *.db
 *.gz
