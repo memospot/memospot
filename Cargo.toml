@@ -11,7 +11,7 @@ homepage = "https://memospot.github.io/"
 license = "BlueOak-1.0.0"
 publish = false
 repository = "https://github.com/memospot/memospot"
-rust-version = "1.85.0"
+rust-version = "1.88.0"
 description = "Memospot is a desktop version of Memos, a beautiful, privacy-first, lightweight note-taking service."
 
 # Features should be listed at package level.

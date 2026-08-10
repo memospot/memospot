@@ -67,7 +67,7 @@ Never run `biome format` or `prettier` in this repo.
 
 ## Rust Workspace
 
-- Edition **2024**, MSRV **1.85.0**, toolchain `stable` per `rust-toolchain.toml`.
+- Edition **2024**, MSRV **1.88.0**, toolchain `stable` per `rust-toolchain.toml`.
 - `cargo clippy --all-features --all-targets --workspace --locked` (just recipe always passes `--locked`).
 - `RUST_BACKTRACE=full` is set globally in the justfile.
 - `test-rs` exports `CARGO_PROFILE_TEST_BUILD_OVERRIDE_DEBUG=true` so test builds carry debug info; `test-crates` excludes the `memospot` package.
