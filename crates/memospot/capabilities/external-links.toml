@@ -9,7 +9,8 @@ permissions = [
 
 [remote]
 urls = [
-    "http://localhost:*",
-    "http://127.0.0.1:*",
-    "tauri://*",
+    "http://*",
+    "http://*:*",
+    "https://*",
+    "https://*:*",
 ]
