@@ -34,6 +34,7 @@
       }
     }
   },
+  "language_servers": ["dprint", "json-language-server", "just-lsp", "markdownlint", "..."],
   "lsp": {
     "markdownlint": {
       "settings": {
