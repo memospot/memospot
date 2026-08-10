@@ -2,7 +2,7 @@
 #[cfg(test)]
 mod test {
     use crate::*;
-    use build_utils::find_workspace_root;
+    use memospot_build_internals::find_workspace_root;
 
     const TIMEOUT_MS: u128 = 5_000;
 

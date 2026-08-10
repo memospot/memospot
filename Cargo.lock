@@ -685,10 +685,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "build_utils"
-version = "1.0.4"
-
-[[package]]
 name = "bumpalo"
 version = "3.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3340,7 +3336,6 @@ version = "1.0.4"
 dependencies = [
  "anyhow",
  "async_zip",
- "build_utils",
  "chrono",
  "config",
  "dialog",
@@ -3353,6 +3348,7 @@ dependencies = [
  "log",
  "log4rs",
  "memospot",
+ "memospot-build-internals",
  "migration",
  "path-clean",
  "portpicker",
@@ -3384,6 +3380,10 @@ dependencies = [
  "winreg 0.56.0",
  "writable",
 ]
+
+[[package]]
+name = "memospot-build-internals"
+version = "1.0.4"
 
 [[package]]
 name = "migration"
@@ -5585,9 +5585,9 @@ name = "sidecar"
 version = "1.0.4"
 dependencies = [
  "anyhow",
- "build_utils",
  "encoding_rs",
  "log",
+ "memospot-build-internals",
  "os_pipe",
  "serde",
  "shared_child",

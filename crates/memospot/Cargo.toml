@@ -19,7 +19,7 @@ crate-type = ["staticlib", "cdylib", "lib"]
 
 [build-dependencies]
 tauri-build = { workspace = true, features = ["config-toml"] }
-build_utils = { path = "../build_utils" }
+memospot-build-internals = { path = "../memospot-build-internals" }
 
 [dependencies]
 # Local crates

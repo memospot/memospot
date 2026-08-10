@@ -46,7 +46,7 @@ Everything runs through `just`. Do NOT run raw `cargo`/`npm`/`bun` commands for 
 
 ## Structure
 
-- Rust workspace `crates/*`: `memospot` is the Tauri app; `config`, `dialog`, `homedir`, `migration`, `portpicker`, `sidecar`, `writable` are local path-dependency crates; `build_utils` is build-only.
+- Rust workspace `crates/*`: `memospot` is the Tauri app; `config`, `dialog`, `homedir`, `migration`, `portpicker`, `sidecar`, `writable` are local path-dependency crates; `memospot-build-internals` contains project-specific build and workspace helpers.
 - `src-ui/` — SvelteKit frontend (`@memospot/src-ui` bun workspace package).
 - `build-scripts/` — bun/TS build tooling; bin scripts live in `build-scripts/bin/` (e.g. `download-memos.ts`, `is-stale.ts`).
 - `server-dist/` — downloaded Memos server binaries (gitignored), wired into the app as Tauri `externalBin` sidecar; per-target names like `memos-x86_64-unknown-linux-gnu`.

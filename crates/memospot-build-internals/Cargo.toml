@@ -1,0 +1,11 @@
+[package]
+name = "memospot-build-internals"
+version = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+publish = { workspace = true }
+repository = "https://github.com/memospot/memospot"
+description = "Project-specific build-time helpers for the Memospot desktop app"
+
+[lints]
+workspace = true
