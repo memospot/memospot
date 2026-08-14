@@ -3,7 +3,7 @@
 //! Events fired here are handled by the [`crate::events::handle_menu_event`] function.
 use crate::fl;
 use crate::memos_version::MemosVersionStore;
-use crate::runtime_config::RuntimeConfig;
+use crate::runtime_config::AppState;
 use crate::window::Window;
 use log::{debug, error};
 use std::convert::AsRef;
@@ -98,8 +98,8 @@ pub fn build_empty<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> 
 
 /// Build the main menu.
 pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
-    let config = RuntimeConfig::from_global_store();
-    if config.yaml.memospot.window.hide_menu_bar == Some(true) {
+    let config = handle.state::<AppState>().config.snapshot();
+    if config.current.memospot.window.hide_menu_bar == Some(true) {
         return build_empty(handle);
     }
 

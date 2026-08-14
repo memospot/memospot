@@ -8,6 +8,7 @@
   "loaderTryRestartingMemospot": "Tente reiniciar Memospot.",
   "loaderWaitingForServer": "Aguardando o servidor…",
   "settingsConfigSaveFail": "Falha ao salvar configuração.",
+  "settingsConfigSaveRestartRequired": "É necessário reiniciar o aplicativo para que as alterações tenham efeito.",
   "settingsConfigSaveSuccess": "Configuração salva com êxito.",
   "settingsErrPathDoesNotExist": "O caminho especificado não existe.",
   "settingsLoadDefaults": "Padrões",

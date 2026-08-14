@@ -6,6 +6,7 @@ import { onMount } from "svelte";
 import LightningBolt from "svelte-radix/LightningBolt.svelte";
 import Moon from "svelte-radix/Moon.svelte";
 import Sun from "svelte-radix/Sun.svelte";
+import { toast } from "svelte-sonner";
 import {
     Select,
     SelectContent,
@@ -23,7 +24,12 @@ import {
     keywordsFromLocale,
     type SectionActionsProps
 } from "$lib/settingsUi";
-import { getAppConfig, getDefaultAppConfig, setAppLocale } from "$lib/tauri";
+import {
+    getAppConfig,
+    getDefaultAppConfig,
+    getLocalePreference,
+    setAppLocale
+} from "$lib/tauri";
 import type { Config } from "$lib/types/gen/Config";
 
 type Theme = "system" | "light" | "dark";
@@ -78,13 +84,12 @@ let selectedLocale = $derived({
 });
 
 onMount(async () => {
-    const initialJSON = await getAppConfig();
-    initialConfig = JSON.parse(initialJSON);
-    currentConfig = jsonpatch.deepClone(initialConfig);
     await setPageToInitialConfig();
 });
 
 async function setPageToInitialConfig() {
+    initialConfig = JSON.parse(await getAppConfig()) as Config;
+    currentConfig = jsonpatch.deepClone(initialConfig);
     input = {
         resizable: initialConfig.memospot.window.resizable ?? false,
         maximized: initialConfig.memospot.window.maximized ?? false,
@@ -96,8 +101,6 @@ async function setPageToInitialConfig() {
             localStorage.getItem(modeStorageKey.current) ??
             "system") as Theme
     };
-
-    currentConfig.memospot.window = jsonpatch.deepClone(initialConfig.memospot.window);
 }
 
 async function setPageToDefaultConfig() {
@@ -121,11 +124,30 @@ async function updateTheme(s: Selected<string> | undefined) {
 }
 
 async function updateLocale(s: Selected<string> | undefined) {
+    const baselineLocale = (initialConfig.memospot.window.locale ?? "system") as Locale;
     input.locale = (s?.value ?? "system") as Locale;
     currentConfig.memospot.window.locale = input.locale;
 
-    await setAppLocale(input.locale);
-    await applyLocalePreference(input.locale);
+    try {
+        await setAppLocale(input.locale);
+        initialConfig.memospot.window.locale = input.locale;
+        await applyLocalePreference(input.locale);
+        if (baselineLocale !== input.locale) {
+            window.location.reload();
+        }
+    } catch (_err) {
+        // A rejected or unsuccessful write is a failure: revert and surface it.
+        let committedLocale = baselineLocale;
+        try {
+            committedLocale = (await getLocalePreference()) as Locale;
+        } catch (_err) {
+            // Keep the existing baseline if the backend locale cannot be read.
+        }
+        initialConfig.memospot.window.locale = committedLocale;
+        input.locale = committedLocale;
+        currentConfig.memospot.window.locale = committedLocale;
+        toast.error(m.settingsConfigSaveFail());
+    }
 }
 
 async function updateSetting(updateFn?: () => void): Promise<boolean> {

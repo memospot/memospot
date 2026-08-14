@@ -47,6 +47,7 @@ serde_json = { workspace = true }
 strum = { workspace = true, features = ["derive", "phf"] }
 strum_macros = { workspace = true }
 sysinfo = { workspace = true }
+thiserror = { workspace = true }
 tokio = { workspace = true }
 ts-rs = { workspace = true }
 url = { workspace = true, features = ["serde"] }
@@ -77,6 +78,8 @@ tauri-plugin-single-instance = { workspace = true }
 
 [dev-dependencies]
 memospot = { path = ".", features = ["unittest"] } # Allows gating code in `build.rs` to run only in test/lint mode.
+serde_yaml = { workspace = true } # Used in tests to assert on-disk configuration.
+tauri = { workspace = true, features = ["test"] } # Enables `tauri::test` mock app for unit tests.
 tempfile = { workspace = true }
 
 [features]

@@ -8,6 +8,7 @@
   "loaderTryRestartingMemospot": "Essayez de redémarrer Mémospot.",
   "loaderWaitingForServer": "En attente du serveur…",
   "settingsConfigSaveFail": "Échec de l'enregistrement de la configuration.",
+  "settingsConfigSaveRestartRequired": "Un redémarrage est nécessaire pour que les modifications prennent effet.",
   "settingsConfigSaveSuccess": "Configuration enregistrée avec succès.",
   "settingsErrPathDoesNotExist": "Le chemin spécifié n'existe pas.",
   "settingsLoadDefaults": "Valeurs par défaut",

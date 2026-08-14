@@ -10,7 +10,7 @@ use crate::menu;
 use crate::menu::MainMenu;
 use crate::menu::build_empty;
 use crate::route::Route;
-use crate::runtime_config::RuntimeConfig;
+use crate::runtime_config::AppState;
 use crate::updater;
 use crate::window::Window;
 use crate::window_ext::WebviewWindowExt;
@@ -111,36 +111,25 @@ fn handle_exit_requested_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEve
 fn on_exit_cleanup<R: Runtime>(app: &AppHandle<R>) {
     debug!("running before exit cleanup code…");
 
-    #[cfg(not(debug_assertions))]
-    let mut final_config = RuntimeConfig::from_global_store();
-    #[cfg(debug_assertions)]
-    let mut final_config = RuntimeConfig::from_global_store();
-
-    #[cfg(debug_assertions)]
-    {
-        // Restore previous mode and port.
-        final_config.yaml.memos.mode = final_config.__yaml__.memos.mode.clone();
-        final_config.yaml.memos.port = final_config.__yaml__.memos.port;
-    }
-
-    memos::sync_mode_demo_compat(&mut final_config.yaml.memos);
-
-    if final_config.yaml != final_config.__yaml__ {
-        info!("configuration has changed. Saving…");
-        async_runtime::block_on(async {
-            let config_path = final_config.paths.memospot_config_file;
-            if let Err(e) = final_config.yaml.save_to_file(&config_path).await {
-                error_dialog!(
-                    "Failed to save config file:\n`{}`\n\n{}",
-                    config_path.display(),
-                    e
-                );
-            }
-        })
-    }
-
+    // Debug-only server overrides live in the runtime context, never in the
+    // current configuration, so the baseline comparison below needs no
+    // restore step.
+    let state = app.state::<AppState>();
+    let config_store = state.config.clone();
+    let config_file = state.runtime.paths.memospot_config_file.clone();
     async_runtime::block_on(async move {
-        memos::shutdown().await;
+        if let Err(e) = config_store.finalize_persistence().await {
+            error_dialog!(
+                "Failed to save config file:\n`{}`\n\n{}",
+                config_file.display(),
+                e
+            );
+        }
+    });
+
+    let runtime = app.state::<AppState>().runtime.clone();
+    async_runtime::block_on(async move {
+        memos::shutdown(&runtime).await;
         *PREVENT_EXIT.lock().unwrap() = false;
     });
 
@@ -208,15 +197,21 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) -> Res
             });
         }
         MainMenu::AppBrowseDataDirectory => {
-            let config = RuntimeConfig::from_global_store();
+            let state = app.state::<AppState>();
             app.opener().open_url(
-                config.paths.memospot_data.to_string_lossy().to_string(),
+                state
+                    .runtime
+                    .paths
+                    .memospot_data
+                    .to_string_lossy()
+                    .to_string(),
                 None::<&str>,
             )?;
         }
         MainMenu::AppOpenInBrowser => {
-            let config = RuntimeConfig::from_global_store();
-            app.opener().open_url(config.memos_url, None::<&str>)?;
+            let state = app.state::<AppState>();
+            app.opener()
+                .open_url(state.runtime.active_server.url.clone(), None::<&str>)?;
         }
         MainMenu::AppUpdate => {
             let app_ = app.clone();
@@ -342,7 +337,7 @@ where
             match event {
                 WindowEvent::Resized { .. } | WindowEvent::Moved { .. } => {
                     if let Some(w) = app.get_webview_window(Window::Main.into()) {
-                        w.persist_window_state();
+                        w.persist_window_state(&app.state::<AppState>().config);
                     }
                 }
                 WindowEvent::CloseRequested { .. } => {

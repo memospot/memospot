@@ -8,6 +8,7 @@
   "loaderTryRestartingMemospot": "Intenta reiniciar Memospot.",
   "loaderWaitingForServer": "Esperando al servidor…",
   "settingsConfigSaveFail": "Error al guardar la configuración.",
+  "settingsConfigSaveRestartRequired": "Se requiere reiniciar la aplicación para que los cambios surtan efecto.",
   "settingsConfigSaveSuccess": "Configuración guardada correctamente.",
   "settingsErrPathDoesNotExist": "La ruta especificada no existe.",
   "settingsLoadDefaults": "Valores predeterminados",

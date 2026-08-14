@@ -8,6 +8,7 @@
   "loaderTryRestartingMemospot": "Попробуйте перезапустить Memospot.",
   "loaderWaitingForServer": "Ожидание сервера…",
   "settingsConfigSaveFail": "Не удалось сохранить конфигурацию.",
+  "settingsConfigSaveRestartRequired": "Для применения изменений требуется перезапуск приложения.",
   "settingsConfigSaveSuccess": "Конфигурация успешно сохранена.",
   "settingsErrPathDoesNotExist": "Указанный путь не существует.",
   "settingsLoadDefaults": "По умолчанию",

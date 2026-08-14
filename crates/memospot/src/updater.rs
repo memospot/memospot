@@ -1,11 +1,13 @@
-use crate::{RuntimeConfig, fl, memos};
+use crate::runtime_config::AppState;
+use crate::{fl, memos};
 use chrono::DateTime;
+use config::Config;
 use log::{debug, error, info, warn};
 use std::{
     env,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use tauri::{AppHandle, Runtime, async_runtime};
+use tauri::{AppHandle, Manager, Runtime, async_runtime};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_updater::UpdaterExt;
@@ -16,10 +18,9 @@ const LATEST_RELEASE_URL: &str = "https://github.com/memospot/memospot/releases/
 ///
 /// This is true if the updater is not explicitly disabled by the
 /// user and the application is not running in a Flatpak sandbox.
-pub fn is_enabled(config: &RuntimeConfig) -> bool {
+pub fn is_enabled(config: &Config) -> bool {
     let is_flatpak = env::var("FLATPAK_ID").is_ok_and(|v| !v.is_empty());
     let is_enabled = config
-        .yaml
         .memospot
         .updater
         .enabled
@@ -31,9 +32,8 @@ pub fn is_enabled(config: &RuntimeConfig) -> bool {
 /// Check if the updater should be run.
 ///
 /// True if the last check time is more than the configured check interval ago.
-pub fn should_run(config: &RuntimeConfig) -> bool {
+pub fn should_run(config: &Config) -> bool {
     let check_interval_config = config
-        .yaml
         .memospot
         .updater
         .check_interval
@@ -44,7 +44,7 @@ pub fn should_run(config: &RuntimeConfig) -> bool {
         .unwrap_or_default()
         .as_secs();
 
-    let last_check_config = config.yaml.memospot.updater.last_check.unwrap_or_default();
+    let last_check_config = config.memospot.updater.last_check.unwrap_or_default();
     let last_check = Duration::from_secs(last_check_config).as_secs();
 
     let unix_time_now = SystemTime::now()
@@ -98,12 +98,14 @@ pub fn manual_check<R: Runtime>(app: AppHandle<R>) {
 /// Check for updates and prompt the user to install them.
 async fn update<R: Runtime>(app: AppHandle<R>) -> tauri_plugin_updater::Result<bool> {
     debug!("auto-updater is starting");
+    let runtime = app.state::<AppState>().runtime.clone();
     let updater = app
         .updater_builder()
-        .on_before_exit(|| {
+        .on_before_exit(move || {
             info!("preparing to install update");
+            let runtime = runtime.clone();
             async_runtime::block_on(async move {
-                memos::shutdown().await;
+                memos::shutdown(&runtime).await;
             });
         })
         .build()?

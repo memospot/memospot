@@ -1,7 +1,7 @@
 #[cfg(test)]
 use anyhow::bail;
 #[cfg(test)]
-use {crate::Config, std::fs};
+use {crate::Config, std::env, std::fs, std::process::Command};
 
 /// Test that provided config is merged with
 /// default config in case of missing fields.
@@ -119,4 +119,37 @@ fn test_show() {
     let default_config = Config::default();
     let default_yaml = serde_yaml::to_string(&default_config).unwrap();
     println!("{default_yaml}");
+}
+
+#[test]
+fn test_init_honors_environment_and_profile_without_mutating_parent_environment() {
+    let output = Command::new(std::env::current_exe().unwrap())
+        .arg("test_init_honors_environment_and_profile_child")
+        .env("CONFIG_TEST_CHILD", "1")
+        .env("MEMOSPOT_PROFILE", "release")
+        .env("MEMOSPOT_MEMOS", "{port=4242}")
+        .output()
+        .unwrap();
+
+    assert!(
+        output.status.success(),
+        "child test failed:\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+fn test_init_honors_environment_and_profile_child() {
+    if env::var_os("CONFIG_TEST_CHILD").is_none() {
+        return;
+    }
+
+    let tmp_dir = tempfile::tempdir().unwrap();
+    let config_path = tmp_dir.path().join("profiled.yaml");
+    fs::write(&config_path, "memos:\n  port: 4321\n").unwrap();
+
+    let parsed_config = Config::init(&config_path).unwrap();
+
+    assert_eq!(parsed_config.memos.port, Some(4242));
 }

@@ -5,88 +5,24 @@
 //!
 //! The TypeScript/JavaScript API is defined in `src-ui/src/lib/tauri.ts`.
 
+use crate::runtime_config::{AppState, ConfigUpdateResult};
+use crate::{i18n, memos, menu};
 use config::Config;
-use dialog::error_dialog;
 use i18n_embed::LanguageLoader;
 use json_patch::Patch;
-use log::{debug, error, info};
-use serde_json::json;
+use log::{debug, error};
 use tauri::{AppHandle, Runtime, State, command};
-use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
-use tokio::sync::Mutex;
 
-use crate::{fl, i18n, memos, menu, runtime_config::RuntimeConfig};
-
-pub struct MemosURL(pub Mutex<String>);
-impl MemosURL {
-    pub fn manage(url: String) -> Self {
-        Self(Mutex::new(url))
-    }
-}
-
-#[command]
-pub async fn get_memos_url(memos_url: State<'_, MemosURL>) -> Result<String, String> {
-    Ok(memos_url.0.lock().await.clone())
-}
-
-#[command]
-pub async fn get_theme() -> Result<String, String> {
-    let config = RuntimeConfig::from_global_store();
-    Ok(config.yaml.memospot.window.theme.unwrap_or_default())
-}
-
-#[command]
-pub async fn get_reduce_animation_status() -> Result<bool, String> {
-    let config = RuntimeConfig::from_global_store();
-    Ok(config
-        .yaml
+fn apply_locale<R: Runtime>(app: &AppHandle<R>, state: &AppState) {
+    let current_locale = state
+        .config
+        .snapshot()
+        .current
         .memospot
         .window
-        .reduce_animation
-        .unwrap_or_default())
-}
-
-pub struct Locale(pub Mutex<String>);
-impl Locale {
-    pub fn manage(locale: String) -> Self {
-        Self(Mutex::new(locale))
-    }
-}
-#[command]
-pub async fn get_locale_preference(locale: State<'_, Locale>) -> Result<String, String> {
-    Ok(locale.0.lock().await.clone())
-}
-
-#[command]
-pub async fn get_effective_locale() -> Result<String, String> {
-    Ok(i18n::LOCALE_LOADER.current_language().to_string())
-}
-
-#[command]
-pub async fn set_locale<R: Runtime>(
-    app: AppHandle<R>,
-    new: String,
-    locale: State<'_, Locale>,
-) -> Result<bool, String> {
-    debug!("setting locale to {new}");
-    *locale.0.lock().await = new.clone();
-
-    let mut config = RuntimeConfig::from_global_store();
-    config.yaml.memospot.window.locale = Some(new.clone());
-    RuntimeConfig::to_global_store(&config);
-
-    debug!("configuration updated by user. Saving…");
-
-    let config_path = config.paths.memospot_config_file.clone();
-    if let Err(e) = config.yaml.save_to_file(&config_path).await {
-        app.dialog()
-            .message(fl!("error-config-write-error", error = e.to_string()))
-            .kind(MessageDialogKind::Error)
-            .title(fl!("dialog-generic-error"))
-            .show(|_| {});
-    }
-
-    let current_locale = locale.0.lock().await.clone();
+        .locale
+        .clone()
+        .unwrap_or_default();
     debug!("current locale set to {current_locale}");
 
     if current_locale.is_empty() || current_locale == "system" {
@@ -95,23 +31,99 @@ pub async fn set_locale<R: Runtime>(
         i18n::reload(current_locale.as_str());
     }
 
-    match menu::build(&app) {
+    match menu::build(app) {
         Ok(menu_bar) => {
             if let Err(error) = app.set_menu(menu_bar) {
                 error!("failed to update menu locale: {error}");
             } else {
-                menu::update_memos_version_entry(&app);
+                menu::update_memos_version_entry(app);
             }
         }
         Err(error) => error!("failed to rebuild menu after locale change: {error}"),
     }
-
-    Ok(true)
 }
 
 #[command]
-pub async fn ping_memos(memos_url: &str, timeout_millis: u64) -> Result<bool, String> {
-    memos::ping_api(memos_url, timeout_millis).await
+pub async fn get_memos_url(state: State<'_, AppState>) -> Result<String, String> {
+    Ok(state.runtime.active_server.url.clone())
+}
+
+#[command]
+pub async fn get_theme(state: State<'_, AppState>) -> Result<String, String> {
+    let config = state.config.snapshot();
+    Ok(config
+        .current
+        .memospot
+        .window
+        .theme
+        .clone()
+        .unwrap_or_default())
+}
+
+#[command]
+pub async fn get_reduce_animation_status(state: State<'_, AppState>) -> Result<bool, String> {
+    let config = state.config.snapshot();
+    Ok(config
+        .current
+        .memospot
+        .window
+        .reduce_animation
+        .unwrap_or_default())
+}
+
+#[command]
+pub async fn get_locale_preference(state: State<'_, AppState>) -> Result<String, String> {
+    let config = state.config.snapshot();
+    Ok(config
+        .current
+        .memospot
+        .window
+        .locale
+        .clone()
+        .unwrap_or_default())
+}
+
+#[command]
+pub async fn get_effective_locale() -> Result<String, String> {
+    Ok(i18n::LOCALE_LOADER.current_language().to_string())
+}
+
+/// Set the application locale.
+///
+/// The preference is persisted through the managed configuration store and,
+/// only after a successful synchronized update, applied live by reloading the
+/// localization and rebuilding the menu.
+#[command]
+pub async fn set_locale<R: Runtime>(
+    app: AppHandle<R>,
+    state: State<'_, AppState>,
+    new: String,
+) -> Result<ConfigUpdateResult, String> {
+    debug!("setting locale to {new}");
+
+    let update = state
+        .config
+        .update_and_persist(|config| {
+            config.memospot.window.locale = Some(new.clone());
+        })
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if update.locale_changed {
+        apply_locale(&app, &state);
+    }
+
+    Ok(update.result)
+}
+
+#[command]
+pub async fn ping_memos(
+    state: State<'_, AppState>,
+    memos_url: &str,
+    timeout_millis: u64,
+) -> Result<bool, String> {
+    let user_agent = state.runtime.active_server.user_agent.clone();
+    memos::ping_api(memos_url, timeout_millis, &user_agent).await
 }
 
 #[command]
@@ -119,11 +131,11 @@ pub async fn get_env(name: &str) -> Result<String, String> {
     Ok(std::env::var(String::from(name)).unwrap_or(String::from("")))
 }
 
-/// Get the app config from the global store.
+/// Get the current app config.
 #[command]
-pub async fn get_config() -> Result<String, String> {
-    let config = RuntimeConfig::from_global_store();
-    let serialized = match serde_json::to_string(&config.yaml) {
+pub async fn get_config(state: State<'_, AppState>) -> Result<String, String> {
+    let config = state.config.snapshot();
+    let serialized = match serde_json::to_string(&*config.current) {
         Ok(s) => s,
         Err(e) => {
             error!("failed to serialize config: {e}");
@@ -136,7 +148,7 @@ pub async fn get_config() -> Result<String, String> {
 /// Get the default app config.
 #[command]
 pub async fn get_default_config() -> Result<String, String> {
-    let serialized = match serde_json::to_string(&RuntimeConfig::default().yaml) {
+    let serialized = match serde_json::to_string(&Config::default()) {
         Ok(s) => s,
         Err(e) => {
             error!("failed to serialize config: {e}");
@@ -147,63 +159,45 @@ pub async fn get_default_config() -> Result<String, String> {
 }
 
 /// Apply a configuration patch.
+///
+/// The patch is validated and persisted through the managed configuration
+/// store. Invalid patches and persistence failures are returned as errors.
 #[command]
-pub async fn set_config(patch: String) -> Result<bool, String> {
+pub async fn set_config<R: Runtime>(
+    app: AppHandle<R>,
+    state: State<'_, AppState>,
+    patch: String,
+) -> Result<ConfigUpdateResult, String> {
     debug!("applying configuration patch: {patch:?}");
-
-    let mut runtime_config = RuntimeConfig::from_global_store();
-
-    let mut deserialized_config = serde_json::from_str(
-        serde_json::to_string(&runtime_config.yaml)
-            .unwrap_or_else(|e| {
-                error!("failed to serialize config: {e}");
-                String::from("{}")
-            })
-            .as_str(),
-    )
-    .unwrap_or_else(|e| {
-        error!("failed to deserialize configuration: {e}");
-        json!({})
-    });
 
     let deserialized_patch: Patch = match serde_json::from_str(patch.as_str()) {
         Ok(p) => p,
         Err(e) => {
             error!("failed to deserialize configuration patch: {e}");
-            return Ok(false);
+            return Err(format!("failed to deserialize configuration patch: {e}"));
         }
     };
 
     if deserialized_patch.is_empty() {
         error!("received empty configuration patch. No changes applied.");
-        return Ok(false);
+        return Err("received empty configuration patch. No changes applied.".to_string());
     }
 
-    json_patch::patch(&mut deserialized_config, &deserialized_patch).unwrap_or_else(|e| {
-        error!("failed to apply configuration patch: {e}");
-    });
+    let update = state
+        .config
+        .apply_patch_and_persist(&deserialized_patch)
+        .await
+        .map_err(|e| e.to_string())?;
+    debug!(
+        "configuration updated. Restart required: {}",
+        update.result.restart_required
+    );
 
-    let mut new_config: Config = match serde_json::from_value(deserialized_config) {
-        Ok(c) => c,
-        Err(e) => {
-            error!("failed to deserialize configuration: {e}");
-            return Ok(false);
-        }
-    };
-
-    crate::memos::sync_mode_demo_compat(&mut new_config.memos);
-
-    runtime_config.yaml = new_config.clone();
-    RuntimeConfig::to_global_store(&runtime_config);
-
-    info!("configuration updated by user. Saving…");
-
-    let config_path = runtime_config.paths.memospot_config_file.clone();
-    if let Err(e) = runtime_config.yaml.save_to_file(&config_path).await {
-        error_dialog!(fl!("error-config-write-error", error = e.to_string()));
+    if update.locale_changed {
+        apply_locale(&app, &state);
     }
 
-    Ok(true)
+    Ok(update.result)
 }
 
 /// Check if a path exists.

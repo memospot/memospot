@@ -1,8 +1,10 @@
 use crate::memos_version::MemosVersionStore;
+use crate::runtime_config::RuntimeContext;
+use crate::sqlite;
 use crate::utils::absolute_path;
-use crate::{RuntimeConfig, sqlite};
 use crate::{fl, memos_log};
 use anyhow::{Result, anyhow};
+use config::{Config, Memos};
 use dialog::error_dialog;
 use homedir::HomeDirExt;
 use log::{debug, error, info, warn};
@@ -41,14 +43,17 @@ pub fn sync_mode_demo_compat(memos: &mut config::Memos) {
 /// Memospot tries to checkpoint a database locked by a process it no longer controls.
 ///
 /// This function is cross-platform and should help to recover from such situations.
-pub fn find_and_kill_orphaned(rtcfg: &RuntimeConfig) {
-    if let Some(pid) = get_last_pid(rtcfg) {
+///
+/// `memos` contains the effective startup settings, including debug-only
+/// overrides that determine the port used by the previous run.
+pub fn find_and_kill_orphaned(memos: &Memos, memospot_data: &Path) {
+    if let Some(pid) = get_last_pid(memospot_data) {
         debug!("unclean shutdown detected");
-        let prev_port = rtcfg.__yaml__.memos.port.unwrap_or_default();
+        let prev_port = memos.port.unwrap_or_default();
         let prev_url = format!("http://localhost:{}/", prev_port);
 
         async_runtime::block_on(async {
-            if Ok(true) == ping_api(&prev_url, 2_000).await {
+            if Ok(true) == ping_api(&prev_url, 2_000, "").await {
                 warn!("detected orphaned Memos server (PID: {pid}). Attempting to terminate…");
                 kill_pid(pid).await;
 
@@ -64,8 +69,8 @@ pub fn find_and_kill_orphaned(rtcfg: &RuntimeConfig) {
 /// Get the last known Memos PID.
 ///
 /// Should return None if it had a graceful shutdown.
-pub fn get_last_pid(rtcfg: &RuntimeConfig) -> Option<u32> {
-    let pid_file = rtcfg.paths.memospot_data.join("memos.pid");
+pub fn get_last_pid(memospot_data: &Path) -> Option<u32> {
+    let pid_file = memospot_data.join("memos.pid");
     if pid_file.is_file() {
         return match fs::read_to_string(&pid_file) {
             Ok(content) => match content.trim().parse::<u32>() {
@@ -145,8 +150,8 @@ fn save_pid_file(pid: u32, file_path: &Path) {
     });
 }
 
-async fn remove_pid_file(rtcfg: &RuntimeConfig) {
-    let pid_file = rtcfg.paths.memospot_data.join("memos.pid");
+async fn remove_pid_file(memospot_data: &Path) {
+    let pid_file = memospot_data.join("memos.pid");
     let time_start = tokio::time::Instant::now();
     let timeout = tokio::time::Duration::from_secs(5);
 
@@ -199,10 +204,13 @@ async fn kill_pid(pid: u32) {
 /// Spawn Memos server.
 ///
 /// Spawns a managed child process with custom environment variables.
-pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
-    let env_vars: HashMap<String, String> = prepare_env(rtcfg);
-    let command = rtcfg.paths.memos_bin.to_string_lossy().to_string();
-    let cwd = get_cwd(rtcfg);
+///
+/// `runtime` carries the startup snapshot of the server settings and paths;
+/// `config` provides the Memospot-side settings read at spawn time.
+pub fn spawn(runtime: &RuntimeContext, config: &Config) -> Result<(), anyhow::Error> {
+    let env_vars: HashMap<String, String> = prepare_env(runtime);
+    let command = runtime.paths.memos_bin.to_string_lossy().to_string();
+    let cwd = get_cwd(runtime);
 
     debug!("working directory: {}", cwd.to_string_lossy());
     debug!("environment: {env_vars:#?}");
@@ -218,7 +226,7 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
 
         match res {
             Ok(receiver, ..) => {
-                if rtcfg.yaml.memospot.log.enabled.unwrap_or(false) {
+                if config.memospot.log.enabled.unwrap_or(false) {
                     let (rx_, _) = receiver;
                     async_runtime::spawn(async move {
                         memos_log::log_events(rx_).await;
@@ -226,7 +234,7 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
                 }
 
                 let (_, child) = receiver;
-                let pid_file = rtcfg.paths.memospot_data.join("memos.pid");
+                let pid_file = runtime.paths.memospot_data.join("memos.pid");
 
                 save_pid_file(child.pid(), &pid_file);
 
@@ -262,9 +270,8 @@ pub fn spawn(rtcfg: &RuntimeConfig) -> Result<(), anyhow::Error> {
 }
 
 /// Shutdown the Memos server and checkpoint the database.
-pub async fn shutdown() {
-    let config = RuntimeConfig::from_global_store();
-    if !config.is_managed_server {
+pub async fn shutdown(runtime: &RuntimeContext) {
+    if !runtime.active_server.managed {
         debug!("server is not managed by Memospot. No need to cleanup before exit");
         return;
     }
@@ -272,7 +279,7 @@ pub async fn shutdown() {
     debug!("shutting down server…");
     sidecar::kill_children();
 
-    if let Some(pid) = get_last_pid(&config) {
+    if let Some(pid) = get_last_pid(&runtime.paths.memospot_data) {
         let pid = Pid::from_u32(pid);
 
         let time_start = tokio::time::Instant::now();
@@ -304,9 +311,9 @@ pub async fn shutdown() {
         }
     }
 
-    let db_file = config.paths.memos_db_file.as_ref();
+    let db_file = runtime.paths.memos_db_file.as_ref();
     sqlite::wait_checkpoint(db_file).await;
-    remove_pid_file(&config).await;
+    remove_pid_file(&runtime.paths.memospot_data).await;
     debug!("server shutdown");
 }
 
@@ -324,11 +331,11 @@ pub async fn shutdown() {
 /// 4. Memospot current working directory.
 ///
 /// Finally, if no `dist` folder is found, fall back to Memospot data directory.
-pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
+pub fn get_cwd(runtime: &RuntimeContext) -> PathBuf {
     let mut search_paths: Vec<PathBuf> = Vec::new();
 
     // Prefer user-provided working_dir, if it's not empty.
-    if let Some(working_dir) = &rtcfg.yaml.memos.working_dir
+    if let Some(working_dir) = &runtime.memos.working_dir
         && !working_dir.trim().is_empty()
     {
         Path::new(working_dir)
@@ -352,8 +359,8 @@ pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
     search_paths.extend([
         // Tauri uses `canonicalize()` to resolve the resource directory, which adds a `\\?\` prefix on Windows.
         resource_dir.trim_start_matches(r#"\\?\"#).into(),
-        rtcfg.paths.memospot_data.clone(),
-        rtcfg.paths.memospot_cwd.clone(),
+        runtime.paths.memospot_data.clone(),
+        runtime.paths.memospot_cwd.clone(),
     ]);
 
     debug!("looking for `dist` folder at {search_paths:#?}");
@@ -366,7 +373,7 @@ pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
         }
     }
     // Fallback to data directory.
-    rtcfg.paths.memospot_data.clone()
+    runtime.paths.memospot_data.clone()
 }
 
 /// Memos URL.
@@ -374,16 +381,14 @@ pub fn get_cwd(rtcfg: &RuntimeConfig) -> PathBuf {
 /// It's ensured to end with a slash.
 ///
 /// If remote server is enabled, return the configured URL.
-/// Otherwise, return the default Memos address for the spawned server.
-pub fn get_url(rtcfg: &RuntimeConfig) -> String {
-    let remote = &rtcfg.yaml.memospot.remote;
+/// Otherwise, return the default Memos address for the spawned server,
+/// using the effective port resolved at startup.
+pub fn get_url(config: &Config, effective_port: u16) -> String {
+    let remote = &config.memospot.remote;
     let url = remote.url.as_deref().unwrap_or_default();
 
     if remote.enabled != Some(true) || url.is_empty() {
-        return format!(
-            "http://localhost:{}/",
-            rtcfg.yaml.memos.port.unwrap_or_default()
-        );
+        return format!("http://localhost:{}/", effective_port);
     }
 
     if !url.starts_with("http") {
@@ -403,23 +408,23 @@ fn make_env_key(key: &str) -> String {
 }
 
 /// Prepare environment variables for Memos server.
-pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
-    // Use the runtime-checked memos_data variable instead of the one from the yaml file.
-    let memos_data = rtcfg.paths.memos_data.to_string_lossy();
-    let mut yaml = rtcfg.yaml.memos.clone();
-    sync_mode_demo_compat(&mut yaml);
+pub fn prepare_env(runtime: &RuntimeContext) -> HashMap<String, String> {
+    // Use the runtime-checked `memospot_data` path, not a user-provided string from config.
+    let memos_data = runtime.paths.memos_data.to_string_lossy();
+    let mut memos = runtime.memos.clone();
+    sync_mode_demo_compat(&mut memos);
     let managed_vars: HashMap<&str, String> = HashMap::from_iter(vec![
         (
             "demo",
-            (yaml.mode.as_deref() == Some("demo") || yaml.demo == Some(true)).to_string(),
+            (memos.mode.as_deref() == Some("demo") || memos.demo == Some(true)).to_string(),
         ),
-        ("mode", yaml.mode.unwrap_or_default()),
-        ("addr", yaml.addr.unwrap_or_default()),
-        ("port", yaml.port.unwrap_or_default().to_string()),
+        ("mode", memos.mode.unwrap_or_default()),
+        ("addr", memos.addr.unwrap_or_default()),
+        ("port", memos.port.unwrap_or_default().to_string()),
         ("data", memos_data.to_string()),
         // Metrics were removed from Memos v0.20+.
         ("metric", "false".to_string()),
-        ("instance_url", rtcfg.memos_url.to_string()),
+        ("instance_url", runtime.active_server.url.to_string()),
         // These were added in v0.22.4 and then removed. Sane defaults are hardcoded to prevent user lock-out.
         ("public", "false".to_string()),
         ("password_auth", "true".to_string()),
@@ -428,8 +433,8 @@ pub fn prepare_env(rtcfg: &RuntimeConfig) -> HashMap<String, String> {
     let mut env_vars: HashMap<String, String> = HashMap::new();
 
     // Add user-provided environment variables.
-    if rtcfg.yaml.memos.env.enabled.unwrap_or_default()
-        && let Some(memos_env) = &rtcfg.yaml.memos.env.vars
+    if memos.env.enabled.unwrap_or_default()
+        && let Some(memos_env) = &memos.env.vars
     {
         for (key, value) in memos_env {
             env_vars.insert(key.into(), value.into());
@@ -538,8 +543,11 @@ pub async fn wait_api_ready(memos_url: &str) {
 }
 
 /// Ping the Memos API to check if it is ready.
-pub async fn ping_api(memos_url: &str, timeout_millis: u64) -> Result<bool, String> {
-    let config = RuntimeConfig::from_global_store();
+pub async fn ping_api(
+    memos_url: &str,
+    timeout_millis: u64,
+    user_agent: &str,
+) -> Result<bool, String> {
     let url = memos_url.trim_end_matches('/');
     let endpoint = format!("{url}/healthz");
 
@@ -547,7 +555,7 @@ pub async fn ping_api(memos_url: &str, timeout_millis: u64) -> Result<bool, Stri
     let client = reqwest::Client::new();
     if let Ok(response) = client
         .get(url)
-        .header("User-Agent", &config.user_agent)
+        .header("User-Agent", user_agent)
         .timeout(std::time::Duration::from_millis(if timeout_millis < 100 {
             1000
         } else {

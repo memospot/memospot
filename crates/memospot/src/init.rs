@@ -2,12 +2,12 @@
 ///
 /// Functions in this module panics with native dialogs instead of returning errors.
 use crate::fl;
-use crate::runtime_config::RuntimeConfig;
+use crate::runtime_config::RuntimePaths;
 use crate::sqlite;
 use crate::utils::*;
 use crate::webview;
 use crate::zip;
-use config::Config;
+use config::{Config, Memos};
 use dialog::*;
 use homedir::HomeDirExt;
 use log::{debug, info, warn};
@@ -45,25 +45,18 @@ pub fn data_path(app_name: &str) -> PathBuf {
 ///
 /// Use Memospot data directory if user-provided path is empty or ".".
 /// Optionally, resolve a user-provided data directory.
-pub fn memos_data(rtcfg: &RuntimeConfig) -> PathBuf {
-    let data_str = rtcfg
-        .yaml
-        .memos
-        .data
-        .as_ref()
-        .map(|s| s.as_str().trim())
-        .unwrap_or("");
+pub fn memos_data(memos: &Memos, memospot_data: &Path) -> PathBuf {
+    let data_str = memos.data.as_ref().map(|s| s.as_str().trim()).unwrap_or("");
 
     // Use Memospot data directory if user-provided path is empty or ".".
     // Prevents resolving data path to a non-writable directory,
     // like /usr/local/bin or "Program Files".
     if data_str.is_empty() || data_str == "." {
-        return rtcfg.paths.memospot_data.to_path_buf();
+        return memospot_data.to_path_buf();
     }
 
     let expanded_path = PathBuf::from(data_str).expand_home().unwrap_or_default();
-    let path = absolute_path(expanded_path)
-        .unwrap_or_else(|_| rtcfg.paths.memospot_data.to_path_buf());
+    let path = absolute_path(expanded_path).unwrap_or_else(|_| memospot_data.to_path_buf());
     if path.exists() && path.is_dir() {
         return path;
     }
@@ -78,12 +71,11 @@ pub fn memos_data(rtcfg: &RuntimeConfig) -> PathBuf {
 ///
 /// Use Memospot data directory if user-provided path is empty or ".".
 /// Optionally, resolve a user-provided directory.
-pub fn ensure_backup_directory(rtcfg: &RuntimeConfig) -> PathBuf {
+pub fn ensure_backup_directory(config: &Config, memospot_data: &Path) -> PathBuf {
     let folder_name = "backups";
-    let default_path = rtcfg.paths.memospot_data.join(folder_name);
+    let default_path = memospot_data.join(folder_name);
 
-    let cfg_path = rtcfg
-        .yaml
+    let cfg_path = config
         .memospot
         .backups
         .path
@@ -126,12 +118,9 @@ pub fn ensure_backup_directory(rtcfg: &RuntimeConfig) -> PathBuf {
 }
 
 /// Ensure that database files are writable, if they exist.
-pub fn database(rtcfg: &RuntimeConfig) -> PathBuf {
-    let db_file = &format!(
-        "memos_{}.db",
-        rtcfg.yaml.memos.mode.as_deref().unwrap_or_default()
-    );
-    let db_path = rtcfg.paths.memos_data.join(db_file);
+pub fn database(memos: &Memos, memos_data: &Path) -> PathBuf {
+    let db_file = &format!("memos_{}.db", memos.mode.as_deref().unwrap_or_default());
+    let db_path = memos_data.join(db_file);
     let files = vec![
         db_path.with_extension("db"),
         db_path.with_extension("db-wal"),
@@ -145,9 +134,7 @@ pub fn database(rtcfg: &RuntimeConfig) -> PathBuf {
         //
         // Demo database is not handled by
         // migrations and can prevent Memos from starting if the schema is outdated.
-        if rtcfg.yaml.memos.demo == Some(true)
-            || rtcfg.yaml.memos.mode.as_deref() == Some("demo")
-        {
+        if memos.demo == Some(true) || memos.mode.as_deref() == Some("demo") {
             match std::fs::remove_file(&file) {
                 Ok(_) => warn!(
                     "Demo database \"{}\" removed.",
@@ -168,16 +155,16 @@ pub fn database(rtcfg: &RuntimeConfig) -> PathBuf {
 }
 
 /// Run database migrations.
-pub async fn migrate_database(rtcfg: &RuntimeConfig) {
-    if !rtcfg.yaml.memospot.migrations.enabled.unwrap_or_default() {
+pub async fn migrate_database(config: &Config, paths: &RuntimePaths) {
+    if !config.memospot.migrations.enabled.unwrap_or_default() {
         warn!("database migration: disabled via configuration");
         return;
     }
-    if !rtcfg.paths.memos_db_file.exists() {
+    if !paths.memos_db_file.exists() {
         return;
     }
 
-    let db_file = rtcfg.paths.memos_db_file.clone();
+    let db_file = paths.memos_db_file.clone();
     let db_conn = sqlite::get_database_connection(&db_file)
         .await
         .expect_dialog(fl!("panic-failed-to-connect-to-database"));
@@ -192,17 +179,14 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
         return;
     }
 
-    if rtcfg.yaml.memospot.backups.enabled.unwrap_or_default() {
-        let backup_path = ensure_backup_directory(rtcfg);
+    if config.memospot.backups.enabled.unwrap_or_default() {
+        let backup_path = ensure_backup_directory(config, &paths.memospot_data);
         let datetime = chrono::Local::now().format("%Y%m%d-%H%M%S").to_string();
         let backup_name = format!("db-{datetime}-pre-migration.zst.zip");
         let backup_path = backup_path.join(&backup_name);
         let start_time = Instant::now();
-        let backup = zip::related_files(
-            &rtcfg.paths.memos_db_file,
-            &["db-wal", "db-shm"],
-            &backup_path,
-        );
+        let backup =
+            zip::related_files(&paths.memos_db_file, &["db-wal", "db-shm"], &backup_path);
         match backup.await {
             Ok(_) => {
                 info!(
@@ -218,7 +202,7 @@ pub async fn migrate_database(rtcfg: &RuntimeConfig) {
     }
 
     let start_time = Instant::now();
-    let db_file = rtcfg.paths.memos_db_file.clone();
+    let db_file = paths.memos_db_file.clone();
     let db_conn = sqlite::get_database_connection(&db_file)
         .await
         .expect_dialog(fl!("panic-failed-to-connect-to-database"));
@@ -333,8 +317,8 @@ pub fn config(config_path: &PathBuf) -> Config {
 ///
 /// Tries to find a free port if the configured one is already
 /// in use and updates the referenced configuration in place.
-pub fn memos_port(rtcfg: &RuntimeConfig) -> u16 {
-    let preferred_port = rtcfg.yaml.memos.port.unwrap_or_default();
+pub fn memos_port(memos: &Memos) -> u16 {
+    let preferred_port = memos.port.unwrap_or_default();
     if let Some(free_port) = portpicker::find_free_port(preferred_port) {
         return free_port;
     }
@@ -351,14 +335,11 @@ pub fn memos_port(rtcfg: &RuntimeConfig) -> u16 {
 /// 4. ProgramData/memos (Windows).
 /// 5. /Applications/Memospot.app/Contents/MacOS/memos (macOS)
 /// 6. /usr/local/bin, /var/opt/memos, /usr/local/memos (Linux).
-pub fn find_memos(rtcfg: &RuntimeConfig) -> PathBuf {
+pub fn find_memos(memos: &Memos, memospot_data: &Path, memospot_cwd: &Path) -> PathBuf {
     #[cfg(debug_assertions)]
     {
         // cwd is target/debug/ on dev.
-        let server_dist_dir = rtcfg
-            .paths
-            .memospot_cwd
-            .clone()
+        let server_dist_dir = memospot_cwd
             .parent()
             .unwrap()
             .parent()
@@ -374,7 +355,7 @@ pub fn find_memos(rtcfg: &RuntimeConfig) -> PathBuf {
     }
 
     // Prefer path from the configuration file if it's valid.
-    if let Some(binary_path) = &rtcfg.yaml.memos.binary_path {
+    if let Some(binary_path) = &memos.binary_path {
         let yaml_bin = binary_path.as_str().trim();
         if !yaml_bin.is_empty() {
             let expanded_path = Path::new(yaml_bin).expand_home().unwrap_or_default();
@@ -385,10 +366,8 @@ pub fn find_memos(rtcfg: &RuntimeConfig) -> PathBuf {
         }
     }
 
-    let mut search_paths: Vec<PathBuf> = Vec::from([
-        rtcfg.paths.memospot_cwd.clone(),
-        rtcfg.paths.memospot_data.clone(),
-    ]);
+    let mut search_paths: Vec<PathBuf> =
+        Vec::from([memospot_cwd.to_path_buf(), memospot_data.to_path_buf()]);
 
     // Fall backs.
     match OS {
@@ -439,21 +418,18 @@ static LOG_CONFIG_YAML: &str = include_str!("log.default.yaml");
 /// - Validates `log.yaml`.
 ///
 /// Return true if logging is enabled.
-pub fn setup_logger(rtcfg: &RuntimeConfig) -> bool {
-    if !rtcfg.yaml.memospot.log.enabled.unwrap_or_default() {
+pub fn setup_logger(config: &Config, memospot_data: &Path) -> bool {
+    if !config.memospot.log.enabled.unwrap_or_default() {
         return false;
     }
 
-    let log_config: PathBuf = rtcfg.paths.memospot_data.join("log.yaml");
+    let log_config: PathBuf = memospot_data.join("log.yaml");
 
     // SAFETY: There's potential for race conditions when setting environment
     // variables in a multithreaded context. Shouldn't be an issue here.
     unsafe {
         // Allows using $ENV{MEMOSPOT_DATA} in `log4rs` config.
-        env::set_var(
-            "MEMOSPOT_DATA",
-            rtcfg.paths.memospot_data.to_string_lossy().to_string(),
-        );
+        env::set_var("MEMOSPOT_DATA", memospot_data.to_string_lossy().to_string());
     }
 
     if log4rs::init_file(&log_config, Default::default()).is_ok() {
@@ -603,15 +579,15 @@ pub fn setup_hw_acceleration() {
 /// WEBKIT_DISABLE_COMPOSITING_MODE=1 to disable hardware acceleration on Linux.
 ///
 /// Should be called after init::hw_acceleration() to allow user-defined overrides.
-pub fn set_env_vars(rtcfg: &RuntimeConfig) {
+pub fn set_env_vars(config: &Config) {
     #[cfg(target_os = "linux")]
     setup_hw_acceleration();
 
-    if !rtcfg.yaml.memospot.env.enabled.unwrap_or(false) {
+    if !config.memospot.env.enabled.unwrap_or(false) {
         return;
     }
 
-    if let Some(memospot_env) = &rtcfg.yaml.memospot.env.vars {
+    if let Some(memospot_env) = &config.memospot.env.vars {
         for (key, value) in memospot_env {
             // SAFETY: There's potential for race conditions when setting environment
             // variables in a multithreaded context. Shouldn't be an issue here.

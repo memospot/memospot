@@ -20,13 +20,16 @@ mod zip;
 
 use crate::event::handle_run_events;
 use crate::route::Route;
-use crate::runtime_config::{RuntimeConfig, RuntimeConfigPaths};
+#[cfg(debug_assertions)]
+use crate::runtime_config::apply_debug_overrides;
+use crate::runtime_config::{
+    ActiveServer, AppState, ConfigStore, RuntimeContext, RuntimePaths,
+};
 use crate::window::Window;
 use dialog::*;
 use i18n::*;
 use log::{debug, info, warn};
 use std::env;
-use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::webview::PageLoadEvent;
 use tauri::{Listener, Manager, async_runtime};
@@ -42,80 +45,56 @@ pub fn run() {
 
     let memospot_data = init::data_path("memospot");
     let config_path = memospot_data.join("memospot.yaml");
-    let yaml_config = init::config(&config_path);
+    let mut current_config = init::config(&config_path);
+    let initial_config = current_config.clone();
 
-    let mut config = RuntimeConfig {
-        paths: RuntimeConfigPaths {
-            memos_bin: PathBuf::new(),
-            memos_data: PathBuf::new(),
-            memos_db_file: PathBuf::new(),
-            memospot_bin: PathBuf::new(),
-            memospot_config_file: config_path,
-            memospot_cwd: PathBuf::new(),
-            memospot_data,
-        },
-        is_managed_server: true,
-        memos_url: String::new(),
-        user_agent: String::new(),
-        yaml: yaml_config.clone(),
-        __yaml__: yaml_config,
-    };
-
-    let locale = &config
-        .yaml
+    let locale = current_config
         .memospot
         .window
         .locale
         .clone()
         .unwrap_or_default();
-
     reload(locale.as_str());
-    init::setup_logger(&config);
+    init::setup_logger(&current_config, &memospot_data);
 
+    // Effective Memos settings for the running server, including debug-only
+    // overrides that never enter the current configuration.
+    let mut effective_memos = current_config.memos.clone();
     #[cfg(debug_assertions)]
+    apply_debug_overrides(&mut effective_memos);
+
+    // Cleanup orphaned Memos processes using the effective startup port.
+    memos::find_and_kill_orphaned(&effective_memos, &memospot_data);
+
+    let effective_port = init::memos_port(&effective_memos);
+    effective_memos.port = Some(effective_port);
+    #[cfg(not(debug_assertions))]
     {
-        // ! `MEMOS_MODE` is retired from v0.26.0. Database is always in `prod` mode unless `MEMOS_DEMO=true` is set.
-        // Use Memos in demo mode during development,
-        // as it's already seeded with some data.
-        config.yaml.memos.mode = Some("demo".to_string());
-        config.yaml.memos.demo = Some(true);
-        // Use an upper port to use a dedicated WebView cache for development.
-        config.yaml.memos.port = Some(config.yaml.memos.port.unwrap_or_default() + 1);
+        // Persist the resolved port in the current configuration, as before.
+        // In debug builds the port override is runtime-only and must not
+        // reach the configuration file.
+        current_config.memos.port = Some(effective_port);
     }
 
-    // Cleanup orphaned Memos processes.
-    memos::find_and_kill_orphaned(&config);
+    let memos_data = init::memos_data(&effective_memos, &memospot_data);
+    let memos_db_file = init::database(&effective_memos, &memos_data);
+    let memos_url = memos::get_url(&current_config, effective_port);
+    let is_managed_server =
+        memos_url.starts_with(&format!("http://localhost:{}", effective_port));
 
-    config.yaml.memos.port = Some(init::memos_port(&config));
-    config.paths.memos_data = init::memos_data(&config);
-    config.paths.memos_db_file = init::database(&config);
-    config.memos_url = memos::get_url(&config);
-
-    info!(
-        "Memos data directory: {}",
-        config.paths.memos_data.to_string_lossy()
-    );
-    info!("Memos URL: {}", config.memos_url);
-
-    config.is_managed_server = config.memos_url.starts_with(&format!(
-        "http://localhost:{}",
-        config.yaml.memos.port.unwrap_or_default()
-    ));
+    info!("Memos data directory: {}", memos_data.to_string_lossy());
+    info!("Memos URL: {}", memos_url);
 
     info!("Starting Memospot.");
-    info!(
-        "Memospot data path: {}",
-        config.paths.memospot_data.to_string_lossy()
-    );
+    info!("Memospot data path: {}", memospot_data.to_string_lossy());
 
-    config.paths.memospot_bin = env::current_exe().unwrap();
-    config.paths.memospot_cwd = config.paths.memospot_bin.parent().unwrap().to_path_buf();
-    config.paths.memos_bin = init::find_memos(&config);
+    let memospot_bin = env::current_exe().unwrap();
+    let memospot_cwd = memospot_bin.parent().unwrap().to_path_buf();
 
-    init::set_env_vars(&config);
+    init::set_env_vars(&current_config);
 
     {
-        let url = config.memos_url.clone();
+        let url = memos_url.clone();
         async_runtime::spawn(async move {
             memos::wait_api_ready(&url).await;
         });
@@ -124,36 +103,54 @@ pub fn run() {
     let mut tauri_ctx = tauri::generate_context!();
 
     let app_version = tauri_ctx.package_info().version.to_string();
-    config.user_agent = config.yaml.memospot.remote.user_agent.as_deref()
-        .filter(|x| !x.is_empty() && config.yaml.memospot.remote.enabled.unwrap_or_default())
-        .map(|x| x.to_string())
+    let user_agent = current_config.memospot.remote.user_agent.as_deref()
+        .filter(|v| !v.is_empty() && current_config.memospot.remote.enabled.unwrap_or_default())
+        .map(|v| v.to_string())
         .unwrap_or_else(|| {
             format!("Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Memospot/{}", &app_version)
         });
-    warn!("WebView user agent: {}", &config.user_agent);
+    warn!("WebView user agent: {}", &user_agent);
 
-    let should_run_updater = updater::is_enabled(&config) && updater::should_run(&config);
+    let should_run_updater =
+        updater::is_enabled(&current_config) && updater::should_run(&current_config);
     if should_run_updater {
         let unix_time_now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
-        config.yaml.memospot.updater.last_check = Some(unix_time_now);
+        current_config.memospot.updater.last_check = Some(unix_time_now);
     }
 
-    // Store `config` and make it immutable after this point.
-    config.to_global_store();
-    let config = config;
+    let memos_bin = init::find_memos(&effective_memos, &memospot_data, &memospot_cwd);
 
-    let main_title = if config.is_managed_server {
+    let runtime = RuntimeContext {
+        paths: RuntimePaths {
+            memos_bin,
+            memos_data,
+            memos_db_file,
+            memospot_bin,
+            memospot_config_file: config_path.clone(),
+            memospot_cwd,
+            memospot_data,
+        },
+        active_server: ActiveServer {
+            url: memos_url,
+            user_agent,
+            managed: is_managed_server,
+        },
+        memos: effective_memos,
+    };
+
+    let main_title = if runtime.active_server.managed {
         #[cfg(debug_assertions)]
         let title = "Memospot - DEBUG";
         #[cfg(not(debug_assertions))]
         let title = "Memospot";
         title.to_string()
     } else {
-        let url = config
-            .memos_url
+        let url = runtime
+            .active_server
+            .url
             .trim_start_matches("http://")
             .trim_start_matches("https://")
             .trim_end_matches("/");
@@ -166,7 +163,7 @@ pub fn run() {
         window_config[0] = WindowConfig {
             title: main_title,
             url: tauri::WebviewUrl::App(Route::Loader.into()),
-            user_agent: Some(config.user_agent.clone()),
+            user_agent: Some(runtime.active_server.user_agent.clone()),
             // Stop Tauri from handling drag-and-drop events and pass them to the webview.
             drag_drop_enabled: false,
             incognito: cfg!(debug_assertions),
@@ -178,14 +175,20 @@ pub fn run() {
             zoom_hotkeys_enabled: false,
             ..Default::default()
         }
-        .restore_window_state();
+        .restore_window_state(&current_config);
     }
 
-    if config.is_managed_server {
-        let config_ = config.clone();
+    let app_state = AppState {
+        runtime,
+        config: ConfigStore::new(current_config, initial_config, config_path),
+    };
+
+    if app_state.runtime.active_server.managed {
+        let runtime = app_state.runtime.clone();
+        let current = app_state.config.snapshot().current;
         async_runtime::spawn(async move {
-            init::migrate_database(&config_).await;
-            memos::spawn(&config_).expect_dialog(fl!("panic-failed-to-spawn-memos"));
+            init::migrate_database(&current, &runtime.paths).await;
+            memos::spawn(&runtime, &current).expect_dialog(fl!("panic-failed-to-spawn-memos"));
         });
     }
 
@@ -193,8 +196,12 @@ pub fn run() {
     // This is used to keep the behavior consistent across platforms.
     #[cfg(target_os = "macos")]
     {
-        let invalid_url_error = fl!("error-invalid-server-url", url = config.memos_url.clone());
-        let parsed_url = url::Url::parse(&config.memos_url).expect_dialog(&invalid_url_error);
+        let invalid_url_error = fl!(
+            "error-invalid-server-url",
+            url = app_state.runtime.active_server.url.clone()
+        );
+        let parsed_url = url::Url::parse(&app_state.runtime.active_server.url)
+            .expect_dialog(&invalid_url_error);
         let domain = parsed_url
             .host()
             .expect_dialog(invalid_url_error)
@@ -204,8 +211,7 @@ pub fn run() {
         tauri_ctx.config_mut().bundle.macos.exception_domain = Some(domain);
     }
 
-    let config_ = config;
-    #[allow(unused_qualifications)]
+    let config_store = app_state.config.clone();
     let Ok(tauri_app) = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
@@ -218,10 +224,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .manage(cmd::MemosURL::manage(config_.memos_url.clone()))
-        .manage(cmd::Locale::manage(
-            config_.yaml.memospot.window.locale.unwrap_or_default(),
-        ))
+        .manage(app_state)
         .invoke_handler(tauri::generate_handler![
             cmd::get_memos_url,
             cmd::get_theme,
@@ -251,8 +254,9 @@ pub fn run() {
                     include_str!(concat!(env!("OUT_DIR"), "/shortcut_polyfill.js"));
                 webview.eval(POLYFILL).ok();
 
-                let inject_reduce_animation_polyfill = config_
-                    .yaml
+                let inject_reduce_animation_polyfill = config_store
+                    .snapshot()
+                    .current
                     .memospot
                     .window
                     .reduce_animation

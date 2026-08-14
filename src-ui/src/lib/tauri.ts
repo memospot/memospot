@@ -6,6 +6,7 @@
 
 import { isTauri, invoke as TauriInvoke } from "@tauri-apps/api/core";
 import { open as TauriOpen } from "@tauri-apps/plugin-shell";
+import type { ConfigUpdateResult } from "./types/gen/ConfigUpdateResult";
 
 const browserError = new Error("Not running in Tauri!");
 const TAURI = typeof window !== "undefined" && isTauri();
@@ -70,10 +71,10 @@ export async function getEffectiveLocale(): Promise<string> {
 /**
  * Set the application locale.
  * @param tag the locale to set
- * @returns true if the locale was set
+ * @returns the update result, including whether a restart is required
  */
-export async function setAppLocale(tag: string): Promise<boolean> {
-    return (await invoke("set_locale", { new: tag })) as boolean;
+export async function setAppLocale(tag: string): Promise<ConfigUpdateResult> {
+    return (await invoke("set_locale", { new: tag })) as ConfigUpdateResult;
 }
 
 /**
@@ -95,11 +96,13 @@ export async function getDefaultAppConfig(): Promise<string> {
  * Set the configuration.
  *
  * Takes a JSON Patch (RFC 6902) as the argument.
+ *
+ * Rejects invalid patches and persistence failures instead of resolving false.
  * @param JSONPatch
- * @returns
+ * @returns the update result, including whether a restart is required
  */
-export async function setAppConfig(JSONPatch: string): Promise<boolean> {
-    return (await invoke("set_config", { patch: JSONPatch })) as boolean;
+export async function setAppConfig(JSONPatch: string): Promise<ConfigUpdateResult> {
+    return (await invoke("set_config", { patch: JSONPatch })) as ConfigUpdateResult;
 }
 
 /**

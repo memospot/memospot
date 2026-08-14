@@ -8,6 +8,7 @@
   "loaderTryRestartingMemospot": "Versuche Memospot neu zu starten.",
   "loaderWaitingForServer": "Warte auf den Server…",
   "settingsConfigSaveFail": "Fehler beim Speichern der Konfiguration.",
+  "settingsConfigSaveRestartRequired": "Ein Neustart ist erforderlich, damit die Änderungen wirksam werden.",
   "settingsConfigSaveSuccess": "Konfiguration erfolgreich gespeichert.",
   "settingsErrPathDoesNotExist": "Der angegebene Pfad existiert nicht.",
   "settingsLoadDefaults": "Standardwerte",
