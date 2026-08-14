@@ -8,6 +8,7 @@
   "loaderTryRestartingMemospot": "嘗試重新啟動 Memospot。",
   "loaderWaitingForServer": "正在等待伺服器…",
   "settingsConfigSaveFail": "儲存設定失敗。",
+  "settingsConfigSaveRestartRequired": "Restart required for the changes to take effect.",
   "settingsConfigSaveSuccess": "設定已成功儲存。",
   "settingsErrPathDoesNotExist": "指定的路徑不存在。",
   "settingsLoadDefaults": "預設值",
