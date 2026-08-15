@@ -8,7 +8,7 @@
   "loaderTryRestartingMemospot": "尝试重启Memospot。",
   "loaderWaitingForServer": "等待服务器…",
   "settingsConfigSaveFail": "保存配置失败。",
-  "settingsConfigSaveRestartRequired": "Restart required for the changes to take effect.",
+  "settingsConfigSaveRestartRequired": "重启更改生效所需。",
   "settingsConfigSaveSuccess": "配置保存成功。",
   "settingsErrPathDoesNotExist": "指定的路径不存在。",
   "settingsLoadDefaults": "默认值",
