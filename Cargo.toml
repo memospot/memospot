@@ -44,8 +44,8 @@ sea-orm = { version = "2.0.1", default-features = false }
 sea-orm-migration = { version = "2.0.1", default-features = false }
 semver = "1.0.28"
 serde = { version = "1.0.229", features = ["derive"] }
+serde-saphyr = { version = "1.0.1", features = ["figment"] }
 serde_json = "1.0.151"
-serde_yaml = "0.9.34"
 shared_child = "1.1.1"
 strum = "0.28.0"
 strum_macros = "0.28.0"

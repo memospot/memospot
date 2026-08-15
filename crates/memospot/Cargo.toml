@@ -78,7 +78,7 @@ tauri-plugin-single-instance = { workspace = true }
 
 [dev-dependencies]
 memospot = { path = ".", features = ["unittest"] } # Allows gating code in `build.rs` to run only in test/lint mode.
-serde_yaml = { workspace = true } # Used in tests to assert on-disk configuration.
+serde-saphyr = { workspace = true } # Used in tests to assert on-disk configuration.
 tauri = { workspace = true, features = ["test"] } # Enables `tauri::test` mock app for unit tests.
 tempfile = { workspace = true }
 

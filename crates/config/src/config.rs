@@ -3,9 +3,10 @@ use crate::memospot::Memospot;
 use crate::migration::MigrationExt;
 
 use anyhow::{Error, Result, bail};
-use figment::providers::{Env, Format, Json, Serialized, Yaml};
+use figment::providers::{Env, Format, Json, Serialized};
 use figment::{Figment, Profile};
 use serde::{Deserialize, Serialize};
+use serde_saphyr::figment::Yaml;
 use std::path::Path;
 use tokio::io::AsyncWriteExt;
 use ts_rs::TS;
@@ -37,7 +38,7 @@ impl Config {
     }
 
     pub fn to_string(&self) -> Result<String, Error> {
-        Ok(serde_yaml::to_string(&self)?)
+        Ok(serde_saphyr::to_string(&self)?)
     }
 
     /// Initialize configuration from a file.
@@ -82,7 +83,7 @@ impl Config {
         if file_path.is_dir() {
             bail!("provided configuration file is a directory");
         }
-        let Ok(yaml) = serde_yaml::to_string(&self) else {
+        let Ok(yaml) = serde_saphyr::to_string(&self) else {
             bail!("failed to serialize configuration");
         };
 

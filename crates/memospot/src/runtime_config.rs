@@ -587,7 +587,7 @@ mod tests {
         assert_eq!(snapshot.current.memos.port, Some(9999));
 
         // The full candidate is on disk and round-trips without schema changes.
-        let on_disk: Config = serde_yaml::from_str(
+        let on_disk: Config = serde_saphyr::from_str(
             &std::fs::read_to_string(dir.path().join("memospot.yaml")).expect("config file"),
         )
         .expect("on-disk config should parse");

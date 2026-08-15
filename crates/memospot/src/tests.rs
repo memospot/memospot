@@ -64,7 +64,7 @@ mod configuration_state_tests {
             store.snapshot().current.memospot.window.locale.as_deref(),
             Some("es")
         );
-        let on_disk: Config = serde_yaml::from_str(
+        let on_disk: Config = serde_saphyr::from_str(
             &std::fs::read_to_string(&config_file).expect("config file should exist"),
         )
         .expect("on-disk config should parse");

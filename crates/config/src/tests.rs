@@ -102,7 +102,7 @@ async fn test_edit() {
 #[tokio::test]
 async fn test_reset() {
     let default_config = Config::default();
-    let default_yaml = serde_yaml::to_string(&default_config).unwrap();
+    let default_yaml = serde_saphyr::to_string(&default_config).unwrap();
 
     let tmp_dir = tempfile::tempdir().unwrap();
     let tmp_yaml = tmp_dir.path().join("memospot.yaml");
@@ -110,14 +110,14 @@ async fn test_reset() {
     Config::reset_file(&tmp_yaml).await.ok();
 
     let cfg = Config::parse_file(&tmp_yaml).unwrap();
-    let yaml = serde_yaml::to_string(&cfg).unwrap();
+    let yaml = serde_saphyr::to_string(&cfg).unwrap();
     assert_eq!(yaml, default_yaml);
 }
 
 #[test]
 fn test_show() {
     let default_config = Config::default();
-    let default_yaml = serde_yaml::to_string(&default_config).unwrap();
+    let default_yaml = serde_saphyr::to_string(&default_config).unwrap();
     println!("{default_yaml}");
 }
 
