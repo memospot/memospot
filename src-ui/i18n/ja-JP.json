@@ -8,7 +8,7 @@
   "loaderTryRestartingMemospot": "Memospot を再起動してみてください。",
   "loaderWaitingForServer": "サーバーを待っています…",
   "settingsConfigSaveFail": "設定を保存できませんでした。",
-  "settingsConfigSaveRestartRequired": "Restart required for the changes to take effect.",
+  "settingsConfigSaveRestartRequired": "変更を有効にするには再起動が必要です。",
   "settingsConfigSaveSuccess": "構成が正常に保存されました。",
   "settingsErrPathDoesNotExist": "指定されたパスは存在しません。",
   "settingsLoadDefaults": "デフォルト",
