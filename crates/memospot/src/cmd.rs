@@ -128,7 +128,12 @@ pub async fn ping_memos(
 
 #[command]
 pub async fn get_env(name: &str) -> Result<String, String> {
-    Ok(std::env::var(String::from(name)).unwrap_or(String::from("")))
+    if !name.starts_with("MEMOSPOT_") {
+        return Err(String::from(
+            "access denied: only MEMOSPOT_ prefixed environment variables can be accessed",
+        ));
+    }
+    Ok(std::env::var(name).unwrap_or_default())
 }
 
 /// Get the current app config.
