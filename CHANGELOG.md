@@ -27,6 +27,10 @@ Security: in case of vulnerabilities.
 - Keyboard shortcuts are now working properly.
 - External links now properly open in the default browser when using a remote server.
 
+### Security
+
+- Restricted environment variable access to only `MEMOSPOT_` prefixed variables.
+
 ## [1.0.4] - 2026-08-08
 
 ### Changed
@@ -309,7 +313,8 @@ Security: in case of vulnerabilities.
 
 <!-- next-url -->
 
-[Unreleased]: https://github.com/memospot/memospot/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/memospot/memospot/compare/v1.0.4...HEAD
+[1.0.4]: https://github.com/memospot/memospot/releases/tag/v1.0.4
 [1.0.3]: https://github.com/memospot/memospot/releases/tag/v1.0.3
 [1.0.2]: https://github.com/memospot/memospot/releases/tag/v1.0.2
 [1.0.1]: https://github.com/memospot/memospot/releases/tag/v1.0.1
