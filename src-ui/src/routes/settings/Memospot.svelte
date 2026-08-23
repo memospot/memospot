@@ -1,106 +1,88 @@
 <script lang="ts">
-import * as jsonpatch from "fast-json-patch";
 import { onMount } from "svelte";
 import { toast } from "svelte-sonner";
 import { Setting, SettingToggle } from "$lib/components/ui/setting/index";
 import { Switch } from "$lib/components/ui/switch/index";
-import { debouncePromise } from "$lib/debounce";
 import { envFromKV, envToKV } from "$lib/environmentVariables";
 import { m } from "$lib/i18n";
-import { patchConfig } from "$lib/settings";
+import { createSettingsSection } from "$lib/settingsSection";
 import {
     buildSectionActions,
     keywordsFromLocale,
     type SectionActionsProps
 } from "$lib/settingsUi";
-import { getAppConfig, getDefaultAppConfig, pingMemos } from "$lib/tauri";
+import { pingMemos } from "$lib/tauri";
 import type { Config } from "$lib/types/gen/Config";
 
 let { onActionsChange }: SectionActionsProps = $props();
 
-let initialConfig = $state({}) as Config;
-let currentConfig = $state({}) as Config;
-let input = $state({
-    remoteEnabled: false,
-    remoteURL: "",
-    remoteUserAgent: "",
-    updaterEnabled: false,
-    updaterCheckInterval: "",
-    migrationsEnabled: false,
-    backupsEnabled: false,
-    loggingEnabled: false,
-    envVarsEnabled: false,
-    envVars: ""
-});
+type MemospotInput = {
+    remoteEnabled: boolean;
+    remoteURL: string;
+    remoteUserAgent: string;
+    updaterEnabled: boolean;
+    updaterCheckInterval: string;
+    migrationsEnabled: boolean;
+    backupsEnabled: boolean;
+    loggingEnabled: boolean;
+    envVarsEnabled: boolean;
+    envVars: string;
+};
+
+const section = $state(
+    createSettingsSection<MemospotInput>({
+        mapping: {
+            initial: {
+                remoteEnabled: false,
+                remoteURL: "",
+                remoteUserAgent: "",
+                updaterEnabled: false,
+                updaterCheckInterval: "",
+                migrationsEnabled: false,
+                backupsEnabled: false,
+                loggingEnabled: false,
+                envVarsEnabled: false,
+                envVars: ""
+            },
+            mapToInput: (cfg: Config) => ({
+                remoteEnabled: cfg.memospot.remote.enabled ?? false,
+                remoteURL: cfg.memospot.remote.url ?? "",
+                remoteUserAgent: cfg.memospot.remote.user_agent ?? "",
+                updaterEnabled: cfg.memospot.updater.enabled ?? false,
+                updaterCheckInterval: cfg.memospot.updater.check_interval ?? "",
+                migrationsEnabled: cfg.memospot.migrations.enabled ?? false,
+                backupsEnabled: cfg.memospot.backups.enabled ?? false,
+                loggingEnabled: cfg.memospot.log.enabled ?? false,
+                envVarsEnabled: cfg.memospot.env.enabled ?? false,
+                envVars: envFromKV((cfg.memospot.env.vars ?? {}) as Record<string, string>)
+            }),
+            mapFromInput: (input: MemospotInput, cfg: Config) => {
+                cfg.memospot.remote.enabled = input.remoteEnabled;
+                cfg.memospot.remote.url = input.remoteURL;
+                cfg.memospot.remote.user_agent = input.remoteUserAgent;
+                cfg.memospot.updater.enabled = input.updaterEnabled;
+                cfg.memospot.updater.check_interval = input.updaterCheckInterval;
+                cfg.memospot.migrations.enabled = input.migrationsEnabled;
+                cfg.memospot.backups.enabled = input.backupsEnabled;
+                cfg.memospot.log.enabled = input.loggingEnabled;
+                cfg.memospot.env.enabled = input.envVarsEnabled;
+                cfg.memospot.env.vars = envToKV(input.envVars);
+            }
+        }
+    })
+);
 
 onMount(async () => {
-    const initialJSON = await getAppConfig();
-    initialConfig = JSON.parse(initialJSON);
-    currentConfig = jsonpatch.deepClone(initialConfig);
-    await setPageToInitialConfig();
+    await section.init();
 });
 
-async function setPageToInitialConfig() {
-    input = {
-        remoteEnabled: initialConfig.memospot.remote.enabled ?? false,
-        remoteURL: initialConfig.memospot.remote.url ?? "",
-        remoteUserAgent: initialConfig.memospot.remote.user_agent ?? "",
-        updaterEnabled: initialConfig.memospot.updater.enabled ?? false,
-        updaterCheckInterval: initialConfig.memospot.updater.check_interval ?? "",
-        migrationsEnabled: initialConfig.memospot.migrations.enabled ?? false,
-        backupsEnabled: initialConfig.memospot.backups.enabled ?? false,
-        loggingEnabled: initialConfig.memospot.log.enabled ?? false,
-        envVarsEnabled: initialConfig.memospot.env.enabled ?? false,
-        envVars: envFromKV((initialConfig.memospot.env.vars ?? {}) as Record<string, string>)
-    };
-
-    currentConfig.memospot = jsonpatch.deepClone(initialConfig.memospot);
-}
-
-async function setPageToDefaultConfig() {
-    const defaultJSON = JSON.parse(await getDefaultAppConfig()) as Config;
-    input = {
-        remoteEnabled: defaultJSON.memospot.remote.enabled ?? false,
-        remoteURL: defaultJSON.memospot.remote.url ?? "",
-        remoteUserAgent: defaultJSON.memospot.remote.user_agent ?? "",
-        updaterEnabled: defaultJSON.memospot.updater.enabled ?? false,
-        updaterCheckInterval: defaultJSON.memospot.updater.check_interval ?? "",
-        migrationsEnabled: defaultJSON.memospot.migrations.enabled ?? false,
-        backupsEnabled: defaultJSON.memospot.backups.enabled ?? false,
-        loggingEnabled: defaultJSON.memospot.log.enabled ?? false,
-        envVarsEnabled: defaultJSON.memospot.env.enabled ?? false,
-        envVars: envFromKV((defaultJSON.memospot.env.vars ?? {}) as Record<string, string>)
-    };
-
-    currentConfig.memospot = jsonpatch.deepClone(defaultJSON.memospot);
-}
-
-function syncCurrentConfigFromInput() {
-    currentConfig.memospot.remote.enabled = input.remoteEnabled;
-    currentConfig.memospot.remote.url = input.remoteURL;
-    currentConfig.memospot.remote.user_agent = input.remoteUserAgent;
-    currentConfig.memospot.updater.enabled = input.updaterEnabled;
-    currentConfig.memospot.updater.check_interval = input.updaterCheckInterval;
-    currentConfig.memospot.migrations.enabled = input.migrationsEnabled;
-    currentConfig.memospot.backups.enabled = input.backupsEnabled;
-    currentConfig.memospot.log.enabled = input.loggingEnabled;
-    currentConfig.memospot.env.enabled = input.envVarsEnabled;
-    currentConfig.memospot.env.vars = envToKV(input.envVars);
-}
-
 async function updateEnvVars(_: Event) {
-    const kv = envToKV(input.envVars);
-    currentConfig.memospot.env.vars = kv;
-    input.envVars = envFromKV(kv);
+    const kv = envToKV(section.input.envVars);
+    section.input.envVars = envFromKV(kv);
 }
 
-/**
- * Update remote server URL.
- *
- * Checks if the URL is valid.
- */
 async function updateRemoteServerUrl(_: Event) {
-    let inputURL = input.remoteURL.trim();
+    let inputURL = section.input.remoteURL.trim();
 
     if (inputURL.length > 0) {
         if (!inputURL.startsWith("http://") && !inputURL.startsWith("https://")) {
@@ -115,71 +97,33 @@ async function updateRemoteServerUrl(_: Event) {
             if (url.protocol !== "http:" && url.protocol !== "https:") {
                 throw new Error();
             }
-        } catch (error) {
+        } catch {
             toast.error(m.settingsMemospotErrInvalidServer(), {
                 duration: 5000
             });
-            input.remoteURL = initialConfig.memospot.remote.url ?? "";
+            section.input.remoteURL = section.baselineInput.remoteURL as string;
             return;
         }
     }
 
-    const intervalMs = 300;
-    await debouncePromise(async () => {
-        if (inputURL && !(await pingMemos(inputURL))) {
-            toast.error(m.settingsMemospotErrInvalidServer(), {
-                duration: 5000
-            });
-            input.remoteURL = initialConfig.memospot.remote.url ?? "";
-            return;
-        }
+    if (inputURL && !(await pingMemos(inputURL))) {
+        toast.error(m.settingsMemospotErrInvalidServer(), {
+            duration: 5000
+        });
+        section.input.remoteURL = section.baselineInput.remoteURL as string;
+        return;
+    }
 
-        currentConfig.memospot.remote.url = inputURL;
-        input.remoteURL = inputURL;
-    }, intervalMs)();
+    section.input.remoteURL = inputURL;
 }
-
-async function updateSetting(updateFn?: () => void): Promise<boolean> {
-    return debouncePromise(async () => {
-        updateFn?.();
-        return await patchConfig(initialConfig, currentConfig).then(
-            (_ok) => {
-                initialConfig = jsonpatch.deepClone(currentConfig);
-            },
-            (_err) => {
-                currentConfig = jsonpatch.deepClone(initialConfig);
-            }
-        );
-    })();
-}
-
-$effect(() => {
-    if (!currentConfig.memospot) return;
-    syncCurrentConfigFromInput();
-});
-
-const hasPendingChanges = $derived(
-    input.remoteEnabled !== (initialConfig.memospot?.remote?.enabled ?? false) ||
-        input.remoteURL !== (initialConfig.memospot?.remote?.url ?? "") ||
-        input.remoteUserAgent !== (initialConfig.memospot?.remote?.user_agent ?? "") ||
-        input.updaterEnabled !== (initialConfig.memospot?.updater?.enabled ?? false) ||
-        input.updaterCheckInterval !==
-            (initialConfig.memospot?.updater?.check_interval ?? "") ||
-        input.migrationsEnabled !== (initialConfig.memospot?.migrations?.enabled ?? false) ||
-        input.backupsEnabled !== (initialConfig.memospot?.backups?.enabled ?? false) ||
-        input.loggingEnabled !== (initialConfig.memospot?.log?.enabled ?? false) ||
-        input.envVarsEnabled !== (initialConfig.memospot?.env?.enabled ?? false) ||
-        input.envVars !==
-            envFromKV((initialConfig.memospot?.env?.vars ?? {}) as Record<string, string>)
-);
 
 $effect(() => {
     onActionsChange?.(
         buildSectionActions(
-            setPageToDefaultConfig,
-            setPageToInitialConfig,
-            updateSetting,
-            hasPendingChanges
+            () => section.loadDefaults(),
+            () => section.reset(),
+            () => section.save(),
+            section.hasPendingChanges
         )
     );
 });
@@ -199,10 +143,7 @@ $effect(() => {
     desc={m.settingsMemospotRemoteServerDescription()}
     searchId="memospot-remote-server"
     searchKeywords={keywordsFromLocale(m.settingsMemospotRemoteServerSearchKeywords)}
-    bind:state={input.remoteEnabled}
-    onclick={() => {
-        currentConfig.memospot.remote.enabled = input.remoteEnabled;
-    }}
+    bind:state={section.input.remoteEnabled}
   >
     <Setting
       name={m.settingsMemospotRemoteServerURL()}
@@ -213,11 +154,11 @@ $effect(() => {
       <input
         id="url"
         type="url"
-        bind:value={input.remoteURL}
+        bind:value={section.input.remoteURL}
         onfocusout={updateRemoteServerUrl}
         onkeypress={async (e) => e.key === "Enter" && (await updateRemoteServerUrl(e))}
         class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
-        disabled={!input.remoteEnabled}
+        disabled={!section.input.remoteEnabled}
       />
     </Setting>
     <Setting
@@ -229,12 +170,9 @@ $effect(() => {
       <input
         id="userAgent"
         type="text"
-        bind:value={input.remoteUserAgent}
-        onfocusout={() => {
-            currentConfig.memospot.remote.user_agent = input.remoteUserAgent;
-        }}
+        bind:value={section.input.remoteUserAgent}
         class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
-        disabled={!input.remoteEnabled}
+        disabled={!section.input.remoteEnabled}
       />
     </Setting>
   </SettingToggle>
@@ -244,10 +182,7 @@ $effect(() => {
     desc={m.settingsMemospotUpdaterDescription()}
     searchId="memospot-updater"
     searchKeywords={keywordsFromLocale(m.settingsMemospotUpdaterSearchKeywords)}
-    bind:state={input.updaterEnabled}
-    onclick={() => {
-        currentConfig.memospot.updater.enabled = input.updaterEnabled;
-    }}
+    bind:state={section.input.updaterEnabled}
   >
     <Setting
       name={m.settingsMemospotUpdaterInterval()}
@@ -258,12 +193,9 @@ $effect(() => {
       <input
         id="updaterCheckInterval"
         type="text"
-        bind:value={input.updaterCheckInterval}
-        onfocusout={() => {
-            currentConfig.memospot.updater.check_interval = input.updaterCheckInterval;
-        }}
+        bind:value={section.input.updaterCheckInterval}
         class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
-        disabled={!input.updaterEnabled}
+        disabled={!section.input.updaterEnabled}
       />
     </Setting>
   </SettingToggle>
@@ -274,12 +206,7 @@ $effect(() => {
     searchId="memospot-migrations"
     searchKeywords={keywordsFromLocale(m.settingsMemospotMigrationsSearchKeywords)}
   >
-    <Switch
-      bind:checked={input.migrationsEnabled}
-      onclick={() => {
-          currentConfig.memospot.migrations.enabled = input.migrationsEnabled;
-      }}
-    />
+    <Switch bind:checked={section.input.migrationsEnabled} />
   </Setting>
 
   <Setting
@@ -288,12 +215,7 @@ $effect(() => {
     searchId="memospot-backups"
     searchKeywords={keywordsFromLocale(m.settingsMemospotBackupsSearchKeywords)}
   >
-    <Switch
-      bind:checked={input.backupsEnabled}
-      onclick={() => {
-          currentConfig.memospot.backups.enabled = input.backupsEnabled;
-      }}
-    />
+    <Switch bind:checked={section.input.backupsEnabled} />
   </Setting>
 
   <Setting
@@ -302,12 +224,7 @@ $effect(() => {
     searchId="memospot-logging"
     searchKeywords={keywordsFromLocale(m.settingsMemospotLoggingSearchKeywords)}
   >
-    <Switch
-      bind:checked={input.loggingEnabled}
-      onclick={() => {
-          currentConfig.memospot.log.enabled = input.loggingEnabled;
-      }}
-    />
+    <Switch bind:checked={section.input.loggingEnabled} />
   </Setting>
 
   <SettingToggle
@@ -315,19 +232,16 @@ $effect(() => {
     desc={m.settingsMemospotEnvironmentVariablesDescription()}
     searchId="memospot-env-vars"
     searchKeywords={keywordsFromLocale(m.settingsMemospotEnvironmentVariablesSearchKeywords)}
-    bind:state={input.envVarsEnabled}
-    onclick={() => {
-        currentConfig.memospot.env.enabled = input.envVarsEnabled;
-    }}
+    bind:state={section.input.envVarsEnabled}
   >
     <textarea
       id="env"
       rows="5"
       class="p-2 rounded-md border bg-input min-w-max w-full font-mono leading-tight"
-      bind:value={input.envVars}
+      bind:value={section.input.envVars}
       onfocusout={updateEnvVars}
       onkeypress={async (e) => e.key === "Enter" && (await updateEnvVars(e))}
-      disabled={!input.envVarsEnabled}
+      disabled={!section.input.envVarsEnabled}
     >
     </textarea>
   </SettingToggle>

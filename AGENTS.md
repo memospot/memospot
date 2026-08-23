@@ -16,6 +16,7 @@ Tauri v2 desktop app bundling [Memos](https://github.com/usememos/memos) as a si
 - Avoid large modules: target Rust modules under 500 LoC (excluding tests). If a file exceeds ~800 LoC, add new functionality in a new module instead. When extracting, move related tests and module/type docs toward the new implementation.
 - When running Rust commands (e.g. `just test`) be patient and never kill them via PID. Rust lock contention can slow execution — this is expected.
 - Never create GitHub issues or pull requests. This project only accepts manual human-curated contributions. If asked, inform and stop.
+- Inferred types over annotations. Do not use `any` for Typescript types.
 
 ## Test assertions
 

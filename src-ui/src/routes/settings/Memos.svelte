@@ -1,6 +1,5 @@
 <script lang="ts">
 import type { Selected } from "bits-ui";
-import * as jsonpatch from "fast-json-patch";
 import { onMount } from "svelte";
 import Code from "svelte-radix/Code.svelte";
 import ExternalLink from "svelte-radix/ExternalLink.svelte";
@@ -15,33 +14,66 @@ import {
     SelectValue
 } from "$lib/components/ui/select";
 import { Setting, SettingToggle } from "$lib/components/ui/setting/index";
-import { debouncePromise } from "$lib/debounce";
 import { envFromKV, envToKV } from "$lib/environmentVariables";
 import { m } from "$lib/i18n";
-import { patchConfig } from "$lib/settings";
+import { createSettingsSection } from "$lib/settingsSection";
 import {
     buildSectionActions,
     keywordsFromLocale,
     type SectionActionsProps
 } from "$lib/settingsUi";
-import { getAppConfig, getDefaultAppConfig, pathExists } from "$lib/tauri";
+import { pathExists } from "$lib/tauri";
 import type { Config } from "$lib/types/gen/Config";
 
 let { onActionsChange }: SectionActionsProps = $props();
 
-let initialConfig = $state({}) as Config;
-let currentConfig = $state({}) as Config;
-let isInitialized = $state(false);
-let input = $state({
-    mode: "",
-    binaryPath: "",
-    workingDir: "",
-    dataDir: "",
-    bindAddr: "",
-    bindPort: 0,
-    envVarsEnabled: false,
-    envVars: ""
-});
+type MemosInput = {
+    mode: string;
+    binaryPath: string;
+    workingDir: string;
+    dataDir: string;
+    bindAddr: string;
+    bindPort: number;
+    envVarsEnabled: boolean;
+    envVars: string;
+};
+
+const section = $state(
+    createSettingsSection<MemosInput>({
+        mapping: {
+            initial: {
+                mode: "prod",
+                binaryPath: "",
+                workingDir: "",
+                dataDir: "",
+                bindAddr: "",
+                bindPort: 0,
+                envVarsEnabled: false,
+                envVars: ""
+            },
+            mapToInput: (cfg: Config) => ({
+                mode: cfg.memos.mode ?? "prod",
+                binaryPath: cfg.memos.binary_path ?? "",
+                workingDir: cfg.memos.working_dir ?? "",
+                dataDir: cfg.memos.data ?? "",
+                bindAddr: cfg.memos.addr ?? "",
+                bindPort: cfg.memos.port ?? 0,
+                envVarsEnabled: cfg.memos.env.enabled ?? false,
+                envVars: envFromKV((cfg.memos.env.vars ?? {}) as Record<string, string>)
+            }),
+            mapFromInput: (input: MemosInput, cfg: Config) => {
+                cfg.memos.mode = input.mode;
+                cfg.memos.binary_path = input.binaryPath;
+                cfg.memos.working_dir = input.workingDir;
+                cfg.memos.data = input.dataDir;
+                cfg.memos.addr = input.bindAddr;
+                cfg.memos.port = input.bindPort;
+                cfg.memos.env.enabled = input.envVarsEnabled;
+                cfg.memos.env.vars = envToKV(input.envVars);
+            }
+        }
+    })
+);
 
 const memosModeNames = {
     prod: m.settingsMemosModeProduction(),
@@ -50,110 +82,49 @@ const memosModeNames = {
 } as const;
 
 let selectedMode: Selected<string> = $derived({
-    label: memosModeNames[input.mode as keyof typeof memosModeNames],
-    value: input.mode
+    label: memosModeNames[section.input.mode as keyof typeof memosModeNames],
+    value: section.input.mode
 });
 
-const reduceAnimation = $derived(currentConfig.memospot?.window?.reduce_animation ?? false);
+const reduceAnimation = $derived(
+    JSON.parse(localStorage.getItem("reduce-animation") ?? "false")
+);
 
 onMount(async () => {
-    const initialJSON = await getAppConfig();
-    initialConfig = JSON.parse(initialJSON);
-    currentConfig = jsonpatch.deepClone(initialConfig);
-    await setPageToInitialConfig();
-    isInitialized = true;
+    await section.init();
 });
 
-async function setPageToInitialConfig() {
-    input = {
-        mode: initialConfig.memos.mode ?? "prod",
-        binaryPath: initialConfig.memos.binary_path ?? "",
-        workingDir: initialConfig.memos.working_dir ?? "",
-        dataDir: initialConfig.memos.data ?? "",
-        bindAddr: initialConfig.memos.addr ?? "",
-        bindPort: initialConfig.memos.port ?? 0,
-        envVarsEnabled: initialConfig.memos.env.enabled ?? false,
-        envVars: envFromKV((initialConfig.memos.env.vars ?? {}) as Record<string, string>)
-    };
-
-    currentConfig.memos = jsonpatch.deepClone(initialConfig.memos);
-}
-
-async function setPageToDefaultConfig() {
-    const defaultJSON = JSON.parse(await getDefaultAppConfig()) as Config;
-    input = {
-        mode: defaultJSON.memos.mode ?? "prod",
-        binaryPath: defaultJSON.memos.binary_path ?? "",
-        workingDir: defaultJSON.memos.working_dir ?? "",
-        dataDir: defaultJSON.memos.data ?? "",
-        bindAddr: defaultJSON.memos.addr ?? "",
-        bindPort: defaultJSON.memos.port ?? 0,
-        envVarsEnabled: defaultJSON.memos.env.enabled ?? false,
-        envVars: envFromKV((defaultJSON.memos.env.vars ?? {}) as Record<string, string>)
-    };
-
-    currentConfig.memos = jsonpatch.deepClone(defaultJSON.memos);
-}
-
-function syncCurrentConfigFromInput() {
-    currentConfig.memos.mode = input.mode;
-    currentConfig.memos.binary_path = input.binaryPath;
-    currentConfig.memos.working_dir = input.workingDir;
-    currentConfig.memos.data = input.dataDir;
-    currentConfig.memos.addr = input.bindAddr;
-    currentConfig.memos.port = input.bindPort;
-    currentConfig.memos.env.enabled = input.envVarsEnabled;
-    currentConfig.memos.env.vars = envToKV(input.envVars);
-}
-
 async function setMemosMode(s: Selected<string> | undefined) {
-    input.mode = s?.value ?? "prod";
-    currentConfig.memos.mode = input.mode;
+    section.input.mode = s?.value ?? "prod";
 }
 
 async function validateMemosDataDir(e: Event | KeyboardEvent) {
     if (e.type === "keypress" && (e as KeyboardEvent).key !== "Enter") return;
 
-    await validatePath(e).then(
-        (_ok) => {
-            currentConfig.memos.data = input.dataDir;
-        },
-        (_err) => {
-            input.dataDir = initialConfig.memos.data as string;
-        }
-    );
+    await validatePath(e).catch(() => {
+        section.input.dataDir = section.baselineInput.dataDir;
+    });
 }
 
 async function validateMemosBinaryPath(e: Event | KeyboardEvent) {
     if (e.type === "keypress" && (e as KeyboardEvent).key !== "Enter") return;
 
-    await validatePath(e).then(
-        (_ok) => {
-            currentConfig.memos.binary_path = input.binaryPath;
-        },
-        (_err) => {
-            input.binaryPath = initialConfig.memos.binary_path as string;
-        }
-    );
+    await validatePath(e).catch(() => {
+        section.input.binaryPath = section.baselineInput.binaryPath;
+    });
 }
 
 async function validateMemosWorkingDir(e: Event | KeyboardEvent) {
     if (e.type === "keypress" && (e as KeyboardEvent).key !== "Enter") return;
 
-    await validatePath(e).then(
-        (_ok) => {
-            currentConfig.memos.working_dir = input.workingDir;
-        },
-        (_err) => {
-            input.workingDir = initialConfig.memos.working_dir as string;
-        }
-    );
+    await validatePath(e).catch(() => {
+        section.input.workingDir = section.baselineInput.workingDir;
+    });
 }
 
 async function validatePath(e: Event) {
-    const input = e.target as HTMLInputElement;
-    if (!input.value || (await pathExists(input.value))) {
-        // Must allow empty paths.
+    const inputEl = e.target as HTMLInputElement;
+    if (!inputEl.value || (await pathExists(inputEl.value))) {
         return Promise.resolve();
     }
     toast.error(m.settingsErrPathDoesNotExist());
@@ -161,51 +132,17 @@ async function validatePath(e: Event) {
 }
 
 async function updateEnvVars(_: Event) {
-    const kv = envToKV(input.envVars);
-    currentConfig.memos.env.vars = kv;
-    input.envVars = envFromKV(kv);
+    const kv = envToKV(section.input.envVars);
+    section.input.envVars = envFromKV(kv);
 }
-
-async function updateSetting(updateFn?: () => void): Promise<boolean> {
-    return debouncePromise(async () => {
-        updateFn?.();
-        return await patchConfig(initialConfig, currentConfig).then(
-            (_ok) => {
-                initialConfig = jsonpatch.deepClone(currentConfig);
-            },
-            (_err) => {
-                currentConfig = jsonpatch.deepClone(initialConfig);
-            }
-        );
-    })();
-}
-
-$effect(() => {
-    if (!currentConfig.memos) return;
-    syncCurrentConfigFromInput();
-});
-
-const hasPendingChanges = $derived(
-    (isInitialized &&
-        (input.mode !== (initialConfig.memos?.mode ?? "prod") ||
-            input.binaryPath !== (initialConfig.memos?.binary_path ?? "") ||
-            input.workingDir !== (initialConfig.memos?.working_dir ?? "") ||
-            input.dataDir !== (initialConfig.memos?.data ?? "") ||
-            input.bindAddr !== (initialConfig.memos?.addr ?? "") ||
-            input.bindPort !== (initialConfig.memos?.port ?? 0) ||
-            input.envVarsEnabled !== (initialConfig.memos?.env?.enabled ?? false) ||
-            input.envVars !==
-                envFromKV((initialConfig.memos?.env?.vars ?? {}) as Record<string, string>))) ||
-        false
-);
 
 $effect(() => {
     onActionsChange?.(
         buildSectionActions(
-            setPageToDefaultConfig,
-            setPageToInitialConfig,
-            updateSetting,
-            hasPendingChanges
+            () => section.loadDefaults(),
+            () => section.reset(),
+            () => section.save(),
+            section.hasPendingChanges
         )
     );
 });
@@ -258,7 +195,7 @@ $effect(() => {
     <input
       id="dataDirectory"
       type="text"
-      bind:value={input.dataDir}
+      bind:value={section.input.dataDir}
       onfocusout={validateMemosDataDir}
       onkeypress={validateMemosDataDir}
       class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
@@ -274,7 +211,7 @@ $effect(() => {
     <input
       id="binaryPath"
       type="text"
-      bind:value={input.binaryPath}
+      bind:value={section.input.binaryPath}
       onfocusout={validateMemosBinaryPath}
       onkeypress={validateMemosBinaryPath}
       class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
@@ -290,7 +227,7 @@ $effect(() => {
     <input
       id="workingDirectory"
       type="text"
-      bind:value={input.workingDir}
+      bind:value={section.input.workingDir}
       onfocusout={validateMemosWorkingDir}
       onkeypress={validateMemosWorkingDir}
       class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
@@ -306,10 +243,7 @@ $effect(() => {
     <input
       id="bindAddress"
       type="text"
-      bind:value={input.bindAddr}
-      onfocusout={() => {
-          currentConfig.memos.addr = input.bindAddr;
-      }}
+      bind:value={section.input.bindAddr}
       class="font-mono p-2 rounded-md border bg-input min-w-max md:w-96"
     />
   </Setting>
@@ -325,10 +259,7 @@ $effect(() => {
       type="number"
       min="0"
       max="65535"
-      bind:value={input.bindPort}
-      onfocusout={() => {
-          currentConfig.memos.port = input.bindPort;
-      }}
+      bind:value={section.input.bindPort}
       class="font-mono p-2 rounded-md border bg-input min-w-max w-40"
     />
   </Setting>
@@ -338,19 +269,16 @@ $effect(() => {
     desc={m.settingsMemosEnvironmentVariablesDescription()}
     searchId="memos-env-vars"
     searchKeywords={keywordsFromLocale(m.settingsMemosEnvironmentVariablesSearchKeywords)}
-    bind:state={input.envVarsEnabled}
-    onclick={() => {
-        currentConfig.memos.env.enabled = input.envVarsEnabled;
-    }}
+    bind:state={section.input.envVarsEnabled}
   >
     <textarea
       id="env"
       rows="5"
       class="p-2 rounded-md border bg-input min-w-max w-full font-mono leading-tight"
-      bind:value={input.envVars}
+      bind:value={section.input.envVars}
       onfocusout={updateEnvVars}
       onkeypress={async (e) => e.key === "Enter" && (await updateEnvVars(e))}
-      disabled={!input.envVarsEnabled}
+      disabled={!section.input.envVarsEnabled}
     >
     </textarea>
   </SettingToggle>
