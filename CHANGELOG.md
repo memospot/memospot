@@ -22,6 +22,10 @@ Security: in case of vulnerabilities.
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+- "Browse downloads directory" (CmdOrCtrl+J) menu item to open the user's Downloads folder.
+
 ### Fixed
 
 - Keyboard shortcuts are now working properly.
