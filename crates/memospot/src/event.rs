@@ -218,8 +218,11 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) -> Res
         }
         MainMenu::AppOpenInBrowser => {
             let state = app.state::<AppState>();
-            app.opener()
-                .open_url(state.runtime.active_server.url.clone(), None::<&str>)?;
+            let url = main_window
+                .url()
+                .map(|url| url.to_string())
+                .unwrap_or_else(|_| state.runtime.active_server.url.clone());
+            app.opener().open_url(url, None::<&str>)?;
         }
         MainMenu::AppUpdate => {
             let app_ = app.clone();

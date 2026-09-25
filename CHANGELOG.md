@@ -26,6 +26,10 @@ Security: in case of vulnerabilities.
 
 - "Browse downloads directory" (CmdOrCtrl+J) menu item to open the user's Downloads folder.
 
+### Changed
+
+- "Open in browser" now opens the current page instead of the server home page.
+
 ### Fixed
 
 - Keyboard shortcuts are now working properly.
