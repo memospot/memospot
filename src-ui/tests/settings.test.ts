@@ -3,6 +3,9 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { ConfigUpdateResult } from "../src/lib/types/gen/ConfigUpdateResult";
 
 const mockedSetAppConfig = mock<(patch: string) => Promise<ConfigUpdateResult>>();
+const mockedGetAppConfig = mock<() => Promise<string>>();
+const mockedGetDefaultAppConfig = mock<() => Promise<string>>();
+const mockedPathExists = mock<(path: string) => Promise<boolean>>();
 const toast = {
     success: mock<(message: string) => void>(),
     error: mock<(message: string) => void>(),
@@ -10,7 +13,10 @@ const toast = {
 };
 
 mock.module("../src/lib/tauri", () => ({
-    setAppConfig: mockedSetAppConfig
+    getAppConfig: mockedGetAppConfig,
+    getDefaultAppConfig: mockedGetDefaultAppConfig,
+    setAppConfig: mockedSetAppConfig,
+    pathExists: mockedPathExists
 }));
 
 mock.module("svelte-sonner", () => ({
@@ -69,6 +75,9 @@ function configWithTheme(theme: string): Config {
 describe("patchConfig", () => {
     beforeEach(() => {
         mockedSetAppConfig.mockClear();
+        mockedGetAppConfig.mockClear();
+        mockedGetDefaultAppConfig.mockClear();
+        mockedPathExists.mockClear();
         toast.success.mockClear();
         toast.error.mockClear();
         toast.info.mockClear();
