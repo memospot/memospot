@@ -1,5 +1,6 @@
 appmenu = &Anwendung
 appmenu-browse-data-directory = Datenverzeichnis… durchsuchen
+appmenu-browse-downloads-directory = Downloads-Verzeichnis… durchsuchen
 appmenu-check-for-updates = Suche nach Aktualisierungen…
 appmenu-open-in-browser = Im Browser… &öffnen
 appmenu-quit = &Beenden

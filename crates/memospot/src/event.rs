@@ -208,6 +208,14 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) -> Res
                 None::<&str>,
             )?;
         }
+        MainMenu::AppBrowseDownloadsDirectory => {
+            app.opener().open_path(
+                crate::utils::get_downloads_dir()
+                    .to_string_lossy()
+                    .to_string(),
+                None::<&str>,
+            )?;
+        }
         MainMenu::AppOpenInBrowser => {
             let state = app.state::<AppState>();
             app.opener()

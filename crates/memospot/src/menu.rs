@@ -33,6 +33,8 @@ pub enum MainMenu {
     App,
     #[strum(serialize = "appmenu-browse-data-directory")]
     AppBrowseDataDirectory,
+    #[strum(serialize = "appmenu-browse-downloads-directory")]
+    AppBrowseDownloadsDirectory,
     #[strum(serialize = "appmenu-settings")]
     AppSettings,
     #[strum(serialize = "appmenu-open-in-browser")]
@@ -115,6 +117,13 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     .accelerator("CmdOrCtrl+D")
     .build(handle)?;
 
+    let browse_downloads_directory = MenuItemBuilder::with_id(
+        MainMenu::AppBrowseDownloadsDirectory.id(),
+        MainMenu::AppBrowseDownloadsDirectory.text(),
+    )
+    .accelerator("CmdOrCtrl+J")
+    .build(handle)?;
+
     let check_for_updates =
         MenuItemBuilder::with_id(MainMenu::AppUpdate.id(), MainMenu::AppUpdate.text())
             .build(handle)?;
@@ -139,6 +148,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .separator()
         .item(&settings)
         .item(&browse_data_directory)
+        .item(&browse_downloads_directory)
         .item(&check_for_updates)
         .item(&open_in_browser)
         .separator()
@@ -156,6 +166,7 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .items(&[
             &settings,
             &browse_data_directory,
+            &browse_downloads_directory,
             &check_for_updates,
             &open_in_browser,
             &PredefinedMenuItem::separator(handle)?,

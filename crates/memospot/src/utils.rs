@@ -66,6 +66,157 @@ pub fn get_app_data_path(app_name: &str) -> PathBuf {
     fallback
 }
 
+/// Get the user's Downloads directory.
+///
+/// - Windows: Downloads Known Folder from the registry, falling back to
+///   `%USERPROFILE%\Downloads`.
+/// - Linux: `XDG_DOWNLOAD_DIR` from `user-dirs.dirs`, falling back to
+///   `~/Downloads`.
+/// - macOS: `~/Downloads`.
+///
+/// Home directory resolution uses the [`home`](https://docs.rs/home) crate.
+pub fn get_downloads_dir() -> PathBuf {
+    #[cfg(target_os = "windows")]
+    return windows_downloads_dir();
+    #[cfg(target_os = "linux")]
+    return linux_downloads_dir();
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
+    return home_dir().unwrap_or_default().join("Downloads");
+}
+
+#[cfg(target_os = "windows")]
+fn windows_downloads_dir() -> PathBuf {
+    use winreg::RegKey;
+    use winreg::enums::HKEY_CURRENT_USER;
+
+    const DOWNLOADS_GUID: &str = "{374DE290-123F-4565-9164-39C4925E467B}";
+    const SHELL_FOLDERS: &str =
+        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders";
+    const USER_SHELL_FOLDERS: &str =
+        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders";
+
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    if let Ok(key) = hkcu.open_subkey(USER_SHELL_FOLDERS)
+        && let Ok(value) = key.get_value::<String, _>(DOWNLOADS_GUID)
+        && let Some(expanded) = expand_windows_env(value.trim(), |name| env::var(name).ok())
+        && !expanded.trim().is_empty()
+    {
+        return PathBuf::from(expanded);
+    }
+    if let Ok(key) = hkcu.open_subkey(SHELL_FOLDERS)
+        && let Ok(value) = key.get_value::<String, _>(DOWNLOADS_GUID)
+        && !value.trim().is_empty()
+    {
+        return PathBuf::from(value.trim());
+    }
+    if let Ok(profile) = env::var("USERPROFILE")
+        && !profile.trim().is_empty()
+    {
+        return PathBuf::from(profile).join("Downloads");
+    }
+
+    home_dir().unwrap_or_default().join("Downloads")
+}
+
+#[cfg(target_os = "linux")]
+fn linux_downloads_dir() -> PathBuf {
+    let home = home_dir().unwrap_or_default();
+    let user_dirs = env::var("XDG_CONFIG_HOME")
+        .ok()
+        .filter(|dir| !dir.trim().is_empty() && PathBuf::from(dir).is_absolute())
+        .map(PathBuf::from)
+        .unwrap_or_else(|| home.join(".config"))
+        .join("user-dirs.dirs");
+    if let Ok(contents) = std::fs::read_to_string(user_dirs)
+        && let Some(dir) = resolve_downloads_from_user_dirs(&contents, &home)
+    {
+        return dir;
+    }
+
+    home.join("Downloads")
+}
+
+/// Resolve the Downloads directory from `user-dirs.dirs` file contents.
+///
+/// Returns `None` when `XDG_DOWNLOAD_DIR` is absent, so the caller falls back
+/// to `~/Downloads`. Relative values resolve against `home`.
+#[cfg(any(target_os = "linux", test))]
+fn resolve_downloads_from_user_dirs(contents: &str, home: &Path) -> Option<PathBuf> {
+    for line in contents.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
+        if key.trim() != "XDG_DOWNLOAD_DIR" {
+            continue;
+        }
+        let mut value = value.trim();
+        if value.len() >= 2 {
+            let bytes = value.as_bytes();
+            if (bytes[0] == b'"' && bytes[value.len() - 1] == b'"')
+                || (bytes[0] == b'\'' && bytes[value.len() - 1] == b'\'')
+            {
+                value = value[1..value.len() - 1].trim();
+            }
+        }
+        if value.is_empty() {
+            return None;
+        }
+        if value == "$HOME" || value == "${HOME}" || value == "$HOME/" {
+            return Some(home.to_path_buf());
+        }
+        if let Some(rest) = value.strip_prefix("$HOME/") {
+            return Some(home.join(rest));
+        }
+        if let Some(rest) = value.strip_prefix("${HOME}/") {
+            return Some(home.join(rest));
+        }
+        let path = PathBuf::from(value);
+        if path.is_absolute() {
+            return Some(path);
+        }
+        return Some(home.join(path));
+    }
+
+    None
+}
+
+/// Expand `%NAME%` variables using `lookup`.
+///
+/// Returns `None` when a referenced variable has no value, so the caller
+/// falls through to the next candidate instead of opening a mangled path.
+#[cfg(any(target_os = "windows", test))]
+fn expand_windows_env(value: &str, lookup: impl Fn(&str) -> Option<String>) -> Option<String> {
+    let mut expanded = String::with_capacity(value.len());
+    let mut chars = value.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c != '%' {
+            expanded.push(c);
+            continue;
+        }
+        let mut name = String::new();
+        let mut closed = false;
+        for next in chars.by_ref() {
+            if next == '%' {
+                closed = true;
+                break;
+            }
+            name.push(next);
+        }
+        if closed && !name.is_empty() {
+            expanded.push_str(&lookup(&name)?);
+        } else {
+            expanded.push('%');
+            expanded.push_str(&name);
+        }
+    }
+
+    Some(expanded)
+}
+
 /// Get the absolute path to supplied path.
 pub fn absolute_path(path: impl AsRef<Path>) -> Result<PathBuf> {
     let path = path.as_ref();
@@ -201,5 +352,72 @@ mod tests {
                 .ends_with("memospot")
         );
         Ok(())
+    }
+
+    #[test]
+    fn user_dirs_download_resolves_home_relative_and_absolute_entries() {
+        let home = Path::new("/home/alice");
+        assert_eq!(
+            resolve_downloads_from_user_dirs("XDG_DOWNLOAD_DIR=\"$HOME/Downloads\"\n", home),
+            Some(PathBuf::from("/home/alice/Downloads"))
+        );
+        assert_eq!(
+            resolve_downloads_from_user_dirs("XDG_DOWNLOAD_DIR=${HOME}/dl\n", home),
+            Some(PathBuf::from("/home/alice/dl"))
+        );
+        assert_eq!(
+            resolve_downloads_from_user_dirs("XDG_DOWNLOAD_DIR=/srv/shared\n", home),
+            Some(PathBuf::from("/srv/shared"))
+        );
+        assert_eq!(
+            resolve_downloads_from_user_dirs(
+                "# comment\nXDG_DOCUMENTS_DIR=\"$HOME/Documents\"\nXDG_DOWNLOAD_DIR=\"$HOME/data/downloads\"\n",
+                home
+            ),
+            Some(PathBuf::from("/home/alice/data/downloads"))
+        );
+    }
+
+    #[test]
+    fn user_dirs_download_returns_none_when_missing_or_empty() {
+        let home = Path::new("/home/alice");
+        assert_eq!(
+            resolve_downloads_from_user_dirs("XDG_DOCUMENTS_DIR=\"$HOME/Documents\"\n", home),
+            None
+        );
+        assert_eq!(
+            resolve_downloads_from_user_dirs("XDG_DOWNLOAD_DIR=\"\"\n", home),
+            None
+        );
+        assert_eq!(
+            resolve_downloads_from_user_dirs("XDG_DOWNLOAD_DIR = \"$HOME/Downloads\"\n", home),
+            Some(PathBuf::from("/home/alice/Downloads"))
+        );
+        assert_eq!(
+            resolve_downloads_from_user_dirs("XDG_DOWNLOAD_DIR=$HOME\n", home),
+            Some(PathBuf::from("/home/alice"))
+        );
+    }
+
+    #[test]
+    fn windows_env_expansion_replaces_known_variables() {
+        let expanded = expand_windows_env(r"%USERPROFILE%\Downloads", |name| {
+            (name == "USERPROFILE").then(|| r"C:\Users\alice".to_string())
+        });
+        assert_eq!(expanded.as_deref(), Some(r"C:\Users\alice\Downloads"));
+
+        let expanded = expand_windows_env(r"%A%\%B%", |name| match name {
+            "A" => Some("a".to_string()),
+            "B" => Some("b".to_string()),
+            _ => None,
+        });
+        assert_eq!(expanded.as_deref(), Some(r"a\b"));
+    }
+
+    #[test]
+    fn windows_env_expansion_fails_on_unknown_variables() {
+        let expanded =
+            expand_windows_env(r"%A%-%B%", |name| (name == "A").then(|| "a".to_string()));
+        assert_eq!(expanded, None);
     }
 }
