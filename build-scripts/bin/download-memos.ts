@@ -17,9 +17,9 @@
 
 import fs from "node:fs";
 import { parseArgs } from "node:util";
+import decompress from "@xhmikosr/decompress";
 import * as async from "async";
 import * as Bun from "bun";
-import decompress from "@xhmikosr/decompress";
 import { minimatch } from "minimatch";
 import {
     downloadFileWithRateLimit,
