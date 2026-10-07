@@ -31,15 +31,23 @@ fn apply_locale<R: Runtime>(app: &AppHandle<R>, state: &AppState) {
         i18n::reload(current_locale.as_str());
     }
 
-    match menu::build(app) {
-        Ok(menu_bar) => {
+    // Menu construction panics on macOS when executed off the main thread
+    // (muda requires `MainThreadMarker`). The mock runtime runs
+    // `run_on_main_thread` inline on the calling test thread, so a locale
+    // test would crash there. A menu refresh must never interrupt the locale
+    // update, so contain a construction panic and keep it a logged error
+    // like any other rebuild failure.
+    let build = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| menu::build(app)));
+    match build {
+        Ok(Ok(menu_bar)) => {
             if let Err(error) = app.set_menu(menu_bar) {
                 error!("failed to update menu locale: {error}");
             } else {
                 menu::update_memos_version_entry(app);
             }
         }
-        Err(error) => error!("failed to rebuild menu after locale change: {error}"),
+        Ok(Err(error)) => error!("failed to rebuild menu after locale change: {error}"),
+        Err(_) => error!("failed to rebuild menu after locale change: menu panicked"),
     }
 }
 
