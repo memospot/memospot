@@ -18,18 +18,25 @@ impl WebviewWindowExt for WebviewWindow {
     /// The update merges with concurrent settings updates and is persisted
     /// on shutdown rather than immediately.
     fn persist_window_state(&self, config_store: &ConfigStore) {
-        let maximized = self.is_maximized().unwrap_or_default();
-        let width = self.inner_size().unwrap_or_default().width;
-        let height = self.outer_size().unwrap_or_default().height;
-        let x = self.outer_position().unwrap_or_default().x;
-        let y = self.outer_position().unwrap_or_default().y;
+        // `WindowConfig` restores inner size and position in logical pixels,
+        // so store them in the same unit. Physical pixels would grow the
+        // window by the scale factor on every restart.
+        let scale_factor = self.scale_factor().unwrap_or(1.0);
+        let size = self
+            .inner_size()
+            .unwrap_or_default()
+            .to_logical::<u32>(scale_factor);
+        let position = self
+            .outer_position()
+            .unwrap_or_default()
+            .to_logical::<i32>(scale_factor);
 
         config_store.queue_runtime_owned_window_state(WindowState {
-            maximized,
-            width,
-            height,
-            x,
-            y,
+            maximized: self.is_maximized().unwrap_or_default(),
+            width: size.width,
+            height: size.height,
+            x: position.x,
+            y: position.y,
         });
     }
 }
