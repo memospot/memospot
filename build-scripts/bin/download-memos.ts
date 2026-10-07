@@ -426,7 +426,7 @@ async function downloadMemos(downloadFilesGlob: string[], tag: string) {
                 })
                 .catch((error: any) => {
                     console.log(`\x1b[31m[ERROR]\x1b[0m \x1b[36m${fileName}\x1b[0m ${error}`);
-                    fs.rmSync(extractDir, { recursive: true });
+                    fs.rmSync(extractDir, { recursive: true, force: true });
                     throw error;
                 });
         }
@@ -450,7 +450,9 @@ async function downloadMemos(downloadFilesGlob: string[], tag: string) {
             }
         }
 
-        fs.rmSync(extractDir, { recursive: true });
+        // Best-effort cleanup: the scratch dir may already be gone on some
+        // runners (ENOENT seen on Windows CI), which must not fail the build.
+        fs.rmSync(extractDir, { recursive: true, force: true });
         fs.rmSync(filePath);
     });
 
