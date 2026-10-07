@@ -9,40 +9,40 @@ macro_rules! confirm_dialog {
 macro_rules! error_dialog {
     // Single argument.
     ($arg:expr) => {
-        error_dialog(&$arg.to_string());
+        error_dialog(&$arg.to_string())
     };
     // Multiple arguments.
     ($($arg:tt)+) => {
-        error_dialog(&format!($($arg)+));
+        error_dialog(&format!($($arg)+))
     };
 }
 
 #[macro_export]
 macro_rules! info_dialog {
     ($arg:expr) => {
-        info_dialog(&$arg.to_string());
+        info_dialog(&$arg.to_string())
     };
     ($($arg:tt)+) => {
-        info_dialog(&format!($($arg)+));
+        info_dialog(&format!($($arg)+))
     };
 }
 
 #[macro_export]
 macro_rules! panic_dialog {
     ($arg:expr) => {
-        panic_dialog(&$arg.to_string());
+        panic_dialog(&$arg.to_string())
     };
     ($($arg:tt)+) => {
-        panic_dialog(&format!($($arg)+));
+        panic_dialog(&format!($($arg)+))
     };
 }
 
 #[macro_export]
 macro_rules! warn_dialog {
     ($arg:expr) => {
-        warn_dialog(&$arg.to_string());
+        warn_dialog(&$arg.to_string())
     };
     ($($arg:tt)+) => {
-        warn_dialog(&format!($($arg)+));
+        warn_dialog(&format!($($arg)+))
     };
 }
