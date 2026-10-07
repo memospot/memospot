@@ -125,6 +125,10 @@ pub struct ConfigStore {
     pending_window_state: Arc<Mutex<Option<WindowState>>>,
     window_update_scheduled: Arc<AtomicBool>,
     window_update_notify: Arc<tokio::sync::Notify>,
+    /// Last maximized state observed on the live window. `maximized` is only
+    /// written when the window actually toggles, so routine resize/move events
+    /// (frequent on GNOME) don't clobber the preference saved from settings.
+    observed_maximized: Arc<AtomicBool>,
 }
 
 /// Runtime-owned window state queued from the Tauri event loop.
@@ -141,6 +145,9 @@ impl ConfigStore {
     /// Create a store for the given current configuration and startup baseline.
     pub fn new(current: Config, initial: Config, config_file: PathBuf) -> Self {
         Self {
+            observed_maximized: Arc::new(AtomicBool::new(
+                current.memospot.window.maximized.unwrap_or_default(),
+            )),
             restart_baseline: Arc::new(RwLock::new(Arc::new(current.clone()))),
             current: Arc::new(RwLock::new(Arc::new(current))),
             initial: Arc::new(initial),
@@ -289,8 +296,20 @@ impl ConfigStore {
                 return;
             };
 
+            let maximized_toggled = self
+                .observed_maximized
+                .swap(window_state.maximized, Ordering::AcqRel)
+                != window_state.maximized;
             self.update_runtime_owned_fields(|config| {
-                config.memospot.window.maximized = Some(window_state.maximized);
+                if maximized_toggled {
+                    config.memospot.window.maximized = Some(window_state.maximized);
+                }
+                // Keep the restored geometry while maximized. A screen-sized
+                // window gets auto-maximized by GNOME on the next start, which
+                // would override `maximized: false`.
+                if window_state.maximized {
+                    return;
+                }
                 config.memospot.window.width = Some(window_state.width);
                 config.memospot.window.height = Some(window_state.height);
                 config.memospot.window.x = Some(window_state.x);
@@ -794,7 +813,7 @@ mod tests {
         let store = default_store(&dir);
 
         store.queue_runtime_owned_window_state(WindowState {
-            maximized: true,
+            maximized: false,
             width: 1440,
             height: 900,
             x: 42,
@@ -804,10 +823,63 @@ mod tests {
 
         let snapshot = store.snapshot();
         let window = &snapshot.current.memospot.window;
-        assert_eq!(window.maximized, Some(true));
+        assert_eq!(window.maximized, Some(false));
         assert_eq!(window.width, Some(1440));
         assert_eq!(window.height, Some(900));
         assert_eq!(window.x, Some(42));
         assert_eq!(window.y, Some(24));
+    }
+
+    #[tokio::test]
+    async fn window_events_keep_saved_maximized_preference_and_restored_geometry() {
+        let dir = TempDir::new().expect("tempdir");
+        let mut config = Config::default();
+        config.memospot.window.maximized = Some(true);
+        let store = store_with(&dir, config.clone(), config);
+        let maximized = WindowState {
+            maximized: true,
+            width: 3904,
+            height: 2304,
+            x: 0,
+            y: 0,
+        };
+        let restored = WindowState {
+            maximized: false,
+            width: 1440,
+            height: 900,
+            x: 42,
+            y: 24,
+        };
+        let saved_window_state = |store: &ConfigStore| {
+            let window = store.snapshot().current.memospot.window.clone();
+            WindowState {
+                maximized: window.maximized.unwrap_or_default(),
+                width: window.width.unwrap_or_default(),
+                height: window.height.unwrap_or_default(),
+                x: window.x.unwrap_or_default(),
+                y: window.y.unwrap_or_default(),
+            }
+        };
+
+        store
+            .apply_patch_and_persist(&patch("/memospot/window/maximized", json!(false)))
+            .await
+            .expect("patch should succeed");
+        let before = saved_window_state(&store);
+        store.queue_runtime_owned_window_state(maximized);
+        store.flush_runtime_owned_updates().await;
+        assert_eq!(saved_window_state(&store), before);
+
+        store.queue_runtime_owned_window_state(restored);
+        store.flush_runtime_owned_updates().await;
+        store.queue_runtime_owned_window_state(maximized);
+        store.flush_runtime_owned_updates().await;
+        assert_eq!(
+            saved_window_state(&store),
+            WindowState {
+                maximized: true,
+                ..restored
+            }
+        );
     }
 }
