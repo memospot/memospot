@@ -190,6 +190,7 @@ pub fn run() {
         async_runtime::spawn(async move {
             init::migrate_database(&current, &runtime.paths).await;
             memos_process::spawn(&runtime, &current)
+                .await
                 .expect_dialog(fl!("panic-failed-to-spawn-memos"));
         });
     }

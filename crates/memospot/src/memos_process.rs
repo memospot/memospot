@@ -93,59 +93,56 @@ pub fn get_last_pid(memospot_data: &Path) -> Option<u32> {
 /// Stores the PID so we can use this to track and recover from ungraceful shutdowns.
 ///
 /// Only a single PID is ever stored.
-fn save_pid_file(pid: u32, file_path: &Path) {
+async fn save_pid_file(pid: u32, file_path: &Path) {
     if file_path.is_dir() {
         error!("unable to save pid file: provided file path is a directory");
         return;
     }
 
-    let pid_file = file_path.to_path_buf();
     let file_contents = pid.to_string();
     let time_start = tokio::time::Instant::now();
 
-    async_runtime::spawn(async move {
-        let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
-        let mut last_error: String = "".into();
-        loop {
-            interval.tick().await;
-            if time_start.elapsed() > tokio::time::Duration::from_secs(5) {
-                warn!("timed out after 5 seconds while trying to write pid file");
-                break;
-            }
-
-            let mut file = match tokio::fs::File::create(&pid_file).await {
-                Ok(f) => f,
-                Err(e) => {
-                    let error = e.to_string();
-                    if last_error != error {
-                        warn!("unable to create pid file: {error}");
-                        last_error = error;
-                    }
-                    continue;
-                }
-            };
-
-            if let Err(e) = file.write_all(file_contents.as_bytes()).await {
-                let error = e.to_string();
-                if last_error != error {
-                    warn!("unable to write pid file: {error}");
-                    last_error = error;
-                }
-                continue;
-            }
-
-            if let Err(e) = file.flush().await {
-                let error = e.to_string();
-                if last_error != error {
-                    warn!("unable to flush pid file: {error}");
-                    last_error = error;
-                }
-                continue;
-            }
-
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
+    let mut last_error: String = "".into();
+    loop {
+        interval.tick().await;
+        if time_start.elapsed() > tokio::time::Duration::from_secs(5) {
+            warn!("timed out after 5 seconds while trying to write pid file");
             break;
         }
-    });
+
+        let mut file = match tokio::fs::File::create(file_path).await {
+            Ok(f) => f,
+            Err(e) => {
+                let error = e.to_string();
+                if last_error != error {
+                    warn!("unable to create pid file: {error}");
+                    last_error = error;
+                }
+                continue;
+            }
+        };
+
+        if let Err(e) = file.write_all(file_contents.as_bytes()).await {
+            let error = e.to_string();
+            if last_error != error {
+                warn!("unable to write pid file: {error}");
+                last_error = error;
+            }
+            continue;
+        }
+
+        if let Err(e) = file.flush().await {
+            let error = e.to_string();
+            if last_error != error {
+                warn!("unable to flush pid file: {error}");
+                last_error = error;
+            }
+            continue;
+        }
+
+        break;
+    }
 }
 
 async fn remove_pid_file(memospot_data: &Path) {
@@ -205,7 +202,7 @@ async fn kill_pid(pid: u32) {
 ///
 /// `runtime` carries the startup snapshot of the server settings and paths;
 /// `config` provides the Memospot-side settings read at spawn time.
-pub fn spawn(runtime: &RuntimeContext, config: &Config) -> Result<(), anyhow::Error> {
+pub async fn spawn(runtime: &RuntimeContext, config: &Config) -> Result<(), anyhow::Error> {
     let env_vars: HashMap<String, String> = prepare_env(runtime);
     let command = runtime.paths.memos_bin.to_string_lossy().to_string();
     let cwd = get_cwd(runtime);
@@ -234,7 +231,7 @@ pub fn spawn(runtime: &RuntimeContext, config: &Config) -> Result<(), anyhow::Er
                 let (_, child) = receiver;
                 let pid_file = runtime.paths.memospot_data.join("memos.pid");
 
-                save_pid_file(child.pid(), &pid_file);
+                save_pid_file(child.pid(), &pid_file).await;
 
                 return Ok(());
             }
