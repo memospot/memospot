@@ -24,6 +24,44 @@ where
     rx.recv().ok()
 }
 
+/// Resolve the data path from injected environment inputs.
+///
+/// `xdg_config_home`, `local_app_data`, and `app_data` are the raw values of
+/// `XDG_CONFIG_HOME`, `LOCALAPPDATA`, and `APPDATA`. `exists` stands in for
+/// filesystem probes so tests stay hermetic. Production callers pass the real
+/// environment and `Path::exists`.
+fn resolve_app_data_path(
+    home: &Path,
+    app_name: &str,
+    xdg_config_home: Option<&str>,
+    local_app_data: Option<&str>,
+    app_data: Option<&str>,
+    exists: impl Fn(&Path) -> bool,
+) -> PathBuf {
+    let fallback = home.join(format!(".{app_name}"));
+    let xdg_config_path = xdg_config_home
+        .map(PathBuf::from)
+        .unwrap_or_else(|| home.join(".config"))
+        .join(app_name);
+
+    if exists(&xdg_config_path) {
+        return xdg_config_path;
+    }
+    if exists(&fallback) {
+        return fallback;
+    }
+    if let Some(app_data) = local_app_data.or(app_data) {
+        let app_data = PathBuf::from(app_data);
+        return if app_data.ends_with("Roaming") {
+            app_data.parent().unwrap().join("Local").join(app_name)
+        } else {
+            app_data.join(app_name)
+        };
+    }
+
+    fallback
+}
+
 /// Get the data path to supplied application name.
 ///
 /// Probe paths:
@@ -41,29 +79,20 @@ where
 /// Home directory is determined by the [`home`](https://docs.rs/home) crate.
 pub fn get_app_data_path(app_name: &str) -> PathBuf {
     let home = home_dir().unwrap_or_default();
-    let fallback = home.join(format!(".{app_name}"));
-    let xdg_config_path = env::var("XDG_CONFIG_HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| home.join(".config"))
-        .join(app_name);
-
-    if xdg_config_path.exists() {
-        return xdg_config_path;
-    }
-    if fallback.exists() {
-        return fallback;
-    }
+    let xdg_config_home = env::var("XDG_CONFIG_HOME").ok();
     #[cfg(target_os = "windows")]
-    if let Ok(app_data) = env::var("LOCALAPPDATA").or_else(|_| env::var("APPDATA")) {
-        let app_data = PathBuf::from(app_data);
-        return if app_data.ends_with("Roaming") {
-            app_data.parent().unwrap().join("Local").join(app_name)
-        } else {
-            app_data.join(app_name)
-        };
-    }
+    let (local_app_data, app_data) = (env::var("LOCALAPPDATA").ok(), env::var("APPDATA").ok());
+    #[cfg(not(target_os = "windows"))]
+    let (local_app_data, app_data): (Option<String>, Option<String>) = (None, None);
 
-    fallback
+    resolve_app_data_path(
+        &home,
+        app_name,
+        xdg_config_home.as_deref(),
+        local_app_data.as_deref(),
+        app_data.as_deref(),
+        |path| path.exists(),
+    )
 }
 
 /// Get the user's Downloads directory.
@@ -121,14 +150,30 @@ fn windows_downloads_dir() -> PathBuf {
 #[cfg(target_os = "linux")]
 fn linux_downloads_dir() -> PathBuf {
     let home = home_dir().unwrap_or_default();
-    let user_dirs = env::var("XDG_CONFIG_HOME")
-        .ok()
+    let xdg_config_home = env::var("XDG_CONFIG_HOME").ok();
+    resolve_linux_downloads_dir(&home, xdg_config_home.as_deref(), |path| {
+        std::fs::read_to_string(path).ok()
+    })
+}
+
+/// Resolve the Linux Downloads directory from injected inputs.
+///
+/// `xdg_config_home` is the raw `XDG_CONFIG_HOME` value. `read_user_dirs`
+/// stands in for reading `user-dirs.dirs` so tests stay hermetic. Production
+/// callers pass the real environment and filesystem.
+#[cfg(any(target_os = "linux", test))]
+fn resolve_linux_downloads_dir(
+    home: &Path,
+    xdg_config_home: Option<&str>,
+    read_user_dirs: impl Fn(&Path) -> Option<String>,
+) -> PathBuf {
+    let user_dirs = xdg_config_home
         .filter(|dir| !dir.trim().is_empty() && PathBuf::from(dir).is_absolute())
         .map(PathBuf::from)
         .unwrap_or_else(|| home.join(".config"))
         .join("user-dirs.dirs");
-    if let Ok(contents) = std::fs::read_to_string(user_dirs)
-        && let Some(dir) = resolve_downloads_from_user_dirs(&contents, &home)
+    if let Some(contents) = read_user_dirs(&user_dirs)
+        && let Some(dir) = resolve_downloads_from_user_dirs(&contents, home)
     {
         return dir;
     }
@@ -235,128 +280,122 @@ pub fn absolute_path(path: impl AsRef<Path>) -> Result<PathBuf> {
 mod tests {
     use super::*;
 
-    fn remove_env_vars() {
-        // SAFETY: This is a test function, and removing a process environment
-        // variable is generally safe. The unsafe block is required due to the
-        // potential for race conditions in a multithreaded context.
-        unsafe {
-            env::remove_var("APPDATA");
-            env::remove_var("HOME");
-            env::remove_var("LOCALAPPDATA");
-            env::remove_var("XDG_CONFIG_HOME");
-        }
-    }
-
-    fn ensure_env_vars() {
-        let home = std::env::var("HOME").unwrap_or_default();
-        let app_data = std::env::var("APPDATA").unwrap_or_default();
-        let local_app_data = std::env::var("LOCALAPPDATA").unwrap_or_default();
-
-        // SAFETY: This is a test function, and setting a process environment
-        // variable is generally safe. The unsafe block is required due to the
-        // potential for race conditions in a multithreaded context.
-        unsafe {
-            if home.is_empty() {
-                env::set_var(
-                    "HOME",
-                    if cfg!(windows) {
-                        r"C:\Users\foo"
-                    } else {
-                        r"/home/foo"
-                    },
-                );
-            }
-            if app_data.is_empty() {
-                env::set_var("APPDATA", r"C:\Users\foo\AppData\Roaming");
-            }
-            if local_app_data.is_empty() {
-                env::set_var("LOCALAPPDATA", r"C:\Users\foo\AppData\Local");
-            }
-        }
-    }
-
-    #[cfg(windows)]
     #[test]
-    fn test_get_data_path_windows() {
-        remove_env_vars();
-
-        // Test fallback to USERPROFILE (via home crate).
-        assert!(
-            get_app_data_path("memospot")
-                .to_string_lossy()
-                .ends_with("memospot")
-        );
-
-        let ci = env::var("CI").unwrap_or_default() == "true";
-        if ci {
-            assert!(
-                get_app_data_path("memospot")
-                    .to_string_lossy()
-                    .ends_with("memospot")
-            );
-        } else {
-            // Test fallback via APPDATA (ancient Windows versions).
-            unsafe {
-                env::set_var("APPDATA", r"C:\Users\foo\AppData\Roaming");
-            }
-            assert_eq!(
-                get_app_data_path("memospot"),
-                PathBuf::from(r"C:\Users\foo\AppData\Local\memospot")
-            );
-
-            // Test a standard system with LOCALAPPDATA set.
-            unsafe {
-                env::set_var("LOCALAPPDATA", r"C:\Users\foo\AppData\Local");
-            }
-            assert_eq!(
-                get_app_data_path("memospot"),
-                PathBuf::from(r"C:\Users\foo\AppData\Local\memospot")
-            );
-        }
+    fn app_data_path_returns_fallback_when_nothing_exists() {
+        // GIVEN a home directory with no probed paths on disk
+        let home = Path::new("/home/alice");
+        // WHEN resolving with no environment inputs and nothing existing
+        let resolved = resolve_app_data_path(home, "memospot", None, None, None, |_| false);
+        // THEN the home dot-directory fallback is returned
+        assert_eq!(resolved, PathBuf::from("/home/alice/.memospot"));
     }
 
     #[test]
-    fn test_get_data_path() {
-        ensure_env_vars();
-        let data_path = get_app_data_path("memospot");
-        assert!(data_path.has_root());
-        assert!(data_path.is_absolute());
-        assert!(data_path.to_string_lossy().ends_with("memospot"));
+    fn app_data_path_prefers_existing_xdg_config_path() {
+        // GIVEN an XDG config path that exists alongside a missing fallback
+        let home = Path::new("/home/alice");
+        let xdg = PathBuf::from("/etc/xdg/memospot");
+        let fallback = PathBuf::from("/home/alice/.memospot");
+        // WHEN resolving with the XDG input present
+        let resolved =
+            resolve_app_data_path(home, "memospot", Some("/etc/xdg"), None, None, |path| {
+                path == xdg
+            });
+        // THEN the existing XDG path wins over the fallback
+        assert_eq!(resolved, xdg);
+        assert_ne!(resolved, fallback);
     }
 
     #[test]
-    fn test_xdg_config_home() -> Result<()> {
-        remove_env_vars();
-        let tmp_dir = tempfile::tempdir()?;
-        let xdg_config_home = tmp_dir.path().join(".config");
-        unsafe {
-            env::set_var("XDG_CONFIG_HOME", &xdg_config_home);
-        }
+    fn app_data_path_uses_fallback_when_only_it_exists() {
+        // GIVEN a missing XDG path and an existing home fallback
+        let home = Path::new("/home/alice");
+        let fallback = PathBuf::from("/home/alice/.memospot");
+        // WHEN resolving with an XDG input that does not exist
+        let resolved =
+            resolve_app_data_path(home, "memospot", Some("/etc/xdg"), None, None, |path| {
+                path == fallback
+            });
+        // THEN the fallback is returned
+        assert_eq!(resolved, fallback);
+    }
+
+    #[test]
+    fn app_data_path_resolves_windows_inputs_without_process_env() {
+        // GIVEN no probed paths on disk and Windows-style env inputs
+        let home = Path::new("/home/alice");
+        let no_disk = |_: &Path| false;
+        // WHEN LOCALAPPDATA is present it wins over APPDATA
+        // THEN the local path is returned
         assert_eq!(
-            env::var("XDG_CONFIG_HOME").unwrap(),
-            xdg_config_home.to_string_lossy()
+            resolve_app_data_path(
+                home,
+                "memospot",
+                None,
+                Some("/local"),
+                Some("/roaming"),
+                no_disk,
+            ),
+            PathBuf::from("/local/memospot")
         );
+        // WHEN only a Roaming APPDATA is present
+        // THEN it maps to the sibling Local directory
+        assert_eq!(
+            resolve_app_data_path(home, "memospot", None, None, Some("/foo/Roaming"), no_disk,),
+            PathBuf::from("/foo/Local/memospot")
+        );
+        // WHEN only a plain APPDATA is present
+        // THEN the app name is appended directly
+        assert_eq!(
+            resolve_app_data_path(home, "memospot", None, None, Some("/foo/Plain"), no_disk,),
+            PathBuf::from("/foo/Plain/memospot")
+        );
+    }
 
-        // Test fallback to HOME/.memospot.
-        assert!(
-            get_app_data_path("memospot")
-                .to_string_lossy()
-                .ends_with("memospot")
-        );
+    #[test]
+    fn linux_downloads_uses_injected_config_home_and_contents() {
+        // GIVEN an injected XDG_CONFIG_HOME pointing at a user-dirs file
+        let home = Path::new("/home/alice");
+        let expected_file = PathBuf::from("/custom/config/user-dirs.dirs");
+        // WHEN the injected file contains a home-relative download dir
+        let resolved = resolve_linux_downloads_dir(home, Some("/custom/config"), |path| {
+            assert_eq!(path, expected_file);
+            Some("XDG_DOWNLOAD_DIR=\"$HOME/Downloads\"\n".to_string())
+        });
+        // THEN the resolved path expands against the injected home
+        assert_eq!(resolved, PathBuf::from("/home/alice/Downloads"));
+    }
 
-        // Create XDG_CONFIG_HOME/memospot.
-        std::fs::create_dir_all(xdg_config_home.join("memospot"))?;
-        assert!(
-            get_app_data_path("memospot")
-                .to_string_lossy()
-                .ends_with("memospot")
+    #[test]
+    fn linux_downloads_falls_back_for_blank_or_missing_inputs() {
+        // GIVEN a home directory with no readable user-dirs file
+        let home = Path::new("/home/alice");
+        // WHEN the config home is blank
+        // THEN the default Downloads directory is returned
+        assert_eq!(
+            resolve_linux_downloads_dir(home, Some("   "), |_| None),
+            PathBuf::from("/home/alice/Downloads")
         );
-        Ok(())
+        // WHEN the config home is relative
+        // THEN it is ignored in favor of the default
+        assert_eq!(
+            resolve_linux_downloads_dir(home, Some("relative/config"), |_| None),
+            PathBuf::from("/home/alice/Downloads")
+        );
+        // WHEN the user-dirs file cannot be read
+        // THEN the default Downloads directory is returned
+        assert_eq!(
+            resolve_linux_downloads_dir(home, Some("/custom/config"), |_| None),
+            PathBuf::from("/home/alice/Downloads")
+        );
     }
 
     #[test]
     fn user_dirs_download_resolves_home_relative_and_absolute_entries() {
+        // GIVEN user-dirs contents with home-relative and absolute entries
         let home = Path::new("/home/alice");
+        // WHEN resolving each entry
+        // THEN each maps to the expected absolute path
         assert_eq!(
             resolve_downloads_from_user_dirs("XDG_DOWNLOAD_DIR=\"$HOME/Downloads\"\n", home),
             Some(PathBuf::from("/home/alice/Downloads"))
@@ -380,7 +419,10 @@ mod tests {
 
     #[test]
     fn user_dirs_download_returns_none_when_missing_or_empty() {
+        // GIVEN user-dirs contents without a usable download entry
         let home = Path::new("/home/alice");
+        // WHEN resolving entries that are missing or empty
+        // THEN none is returned so the caller falls back
         assert_eq!(
             resolve_downloads_from_user_dirs("XDG_DOCUMENTS_DIR=\"$HOME/Documents\"\n", home),
             None
@@ -389,6 +431,9 @@ mod tests {
             resolve_downloads_from_user_dirs("XDG_DOWNLOAD_DIR=\"\"\n", home),
             None
         );
+        // GIVEN entries with surrounding whitespace or a bare home reference
+        // WHEN resolving them
+        // THEN they expand against the injected home
         assert_eq!(
             resolve_downloads_from_user_dirs("XDG_DOWNLOAD_DIR = \"$HOME/Downloads\"\n", home),
             Some(PathBuf::from("/home/alice/Downloads"))
@@ -401,6 +446,9 @@ mod tests {
 
     #[test]
     fn windows_env_expansion_replaces_known_variables() {
+        // GIVEN a lookup with known Windows variables
+        // WHEN expanding paths that reference them
+        // THEN the placeholders are replaced
         let expanded = expand_windows_env(r"%USERPROFILE%\Downloads", |name| {
             (name == "USERPROFILE").then(|| r"C:\Users\alice".to_string())
         });
@@ -416,6 +464,9 @@ mod tests {
 
     #[test]
     fn windows_env_expansion_fails_on_unknown_variables() {
+        // GIVEN a lookup missing one referenced variable
+        // WHEN expanding a path that needs it
+        // THEN expansion fails so the caller tries the next candidate
         let expanded =
             expand_windows_env(r"%A%-%B%", |name| (name == "A").then(|| "a".to_string()));
         assert_eq!(expanded, None);

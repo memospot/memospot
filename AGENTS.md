@@ -26,7 +26,7 @@ Tauri v2 desktop app bundling [Memos](https://github.com/usememos/memos) as a si
 - Only high-value tests that prevent regressions or verify correctness; cover success, failure, and edge cases for new behavior.
 - Test behavior and public contracts, not private implementation details; test the actual implementation without duplicating its logic into the test; avoid mocks.
 - Prefer unit tests close to code and integration tests under `tests/`; keep tests deterministic (no wall-clock, network, or environment coupling unless explicitly required) so they pass locally and on CI.
-- Use BDD comments for tests: `//#given`, `//#when`, `//#then`.
+- Use BDD comments for tests: `// GIVEN`, `// WHEN`, `// THEN`, `// AND`.
 - Do not add tests for values that are statically defined.
 - Do not add negative tests for logic that was removed.
 - Prefer deep equals comparisons. Perform `assert_eq!()` on entire objects, not individual fields.

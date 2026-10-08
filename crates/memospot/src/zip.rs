@@ -81,7 +81,7 @@ mod tests {
 
     #[tokio::test]
     async fn related_files_round_trip_streams_entries() {
-        //#given a main file plus related files larger than the copy buffer
+        // GIVEN a main file plus related files larger than the copy buffer
         let dir = tempfile::tempdir().expect("tempdir");
         let main = dir.path().join("memos_prod.db");
         let wal = dir.path().join("memos_prod.db-wal");
@@ -95,12 +95,12 @@ mod tests {
         tokio::fs::write(&shm, b"shm").await.expect("write shm");
         let output = dir.path().join("backup.zst.zip");
 
-        //#when backing up the main file with related extensions
+        // WHEN backing up the main file with related extensions
         related_files(&main, &["db-wal", "db-shm"], &output)
             .await
             .expect("backup");
 
-        //#then the archive holds byte-identical entries
+        // THEN the archive holds byte-identical entries
         let reader = ZipFileReader::new(&output).await.expect("open zip");
         let names: Vec<String> = reader
             .file()
