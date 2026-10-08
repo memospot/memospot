@@ -49,6 +49,7 @@ strum_macros = { workspace = true }
 sysinfo = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+tokio-util = { workspace = true }
 ts-rs = { workspace = true }
 url = { workspace = true, features = ["serde"] }
 uuid = { workspace = true }
