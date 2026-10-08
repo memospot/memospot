@@ -45,21 +45,21 @@ Governs agent-driven GitHub contributions on the user's behalf. No `CONTRIBUTING
 
 Everything runs through `just`. Do NOT run raw `cargo`/`npm`/`bun` commands for build/test/lint — use just recipes.
 
-| Task                              | Command                                                                                                   |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Concise agent-oriented validation | `just gate`                                                                                               |
-| Full validation (lint → test)     | `just validate`                                                                                           |
-| Dev mode                          | `just dev`                                                                                                |
-| Build                             | `just build` / `just build no-bundle` (binary only)                                                       |
-| Run all tests                     | `just test`                                                                                               |
-| TS tests only                     | `just test-ts`                                                                                            |
-| Rust tests only                   | `just test-rs` (workspace lib), `just test-tauri` (memospot only), `just test-crates` (excludes memospot) |
-| Lint all                          | `just lint` (dprint-check → biome-ci → cargo-fmt-check → clippy)                                          |
-| Fix                               | `just fix` (TS safe fixes + `cargo fix`)                                                                  |
-| Format all                        | `just fmt`                                                                                                |
-| Pre-commit                        | `just pre-commit` (fmt → lint → test — in that order)                                                     |
-| Clean                             | `just clean` (add `--deep` for cargo cache)                                                               |
-| Single Svelte typecheck           | `(cd src-ui && bun check)`                                                                                |
+| Task                              | Command                                                                                                    |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Concise agent-oriented validation | `just gate` (in case it fails, it tells the agent to get the full validation summary with `just validate`) |
+| Full validation (lint → test)     | `just validate` (only run if `just gate` fails)                                                            |
+| Dev mode                          | `just dev`                                                                                                 |
+| Build                             | `just build` / `just build no-bundle` (much faster, binary only)                                           |
+| Run all tests                     | `just test`                                                                                                |
+| TS tests only                     | `just test-ts`                                                                                             |
+| Rust tests only                   | `just test-rs` (workspace lib), `just test-tauri` (memospot only), `just test-crates` (excludes memospot)  |
+| Lint all                          | `just lint` (dprint-check → biome-ci → cargo-fmt-check → clippy)                                           |
+| Fix                               | `just fix` (TS safe fixes + `cargo fix`)                                                                   |
+| Format all                        | `just fmt`                                                                                                 |
+| Pre-commit                        | `just pre-commit` (fmt → lint → test — in that order)                                                      |
+| Clean                             | `just clean` (add `--deep` for cargo cache)                                                                |
+| Single Svelte typecheck           | `(cd src-ui && bun check)`                                                                                 |
 
 ## Structure
 
