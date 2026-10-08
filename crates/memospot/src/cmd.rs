@@ -6,7 +6,7 @@
 //! The TypeScript/JavaScript API is defined in `src-ui/src/lib/tauri.ts`.
 
 use crate::runtime_config::{AppState, ConfigUpdateResult};
-use crate::{i18n, memos, menu};
+use crate::{i18n, memos_api, menu};
 use config::Config;
 use i18n_embed::LanguageLoader;
 use json_patch::Patch;
@@ -131,7 +131,7 @@ pub async fn ping_memos(
     timeout_millis: u64,
 ) -> Result<bool, String> {
     let user_agent = state.runtime.active_server.user_agent.clone();
-    memos::ping_api(memos_url, timeout_millis, &user_agent).await
+    memos_api::ping_api(memos_url, timeout_millis, &user_agent).await
 }
 
 #[command]

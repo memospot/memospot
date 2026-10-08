@@ -159,7 +159,7 @@ mod i18n_tests {
 }
 
 mod memos_tests {
-    use crate::memos::sync_mode_demo_compat;
+    use crate::memos_process::sync_mode_demo_compat;
 
     #[test]
     fn sync_mode_demo_compat_sets_demo_for_legacy_mode() {

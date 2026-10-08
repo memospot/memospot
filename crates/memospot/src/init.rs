@@ -2,6 +2,7 @@
 ///
 /// Functions in this module panics with native dialogs instead of returning errors.
 use crate::fl;
+use crate::memos_process;
 use crate::runtime_config::RuntimePaths;
 use crate::sqlite;
 use crate::utils::*;
@@ -309,7 +310,7 @@ pub fn config(config_path: &PathBuf) -> Config {
         cfg_reader = Ok(Config::default());
     }
     let mut cfg = cfg_reader.expect_dialog(fl!("panic-config-parse-error"));
-    crate::memos::sync_mode_demo_compat(&mut cfg.memos);
+    memos_process::sync_mode_demo_compat(&mut cfg.memos);
     cfg
 }
 

@@ -3,6 +3,7 @@
 //! [`AppState`] is the single Tauri-managed source of truth for the editable
 //! configuration and the immutable runtime context derived from it at startup.
 
+use crate::memos_process::sync_mode_demo_compat;
 use config::Config;
 use json_patch::Patch;
 use serde::{Deserialize, Serialize};
@@ -382,7 +383,7 @@ pub fn apply_patch(config: &Config, patch: &Patch) -> Result<Config, ConfigError
 /// Applies the existing demo-mode compatibility rules so persisted values
 /// always match the normalized form used at startup.
 pub fn normalize_config(mut config: Config) -> Config {
-    crate::memos::sync_mode_demo_compat(&mut config.memos);
+    sync_mode_demo_compat(&mut config.memos);
     config
 }
 

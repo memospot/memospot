@@ -4,7 +4,7 @@ use std::sync::LazyLock;
 use std::sync::atomic::{AtomicU32, Ordering};
 
 use crate::cmd;
-use crate::memos;
+use crate::memos_process;
 use crate::memos_version::MemosVersionStore;
 use crate::menu;
 use crate::menu::MainMenu;
@@ -129,7 +129,7 @@ fn on_exit_cleanup<R: Runtime>(app: &AppHandle<R>) {
 
     let runtime = app.state::<AppState>().runtime.clone();
     async_runtime::block_on(async move {
-        memos::shutdown(&runtime).await;
+        memos_process::shutdown(&runtime).await;
         *PREVENT_EXIT.lock().unwrap() = false;
     });
 

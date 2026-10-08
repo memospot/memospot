@@ -12,7 +12,7 @@ impl MemosVersionStore {
         static INSTANCE: LazyLock<MemosVersionStore> = LazyLock::new(Default::default);
         &INSTANCE
     }
-    /// Get version previously stored by [`memos::wait_api_ready()`].
+    /// Get version previously stored by [`crate::memos_api::wait_api_ready()`].
     pub fn get() -> String {
         MemosVersionStore::instance()
             .version

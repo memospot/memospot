@@ -1,5 +1,5 @@
 use crate::runtime_config::AppState;
-use crate::{fl, memos};
+use crate::{fl, memos_process};
 use chrono::DateTime;
 use config::Config;
 use log::{debug, error, info, warn};
@@ -105,7 +105,7 @@ async fn update<R: Runtime>(app: AppHandle<R>) -> tauri_plugin_updater::Result<b
             info!("preparing to install update");
             let runtime = runtime.clone();
             async_runtime::block_on(async move {
-                memos::shutdown(&runtime).await;
+                memos_process::shutdown(&runtime).await;
             });
         })
         .build()?

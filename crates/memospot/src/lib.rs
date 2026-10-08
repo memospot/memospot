@@ -2,8 +2,9 @@ mod cmd;
 mod event;
 mod i18n;
 mod init;
-mod memos;
+mod memos_api;
 mod memos_log;
+mod memos_process;
 mod memos_version;
 mod menu;
 mod route;
@@ -64,7 +65,7 @@ pub fn run() {
     apply_debug_overrides(&mut effective_memos);
 
     // Cleanup orphaned Memos processes using the effective startup port.
-    memos::find_and_kill_orphaned(&effective_memos, &memospot_data);
+    memos_process::find_and_kill_orphaned(&effective_memos, &memospot_data);
 
     let effective_port = init::memos_port(&effective_memos);
     effective_memos.port = Some(effective_port);
@@ -78,7 +79,7 @@ pub fn run() {
 
     let memos_data = init::memos_data(&effective_memos, &memospot_data);
     let memos_db_file = init::database(&effective_memos, &memos_data);
-    let memos_url = memos::get_url(&current_config, effective_port);
+    let memos_url = memos_api::get_url(&current_config, effective_port);
     let is_managed_server =
         memos_url.starts_with(&format!("http://localhost:{}", effective_port));
 
@@ -96,7 +97,7 @@ pub fn run() {
     {
         let url = memos_url.clone();
         async_runtime::spawn(async move {
-            memos::wait_api_ready(&url).await;
+            memos_api::wait_api_ready(&url).await;
         });
     }
 
@@ -188,7 +189,8 @@ pub fn run() {
         let current = app_state.config.snapshot().current;
         async_runtime::spawn(async move {
             init::migrate_database(&current, &runtime.paths).await;
-            memos::spawn(&runtime, &current).expect_dialog(fl!("panic-failed-to-spawn-memos"));
+            memos_process::spawn(&runtime, &current)
+                .expect_dialog(fl!("panic-failed-to-spawn-memos"));
         });
     }
 
