@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import type { Operation } from "fast-json-patch";
 
 import type { ConfigUpdateResult } from "../src/lib/types/gen/ConfigUpdateResult";
 
-const mockedSetAppConfig = mock<(patch: string) => Promise<ConfigUpdateResult>>();
+const mockedSetAppConfig = mock<(patch: Operation[]) => Promise<ConfigUpdateResult>>();
 const mockedGetAppConfig = mock<() => Promise<string>>();
 const mockedGetDefaultAppConfig = mock<() => Promise<string>>();
 const mockedPathExists = mock<(path: string) => Promise<boolean>>();

@@ -6,6 +6,7 @@
 
 import { isTauri, invoke as TauriInvoke } from "@tauri-apps/api/core";
 import { open as TauriOpen } from "@tauri-apps/plugin-shell";
+import type { Operation } from "fast-json-patch";
 import type { ConfigUpdateResult } from "./types/gen/ConfigUpdateResult";
 
 const browserError = new Error("Not running in Tauri!");
@@ -101,7 +102,7 @@ export async function getDefaultAppConfig(): Promise<string> {
  * @param JSONPatch
  * @returns the update result, including whether a restart is required
  */
-export async function setAppConfig(JSONPatch: string): Promise<ConfigUpdateResult> {
+export async function setAppConfig(JSONPatch: Operation[]): Promise<ConfigUpdateResult> {
     return (await invoke("set_config", { patch: JSONPatch })) as ConfigUpdateResult;
 }
 

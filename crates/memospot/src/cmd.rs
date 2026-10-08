@@ -179,11 +179,11 @@ pub async fn get_default_config() -> Result<String, String> {
 pub async fn set_config<R: Runtime>(
     app: AppHandle<R>,
     state: State<'_, AppState>,
-    patch: String,
+    patch: serde_json::Value,
 ) -> Result<ConfigUpdateResult, String> {
     debug!("applying configuration patch: {patch:?}");
 
-    let deserialized_patch: Patch = match serde_json::from_str(patch.as_str()) {
+    let deserialized_patch: Patch = match serde_json::from_value(patch) {
         Ok(p) => p,
         Err(e) => {
             error!("failed to deserialize configuration patch: {e}");

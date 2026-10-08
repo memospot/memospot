@@ -86,12 +86,11 @@ mod configuration_state_tests {
         #[cfg(target_os = "macos")]
         assert!(app.menu().is_none());
 
-        let patch = serde_json::to_string(&json!([{
+        let patch = json!([{
             "op": "replace",
             "path": "/memospot/window/locale",
             "value": "de-DE",
-        }]))
-        .expect("locale patch should serialize");
+        }]);
         cmd::set_config(app.handle().clone(), app.state::<AppState>(), patch)
             .await
             .expect("generic locale patch should succeed");

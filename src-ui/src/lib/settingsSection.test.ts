@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
-import type * as jsonpatch from "fast-json-patch";
+import type { Operation } from "fast-json-patch";
 import type { Config } from "./types/gen/Config";
 import type { ConfigUpdateResult } from "./types/gen/ConfigUpdateResult";
 
@@ -45,7 +45,7 @@ function baseConfig(theme: string, locale: string | null): Config {
 const defaultConfig = baseConfig("system", null);
 const initialConfig = baseConfig("light", "en");
 
-const mockedSetAppConfig = mock<(patch: string) => Promise<ConfigUpdateResult>>();
+const mockedSetAppConfig = mock<(patch: Operation[]) => Promise<ConfigUpdateResult>>();
 const mockedGetAppConfig = mock<() => Promise<string>>();
 const mockedGetDefaultAppConfig = mock<() => Promise<string>>();
 const mockedPathExists = mock<(path: string) => Promise<boolean>>();
@@ -226,9 +226,7 @@ describe("settingsSection — init and pending", () => {
         section.input.locale = "fr-FR";
         const ok2 = await section.save();
         expect(ok2).toBe(true);
-        const patch = JSON.parse(
-            mockedSetAppConfig.mock.calls[0][0] as string
-        ) as jsonpatch.Operation[];
+        const patch = mockedSetAppConfig.mock.calls[0][0] as Operation[];
         expect(patch.some((op) => op.path.includes("locale"))).toBe(false);
     });
 
@@ -242,9 +240,7 @@ describe("settingsSection — init and pending", () => {
         section.input.theme = "dark";
         const ok = await section.save();
         expect(ok).toBe(true);
-        const patch = JSON.parse(
-            mockedSetAppConfig.mock.calls[0][0] as string
-        ) as jsonpatch.Operation[];
-        expect(patch.some((op: jsonpatch.Operation) => op.path.includes("locale"))).toBe(false);
+        const patch = mockedSetAppConfig.mock.calls[0][0] as Operation[];
+        expect(patch.some((op: Operation) => op.path.includes("locale"))).toBe(false);
     });
 });

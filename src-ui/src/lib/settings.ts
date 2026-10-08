@@ -17,7 +17,7 @@ export async function patchConfig(initial: Config, current: Config) {
     if (import.meta.env.DEV) console.log(diff);
 
     try {
-        const result = await setAppConfig(JSON.stringify(diff));
+        const result = await setAppConfig(diff);
         toast.success(m.settingsConfigSaveSuccess());
         if (result.restart_required) {
             toast.info(m.settingsConfigSaveRestartRequired(), {
