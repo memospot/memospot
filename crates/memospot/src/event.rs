@@ -1,6 +1,5 @@
 //! Tauri event handler.
 use std::str::FromStr;
-use std::sync::LazyLock;
 use std::sync::atomic::{AtomicU32, Ordering};
 
 use crate::cmd;
@@ -27,9 +26,6 @@ use tauri::WindowEvent;
 use tauri::{AppHandle, Manager, RunEvent, Runtime, async_runtime};
 use tauri_plugin_opener::OpenerExt;
 use uuid::Uuid;
-
-pub static PREVENT_EXIT: LazyLock<std::sync::Mutex<bool>> =
-    LazyLock::new(|| std::sync::Mutex::new(true));
 
 /// Zoom factor stored as `(factor * 100)` to avoid floating-point atomics.
 pub(crate) static ZOOM_LEVEL: AtomicU32 = AtomicU32::new(100);
@@ -130,17 +126,11 @@ fn on_exit_cleanup<R: Runtime>(app: &AppHandle<R>) {
     let runtime = app.state::<AppState>().runtime.clone();
     async_runtime::block_on(async move {
         memos_process::shutdown(&runtime).await;
-        *PREVENT_EXIT.lock().unwrap() = false;
     });
 
     app.get_webview_window(Window::Main.into())
         .map(|w| w.hide().ok());
-    loop {
-        if !*PREVENT_EXIT.lock().unwrap() {
-            debug!("finished pre-exit cleanup");
-            break;
-        }
-    }
+    debug!("finished pre-exit cleanup");
     app.get_webview_window(Window::Main.into())
         .map(|w| w.close().ok());
     info!("Memospot closed.");
