@@ -9,6 +9,7 @@ crates/memospot/gen/schemas/
 *.db
 *.gz
 crates/memospot/bindings/
+tmp
 
 # is-stale build script
 *.task

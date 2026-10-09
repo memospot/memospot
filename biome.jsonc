@@ -7,7 +7,14 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/build/", "!**/gen/", "!**/lib/paraglide/", "!**/.svelte-kit/"]
+    "includes": [
+      "**",
+      "!**/build/",
+      "!**/gen/",
+      "!**/lib/paraglide/",
+      "!**/.svelte-kit/",
+      "!**/tmp/"
+    ]
   },
   "assist": {
     "enabled": true,
