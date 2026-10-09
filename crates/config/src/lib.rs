@@ -7,6 +7,7 @@ mod log;
 mod memos;
 mod memospot;
 mod migration;
+mod restart;
 
 pub use config::Config;
 pub use log::Log;

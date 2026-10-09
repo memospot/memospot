@@ -188,7 +188,7 @@ impl ConfigStore {
             .read()
             .expect("config lock poisoned")
             .clone();
-        let restart_required = restart_required(&restart_baseline, &candidate);
+        let restart_required = restart_baseline.restart_required(&candidate);
         let locale_changed = current.memospot.window.locale != candidate.memospot.window.locale;
 
         candidate
@@ -224,7 +224,7 @@ impl ConfigStore {
             .read()
             .expect("config lock poisoned")
             .clone();
-        let restart_required = restart_required(&restart_baseline, &candidate);
+        let restart_required = restart_baseline.restart_required(&candidate);
         let locale_changed = current.memospot.window.locale != candidate.memospot.window.locale;
 
         candidate
@@ -387,34 +387,6 @@ pub fn normalize_config(mut config: Config) -> Config {
     config
 }
 
-/// Whether changing from `before` to `after` requires restarting Memospot.
-///
-/// Server/process settings and startup-only window settings are restart
-/// required. Theme, reduce-animation, and locale changes apply live.
-pub fn restart_required(before: &Config, after: &Config) -> bool {
-    if before.memos != after.memos
-        || before.memospot.remote != after.memospot.remote
-        || before.memospot.env != after.memospot.env
-        || before.memospot.updater != after.memospot.updater
-        || before.memospot.log != after.memospot.log
-        || before.memospot.migrations != after.memospot.migrations
-        || before.memospot.backups != after.memospot.backups
-    {
-        return true;
-    }
-    let before_window = &before.memospot.window;
-    let after_window = &after.memospot.window;
-    before_window.center != after_window.center
-        || before_window.fullscreen != after_window.fullscreen
-        || before_window.resizable != after_window.resizable
-        || before_window.maximized != after_window.maximized
-        || before_window.width != after_window.width
-        || before_window.height != after_window.height
-        || before_window.x != after_window.x
-        || before_window.y != after_window.y
-        || before_window.hide_menu_bar != after_window.hide_menu_bar
-}
-
 /// Apply debug-only Memos server mode and port overrides.
 ///
 /// The overrides only affect the running process: they never enter the
@@ -541,43 +513,6 @@ mod tests {
         let store = ConfigStore::new(current, initial, config_file.clone());
         store.finalize_persistence().await.expect("finalize");
         assert!(config_file.exists());
-    }
-
-    #[test]
-    fn restart_classification_marks_restart_required_settings() {
-        let before = Config::default();
-        let mut after = before.clone();
-
-        assert!(!restart_required(&before, &after));
-
-        // Live settings.
-        after.memospot.window.theme = Some("dark".to_string());
-        assert!(!restart_required(&before, &after));
-        after.memospot.window.locale = Some("es".to_string());
-        assert!(!restart_required(&before, &after));
-        after.memospot.window.reduce_animation = Some(true);
-        assert!(!restart_required(&before, &after));
-
-        // Server/process settings.
-        after.memos.port = Some(9999);
-        assert!(restart_required(&before, &after));
-        after = before.clone();
-        after.memospot.remote.url = Some("https://example.com/".into());
-        assert!(restart_required(&before, &after));
-        after = before.clone();
-        after.memospot.env.enabled = Some(true);
-        assert!(restart_required(&before, &after));
-        after = before.clone();
-        after.memospot.updater.enabled = Some(false);
-        assert!(restart_required(&before, &after));
-
-        // Startup-only window settings.
-        after = before.clone();
-        after.memospot.window.maximized = Some(true);
-        assert!(restart_required(&before, &after));
-        after = before.clone();
-        after.memospot.window.hide_menu_bar = Some(true);
-        assert!(restart_required(&before, &after));
     }
 
     #[tokio::test]
