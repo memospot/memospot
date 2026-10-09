@@ -144,7 +144,7 @@ impl MigrationTrait for Migration {
                     LevelFilter::Debug => {
                         debug!(
                             "[Running] Migrated {migrated_count}/{total_resources} paths.\nLast: {} => {}",
-                            &resource.reference, new_path
+                            resource.reference, new_path
                         );
                     }
                     _ => {}

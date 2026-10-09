@@ -108,9 +108,9 @@ pub fn run() {
         .filter(|v| !v.is_empty() && current_config.memospot.remote.enabled.unwrap_or_default())
         .map(|v| v.to_string())
         .unwrap_or_else(|| {
-            format!("Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Memospot/{}", &app_version)
+            format!("Mozilla/5.0 (x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Memospot/{}", app_version)
         });
-    warn!("WebView user agent: {}", &user_agent);
+    warn!("WebView user agent: {}", user_agent);
 
     let should_run_updater =
         updater::is_enabled(&current_config) && updater::should_run(&current_config);
