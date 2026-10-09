@@ -46,23 +46,18 @@ const defaultConfig = baseConfig("system", null);
 const initialConfig = baseConfig("light", "en");
 
 const mockedSetAppConfig = mock<(patch: Operation[]) => Promise<ConfigUpdateResult>>();
-const mockedGetAppConfig = mock<() => Promise<string>>();
-const mockedGetDefaultAppConfig = mock<() => Promise<string>>();
+const mockedGetAppConfig = mock<() => Promise<Config>>();
+const mockedGetDefaultAppConfig = mock<() => Promise<Config>>();
 const mockedPathExists = mock<(path: string) => Promise<boolean>>();
-const toast = {
-    success: mock<(message: string) => void>(),
-    error: mock<(message: string) => void>(),
-    info: mock<(message: string, options?: unknown) => void>()
-};
 
+// NOTE: mocked as a whole module shared with tests/settings.test.ts in the
+// same run — the factory must provide every export either suite imports.
 mock.module("./tauri", () => ({
     getAppConfig: mockedGetAppConfig,
     getDefaultAppConfig: mockedGetDefaultAppConfig,
     setAppConfig: mockedSetAppConfig,
     pathExists: mockedPathExists
 }));
-
-mock.module("svelte-sonner", () => ({ toast }));
 
 mock.module("./i18n", () => ({
     m: {
@@ -104,11 +99,8 @@ beforeEach(() => {
     mockedGetDefaultAppConfig.mockClear();
     mockedPathExists.mockClear();
     mockedPathExists.mockResolvedValue(true);
-    toast.success.mockClear();
-    toast.error.mockClear();
-    toast.info.mockClear();
-    mockedGetAppConfig.mockResolvedValue(JSON.stringify(initialConfig));
-    mockedGetDefaultAppConfig.mockResolvedValue(JSON.stringify(defaultConfig));
+    mockedGetAppConfig.mockResolvedValue(initialConfig);
+    mockedGetDefaultAppConfig.mockResolvedValue(defaultConfig);
 });
 
 describe("settingsSection — init and pending", () => {
@@ -153,64 +145,57 @@ describe("settingsSection — init and pending", () => {
         const section = makeSection();
         await section.init();
         section.input.theme = "dark";
-        const ok = await section.save();
-        expect(ok).toBe(true);
+        const result = await section.save();
+        expect(result).toEqual({ restart_required: false });
         expect(mockedSetAppConfig).toHaveBeenCalledTimes(1);
-        expect(toast.success).toHaveBeenCalled();
         expect(section.hasPendingChanges).toBe(false);
         expect(section.baselineInput.theme).toBe("dark");
     });
 
-    it("save shows restart notice when backend reports restart_required", async () => {
+    it("save returns the restart notice when backend reports restart_required", async () => {
         mockedSetAppConfig.mockResolvedValue({ restart_required: true });
         const section = makeSection();
         await section.init();
         section.input.theme = "dark";
-        await section.save();
-        expect(toast.info).toHaveBeenCalled();
+        const result = await section.save();
+        expect(result).toEqual({ restart_required: true });
     });
 
-    it("failed save rolls back input and shows failure", async () => {
+    it("failed save throws and leaves input for the caller to roll back", async () => {
         mockedSetAppConfig.mockRejectedValue(new Error("persistence failed"));
         const section = makeSection();
         await section.init();
         section.input.theme = "dark";
-        const ok = await section.save();
-        expect(ok).toBe(false);
-        expect(section.input.theme).toBe("light");
-        expect(toast.error).toHaveBeenCalled();
+        await expect(section.save()).rejects.toThrow("persistence failed");
+        expect(section.input.theme).toBe("dark");
     });
 
-    it("empty diff performs no write and no notification", async () => {
+    it("empty diff performs no write and returns false", async () => {
         const section = makeSection();
         await section.init();
-        const ok = await section.save();
-        expect(ok).toBe(false);
+        const result = await section.save();
+        expect(result).toBe(false);
         expect(mockedSetAppConfig).not.toHaveBeenCalled();
-        expect(toast.success).not.toHaveBeenCalled();
-        expect(toast.error).not.toHaveBeenCalled();
     });
 
     it("each save persists independently", async () => {
         const section = makeSection();
         await section.init();
         section.input.theme = "dark";
-        expect(await section.save()).toBe(true);
+        expect(await section.save()).toEqual({ restart_required: false });
         expect(mockedSetAppConfig).toHaveBeenCalledTimes(1);
         section.input.theme = "light";
-        expect(await section.save()).toBe(true);
+        expect(await section.save()).toEqual({ restart_required: false });
         expect(mockedSetAppConfig).toHaveBeenCalledTimes(2);
     });
 
-    it("validation rejects field and reverts to committed value without persistence", async () => {
+    it("validation throws field messages without persistence", async () => {
         const section = makeSection({
             validate: (input) => (input.theme === "bad" ? { theme: "invalid" } : {})
         });
         await section.init();
         section.input.theme = "bad";
-        const ok = await section.save();
-        expect(ok).toBe(false);
-        expect(section.input.theme).toBe("light");
+        await expect(section.save()).rejects.toEqual(["invalid"]);
         expect(mockedSetAppConfig).not.toHaveBeenCalled();
     });
 
@@ -219,13 +204,13 @@ describe("settingsSection — init and pending", () => {
         await section.init();
         section.input.locale = "fr-FR";
         expect(section.hasPendingChanges).toBe(false);
-        const ok = await section.save();
-        expect(ok).toBe(false);
+        const result = await section.save();
+        expect(result).toBe(false);
         expect(mockedSetAppConfig).not.toHaveBeenCalled();
         section.input.theme = "dark";
         section.input.locale = "fr-FR";
-        const ok2 = await section.save();
-        expect(ok2).toBe(true);
+        const result2 = await section.save();
+        expect(result2).toEqual({ restart_required: false });
         const patch = mockedSetAppConfig.mock.calls[0][0] as Operation[];
         expect(patch.some((op) => op.path.includes("locale"))).toBe(false);
     });
@@ -238,8 +223,8 @@ describe("settingsSection — init and pending", () => {
         expect(section.baselineInput.locale).toBe("fr-FR");
         expect(section.hasPendingChanges).toBe(false);
         section.input.theme = "dark";
-        const ok = await section.save();
-        expect(ok).toBe(true);
+        const result = await section.save();
+        expect(result).toEqual({ restart_required: false });
         const patch = mockedSetAppConfig.mock.calls[0][0] as Operation[];
         expect(patch.some((op: Operation) => op.path.includes("locale"))).toBe(false);
     });

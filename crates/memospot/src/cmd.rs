@@ -146,29 +146,15 @@ pub async fn get_env(name: &str) -> Result<String, String> {
 
 /// Get the current app config.
 #[command]
-pub async fn get_config(state: State<'_, AppState>) -> Result<String, String> {
+pub async fn get_config(state: State<'_, AppState>) -> Result<Config, String> {
     let config = state.config.snapshot();
-    let serialized = match serde_json::to_string(&*config.current) {
-        Ok(s) => s,
-        Err(e) => {
-            error!("failed to serialize config: {e}");
-            String::from("{}")
-        }
-    };
-    Ok(serialized)
+    Ok((*config.current).clone())
 }
 
 /// Get the default app config.
 #[command]
-pub async fn get_default_config() -> Result<String, String> {
-    let serialized = match serde_json::to_string(&Config::default()) {
-        Ok(s) => s,
-        Err(e) => {
-            error!("failed to serialize config: {e}");
-            String::from("{}")
-        }
-    };
-    Ok(serialized)
+pub async fn get_default_config() -> Result<Config, String> {
+    Ok(Config::default())
 }
 
 /// Apply a configuration patch.

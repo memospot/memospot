@@ -145,27 +145,44 @@ async function updateLocale(s: Selected<string> | undefined) {
 
 async function handleSave(): Promise<boolean> {
     const localeBefore = section.baselineInput.locale;
-    const saved = await section.save();
-    if (saved) {
+    try {
+        const result = await section.save();
+        if (result === false) return false;
         localStorage.setItem(
             "reduce-animation",
             JSON.stringify(section.input.reduce_animation)
         );
-    } else if (section.input.reduce_animation !== section.baselineInput.reduce_animation) {
+        if (result.restart_required) {
+            toast.info(m.settingsConfigSaveRestartRequired(), {
+                duration: 5000
+            });
+        } else {
+            toast.success(m.settingsConfigSaveSuccess());
+        }
+        if (section.input.theme === "system") {
+            resetMode();
+        } else {
+            setMode(section.input.theme);
+        }
+        if (localeBefore !== section.input.locale) {
+            window.location.reload();
+        }
+        return true;
+    } catch (err) {
+        section.reset();
         localStorage.setItem(
             "reduce-animation",
             JSON.stringify(section.baselineInput.reduce_animation)
         );
+        if (Array.isArray(err)) {
+            for (const message of err) {
+                toast.error(String(message));
+            }
+        } else {
+            toast.error(m.settingsConfigSaveFail());
+        }
+        return false;
     }
-    if (section.input.theme === "system") {
-        resetMode();
-    } else {
-        setMode(section.input.theme);
-    }
-    if (localeBefore !== section.input.locale && saved) {
-        window.location.reload();
-    }
-    return saved;
 }
 
 $effect(() => {

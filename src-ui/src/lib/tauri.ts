@@ -7,6 +7,7 @@
 import { isTauri, invoke as TauriInvoke } from "@tauri-apps/api/core";
 import { open as TauriOpen } from "@tauri-apps/plugin-shell";
 import type { Operation } from "fast-json-patch";
+import type { Config } from "./types/gen/Config";
 import type { ConfigUpdateResult } from "./types/gen/ConfigUpdateResult";
 
 const browserError = new Error("Not running in Tauri!");
@@ -85,12 +86,12 @@ export async function getEnv(name: string): Promise<string> {
     return (await invoke("get_env", { name: name })) as string;
 }
 
-export async function getAppConfig(): Promise<string> {
-    return (await invoke("get_config")) as string;
+export async function getAppConfig(): Promise<Config> {
+    return (await invoke("get_config")) as Config;
 }
 
-export async function getDefaultAppConfig(): Promise<string> {
-    return (await invoke("get_default_config")) as string;
+export async function getDefaultAppConfig(): Promise<Config> {
+    return (await invoke("get_default_config")) as Config;
 }
 
 /**

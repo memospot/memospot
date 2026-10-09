@@ -136,12 +136,37 @@ async function updateEnvVars(_: Event) {
     section.input.envVars = envFromKV(kv);
 }
 
+async function handleSave(): Promise<boolean> {
+    try {
+        const result = await section.save();
+        if (result === false) return false;
+        if (result.restart_required) {
+            toast.info(m.settingsConfigSaveRestartRequired(), {
+                duration: 5000
+            });
+        } else {
+            toast.success(m.settingsConfigSaveSuccess());
+        }
+        return true;
+    } catch (err) {
+        section.reset();
+        if (Array.isArray(err)) {
+            for (const message of err) {
+                toast.error(String(message));
+            }
+        } else {
+            toast.error(m.settingsConfigSaveFail());
+        }
+        return false;
+    }
+}
+
 $effect(() => {
     onActionsChange?.(
         buildSectionActions(
             () => section.loadDefaults(),
             () => section.reset(),
-            () => section.save(),
+            handleSave,
             section.hasPendingChanges
         )
     );
