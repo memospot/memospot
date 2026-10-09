@@ -19,18 +19,6 @@ use tauri::utils::platform::resource_dir as tauri_resource_dir;
 use tauri_utils::PackageInfo;
 use tokio::io::AsyncWriteExt;
 
-pub fn sync_mode_demo_compat(memos: &mut config::Memos) {
-    let mode = match memos.mode.as_deref() {
-        Some("prod") => "prod",
-        Some("dev") => "dev",
-        Some("demo") => "demo",
-        _ => "prod",
-    };
-
-    memos.mode = Some(mode.to_string());
-    memos.demo = Some(mode == "demo");
-}
-
 /// Cleanup orphaned Memos processes.
 ///
 /// NOTE: there's a serious bug that prevents the `ExitRequested` event from
@@ -385,7 +373,7 @@ pub fn prepare_env(runtime: &RuntimeContext) -> HashMap<String, String> {
     // Use the runtime-checked `memospot_data` path, not a user-provided string from config.
     let memos_data = runtime.paths.memos_data.to_string_lossy();
     let mut memos = runtime.memos.clone();
-    sync_mode_demo_compat(&mut memos);
+    memos.normalize();
     let managed_vars: HashMap<&str, String> = HashMap::from_iter(vec![
         (
             "demo",

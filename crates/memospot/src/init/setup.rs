@@ -3,7 +3,6 @@
 /// Ensures data directories, configuration file, database files,
 /// Memos server port, and server binary location. Runs database migrations.
 use crate::fl;
-use crate::memos_process;
 use crate::runtime_config::RuntimePaths;
 use crate::sqlite;
 use crate::utils::*;
@@ -272,7 +271,7 @@ pub fn config(config_path: &PathBuf) -> Config {
         cfg_reader = Ok(Config::default());
     }
     let mut cfg = cfg_reader.expect_dialog(fl!("panic-config-parse-error"));
-    memos_process::sync_mode_demo_compat(&mut cfg.memos);
+    cfg.memos.normalize();
     cfg
 }
 

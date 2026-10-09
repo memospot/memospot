@@ -57,6 +57,24 @@ pub struct Memos {
     // Memos server log settings.
     // pub log: Log,
 }
+impl Memos {
+    /// Normalize the mode/demo compatibility invariant.
+    ///
+    /// Unknown modes default to `prod`, and `demo` always mirrors whether
+    /// the mode is `demo`, so persisted values match the normalized form
+    /// used at startup and process setup.
+    pub fn normalize(&mut self) {
+        let mode = match self.mode.as_deref() {
+            Some("prod") => "prod",
+            Some("dev") => "dev",
+            Some("demo") => "demo",
+            _ => "prod",
+        };
+
+        self.mode = Some(mode.to_string());
+        self.demo = Some(mode == "demo");
+    }
+}
 impl Default for Memos {
     fn default() -> Self {
         Self {
@@ -69,5 +87,59 @@ impl Default for Memos {
             port: Some(5230),
             env: EnvironmentVariables::default(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalize_sets_demo_for_demo_mode() {
+        // GIVEN demo mode with a stale demo flag.
+        let mut memos = Memos {
+            mode: Some("demo".to_string()),
+            demo: Some(false),
+            ..Default::default()
+        };
+
+        // WHEN normalized THEN the flag mirrors the mode.
+        memos.normalize();
+
+        // THEN demo is enabled.
+        assert_eq!(memos.demo, Some(true));
+    }
+
+    #[test]
+    fn normalize_disables_demo_for_non_demo_modes() {
+        // GIVEN prod mode with a stale demo flag.
+        let mut memos = Memos {
+            mode: Some("prod".to_string()),
+            demo: Some(true),
+            ..Default::default()
+        };
+
+        // WHEN normalized THEN the flag mirrors the mode.
+        memos.normalize();
+
+        // THEN demo is disabled.
+        assert_eq!(memos.demo, Some(false));
+    }
+
+    #[test]
+    fn normalize_defaults_unknown_mode_to_prod() {
+        // GIVEN an unknown mode with demo enabled.
+        let mut memos = Memos {
+            mode: Some("staging".to_string()),
+            demo: Some(true),
+            ..Default::default()
+        };
+
+        // WHEN normalized THEN the mode falls back to prod.
+        memos.normalize();
+
+        // THEN the mode is prod and demo is disabled.
+        assert_eq!(memos.mode, Some("prod".to_string()));
+        assert_eq!(memos.demo, Some(false));
     }
 }
