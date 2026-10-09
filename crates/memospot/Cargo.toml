@@ -38,9 +38,18 @@ home = { workspace = true }
 humantime = { workspace = true }
 json-patch = { workspace = true }
 log = { workspace = true }
-log4rs = { workspace = true, features = ["background_rotation", "config_parsing", "gzip", "yaml_format"] }
+log4rs = { workspace = true, features = [
+    "background_rotation",
+    "config_parsing",
+    "gzip",
+    "yaml_format",
+] }
 path-clean = { workspace = true }
-sea-orm = { workspace = true, default-features = false, features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
+sea-orm = { workspace = true, default-features = false, features = [
+    "sqlx-sqlite",
+    "runtime-tokio-rustls",
+    "macros",
+] }
 semver = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -55,7 +64,11 @@ url = { workspace = true, features = ["serde"] }
 uuid = { workspace = true }
 
 # i18n
-i18n-embed = { workspace = true, features = ["rust-embed", "fluent-system", "desktop-requester"] }
+i18n-embed = { workspace = true, features = [
+    "rust-embed",
+    "fluent-system",
+    "desktop-requester",
+] }
 i18n-embed-fl = { workspace = true }
 rust-embed = { workspace = true }
 
@@ -78,9 +91,13 @@ winreg = { workspace = true }
 tauri-plugin-single-instance = { workspace = true }
 
 [dev-dependencies]
-memospot = { path = ".", features = ["unittest"] } # Allows gating code in `build.rs` to run only in test/lint mode.
+memospot = { path = ".", features = [
+    "unittest",
+] } # Allows gating code in `build.rs` to run only in test/lint mode.
 serde-saphyr = { workspace = true } # Used in tests to assert on-disk configuration.
-tauri = { workspace = true, features = ["test"] } # Enables `tauri::test` mock app for unit tests.
+tauri = { workspace = true, features = [
+    "test",
+] } # Enables `tauri::test` mock app for unit tests.
 tempfile = { workspace = true }
 
 [features]
