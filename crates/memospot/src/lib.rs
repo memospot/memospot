@@ -176,6 +176,7 @@ pub fn run() {
         runtime,
         config: ConfigStore::new(current_config, initial_config, config_path),
         memos_version: Arc::new(RwLock::new(None)),
+        zoom_level: Arc::new(RwLock::new(1.0)),
     };
 
     if app_state.runtime.active_server.managed {

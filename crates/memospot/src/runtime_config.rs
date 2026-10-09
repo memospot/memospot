@@ -371,6 +371,10 @@ pub struct AppState {
     /// Written once by the single readiness task; read by the menu version
     /// entry and the changelog link. [`None`] until delivered.
     pub memos_version: Arc<RwLock<Option<String>>>,
+    /// Current webview zoom factor, applied app-wide.
+    ///
+    /// Written by every zoom path; read back to step from the current level.
+    pub zoom_level: Arc<RwLock<f64>>,
 }
 
 /// Apply a JSON Patch to a configuration, producing a validated candidate.

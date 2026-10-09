@@ -215,21 +215,17 @@ pub async fn path_exists(path: String) -> Result<bool, String> {
 
 #[command]
 pub fn zoom_in<R: Runtime>(app: AppHandle<R>) {
-    use std::sync::atomic::Ordering;
-    let current = crate::event::ZOOM_LEVEL.load(Ordering::Relaxed) as f64 / 100.0;
-    crate::event::apply_zoom(&app, current + crate::event::ZOOM_STEP);
+    crate::event::zoom_by(&app, crate::event::ZOOM_STEP);
 }
 
 #[command]
 pub fn zoom_out<R: Runtime>(app: AppHandle<R>) {
-    use std::sync::atomic::Ordering;
-    let current = crate::event::ZOOM_LEVEL.load(Ordering::Relaxed) as f64 / 100.0;
-    crate::event::apply_zoom(&app, current - crate::event::ZOOM_STEP);
+    crate::event::zoom_by(&app, -crate::event::ZOOM_STEP);
 }
 
 #[command]
 pub fn reset_zoom<R: Runtime>(app: AppHandle<R>) {
-    crate::event::apply_zoom(&app, 1.0);
+    crate::event::reset_zoom(&app);
 }
 
 #[command]

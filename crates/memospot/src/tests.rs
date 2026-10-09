@@ -52,6 +52,7 @@ mod configuration_state_tests {
             runtime: runtime_context(),
             config: store.clone(),
             memos_version: Arc::new(RwLock::new(None)),
+            zoom_level: Arc::new(RwLock::new(1.0)),
         };
 
         let app = mock_builder()
@@ -180,5 +181,27 @@ mod memos_tests {
 
         // THEN the handoff precondition holds: no version to deliver.
         assert!(result.is_err());
+    }
+}
+
+mod zoom_tests {
+    use crate::event::{ZOOM_STEP, stepped_zoom};
+
+    #[test]
+    fn stepped_zoom_steps_from_current_level() {
+        // GIVEN the default level THEN one step lands exactly on 1.1 / 0.9.
+        assert_eq!(stepped_zoom(1.0, ZOOM_STEP), 1.1);
+        assert_eq!(stepped_zoom(1.0, -ZOOM_STEP), 0.9);
+    }
+
+    #[test]
+    fn stepped_zoom_clamps_at_bounds() {
+        // GIVEN a level at the ceiling THEN stepping up stays clamped.
+        assert_eq!(stepped_zoom(5.0, ZOOM_STEP), 5.0);
+        // AND a level at the floor THEN stepping down stays clamped.
+        assert_eq!(stepped_zoom(0.2, -ZOOM_STEP), 0.2);
+        // AND overshoots clamp rather than wrap or exceed.
+        assert_eq!(stepped_zoom(4.95, ZOOM_STEP), 5.0);
+        assert_eq!(stepped_zoom(0.25, -ZOOM_STEP), 0.2);
     }
 }

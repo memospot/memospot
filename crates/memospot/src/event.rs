@@ -1,6 +1,5 @@
 //! Tauri event handler.
 use std::str::FromStr;
-use std::sync::atomic::{AtomicU32, Ordering};
 
 use crate::cmd;
 use crate::memos_process;
@@ -21,21 +20,45 @@ use tauri::WindowEvent;
 use tauri::{AppHandle, Manager, RunEvent, Runtime, async_runtime};
 use tauri_plugin_opener::OpenerExt;
 
-/// Zoom factor stored as `(factor * 100)` to avoid floating-point atomics.
-pub(crate) static ZOOM_LEVEL: AtomicU32 = AtomicU32::new(100);
-
 pub(crate) const ZOOM_STEP: f64 = 0.1;
 const ZOOM_MIN: f64 = 0.2;
 const ZOOM_MAX: f64 = 5.0;
 pub(crate) const SHORTCUT_EVENT: &str = "memospot-shortcut";
 
-/// Apply the current zoom level to all open webview windows.
-pub(crate) fn apply_zoom<R: Runtime>(app: &AppHandle<R>, zoom: f64) {
-    let zoom = zoom.clamp(ZOOM_MIN, ZOOM_MAX);
-    ZOOM_LEVEL.store((zoom * 100.0) as u32, Ordering::Relaxed);
+/// Step the zoom level by `delta`, clamped to the allowed range.
+///
+/// Pure policy shared by every zoom path; the [`f64`] level needs no
+/// packing now that it lives in managed state instead of an atomic.
+/// Rounded to hundredths so stepped levels stay exact, as when the level
+/// was packed as `factor * 100` in the old atomic.
+pub(crate) fn stepped_zoom(current: f64, delta: f64) -> f64 {
+    ((current + delta).clamp(ZOOM_MIN, ZOOM_MAX) * 100.0).round() / 100.0
+}
+
+/// Apply a zoom level to all open webview windows and remember it.
+fn apply_zoom_level<R: Runtime>(app: &AppHandle<R>, zoom: f64) {
+    *app.state::<AppState>()
+        .zoom_level
+        .write()
+        .expect("zoom lock poisoned") = zoom;
     for (_, window) in app.webview_windows() {
         window.set_zoom(zoom).ok();
     }
+}
+
+/// Step the remembered zoom level by `delta` and apply it to all windows.
+pub(crate) fn zoom_by<R: Runtime>(app: &AppHandle<R>, delta: f64) {
+    let current = *app
+        .state::<AppState>()
+        .zoom_level
+        .read()
+        .expect("zoom lock poisoned");
+    apply_zoom_level(app, stepped_zoom(current, delta));
+}
+
+/// Reset zoom to 100% on all windows.
+pub(crate) fn reset_zoom<R: Runtime>(app: &AppHandle<R>) {
+    apply_zoom_level(app, 1.0);
 }
 
 pub(crate) fn handle_shortcut_event<R: Runtime>(app: &AppHandle<R>, payload: &str) {
@@ -229,15 +252,13 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) -> Res
             url.map(|u| main_window.navigate(u).ok());
         }
         MainMenu::ViewZoomIn => {
-            let current = ZOOM_LEVEL.load(Ordering::Relaxed) as f64 / 100.0;
-            apply_zoom(app, current + ZOOM_STEP);
+            zoom_by(app, ZOOM_STEP);
         }
         MainMenu::ViewZoomOut => {
-            let current = ZOOM_LEVEL.load(Ordering::Relaxed) as f64 / 100.0;
-            apply_zoom(app, current - ZOOM_STEP);
+            zoom_by(app, -ZOOM_STEP);
         }
         MainMenu::ViewResetZoom => {
-            apply_zoom(app, 1.0);
+            reset_zoom(app);
         }
         MainMenu::HelpMemospotDocumentation => {
             open_link("https://memospot.github.io/");
