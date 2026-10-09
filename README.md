@@ -28,9 +28,18 @@ service. Available for Windows, macOS, and Linux.
 
 <div align="center">
     <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/memospot/memospot/main/assets/capture_dark.webp" />
-        <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/memospot/memospot/main/assets/capture_light.webp" />
-        <img alt="Demo screen" src="https://raw.githubusercontent.com/memospot/memospot/main/assets/capture_light.webp" />
+        <source
+            media="(prefers-color-scheme: dark)"
+            srcset="https://raw.githubusercontent.com/memospot/memospot/main/assets/capture_dark.webp"
+        />
+        <source
+            media="(prefers-color-scheme: light)"
+            srcset="https://raw.githubusercontent.com/memospot/memospot/main/assets/capture_light.webp"
+        />
+        <img
+            alt="Demo screen"
+            src="https://raw.githubusercontent.com/memospot/memospot/main/assets/capture_light.webp"
+        />
     </picture>
 </div>
 
@@ -121,12 +130,21 @@ This project is made possible by the following open-source projects:
 You can show your support for this project by [⭐starring](https://github.com/memospot/memospot) it on GitHub.
 
 <details>
-<summary>Star History</summary>
+    <summary>Star History</summary>
     <div align="center">
         <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=memospot/memospot,memospot/memos-builds&type=Date&theme=dark" />
-          <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=memospot/memospot,memospot/memos-builds&type=Date" />
-          <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=memospot/memospot,memospot/memos-builds&type=Date" />
+            <source
+                media="(prefers-color-scheme: dark)"
+                srcset="https://api.star-history.com/svg?repos=memospot/memospot,memospot/memos-builds&type=Date&theme=dark"
+            />
+            <source
+                media="(prefers-color-scheme: light)"
+                srcset="https://api.star-history.com/svg?repos=memospot/memospot,memospot/memos-builds&type=Date"
+            />
+            <img
+                alt="Star History Chart"
+                src="https://api.star-history.com/svg?repos=memospot/memospot,memospot/memos-builds&type=Date"
+            />
         </picture>
     </div>
 </details>
