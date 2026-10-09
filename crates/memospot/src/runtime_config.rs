@@ -367,6 +367,11 @@ pub struct AppState {
     pub runtime: RuntimeContext,
     /// Synchronized editable configuration store.
     pub config: ConfigStore,
+    /// Memos server version once the readiness probe delivers it.
+    ///
+    /// Written once by the single readiness task; read by the menu version
+    /// entry and the changelog link. [`None`] until delivered.
+    pub memos_version: Arc<RwLock<Option<String>>>,
 }
 
 /// Apply a JSON Patch to a configuration, producing a validated candidate.

@@ -5,7 +5,6 @@ mod init;
 mod memos_api;
 mod memos_log;
 mod memos_process;
-mod memos_version;
 mod menu;
 mod route;
 mod runtime_config;
@@ -31,6 +30,7 @@ use dialog::*;
 use i18n::*;
 use log::{debug, info, warn};
 use std::env;
+use std::sync::{Arc, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::webview::PageLoadEvent;
 use tauri::{Listener, Manager, async_runtime};
@@ -93,13 +93,6 @@ pub fn run() {
     let memospot_cwd = memospot_bin.parent().unwrap().to_path_buf();
 
     init::set_env_vars(&current_config);
-
-    {
-        let url = memos_url.clone();
-        async_runtime::spawn(async move {
-            memos_api::wait_api_ready(&url).await;
-        });
-    }
 
     let mut tauri_ctx = tauri::generate_context!();
 
@@ -182,6 +175,7 @@ pub fn run() {
     let app_state = AppState {
         runtime,
         config: ConfigStore::new(current_config, initial_config, config_path),
+        memos_version: Arc::new(RwLock::new(None)),
     };
 
     if app_state.runtime.active_server.managed {
@@ -215,6 +209,8 @@ pub fn run() {
     }
 
     let config_store = app_state.config.clone();
+    let memos_url_setup = app_state.runtime.active_server.url.clone();
+    let memos_version = app_state.memos_version.clone();
     let Ok(tauri_app) = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
@@ -288,7 +284,18 @@ pub fn run() {
 
             // The menu must be set at the application level to also work in macOS.
             app.set_menu(menu::build(app_handle)?)?;
-            menu::update_memos_version_entry(app_handle);
+
+            // Single owner of the version handoff: poll once, store the
+            // version, and update the menu immediately on delivery.
+            // Skipped when the server never becomes ready.
+            let version_handle = app_handle.clone();
+            async_runtime::spawn(async move {
+                if let Some(version) = memos_api::wait_api_ready(&memos_url_setup).await {
+                    *memos_version.write().expect("version lock poisoned") =
+                        Some(version.clone());
+                    menu::update_memos_version_entry(&version_handle, &version);
+                }
+            });
 
             if should_run_updater {
                 debug!("starting updater");

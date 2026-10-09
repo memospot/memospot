@@ -4,7 +4,6 @@ use std::sync::atomic::{AtomicU32, Ordering};
 
 use crate::cmd;
 use crate::memos_process;
-use crate::memos_version::MemosVersionStore;
 use crate::menu;
 use crate::menu::MainMenu;
 use crate::menu::build_empty;
@@ -307,7 +306,13 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) -> Res
             open_link("https://usememos.com/docs");
         }
         MainMenu::HelpMemosReleaseNotes => {
-            let current_version = MemosVersionStore::get();
+            let current_version = app
+                .state::<AppState>()
+                .memos_version
+                .read()
+                .expect("version lock poisoned")
+                .clone()
+                .unwrap_or_default();
             let changelog_version = current_version.replace(".", "-");
             let url = format!("https://www.usememos.com/changelog/{changelog_version}",);
             open_link(url.as_str());

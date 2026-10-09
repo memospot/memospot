@@ -8,6 +8,7 @@ mod configuration_state_tests {
     use i18n_embed::LanguageLoader;
     use serde_json::json;
     use std::path::PathBuf;
+    use std::sync::{Arc, RwLock};
     use tauri::Manager;
     use tauri::test::{mock_builder, mock_context, noop_assets};
     use tempfile::TempDir;
@@ -50,6 +51,7 @@ mod configuration_state_tests {
         let app_state = AppState {
             runtime: runtime_context(),
             config: store.clone(),
+            memos_version: Arc::new(RwLock::new(None)),
         };
 
         let app = mock_builder()
@@ -159,6 +161,7 @@ mod i18n_tests {
 }
 
 mod memos_tests {
+    use crate::memos_api::query_version;
     use crate::memos_process::sync_mode_demo_compat;
 
     #[test]
@@ -199,5 +202,24 @@ mod memos_tests {
 
         assert_eq!(memos.mode, Some("prod".to_string()));
         assert_eq!(memos.demo, Some(false));
+    }
+
+    /// The readiness probe fails fast against a refused connection.
+    ///
+    /// This is the [`None`] precondition of the version handoff: an
+    /// unreachable server yields `Err` here, so `wait_api_ready` keeps
+    /// polling until its timeout and then delivers [`None`]. The full
+    /// 15-second timeout path is deliberately not exercised in tests.
+    #[tokio::test]
+    async fn query_version_fails_against_refused_connection() {
+        // GIVEN a port nothing listens on, so the probe is refused
+        // immediately instead of timing out.
+        let url = "http://127.0.0.1:1/";
+
+        // WHEN the version is queried THEN the probe reports failure.
+        let result = query_version(url).await;
+
+        // THEN the handoff precondition holds: no version to deliver.
+        assert!(result.is_err());
     }
 }

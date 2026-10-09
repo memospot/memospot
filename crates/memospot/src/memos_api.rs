@@ -1,5 +1,4 @@
 use crate::fl;
-use crate::memos_version::MemosVersionStore;
 use anyhow::{Result, anyhow};
 use config::Config;
 use dialog::error_dialog;
@@ -83,9 +82,9 @@ pub async fn query_version(memos_url: &str) -> Result<String, anyhow::Error> {
 
 /// Poll Memos server until the API responds.
 ///
-/// Server version is queried and stored in the global state, available via
-/// [`crate::memos_version::MemosVersionStore::get()`].
-pub async fn wait_api_ready(memos_url: &str) {
+/// Returns the queried server version, or [`None`] if the server never
+/// became ready within the timeout.
+pub async fn wait_api_ready(memos_url: &str) -> Option<String> {
     const INTERVAL_MS: u64 = 100;
     const TIMEOUT_MS: u128 = 15_000;
 
@@ -112,14 +111,14 @@ pub async fn wait_api_ready(memos_url: &str) {
         warn!(
             "failed to query server version via API: {last_error}. Giving up after {TIMEOUT_MS} ms."
         );
-        return;
+        return None;
     }
     info!(
         "API ready in <{} ms. Version: {}.",
         time_start.elapsed().as_millis(),
         version
     );
-    MemosVersionStore::set(version);
+    Some(version)
 }
 
 /// Ping the Memos API to check if it is ready.

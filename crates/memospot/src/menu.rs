@@ -2,21 +2,19 @@
 //!
 //! Events fired here are handled by the [`crate::events::handle_menu_event`] function.
 use crate::fl;
-use crate::memos_version::MemosVersionStore;
 use crate::runtime_config::AppState;
 use crate::window::Window;
-use log::{debug, error};
+use log::debug;
 use std::convert::AsRef;
 use strum_macros::AsRefStr;
 use strum_macros::FromRepr;
 #[cfg(target_os = "macos")]
 use tauri::menu::AboutMetadata;
 use tauri::{
-    AppHandle, Manager, Runtime, async_runtime,
+    AppHandle, Manager, Runtime,
     menu::MenuId,
     menu::{Menu, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder},
 };
-use tokio::time::{self, Duration, Instant};
 
 const GIT_SHORT_HASH: &str = match option_env!("GIT_SHORT_HASH") {
     Some(hash) => hash,
@@ -270,7 +268,16 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
             &PredefinedMenuItem::separator(handle)?,
             &MenuItemBuilder::with_id(
                 MainMenu::HelpMemosVersion.id(),
-                format!("Memos v{}", MemosVersionStore::get()),
+                format!(
+                    "Memos v{}",
+                    handle
+                        .state::<AppState>()
+                        .memos_version
+                        .read()
+                        .expect("version lock poisoned")
+                        .as_deref()
+                        .unwrap_or("unknown")
+                ),
             )
             .enabled(false)
             .build(handle)?,
@@ -299,52 +306,31 @@ pub fn build<R: Runtime>(handle: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     Ok(menu)
 }
 
-/// Update menu after Memos version is known.
+/// Update the Memos version entry in the Help menu to a known version.
 ///
-/// Display current Memos version in the help menu.
+/// Runs immediately with the delivered version: no polling. Skipped when
+/// the version is unknown, leaving the build-time placeholder in place.
 ///
 /// * This function must never interrupt the program flow.
-pub fn update_memos_version_entry<R: Runtime>(handle: &AppHandle<R>) {
-    const INTERVAL_MS: u64 = 100;
-    const TIMEOUT_MS: u128 = 15_000;
+pub fn update_memos_version_entry<R: Runtime>(handle: &AppHandle<R>, version: &str) {
+    let Some(main_window) = handle.get_webview_window(Window::Main.into()) else {
+        debug!("unable to set Memos version in Help menu. Main window not found.");
+        return;
+    };
+    let Some(menu) = main_window.menu() else {
+        return;
+    };
 
-    let handle_ = handle.clone();
-    async_runtime::spawn(async move {
-        let mut interval = time::interval(Duration::from_millis(INTERVAL_MS));
-        let time_start = Instant::now();
-
-        loop {
-            interval.tick().await;
-            if time_start.elapsed().as_millis() > TIMEOUT_MS {
-                debug!(
-                    "unable to set Memos version in Help menu. Timed out after {TIMEOUT_MS}ms."
-                );
-                break;
-            }
-            if !MemosVersionStore::get().is_empty() {
-                break;
-            }
-        }
-
-        let Some(main_window) = handle_.get_webview_window(Window::Main.into()) else {
-            error!("unable to set Memos version in Help menu. Main window not found.");
-            return;
-        };
-        let Some(menu) = main_window.menu() else {
-            return;
-        };
-
-        // Find and update the Memos version entry in the Help menu.
-        let version_text = format!("Memos v{}", MemosVersionStore::get());
-        menu.items()
-            .iter()
-            .flat_map(|item| item.iter())
-            .filter_map(|menu| menu.as_submenu())
-            .find_map(|submenu| {
-                submenu
-                    .get(&MainMenu::HelpMemosVersion.id())
-                    .and_then(|entry| entry.as_menuitem().cloned())
-            })
-            .map(|menuitem| menuitem.set_text(version_text));
-    });
+    // Find and update the Memos version entry in the Help menu.
+    let version_text = format!("Memos v{version}");
+    menu.items()
+        .iter()
+        .flat_map(|item| item.iter())
+        .filter_map(|menu| menu.as_submenu())
+        .find_map(|submenu| {
+            submenu
+                .get(&MainMenu::HelpMemosVersion.id())
+                .and_then(|entry| entry.as_menuitem().cloned())
+        })
+        .map(|menuitem| menuitem.set_text(version_text));
 }

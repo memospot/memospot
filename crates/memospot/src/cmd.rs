@@ -42,8 +42,13 @@ fn apply_locale<R: Runtime>(app: &AppHandle<R>, state: &AppState) {
         Ok(Ok(menu_bar)) => {
             if let Err(error) = app.set_menu(menu_bar) {
                 error!("failed to update menu locale: {error}");
-            } else {
-                menu::update_memos_version_entry(app);
+            } else if let Some(version) = state
+                .memos_version
+                .read()
+                .expect("version lock poisoned")
+                .clone()
+            {
+                menu::update_memos_version_entry(app, &version);
             }
         }
         Ok(Err(error)) => error!("failed to rebuild menu after locale change: {error}"),
