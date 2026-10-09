@@ -16,6 +16,7 @@ mod utils;
 mod webview;
 mod window;
 mod window_ext;
+mod window_state;
 mod zip;
 
 use crate::event::handle_run_events;
@@ -172,11 +173,14 @@ pub fn run() {
         .restore_window_state(&current_config);
     }
 
+    let maximized = current_config.memospot.window.maximized.unwrap_or_default();
+    let config = ConfigStore::new(current_config, initial_config, config_path);
     let app_state = AppState {
         runtime,
-        config: ConfigStore::new(current_config, initial_config, config_path),
+        config: config.clone(),
         memos_version: Arc::new(RwLock::new(None)),
         zoom_level: Arc::new(RwLock::new(1.0)),
+        window_states: crate::window_state::WindowStateQueue::new(config, maximized),
     };
 
     if app_state.runtime.active_server.managed {

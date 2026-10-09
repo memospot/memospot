@@ -48,11 +48,19 @@ mod configuration_state_tests {
         let config_file = dir.path().join("memospot.yaml");
         let config = Config::default();
         let store = ConfigStore::new(config.clone(), config, config_file.clone());
+        let maximized = store
+            .snapshot()
+            .current
+            .memospot
+            .window
+            .maximized
+            .unwrap_or_default();
         let app_state = AppState {
             runtime: runtime_context(),
             config: store.clone(),
             memos_version: Arc::new(RwLock::new(None)),
             zoom_level: Arc::new(RwLock::new(1.0)),
+            window_states: crate::window_state::WindowStateQueue::new(store.clone(), maximized),
         };
 
         let app = mock_builder()

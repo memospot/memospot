@@ -129,8 +129,12 @@ fn on_exit_cleanup<R: Runtime>(app: &AppHandle<R>) {
     // restore step.
     let state = app.state::<AppState>();
     let config_store = state.config.clone();
+    let window_states = state.window_states.clone();
     let config_file = state.runtime.paths.memospot_config_file.clone();
     async_runtime::block_on(async move {
+        // Drain queued window-state updates before persisting, so the
+        // shutdown write sees the latest geometry.
+        window_states.flush().await;
         if let Err(e) = config_store.finalize_persistence().await {
             error_dialog!(
                 "Failed to save config file:\n`{}`\n\n{}",
@@ -312,7 +316,7 @@ where
             match event {
                 WindowEvent::Resized { .. } | WindowEvent::Moved { .. } => {
                     if let Some(w) = app.get_webview_window(Window::Main.into()) {
-                        w.persist_window_state(&app.state::<AppState>().config);
+                        w.persist_window_state(&app.state::<AppState>().window_states);
                     }
                 }
                 WindowEvent::CloseRequested { .. } => {

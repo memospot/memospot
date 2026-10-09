@@ -1,10 +1,10 @@
-use crate::runtime_config::{ConfigStore, WindowState};
+use crate::window_state::{WindowState, WindowStateQueue};
 use config::Config;
 use tauri::WebviewWindow;
 use tauri_utils::config::WindowConfig;
 
 pub trait WebviewWindowExt {
-    fn persist_window_state(&self, config_store: &ConfigStore);
+    fn persist_window_state(&self, window_states: &WindowStateQueue);
 }
 impl WebviewWindowExt for WebviewWindow {
     /// Store the following Window attributes into the managed configuration store:
@@ -17,7 +17,7 @@ impl WebviewWindowExt for WebviewWindow {
     ///
     /// The update merges with concurrent settings updates and is persisted
     /// on shutdown rather than immediately.
-    fn persist_window_state(&self, config_store: &ConfigStore) {
+    fn persist_window_state(&self, window_states: &WindowStateQueue) {
         // `WindowConfig` restores inner size and position in logical pixels,
         // so store them in the same unit. Physical pixels would grow the
         // window by the scale factor on every restart.
@@ -31,7 +31,7 @@ impl WebviewWindowExt for WebviewWindow {
             .unwrap_or_default()
             .to_logical::<i32>(scale_factor);
 
-        config_store.queue_runtime_owned_window_state(WindowState {
+        window_states.queue(WindowState {
             maximized: self.is_maximized().unwrap_or_default(),
             width: size.width,
             height: size.height,

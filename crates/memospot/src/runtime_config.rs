@@ -7,8 +7,7 @@ use config::Config;
 use json_patch::Patch;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 use ts_rs::TS;
 
 /// Runtime paths used throughout the app.
@@ -122,40 +121,17 @@ pub struct ConfigStore {
     restart_baseline: Arc<RwLock<Arc<Config>>>,
     writer: Arc<tokio::sync::Mutex<()>>,
     config_file: PathBuf,
-    pending_window_state: Arc<Mutex<Option<WindowState>>>,
-    window_update_scheduled: Arc<AtomicBool>,
-    window_update_notify: Arc<tokio::sync::Notify>,
-    /// Last maximized state observed on the live window. `maximized` is only
-    /// written when the window actually toggles, so routine resize/move events
-    /// (frequent on GNOME) don't clobber the preference saved from settings.
-    observed_maximized: Arc<AtomicBool>,
-}
-
-/// Runtime-owned window state queued from the Tauri event loop.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct WindowState {
-    pub maximized: bool,
-    pub width: u32,
-    pub height: u32,
-    pub x: i32,
-    pub y: i32,
 }
 
 impl ConfigStore {
     /// Create a store for the given current configuration and startup baseline.
     pub fn new(current: Config, initial: Config, config_file: PathBuf) -> Self {
         Self {
-            observed_maximized: Arc::new(AtomicBool::new(
-                current.memospot.window.maximized.unwrap_or_default(),
-            )),
             restart_baseline: Arc::new(RwLock::new(Arc::new(current.clone()))),
             current: Arc::new(RwLock::new(Arc::new(current))),
             initial: Arc::new(initial),
             writer: Arc::new(tokio::sync::Mutex::new(())),
             config_file,
-            pending_window_state: Arc::new(Mutex::new(None)),
-            window_update_scheduled: Arc::new(AtomicBool::new(false)),
-            window_update_notify: Arc::new(tokio::sync::Notify::new()),
         }
     }
 
@@ -257,91 +233,12 @@ impl ConfigStore {
             Arc::new(restart_baseline);
     }
 
-    /// Queue the latest runtime-owned window state without blocking the event loop.
-    pub fn queue_runtime_owned_window_state(&self, window_state: WindowState) {
-        *self
-            .pending_window_state
-            .lock()
-            .expect("window state lock poisoned") = Some(window_state);
-
-        if self.window_update_scheduled.swap(true, Ordering::AcqRel) {
-            return;
-        }
-
-        let store = self.clone();
-        tauri::async_runtime::spawn(async move {
-            store.process_window_state_queue().await;
-        });
-    }
-
-    async fn process_window_state_queue(&self) {
-        loop {
-            let window_state = self
-                .pending_window_state
-                .lock()
-                .expect("window state lock poisoned")
-                .take();
-
-            let Some(window_state) = window_state else {
-                self.window_update_scheduled.store(false, Ordering::Release);
-                let has_pending = self
-                    .pending_window_state
-                    .lock()
-                    .expect("window state lock poisoned")
-                    .is_some();
-                if has_pending && !self.window_update_scheduled.swap(true, Ordering::AcqRel) {
-                    continue;
-                }
-                self.window_update_notify.notify_waiters();
-                return;
-            };
-
-            let maximized_toggled = self
-                .observed_maximized
-                .swap(window_state.maximized, Ordering::AcqRel)
-                != window_state.maximized;
-            self.update_runtime_owned_fields(|config| {
-                if maximized_toggled {
-                    config.memospot.window.maximized = Some(window_state.maximized);
-                }
-                // Keep the restored geometry while maximized. A screen-sized
-                // window gets auto-maximized by GNOME on the next start, which
-                // would override `maximized: false`.
-                if window_state.maximized {
-                    return;
-                }
-                config.memospot.window.width = Some(window_state.width);
-                config.memospot.window.height = Some(window_state.height);
-                config.memospot.window.x = Some(window_state.x);
-                config.memospot.window.y = Some(window_state.y);
-            })
-            .await;
-        }
-    }
-
-    /// Wait until queued runtime-owned window updates have been merged.
-    pub async fn flush_runtime_owned_updates(&self) {
-        loop {
-            let notified = self.window_update_notify.notified();
-            let has_pending = self
-                .pending_window_state
-                .lock()
-                .expect("window state lock poisoned")
-                .is_some();
-            let is_scheduled = self.window_update_scheduled.load(Ordering::Acquire);
-            if !has_pending && !is_scheduled {
-                return;
-            }
-            notified.await;
-        }
-    }
-
     /// Persist the current configuration if it differs from the startup baseline.
     ///
-    /// Called at shutdown. The baseline comparison is explicit and never
-    /// mutates the current configuration.
+    /// Called at shutdown after queued window-state updates have drained
+    /// (see the shutdown path). The baseline comparison is explicit and
+    /// never mutates the current configuration.
     pub async fn finalize_persistence(&self) -> Result<(), ConfigError> {
-        self.flush_runtime_owned_updates().await;
         let _writer = self.writer.lock().await;
         let snapshot = self.snapshot();
         if snapshot.current != snapshot.initial {
@@ -375,6 +272,11 @@ pub struct AppState {
     ///
     /// Written by every zoom path; read back to step from the current level.
     pub zoom_level: Arc<RwLock<f64>>,
+    /// Coalescing queue for runtime-owned window state.
+    ///
+    /// Merges through the configuration store's serialized path and drains
+    /// before shutdown persistence.
+    pub window_states: crate::window_state::WindowStateQueue,
 }
 
 /// Apply a JSON Patch to a configuration, producing a validated candidate.
@@ -749,81 +651,5 @@ mod tests {
             .expect("patch should succeed");
 
         assert!(!result.result.restart_required);
-    }
-
-    #[tokio::test]
-    async fn queued_window_updates_are_flushed_before_persistence() {
-        let dir = TempDir::new().expect("tempdir");
-        let store = default_store(&dir);
-
-        store.queue_runtime_owned_window_state(WindowState {
-            maximized: false,
-            width: 1440,
-            height: 900,
-            x: 42,
-            y: 24,
-        });
-        store.flush_runtime_owned_updates().await;
-
-        let snapshot = store.snapshot();
-        let window = &snapshot.current.memospot.window;
-        assert_eq!(window.maximized, Some(false));
-        assert_eq!(window.width, Some(1440));
-        assert_eq!(window.height, Some(900));
-        assert_eq!(window.x, Some(42));
-        assert_eq!(window.y, Some(24));
-    }
-
-    #[tokio::test]
-    async fn window_events_keep_saved_maximized_preference_and_restored_geometry() {
-        let dir = TempDir::new().expect("tempdir");
-        let mut config = Config::default();
-        config.memospot.window.maximized = Some(true);
-        let store = store_with(&dir, config.clone(), config);
-        let maximized = WindowState {
-            maximized: true,
-            width: 3904,
-            height: 2304,
-            x: 0,
-            y: 0,
-        };
-        let restored = WindowState {
-            maximized: false,
-            width: 1440,
-            height: 900,
-            x: 42,
-            y: 24,
-        };
-        let saved_window_state = |store: &ConfigStore| {
-            let window = store.snapshot().current.memospot.window.clone();
-            WindowState {
-                maximized: window.maximized.unwrap_or_default(),
-                width: window.width.unwrap_or_default(),
-                height: window.height.unwrap_or_default(),
-                x: window.x.unwrap_or_default(),
-                y: window.y.unwrap_or_default(),
-            }
-        };
-
-        store
-            .apply_patch_and_persist(&patch("/memospot/window/maximized", json!(false)))
-            .await
-            .expect("patch should succeed");
-        let before = saved_window_state(&store);
-        store.queue_runtime_owned_window_state(maximized);
-        store.flush_runtime_owned_updates().await;
-        assert_eq!(saved_window_state(&store), before);
-
-        store.queue_runtime_owned_window_state(restored);
-        store.flush_runtime_owned_updates().await;
-        store.queue_runtime_owned_window_state(maximized);
-        store.flush_runtime_owned_updates().await;
-        assert_eq!(
-            saved_window_state(&store),
-            WindowState {
-                maximized: true,
-                ..restored
-            }
-        );
     }
 }
