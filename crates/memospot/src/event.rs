@@ -6,8 +6,6 @@ use crate::cmd;
 use crate::memos_process;
 use crate::menu;
 use crate::menu::MainMenu;
-use crate::menu::build_empty;
-use crate::route::Route;
 use crate::runtime_config::AppState;
 use crate::updater;
 use crate::window::Window;
@@ -18,13 +16,10 @@ use log::info;
 use log::{debug, error};
 #[cfg(not(debug_assertions))]
 use tauri::Url;
-use tauri::WebviewUrl;
 use tauri::WebviewWindow;
-use tauri::WebviewWindowBuilder;
 use tauri::WindowEvent;
 use tauri::{AppHandle, Manager, RunEvent, Runtime, async_runtime};
 use tauri_plugin_opener::OpenerExt;
-use uuid::Uuid;
 
 /// Zoom factor stored as `(factor * 100)` to avoid floating-point atomics.
 pub(crate) static ZOOM_LEVEL: AtomicU32 = AtomicU32::new(100);
@@ -150,7 +145,6 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) -> Res
     let Some(main_window) = app.get_webview_window(Window::Main.into()) else {
         bail!("main window not found");
     };
-    let empty_menu = build_empty(app)?;
 
     let open_link = |url| {
         app.opener().open_url(url, None::<&str>).ok();
@@ -158,32 +152,7 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) -> Res
 
     match action {
         MainMenu::AppSettings => {
-            let handle_ = app.clone();
-            async_runtime::spawn(async move {
-                let new_window = WebviewWindowBuilder::new(
-                    &handle_,
-                    Window::Settings.to_string(),
-                    WebviewUrl::App(Route::Settings.into()),
-                )
-                .title(MainMenu::AppSettings.text().replace("&", ""))
-                .center()
-                .min_inner_size(800.0, 600.0)
-                .inner_size(1160.0, 720.0)
-                .auto_resize()
-                .disable_drag_drop_handler()
-                .zoom_hotkeys_enabled(true)
-                .visible(cfg!(debug_assertions))
-                .focused(true)
-                .menu(empty_menu);
-
-                #[cfg(not(target_os = "macos"))]
-                new_window.build().ok();
-                #[cfg(target_os = "macos")]
-                new_window
-                    .title_bar_style(tauri::TitleBarStyle::Visible)
-                    .build()
-                    .ok();
-            });
+            crate::window::open_settings_window(app.clone());
         }
         MainMenu::AppBrowseDataDirectory => {
             let state = app.state::<AppState>();
@@ -223,28 +192,7 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, run_event: RunEvent) -> Res
 
         MainMenu::ViewNewWindow => {
             let main_title = main_window.title().unwrap_or_default();
-            let handle_ = app.clone();
-            async_runtime::spawn(async move {
-                let uuid = Uuid::new_v4();
-                let builder = WebviewWindowBuilder::new(
-                    &handle_,
-                    uuid,
-                    WebviewUrl::App(Route::Loader.into()),
-                )
-                .title(main_title)
-                .auto_resize()
-                .disable_drag_drop_handler()
-                .visible(cfg!(debug_assertions))
-                .focused(true)
-                .menu(empty_menu);
-                #[cfg(not(target_os = "macos"))]
-                builder.build().ok();
-                #[cfg(target_os = "macos")]
-                builder
-                    .title_bar_style(tauri::TitleBarStyle::Visible)
-                    .build()
-                    .ok();
-            });
+            crate::window::open_main_clone_window(app.clone(), main_title);
         }
 
         #[cfg(any(debug_assertions, feature = "devtools"))]

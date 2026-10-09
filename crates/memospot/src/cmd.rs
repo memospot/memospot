@@ -246,31 +246,5 @@ pub fn toggle_menu_bar<R: Runtime>(app: AppHandle<R>) {
 
 #[command]
 pub fn open_settings<R: Runtime>(app: AppHandle<R>) {
-    tauri::async_runtime::spawn(async move {
-        let empty_menu = crate::menu::build_empty(&app)
-            .unwrap_or_else(|_| tauri::menu::Menu::with_items(&app, &[]).unwrap());
-        let new_window = tauri::WebviewWindowBuilder::new(
-            &app,
-            crate::window::Window::Settings.to_string(),
-            tauri::WebviewUrl::App(crate::route::Route::Settings.into()),
-        )
-        .title(crate::menu::MainMenu::AppSettings.text().replace("&", ""))
-        .center()
-        .min_inner_size(800.0, 600.0)
-        .inner_size(1160.0, 720.0)
-        .auto_resize()
-        .disable_drag_drop_handler()
-        .zoom_hotkeys_enabled(true)
-        .visible(cfg!(debug_assertions))
-        .focused(true)
-        .menu(empty_menu);
-
-        #[cfg(not(target_os = "macos"))]
-        new_window.build().ok();
-        #[cfg(target_os = "macos")]
-        new_window
-            .title_bar_style(tauri::TitleBarStyle::Visible)
-            .build()
-            .ok();
-    });
+    crate::window::open_settings_window(app);
 }
