@@ -4,7 +4,7 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 <!--
@@ -25,6 +25,7 @@ Security: in case of vulnerabilities.
 ### Added
 
 - "Browse downloads directory" (CmdOrCtrl+J) menu item to open the user's Downloads folder.
+- Settings now say when a restart is needed for changes to take effect.
 
 ### Changed
 
@@ -34,6 +35,9 @@ Security: in case of vulnerabilities.
 
 - Keyboard shortcuts are now working properly.
 - External links now properly open in the default browser when using a remote server.
+- (Linux) Window size, position, and maximized state are now restored correctly on GNOME/Wayland, including HiDPI displays.
+- (Linux) Titlebar buttons now respond on Wayland when the window starts hidden.
+- (macOS) Changing the language no longer crashes the app when the menu cannot be rebuilt.
 
 ### Security
 
