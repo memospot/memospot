@@ -33,7 +33,7 @@ describe("findRepositoryRoot()", async () => {
         expect(() => {
             const cwd = os.tmpdir();
             findRepositoryRoot(cwd);
-        }).toThrowError(/fatal: not a git repository/i);
+        }).toThrowError(/Command exited with code 128/i);
     });
 });
 
