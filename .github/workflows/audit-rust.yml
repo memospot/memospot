@@ -27,8 +27,8 @@ jobs:
     name: Audit with RustSec
     runs-on: ubuntu-latest
     permissions:
-      issues: write
-      checks: write
+      contents: read
+      security-events: write
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
@@ -41,23 +41,34 @@ jobs:
       - name: "Install cargo-audit"
         uses: taiki-e/install-action@d438492cf8a250514fa2d34b30bc3c0dc37c65ff
         with:
-          tool: "cargo-audit@0.22.1"
+          tool: "cargo-audit@0.22.2"
 
-      - name: Rust audit
-        uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998
+      # Unmaintained upstream dependencies:
+      #   - fxhash
+      #   - unic-char-range
+      #   - unic-common
+      #   - unic-char-property
+      #   - unic-ucd-version
+      #   - unic-ucd-ident
+      - name: Run cargo audit (SARIF)
+        shell: bash
+        run: |
+          cargo audit \
+            --format sarif \
+            --ignore RUSTSEC-2025-0057 \
+            --ignore RUSTSEC-2025-0075 \
+            --ignore RUSTSEC-2025-0080 \
+            --ignore RUSTSEC-2025-0081 \
+            --ignore RUSTSEC-2025-0098 \
+            --ignore RUSTSEC-2025-0100 | tee audit-rust.sarif
+          test "${PIPESTATUS[0]}" -eq 0
+
+      - name: Upload to code-scanning
+        if: always()
+        # Fork PRs lack security-events; keep the audit verdict authoritative.
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
-          token: "${{ secrets.GITHUB_TOKEN }}"
-          # Unmaintained:
-          #   - fxhash
-          #   - unic-char-range
-          #   - unic-common
-          #   - unic-char-property
-          #   -	unic-ucd-version
-          #   - unic-ucd-ident
-          ignore: >-
-            RUSTSEC-2025-0057,
-            RUSTSEC-2025-0075,
-            RUSTSEC-2025-0080,
-            RUSTSEC-2025-0081,
-            RUSTSEC-2025-0098,
-            RUSTSEC-2025-0100
+          sarif_file: audit-rust.sarif
+          category: cargo-audit
+          wait-for-processing: true
