@@ -352,6 +352,7 @@ mod tests {
         );
     }
 
+    #[cfg(not(target_os = "windows"))]
     #[test]
     fn linux_downloads_uses_injected_config_home_and_contents() {
         // GIVEN an injected XDG_CONFIG_HOME pointing at a user-dirs file
@@ -390,6 +391,7 @@ mod tests {
         );
     }
 
+    #[cfg(not(target_os = "windows"))]
     #[test]
     fn user_dirs_download_resolves_home_relative_and_absolute_entries() {
         // GIVEN user-dirs contents with home-relative and absolute entries
