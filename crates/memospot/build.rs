@@ -3,6 +3,7 @@ use memospot_build_internals::{
     git::emit_build_metadata,
     memos::{cleanup_dummy_dependency, ensure_dependencies},
     memospot::{ShortcutBinding, generate_shortcut_artifacts},
+    windows_test_manifest::ensure_test_manifest,
 };
 
 use std::{env, path::PathBuf};
@@ -58,5 +59,16 @@ fn main() {
         cleanup_dummy_dependency(&target_dir, &target_os);
     }
 
-    tauri_build::build()
+    tauri_build::build();
+
+    // Test binaries link GUI symbols that exist only in Common Controls v6
+    // but carry none of Tauri's manifest, so the Windows loader kills them
+    // before `main`. Reuse Tauri's generated manifest for every artifact.
+    // Target-gated so cross-compiled and non-Windows builds never match it.
+    if cfg!(feature = "unittest")
+        && env::var("CARGO_CFG_TARGET_OS").unwrap_or_default() == "windows"
+        && env::var("CARGO_CFG_TARGET_ENV").unwrap_or_default() == "msvc"
+    {
+        ensure_test_manifest();
+    }
 }
