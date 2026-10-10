@@ -110,7 +110,7 @@ Everything runs through `just`. Do NOT run raw `cargo`/`npm`/`bun` commands for 
 
 - **Run `bunx --bun svelte-kit sync` before typechecking/linting Svelte files.** The `dev` and `check` scripts run it first; `postinstall` does not (bunfig.toml sets `ignoreScripts = true`).
 - Dev server runs on port **1420** (hardcoded in `Tauri.toml` and `src-ui/vite.config.ts`).
-- Svelte 5 with runes mode (`runes: true` in `svelte.config.js`).
+- Svelte 5 with runes mode auto-detected per file (no global `runes` compiler option; a global `true` would force legacy `bits-ui` components into runes mode and break the build).
 - `adapter-static`, no SSR, fully prerendered.
 - Tailwind CSS v4 via the `@tailwindcss/vite` plugin in `src-ui/vite.config.ts`, not the CLI.
 - Uses `lucide-svelte`, `bits-ui`, `mode-watcher`, `svelte-radix`, `svelte-sonner` for UI components.

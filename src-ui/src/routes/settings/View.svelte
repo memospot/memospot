@@ -1,7 +1,6 @@
 <script lang="ts">
-import type { Selected } from "bits-ui";
 import { modeStorageKey, resetMode, setMode } from "mode-watcher";
-import { onMount } from "svelte";
+import { onMount, untrack } from "svelte";
 import LightningBolt from "svelte-radix/LightningBolt.svelte";
 import Moon from "svelte-radix/Moon.svelte";
 import Sun from "svelte-radix/Sun.svelte";
@@ -12,18 +11,18 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue
-} from "$lib/components/ui/select";
-import { Setting } from "$lib/components/ui/setting/index";
-import { Switch } from "$lib/components/ui/switch/index";
-import { applyLocalePreference, type Locale, locales, m } from "$lib/i18n";
-import { createSettingsSection } from "$lib/settingsSection";
+} from "#lib/components/ui/select";
+import { Setting } from "#lib/components/ui/setting/index";
+import { Switch } from "#lib/components/ui/switch/index";
+import { applyLocalePreference, type Locale, locales, m } from "#lib/i18n";
+import { createSettingsSection } from "#lib/settingsSection";
 import {
     buildSectionActions,
     keywordsFromLocale,
     type SectionActionsProps
-} from "$lib/settingsUi";
-import { getLocalePreference, setAppLocale } from "$lib/tauri";
-import type { Config } from "$lib/types/gen/Config";
+} from "#lib/settingsUi";
+import { getLocalePreference, setAppLocale } from "#lib/tauri";
+import type { Config } from "#lib/types/gen/Config";
 
 type Theme = "system" | "light" | "dark";
 
@@ -82,10 +81,10 @@ const themeNames = {
     system: m.settingsViewSystem()
 } as const;
 
-let selectedTheme = $derived({
-    label: themeNames[section.input.theme as Theme],
-    value: section.input.theme
-});
+const themeItems = (Object.keys(themeNames) as Theme[]).map((value) => ({
+    value,
+    label: themeNames[value]
+}));
 
 let localeDisplayNames: Record<string, string> = {};
 for (const locale of locales.toSorted()) {
@@ -103,25 +102,13 @@ for (const locale of locales.toSorted()) {
     localeDisplayNames[locale] = displayName.slice(0, 1).toUpperCase() + displayName.slice(1);
 }
 
-let selectedLocale = $derived({
-    label:
-        section.input.locale === ("system" as Locale)
-            ? m.settingsViewSystem()
-            : localeDisplayNames[section.input.locale as Locale],
-    value: section.input.locale
-});
-
 onMount(async () => {
     await section.init();
 });
 
-async function updateTheme(s: Selected<string> | undefined) {
-    section.input.theme = (s?.value ?? "system") as Theme;
-}
-
-async function updateLocale(s: Selected<string> | undefined) {
+async function updateLocale(value: string) {
     const baselineLocale = section.baselineInput.locale as Locale;
-    const newLocale = (s?.value ?? "system") as Locale;
+    const newLocale = (value || "system") as Locale;
     section.input.locale = newLocale;
 
     try {
@@ -186,14 +173,17 @@ async function handleSave(): Promise<boolean> {
 }
 
 $effect(() => {
-    onActionsChange?.(
-        buildSectionActions(
-            () => section.loadDefaults(),
-            () => section.reset(),
-            handleSave,
-            section.hasPendingChanges
-        )
-    );
+    section.hasPendingChanges;
+    untrack(() => {
+        onActionsChange?.(
+            buildSectionActions(
+                () => section.loadDefaults(),
+                () => section.reset(),
+                handleSave,
+                section.hasPendingChanges
+            )
+        );
+    });
 });
 </script>
 
@@ -212,18 +202,18 @@ $effect(() => {
     searchId="view-theme"
     searchKeywords={keywordsFromLocale(m.settingsViewThemeSearchKeywords)}
   >
-    <Select portal={null} selected={selectedTheme} onSelectedChange={updateTheme}>
+    <Select type="single" bind:value={section.input.theme} items={themeItems}>
       <SelectTrigger class="ml-1 w-52">
         <SelectValue placeholder={m.settingsViewTheme()} />
       </SelectTrigger>
       <SelectContent reduceAnimation={section.input.reduce_animation}>
-        <SelectItem value="system">
+        <SelectItem value="system" label={themeNames.system}>
           {themeNames.system}<LightningBolt class="h-[1.2rem] w-[1.2rem] ml-auto" />
         </SelectItem>
-        <SelectItem value="dark">
+        <SelectItem value="dark" label={themeNames.dark}>
           {themeNames.dark}<Moon class="h-[1.2rem] w-[1.2rem] ml-auto" />
         </SelectItem>
-        <SelectItem value="light">
+        <SelectItem value="light" label={themeNames.light}>
           {themeNames.light}<Sun class="h-[1.2rem] w-[1.2rem] ml-auto" />
         </SelectItem>
       </SelectContent>
@@ -245,16 +235,27 @@ $effect(() => {
     searchId="view-locale"
     searchKeywords={keywordsFromLocale(m.settingsViewLocaleSearchKeywords)}
   >
-    <Select portal={null} selected={selectedLocale} onSelectedChange={updateLocale}>
+    <Select
+      type="single"
+      bind:value={section.input.locale}
+      onValueChange={updateLocale}
+      items={[
+          { value: "system", label: m.settingsViewSystem() },
+          ...Object.entries(localeDisplayNames).map(([code, displayName]) => ({
+              value: code,
+              label: displayName
+          }))
+      ]}
+    >
       <SelectTrigger class="ml-2 w-64">
         <SelectValue placeholder={m.settingsViewLocale()} />
       </SelectTrigger>
       <SelectContent reduceAnimation={section.input.reduce_animation}>
-        <SelectItem value="system">
+        <SelectItem value="system" label={m.settingsViewSystem()}>
           {m.settingsViewSystem()} <LightningBolt class="h-[1.2rem] w-[1.2rem] ml-auto" />
         </SelectItem>
         {#each Object.entries(localeDisplayNames) as [code, displayName] (code)}
-          <SelectItem value={code}>
+          <SelectItem value={code} label={displayName}>
             {displayName}
           </SelectItem>
         {/each}

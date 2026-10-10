@@ -1,11 +1,11 @@
 <script lang="ts">
 import type { Snippet } from "svelte";
 import type { HTMLAttributes } from "svelte/elements";
-import { Switch } from "$lib/components/ui/switch/index";
+import { Switch } from "#lib/components/ui/switch/index";
 import {
     normalizeSettingSearchKeywords,
     normalizeSettingSearchLabel
-} from "$lib/settingsSearchMetadata";
+} from "#lib/settingsSearchMetadata";
 
 export interface Props extends HTMLAttributes<HTMLDivElement> {
     name?: string;

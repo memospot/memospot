@@ -2,7 +2,7 @@
 import Fuse from "fuse.js";
 import { onMount, tick } from "svelte";
 import MagnifyingGlass from "svelte-radix/MagnifyingGlass.svelte";
-import type { SettingSearchEntry } from "$lib/settingsSearch";
+import type { SettingSearchEntry } from "#lib/settingsSearch";
 
 type Props = {
     entries: SettingSearchEntry[];

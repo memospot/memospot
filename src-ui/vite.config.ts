@@ -1,4 +1,5 @@
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
+import adapter from "@sveltejs/adapter-static";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 import tailwindcss from "@tailwindcss/vite";
@@ -15,10 +16,13 @@ export default defineConfig(async () => ({
             outdir: "./src/lib/paraglide",
             strategy: ["localStorage", "preferredLanguage", "baseLocale"]
         }),
-        sveltekit()
+        sveltekit({
+            adapter: adapter(),
+            embedded: true,
+            preprocess: vitePreprocess()
+        })
     ],
     build: {
-        emptyOutDir: true, // SvelteKit output is fixed at ./build
         target: ["es2022"],
         sourcemap: !!process.env.TAURI_ENV_DEBUG,
         rollupOptions: {
@@ -30,7 +34,6 @@ export default defineConfig(async () => ({
             }
         }
     },
-    preprocess: vitePreprocess(),
     // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
     //
     // 1. prevent vite from obscuring rust errors

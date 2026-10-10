@@ -1,4 +1,4 @@
-import * as messages from "$lib/paraglide/messages.js";
+import * as messages from "#lib/paraglide/messages.js";
 import {
     baseLocale,
     getLocale,
@@ -6,7 +6,7 @@ import {
     locales,
     localStorageKey,
     setLocale
-} from "$lib/paraglide/runtime.js";
+} from "#lib/paraglide/runtime.js";
 import { getEffectiveLocale, getLocalePreference } from "./tauri";
 
 export type Locale = (typeof locales)[number];
@@ -26,7 +26,7 @@ export {
     locales,
     localizeHref,
     setLocale
-} from "$lib/paraglide/runtime.js";
+} from "#lib/paraglide/runtime.js";
 
 /**
  * Locale fallbacks.

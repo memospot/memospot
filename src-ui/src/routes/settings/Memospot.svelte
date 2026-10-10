@@ -1,18 +1,18 @@
 <script lang="ts">
-import { onMount } from "svelte";
+import { onMount, untrack } from "svelte";
 import { toast } from "svelte-sonner";
-import { Setting, SettingToggle } from "$lib/components/ui/setting/index";
-import { Switch } from "$lib/components/ui/switch/index";
-import { envFromKV, envToKV } from "$lib/environmentVariables";
-import { m } from "$lib/i18n";
-import { createSettingsSection } from "$lib/settingsSection";
+import { Setting, SettingToggle } from "#lib/components/ui/setting/index";
+import { Switch } from "#lib/components/ui/switch/index";
+import { envFromKV, envToKV } from "#lib/environmentVariables";
+import { m } from "#lib/i18n";
+import { createSettingsSection } from "#lib/settingsSection";
 import {
     buildSectionActions,
     keywordsFromLocale,
     type SectionActionsProps
-} from "$lib/settingsUi";
-import { pingMemos } from "$lib/tauri";
-import type { Config } from "$lib/types/gen/Config";
+} from "#lib/settingsUi";
+import { pingMemos } from "#lib/tauri";
+import type { Config } from "#lib/types/gen/Config";
 
 let { onActionsChange }: SectionActionsProps = $props();
 
@@ -143,14 +143,17 @@ async function handleSave(): Promise<boolean> {
 }
 
 $effect(() => {
-    onActionsChange?.(
-        buildSectionActions(
-            () => section.loadDefaults(),
-            () => section.reset(),
-            handleSave,
-            section.hasPendingChanges
-        )
-    );
+    section.hasPendingChanges;
+    untrack(() => {
+        onActionsChange?.(
+            buildSectionActions(
+                () => section.loadDefaults(),
+                () => section.reset(),
+                handleSave,
+                section.hasPendingChanges
+            )
+        );
+    });
 });
 </script>
 

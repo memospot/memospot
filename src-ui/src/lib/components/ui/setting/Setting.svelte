@@ -4,7 +4,7 @@ import type { HTMLAttributes } from "svelte/elements";
 import {
     normalizeSettingSearchKeywords,
     normalizeSettingSearchLabel
-} from "$lib/settingsSearchMetadata";
+} from "#lib/settingsSearchMetadata";
 
 export interface Props extends HTMLAttributes<HTMLDivElement> {
     name?: string;

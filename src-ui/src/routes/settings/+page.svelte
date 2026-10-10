@@ -1,14 +1,14 @@
 <script lang="ts">
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-import { tick } from "svelte";
+import { tick, untrack } from "svelte";
 import EyeOpen from "svelte-radix/EyeOpen.svelte";
 import Gear from "svelte-radix/Gear.svelte";
 import Pencil2 from "svelte-radix/Pencil2.svelte";
-import { Button } from "$lib/components/ui/button";
-import { Toaster } from "$lib/components/ui/sonner";
-import { m } from "$lib/i18n";
-import { collectSettingsEntries, type SettingSearchEntry } from "$lib/settingsSearch";
-import type { SectionActions } from "$lib/settingsUi";
+import { Button } from "#lib/components/ui/button";
+import { Toaster } from "#lib/components/ui/sonner";
+import { m } from "#lib/i18n";
+import { collectSettingsEntries, type SettingSearchEntry } from "#lib/settingsSearch";
+import type { SectionActions } from "#lib/settingsUi";
 import Memos from "./Memos.svelte";
 import Memospot from "./Memospot.svelte";
 import type { Section } from "./Navbar.svelte";
@@ -36,7 +36,6 @@ let sectionActions: Record<string, SectionActions> = $state({});
 let sectionSearchEntries: Record<string, SettingSearchEntry[]> = $state({});
 let highlightedElement: HTMLElement | null = null;
 let highlightTimer: ReturnType<typeof setTimeout> | undefined;
-let hasPreloadedSearchEntries = $state(false);
 
 const allSearchEntries = $derived(Object.values(sectionSearchEntries).flat());
 
@@ -78,19 +77,33 @@ async function updateSectionWithOptions(
 }
 
 function registerSectionActions(sectionId: string, actions: SectionActions) {
+    // Callbacks are rebuilt on every child effect run, so identity
+    // comparison never matches; only the pending flag is a stable signal.
+    if (sectionActions[sectionId]?.hasPendingChanges === actions.hasPendingChanges) {
+        return;
+    }
     sectionActions[sectionId] = actions;
 }
 
 function collectSearchEntriesForSection(sectionId: string) {
-    if (!contentPane) return;
     const section = sections.find((candidate) => candidate.id === sectionId);
     if (!section) return;
 
-    sectionSearchEntries[sectionId] = collectSettingsEntries(
-        sectionId,
-        section.label,
-        contentPane
-    );
+    const entries = untrack(() => {
+        if (!contentPane) return undefined;
+        return collectSettingsEntries(sectionId, section.label, contentPane);
+    });
+    if (!entries) return;
+
+    const current = sectionSearchEntries[sectionId];
+    if (
+        current &&
+        current.length === entries.length &&
+        current.every((entry, index) => entry.id === entries[index].id)
+    ) {
+        return;
+    }
+    sectionSearchEntries[sectionId] = entries;
 }
 
 async function handleSearchResultSelect(entry: SettingSearchEntry) {
@@ -112,39 +125,22 @@ async function handleSearchResultSelect(entry: SettingSearchEntry) {
     highlightTimer = nextHighlightState.highlightTimer;
 }
 
-async function preloadSearchEntriesInBackground() {
-    const originalSection = activeSection;
-    const sectionsToPreload = sections.filter((section) => section.id !== originalSection);
-
-    for (const section of sectionsToPreload) {
-        if (sectionSearchEntries[section.id]?.length) continue;
-        await updateSectionWithOptions(section.id, {
-            scrollTop: false,
-            updateHash: false,
-            animate: false
-        });
-    }
-
-    await updateSectionWithOptions(originalSection, {
-        scrollTop: false,
-        updateHash: false,
-        animate: false
-    });
-}
-
 function setContentPane(node: HTMLElement) {
-    contentPane = node;
-    collectSearchEntriesForSection(activeSection);
-
-    if (!hasPreloadedSearchEntries) {
-        hasPreloadedSearchEntries = true;
-        void preloadSearchEntriesInBackground();
-    }
+    // The attach callback runs in a tracking context: reading `contentPane`
+    // or `activeSection` here would subscribe the attach effect to state it
+    // (transitively) writes, re-running itself in a loop. Keep everything
+    // untracked; the collect itself skips no-op writes so it settles.
+    untrack(() => {
+        contentPane = node;
+    });
+    collectSearchEntriesForSection(untrack(() => activeSection));
 
     return () => {
-        if (contentPane === node) {
-            contentPane = undefined;
-        }
+        untrack(() => {
+            if (contentPane === node) {
+                contentPane = undefined;
+            }
+        });
     };
 }
 </script>

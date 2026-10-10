@@ -1,4 +1,4 @@
-import type { SettingSearchEntry } from "$lib/settingsSearch";
+import type { SettingSearchEntry } from "#lib/settingsSearch";
 
 export type SearchNavigationHighlightState = {
     highlightedElement: HTMLElement | null;

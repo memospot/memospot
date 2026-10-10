@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { Selected } from "bits-ui";
-import { onMount } from "svelte";
+import { onMount, untrack } from "svelte";
 import Code from "svelte-radix/Code.svelte";
 import ExternalLink from "svelte-radix/ExternalLink.svelte";
 import LightningBolt from "svelte-radix/LightningBolt.svelte";
@@ -12,18 +12,18 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue
-} from "$lib/components/ui/select";
-import { Setting, SettingToggle } from "$lib/components/ui/setting/index";
-import { envFromKV, envToKV } from "$lib/environmentVariables";
-import { m } from "$lib/i18n";
-import { createSettingsSection } from "$lib/settingsSection";
+} from "#lib/components/ui/select";
+import { Setting, SettingToggle } from "#lib/components/ui/setting/index";
+import { envFromKV, envToKV } from "#lib/environmentVariables";
+import { m } from "#lib/i18n";
+import { createSettingsSection } from "#lib/settingsSection";
 import {
     buildSectionActions,
     keywordsFromLocale,
     type SectionActionsProps
-} from "$lib/settingsUi";
-import { pathExists } from "$lib/tauri";
-import type { Config } from "$lib/types/gen/Config";
+} from "#lib/settingsUi";
+import { pathExists } from "#lib/tauri";
+import type { Config } from "#lib/types/gen/Config";
 
 let { onActionsChange }: SectionActionsProps = $props();
 
@@ -81,22 +81,11 @@ const memosModeNames = {
     demo: m.settingsMemosModeDemonstration()
 } as const;
 
-let selectedMode: Selected<string> = $derived({
-    label: memosModeNames[section.input.mode as keyof typeof memosModeNames],
-    value: section.input.mode
-});
-
-const reduceAnimation = $derived(
-    JSON.parse(localStorage.getItem("reduce-animation") ?? "false")
-);
+const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "false");
 
 onMount(async () => {
     await section.init();
 });
-
-async function setMemosMode(s: Selected<string> | undefined) {
-    section.input.mode = s?.value ?? "prod";
-}
 
 async function validateMemosDataDir(e: Event | KeyboardEvent) {
     if (e.type === "keypress" && (e as KeyboardEvent).key !== "Enter") return;
@@ -162,14 +151,17 @@ async function handleSave(): Promise<boolean> {
 }
 
 $effect(() => {
-    onActionsChange?.(
-        buildSectionActions(
-            () => section.loadDefaults(),
-            () => section.reset(),
-            handleSave,
-            section.hasPendingChanges
-        )
-    );
+    section.hasPendingChanges;
+    untrack(() => {
+        onActionsChange?.(
+            buildSectionActions(
+                () => section.loadDefaults(),
+                () => section.reset(),
+                handleSave,
+                section.hasPendingChanges
+            )
+        );
+    });
 });
 </script>
 
@@ -193,18 +185,25 @@ $effect(() => {
     searchId="memos-mode"
     searchKeywords={keywordsFromLocale(m.settingsMemosModeSearchKeywords)}
   >
-    <Select portal={null} selected={selectedMode} onSelectedChange={setMemosMode}>
+    <Select
+      type="single"
+      bind:value={section.input.mode}
+      items={(Object.keys(memosModeNames) as Array<keyof typeof memosModeNames>).map((value) => ({
+          value,
+          label: memosModeNames[value]
+      }))}
+    >
       <SelectTrigger class="ml-1 min-w-max md:w-64">
         <SelectValue placeholder={m.settingsMemosMode()} />
       </SelectTrigger>
       <SelectContent {reduceAnimation}>
-        <SelectItem value="prod">
+        <SelectItem value="prod" label={memosModeNames.prod}>
           {memosModeNames.prod} <LightningBolt class="h-[1.2rem] w-[1.2rem] ml-auto" />
         </SelectItem>
-        <SelectItem value="dev">
+        <SelectItem value="dev" label={memosModeNames.dev}>
           {memosModeNames.dev} <Code class="h-[1.2rem] w-[1.2rem] ml-auto" />
         </SelectItem>
-        <SelectItem value="demo">
+        <SelectItem value="demo" label={memosModeNames.demo}>
           {memosModeNames.demo} <LockClosed class="h-[1.2rem] w-[1.2rem] ml-auto" />
         </SelectItem>
       </SelectContent>

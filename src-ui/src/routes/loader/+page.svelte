@@ -3,8 +3,8 @@ import { isTauri } from "@tauri-apps/api/core";
 import { mode } from "mode-watcher";
 import { onMount } from "svelte";
 import Update from "svelte-radix/Update.svelte";
-import { m } from "$lib/i18n";
-import { getEnv, getMemosURL, pingMemos } from "$lib/tauri";
+import { m } from "#lib/i18n";
+import { getEnv, getMemosURL, pingMemos } from "#lib/tauri";
 
 const CONFIG = {
     MAX_RETRIES: 10,
@@ -20,7 +20,11 @@ const logo = {
 
 let logoImg = $state(logo[mode.current ?? "light"]);
 $effect(() => {
-    logoImg = logo[mode.current ?? "light"];
+    const current = mode.current ?? "light";
+    const next = logo[current];
+    if (logoImg !== next) {
+        logoImg = next;
+    }
 });
 
 const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "false");

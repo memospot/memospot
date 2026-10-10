@@ -1,5 +1,7 @@
 {
-  "extends": "./.svelte-kit/tsconfig.json",
+  "extends": "$app/tsconfig",
+  "include": ["src", "tests", "vite.config.ts"],
+  "exclude": ["src/service-worker"],
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,
@@ -9,10 +11,16 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    // $app/tsconfig restricts `types` to "$app/types"; re-add node/bun types.
+    "types": ["bun", "node", "$app/types"],
+    // Subpath imports (#lib) declared in package.json. TypeScript does not
+    // resolve them on its own here, so map them explicitly.
+    "paths": {
+      "#lib/*": ["./src/lib/*"]
+    }
   }
-  // Path aliases are handled by https://kit.svelte.dev/docs/configuration#alias
-  // except $lib which is handled by https://kit.svelte.dev/docs/configuration#files
+  // `#lib` subpath imports are declared in package.json (`imports` field).
   //
   // If you want to overwrite includes/excludes, make sure to copy over the relevant includes/excludes
   // from the referenced tsconfig.json - TypeScript does not merge them in

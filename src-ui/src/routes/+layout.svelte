@@ -3,9 +3,9 @@ import "../app.css";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { ModeWatcher, modeStorageKey, setMode, systemPrefersMode } from "mode-watcher";
 import { onMount } from "svelte";
+import { initI18n, locales, localizeHref } from "#lib/i18n";
+import { getAppTheme, getReduceAnimationStatus } from "#lib/tauri";
 import { page } from "$app/state";
-import { initI18n, locales, localizeHref } from "$lib/i18n";
-import { getAppTheme, getReduceAnimationStatus } from "$lib/tauri";
 
 type Theme = "system" | "light" | "dark";
 
