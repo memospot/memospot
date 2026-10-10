@@ -1,6 +1,6 @@
 {
   "name": "memospot",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "packageManager": "bun@1.4.2",
   "private": true,
   "workspaces": ["build-scripts", "src-ui"]

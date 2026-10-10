@@ -1,6 +1,6 @@
 {
   "name": "@memospot/src-ui",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
     "@inlang/paraglide-js": "2.25.4",

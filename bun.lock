@@ -7,7 +7,7 @@
     },
     "build-scripts": {
       "name": "@memospot/build-scripts",
-      "version": "1.0.4",
+      "version": "1.0.5",
       "dependencies": {
         "@xhmikosr/decompress": "11.1.4",
         "async": "3.2.6",
@@ -30,7 +30,7 @@
     },
     "src-ui": {
       "name": "@memospot/src-ui",
-      "version": "1.0.4",
+      "version": "1.0.5",
       "devDependencies": {
         "@biomejs/biome": "2.5.15",
         "@inlang/paraglide-js": "2.25.4",

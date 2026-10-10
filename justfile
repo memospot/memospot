@@ -516,7 +516,6 @@ bumpversion VERSION:
     just fmt
     bun install --lockfile-only
     git add \
-        "./crates/memospot/gen/*" \
         ./crates/memospot/Cargo.toml \
         ./crates/memospot/Tauri.toml \
         ./Cargo.lock \
@@ -524,7 +523,8 @@ bumpversion VERSION:
         ./build-scripts/package.json \
         ./src-ui/package.json \
         ./package.json \
-        ./bun.lock
+        ./bun.lock \
+        ./justfile
     git commit -m "chore: bump version to v$clean"
 
 [group('maintainer')]
