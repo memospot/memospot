@@ -42,8 +42,9 @@ export type FieldMapping<TInput extends Record<string, unknown>> = {
  * Interface for a single editable settings section.
  *
  * Create with `createSettingsSection()` and wrap with `$state(...)` at the
- * call site. Bind form controls to `input` and wire the settings header via
- * `buildSectionActions(() => section.loadDefaults(), () => section.reset(), () => section.save(), section.hasPendingChanges)`.
+ * call site. Bind form controls to `input` and report to the settings header
+ * via `useSectionActions({ loadDefaults, reloadCurrent, save,
+ * hasPendingChanges }, onActionsChange)` — see `#lib/settingsUi.svelte`.
  * `baselineInput` is the last saved input (read-only) and is used to revert
  * individual fields (e.g. failed path validation) and to advance live fields
  * without going through `save()` — see `commitLive`.

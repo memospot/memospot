@@ -7,14 +7,16 @@ import Pencil2 from "svelte-radix/Pencil2.svelte";
 import { Button } from "#lib/components/ui/button";
 import { Toaster } from "#lib/components/ui/sonner";
 import { m } from "#lib/i18n";
-import { collectSettingsEntries, type SettingSearchEntry } from "#lib/settingsSearch";
-import type { SectionActions } from "#lib/settingsUi";
+import { readReduceAnimation } from "#lib/reduceAnimation";
+import type { SettingSearchEntry } from "#lib/settingsSearch";
+import { createSettingsSearchIndex } from "#lib/settingsSearchIndex.svelte";
+import { navigateToSearchResult } from "#lib/settingsSearchNavigation";
+import type { OnSectionActionsChange, SectionActions } from "#lib/settingsUi.svelte";
 import Memos from "./Memos.svelte";
 import Memospot from "./Memospot.svelte";
 import type { Section } from "./Navbar.svelte";
 import Navbar from "./Navbar.svelte";
 import SettingsSearch from "./SettingsSearch.svelte";
-import { navigateToSearchResult } from "./searchNavigation";
 import View from "./View.svelte";
 
 const sections: Section[] = [
@@ -33,15 +35,16 @@ let activeSection: string = $state(
 );
 let contentPane: HTMLElement | undefined = $state(undefined);
 let sectionActions: Record<string, SectionActions> = $state({});
-let sectionSearchEntries: Record<string, SettingSearchEntry[]> = $state({});
 let highlightedElement: HTMLElement | null = null;
 let highlightTimer: ReturnType<typeof setTimeout> | undefined;
 
-const allSearchEntries = $derived(Object.values(sectionSearchEntries).flat());
+const searchIndex = createSettingsSearchIndex((id) => sections.find((s) => s.id === id));
+
+const allSearchEntries = $derived(searchIndex.allEntries);
 
 const activeSectionActions = $derived(sectionActions[activeSection] ?? {});
 
-const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "false");
+const reduceAnimation = readReduceAnimation();
 
 async function animateSectionTransition() {
     const sectionAnimation = "motion-preset-fade";
@@ -72,38 +75,25 @@ async function updateSectionWithOptions(
         contentPane?.scrollTo({ top: 0, behavior: reduceAnimation ? "auto" : "smooth" });
     }
     await tick();
-    collectSearchEntriesForSection(sectionId);
+    searchIndex.collectForSection(sectionId, contentPane);
     if ((options.animate ?? true) && !reduceAnimation) await animateSectionTransition();
 }
 
-function registerSectionActions(sectionId: string, actions: SectionActions) {
-    // Callbacks are rebuilt on every child effect run, so identity
-    // comparison never matches; only the pending flag is a stable signal.
-    if (sectionActions[sectionId]?.hasPendingChanges === actions.hasPendingChanges) {
-        return;
-    }
-    sectionActions[sectionId] = actions;
-}
+const sectionReporters = new Map<string, OnSectionActionsChange>();
 
-function collectSearchEntriesForSection(sectionId: string) {
-    const section = sections.find((candidate) => candidate.id === sectionId);
-    if (!section) return;
-
-    const entries = untrack(() => {
-        if (!contentPane) return undefined;
-        return collectSettingsEntries(sectionId, section.label, contentPane);
-    });
-    if (!entries) return;
-
-    const current = sectionSearchEntries[sectionId];
-    if (
-        current &&
-        current.length === entries.length &&
-        current.every((entry, index) => entry.id === entries[index].id)
-    ) {
-        return;
-    }
-    sectionSearchEntries[sectionId] = entries;
+function reporterForSection(sectionId: string): OnSectionActionsChange {
+    const existing = sectionReporters.get(sectionId);
+    if (existing) return existing;
+    const reporter = (actions: SectionActions) => {
+        // Child reports arrive on every pending-flag change; skip the write
+        // when the flag did not move so the header does not re-render.
+        if (sectionActions[sectionId]?.hasPendingChanges === actions.hasPendingChanges) {
+            return;
+        }
+        sectionActions[sectionId] = actions;
+    };
+    sectionReporters.set(sectionId, reporter);
+    return reporter;
 }
 
 async function handleSearchResultSelect(entry: SettingSearchEntry) {
@@ -126,14 +116,13 @@ async function handleSearchResultSelect(entry: SettingSearchEntry) {
 }
 
 function setContentPane(node: HTMLElement) {
-    // The attach callback runs in a tracking context: reading `contentPane`
-    // or `activeSection` here would subscribe the attach effect to state it
-    // (transitively) writes, re-running itself in a loop. Keep everything
-    // untracked; the collect itself skips no-op writes so it settles.
+    // Runs inside the attach effect: keep everything untracked so the
+    // attach effect never subscribes to the state it writes. Collecting only
+    // writes on real change, so the pipeline settles instead of looping.
     untrack(() => {
         contentPane = node;
+        searchIndex.collectForSection(activeSection, node);
     });
-    collectSearchEntriesForSection(untrack(() => activeSection));
 
     return () => {
         untrack(() => {
@@ -202,9 +191,7 @@ function setContentPane(node: HTMLElement) {
       >
         {#each sections as section (section.id)}
           {#if activeSection === section.id}
-            <section.component
-              onActionsChange={(actions: SectionActions) => registerSectionActions(section.id, actions)}
-            />
+            <section.component onActionsChange={reporterForSection(section.id)} />
           {/if}
         {/each}
       </main>

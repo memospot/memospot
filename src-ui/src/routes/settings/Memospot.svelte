@@ -1,5 +1,5 @@
 <script lang="ts">
-import { onMount, untrack } from "svelte";
+import { onMount } from "svelte";
 import { toast } from "svelte-sonner";
 import { Setting, SettingToggle } from "#lib/components/ui/setting/index";
 import { Switch } from "#lib/components/ui/switch/index";
@@ -7,10 +7,10 @@ import { envFromKV, envToKV } from "#lib/environmentVariables";
 import { m } from "#lib/i18n";
 import { createSettingsSection } from "#lib/settingsSection";
 import {
-    buildSectionActions,
     keywordsFromLocale,
-    type SectionActionsProps
-} from "#lib/settingsUi";
+    type SectionActionsProps,
+    useSectionActions
+} from "#lib/settingsUi.svelte";
 import { pingMemos } from "#lib/tauri";
 import type { Config } from "#lib/types/gen/Config";
 
@@ -142,19 +142,15 @@ async function handleSave(): Promise<boolean> {
     }
 }
 
-$effect(() => {
-    section.hasPendingChanges;
-    untrack(() => {
-        onActionsChange?.(
-            buildSectionActions(
-                () => section.loadDefaults(),
-                () => section.reset(),
-                handleSave,
-                section.hasPendingChanges
-            )
-        );
-    });
-});
+useSectionActions(
+    {
+        loadDefaults: () => section.loadDefaults(),
+        reloadCurrent: () => section.reset(),
+        save: handleSave,
+        hasPendingChanges: () => section.hasPendingChanges
+    },
+    (actions) => onActionsChange?.(actions)
+);
 </script>
 
 <div class="space-y-3">

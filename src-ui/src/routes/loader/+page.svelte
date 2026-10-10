@@ -4,6 +4,7 @@ import { mode } from "mode-watcher";
 import { onMount } from "svelte";
 import Update from "svelte-radix/Update.svelte";
 import { m } from "#lib/i18n";
+import { readReduceAnimation } from "#lib/reduceAnimation";
 import { getEnv, getMemosURL, pingMemos } from "#lib/tauri";
 
 const CONFIG = {
@@ -27,7 +28,7 @@ $effect(() => {
     }
 });
 
-const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "false");
+const reduceAnimation = readReduceAnimation();
 
 let redirectDetails = $state({
     isError: false,

@@ -1,5 +1,6 @@
 <script lang="ts">
 import type { Component } from "svelte";
+import { readReduceAnimation } from "#lib/reduceAnimation";
 
 export type Section = {
     id: string;
@@ -18,7 +19,7 @@ let {
     onSectionChange: (sectionId: string) => void;
 } = $props();
 
-const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "false");
+const reduceAnimation = readReduceAnimation();
 </script>
 
 <nav

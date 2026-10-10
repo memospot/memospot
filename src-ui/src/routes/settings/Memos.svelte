@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { Selected } from "bits-ui";
-import { onMount, untrack } from "svelte";
+import { onMount } from "svelte";
 import Code from "svelte-radix/Code.svelte";
 import ExternalLink from "svelte-radix/ExternalLink.svelte";
 import LightningBolt from "svelte-radix/LightningBolt.svelte";
@@ -16,12 +16,13 @@ import {
 import { Setting, SettingToggle } from "#lib/components/ui/setting/index";
 import { envFromKV, envToKV } from "#lib/environmentVariables";
 import { m } from "#lib/i18n";
+import { readReduceAnimation } from "#lib/reduceAnimation";
 import { createSettingsSection } from "#lib/settingsSection";
 import {
-    buildSectionActions,
     keywordsFromLocale,
-    type SectionActionsProps
-} from "#lib/settingsUi";
+    type SectionActionsProps,
+    useSectionActions
+} from "#lib/settingsUi.svelte";
 import { pathExists } from "#lib/tauri";
 import type { Config } from "#lib/types/gen/Config";
 
@@ -81,7 +82,7 @@ const memosModeNames = {
     demo: m.settingsMemosModeDemonstration()
 } as const;
 
-const reduceAnimation = JSON.parse(localStorage.getItem("reduce-animation") ?? "false");
+const reduceAnimation = readReduceAnimation();
 
 onMount(async () => {
     await section.init();
@@ -150,19 +151,15 @@ async function handleSave(): Promise<boolean> {
     }
 }
 
-$effect(() => {
-    section.hasPendingChanges;
-    untrack(() => {
-        onActionsChange?.(
-            buildSectionActions(
-                () => section.loadDefaults(),
-                () => section.reset(),
-                handleSave,
-                section.hasPendingChanges
-            )
-        );
-    });
-});
+useSectionActions(
+    {
+        loadDefaults: () => section.loadDefaults(),
+        reloadCurrent: () => section.reset(),
+        save: handleSave,
+        hasPendingChanges: () => section.hasPendingChanges
+    },
+    (actions) => onActionsChange?.(actions)
+);
 </script>
 
 <div class="space-y-3">
