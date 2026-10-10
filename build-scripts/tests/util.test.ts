@@ -1,5 +1,6 @@
 import { describe, expect, mock, test } from "bun:test";
 import * as crypto from "node:crypto";
+import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { findRepositoryRoot, makeTripletFromFileName, runSync } from "../lib/util";
@@ -15,8 +16,13 @@ describe("runSync()", () => {
 describe("findRepositoryRoot()", async () => {
     const repoRoot = findRepositoryRoot();
     test("validate git repository root", () => {
-        // Repository root is "builder" when running in the Docker builder environment.
-        expect(repoRoot.endsWith("memospot") || repoRoot.endsWith("builder")).toBeTrue();
+        // GIVEN a clone, worktree, or Docker checkout under any directory name
+        // THEN the root is identified by repository markers
+        expect(fs.existsSync(path.join(repoRoot, ".git"))).toBeTrue();
+        expect(fs.existsSync(path.join(repoRoot, "Cargo.toml"))).toBeTrue();
+        expect(fs.existsSync(path.join(repoRoot, "build-scripts/lib/util.ts"))).toBeTrue();
+        const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf8"));
+        expect(pkg.name).toBe("memospot");
     });
 
     test("validate absolute path", async () => {
