@@ -20,7 +20,9 @@ Security: in case of vulnerabilities.
 
 <!-- next-header -->
 
-## [Unreleased] - ReleaseDate
+## [Unreleased]
+
+## [1.0.5] - 2026-10-10
 
 ### Added
 
@@ -325,7 +327,8 @@ Security: in case of vulnerabilities.
 
 <!-- next-url -->
 
-[Unreleased]: https://github.com/memospot/memospot/compare/v1.0.4...HEAD
+[Unreleased]: https://github.com/memospot/memospot/compare/v1.0.5...HEAD
+[1.0.5]: https://github.com/memospot/memospot/releases/tag/v1.0.5
 [1.0.4]: https://github.com/memospot/memospot/releases/tag/v1.0.4
 [1.0.3]: https://github.com/memospot/memospot/releases/tag/v1.0.3
 [1.0.2]: https://github.com/memospot/memospot/releases/tag/v1.0.2
