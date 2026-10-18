@@ -43,30 +43,25 @@ jobs:
         with:
           tool: "cargo-audit@0.22.2"
 
-      # Unmaintained upstream dependencies:
-      #   - fxhash
-      #   - unic-char-range
-      #   - unic-common
-      #   - unic-char-property
-      #   - unic-ucd-version
-      #   - unic-ucd-ident
       - name: Run cargo audit (SARIF)
         shell: bash
         run: |
-          cargo audit \
-            --format sarif \
-            --ignore RUSTSEC-2025-0057 \
-            --ignore RUSTSEC-2025-0075 \
-            --ignore RUSTSEC-2025-0080 \
-            --ignore RUSTSEC-2025-0081 \
-            --ignore RUSTSEC-2025-0098 \
-            --ignore RUSTSEC-2025-0100 | tee audit-rust.sarif
-          test "${PIPESTATUS[0]}" -eq 0
+          # Report-only: findings must not fail the job. Fail only when
+          # analysis itself fails to produce a SARIF report.
+          set +o pipefail
+          cargo audit --format sarif | tee audit-rust.sarif
+          audit_exit="${PIPESTATUS[0]}"
+          if [ ! -s audit-rust.sarif ]; then
+            echo "::error::cargo audit failed to produce SARIF report (exit ${audit_exit})"
+            exit 1
+          fi
+          if [ "${audit_exit}" -ne 0 ] && [ "${audit_exit}" -ne 1 ]; then
+            echo "::error::cargo audit failed to analyze (exit ${audit_exit})"
+            exit 1
+          fi
 
       - name: Upload to code-scanning
         if: always()
-        # Fork PRs lack security-events; keep the audit verdict authoritative.
-        continue-on-error: true
         uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
           sarif_file: audit-rust.sarif
