@@ -73,13 +73,13 @@ jobs:
           xcode-version: "latest-stable"
 
       - name: Install Just
-        uses: taiki-e/install-action@d438492cf8a250514fa2d34b30bc3c0dc37c65ff
+        uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0
         with:
           tool: just@1.58.0
 
       #> Rust
       - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
         with:
           toolchain: stable
           targets: ${{ matrix.platform.rust_target }}
