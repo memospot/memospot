@@ -73,7 +73,7 @@ jobs:
           xcode-version: "latest-stable"
 
       - name: Install Just
-        uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0
+        uses: taiki-e/install-action@861a07ce7084f55488e375df125cdc99bba60eb7
         with:
           tool: just@1.58.0
 

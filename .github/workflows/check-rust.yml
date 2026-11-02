@@ -74,7 +74,7 @@ jobs:
           toolchain: "stable"
 
       - name: Install cargo-machete
-        uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0
+        uses: taiki-e/install-action@861a07ce7084f55488e375df125cdc99bba60eb7
         with:
           tool: "cargo-machete@0.9.1"
 
@@ -140,7 +140,7 @@ jobs:
       # Clippy with SARIF output
       - if: ${{ github.event_name == 'pull_request' }}
         name: "Install sarif-fmt and clippy-sarif"
-        uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0
+        uses: taiki-e/install-action@861a07ce7084f55488e375df125cdc99bba60eb7
         with:
           tool: >-
             clippy-sarif@0.8.0
