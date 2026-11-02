@@ -176,6 +176,16 @@ pub async fn migrate_database(config: &Config, paths: &RuntimePaths) {
         return;
     }
 
+    // Hand the resolved data directories to the resource-path migrations.
+    // Migrations must not re-derive them: a duplicate resolver historically
+    // missed the real data directory on XDG-based systems.
+    migration::set_prefixes(
+        [&paths.memos_data, &paths.memospot_data]
+            .into_iter()
+            .map(|p| migration::norm_suffix(p.to_string_lossy().as_ref()))
+            .collect(),
+    );
+
     if config.memospot.backups.enabled.unwrap_or_default() {
         let backup_path = ensure_backup_directory(config, &paths.memospot_data);
         let datetime = chrono::Local::now().format("%Y%m%d-%H%M%S").to_string();

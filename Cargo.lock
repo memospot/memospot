@@ -3462,7 +3462,6 @@ dependencies = [
 name = "migration"
 version = "1.0.5"
 dependencies = [
- "homedir",
  "itertools 0.15.0",
  "log",
  "sea-orm",

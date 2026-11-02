@@ -1,10 +1,12 @@
+pub use resource_path::{norm_suffix, set_prefixes};
 pub use sea_orm_migration::prelude::*;
+
+mod resource_path;
 
 mod m20220220_000001_migrate_resource_paths;
 mod m20240522_000002_migrate_resource_paths;
 mod m20240525_000001_storage_settings;
 mod m20250221_000001_memospot_v1;
-mod resource_path;
 
 pub struct Migrator;
 

@@ -7,9 +7,6 @@ publish = { workspace = true }
 repository = "https://github.com/memospot/memospot/crates/migration"
 description = "Memospot database migration"
 
-[target.'cfg(not(local_crates))'.dependencies]
-homedir = { path = "../homedir" }
-
 [dependencies]
 itertools = { workspace = true }
 log = { workspace = true }

@@ -108,14 +108,7 @@ impl MigrationTrait for Migration {
         let mut migrated_count = 0;
         let transaction = db.begin().await?;
         for resource in resources {
-            let mut new_path = resource.reference.clone();
-
-            // Strip known path prefixes.
-            for p in &paths {
-                new_path = new_path.trim_start_matches(p).to_string();
-            }
-
-            new_path = resource_path::to_slash(&new_path);
+            let mut new_path = resource_path::strip_known_prefix(&resource.reference, &paths);
 
             // Fall back: strip everything before "/assets/".
             if new_path.contains("/assets/")
