@@ -6,6 +6,8 @@ mod memos_api;
 mod memos_log;
 mod memos_process;
 mod menu;
+#[cfg(target_os = "linux")]
+mod paste_image;
 mod route;
 mod runtime_config;
 mod sqlite;
@@ -257,6 +259,8 @@ pub fn run() {
                 static POLYFILL: &str =
                     include_str!(concat!(env!("OUT_DIR"), "/shortcut_polyfill.js"));
                 webview.eval(POLYFILL).ok();
+                #[cfg(target_os = "linux")]
+                webview.eval(paste_image::POLYFILL).ok();
 
                 let inject_reduce_animation_polyfill = config_store
                     .snapshot()
@@ -286,6 +290,14 @@ pub fn run() {
             app.listen(event::SHORTCUT_EVENT, move |shortcut_event| {
                 event::handle_shortcut_event(&app_handle_, shortcut_event.payload());
             });
+
+            #[cfg(target_os = "linux")]
+            {
+                let app_handle_ = app_handle.clone();
+                app.listen(paste_image::PASTE_IMAGE_EVENT, move |paste_event| {
+                    paste_image::replay(&app_handle_, paste_event.payload());
+                });
+            }
 
             // The menu must be set at the application level to also work in macOS.
             app.set_menu(menu::build(app_handle)?)?;

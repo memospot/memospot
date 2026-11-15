@@ -29,6 +29,7 @@ i18n-embed = { version = "0.16.0", default-features = false }
 i18n-embed-fl = "0.10.1"
 rust-embed = "8.12.0"
 
+gtk = "0.18.2"
 itertools = "0.15.0"
 json-patch = "4.2.0"
 log = { version = "0.4.33", default-features = false }

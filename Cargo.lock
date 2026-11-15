@@ -3406,6 +3406,7 @@ dependencies = [
  "chrono",
  "config",
  "dialog",
+ "gtk",
  "home",
  "homedir",
  "humantime",
