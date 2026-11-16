@@ -6,7 +6,7 @@
     "@inlang/paraglide-js": "2.25.4",
     "@types/bun": "1.4.2",
     "@sveltejs/adapter-static": "4.0.1",
-    "@sveltejs/kit": "3.0.0",
+    "@sveltejs/kit": "3.1.1",
     "@sveltejs/vite-plugin-svelte": "7.3.1",
     "@tailwindcss/postcss": "4.3.3",
     "@tailwindcss/vite": "4.3.3",
