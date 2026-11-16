@@ -30,11 +30,16 @@ pub fn get_url(config: &Config, effective_port: u16) -> String {
 /// Query Memos version via API.
 ///
 /// Supports:
+///     - 26.10.0+ (api/instance/profile)
 ///     - v0.23.0+ (/api/v1/workspace)
 ///     - v0.26.0+ (/api/v1/instance)
 pub async fn query_version(memos_url: &str) -> Result<String, anyhow::Error> {
     const TIMEOUT_MS: u64 = 1_000;
-    const ENDPOINTS: [&str; 2] = ["api/v1/instance/profile", "api/v1/workspace/profile"];
+    const ENDPOINTS: [&str; 3] = [
+        "api/instance/profile",
+        "api/v1/instance/profile",
+        "api/v1/workspace/profile",
+    ];
 
     let mut last_error = anyhow!("failed to query server version via API");
 
