@@ -1,0 +1,9 @@
+schema: spec-driven
+rules:
+  specs:
+    - |
+      Refactor test: each requirement SHALL survive a behavior-preserving refactor. No module/function names, signatures, line counts, internal flags, or call shapes.
+    - Scenarios SHALL be observable only (GUI, env vars, persisted user data, logs, exit codes, ordering, failure behavior). No `WHEN the codebase is scanned` scenarios.
+    - One owner per behavior; other capabilities reference it by name (`see <capability>`), never restate it.
+    - Main specs describe current intent only under a single `## Requirements`. No History/Changelog/Migration/Deprecated/Reason sections. Deleted behavior is deleted outright.
+    - If a touched capability violates these rules, rewrite recipes as principles and merge duplicates under the owner in the same change.
