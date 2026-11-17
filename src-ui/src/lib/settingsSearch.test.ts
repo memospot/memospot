@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { collectSettingsEntries } from "./settingsSearch";
+import { collectSettingsEntries, hasSameSearchTerms } from "./settingsSearch";
 
 type RowSpec = {
     id?: string;
@@ -146,5 +146,76 @@ describe("collectSettingsEntries", () => {
                 sectionLabel: "View"
             }
         ]);
+    });
+});
+
+// GIVEN a previously collected entry list
+// WHEN comparing against a re-collected list
+// THEN identical entries are a no-op and changed terms force a rewrite
+describe("hasSameSearchTerms", () => {
+    const base = [
+        {
+            id: "view-theme",
+            label: "Theme",
+            keywords: ["dark", "light"],
+            sectionId: "view",
+            sectionLabel: "View"
+        }
+    ];
+
+    it("treats identical entries as the same", () => {
+        // WHEN re-collected entries are identical
+        // THEN they compare as the same and no rewrite is needed
+        expect(hasSameSearchTerms(base, structuredClone(base))).toBe(true);
+    });
+
+    it("treats a changed label as different", () => {
+        // GIVEN a previously collected entry
+        const next = structuredClone(base);
+        next[0].label = "Appearance";
+
+        // WHEN the label changes under the same id
+        // THEN the entries compare as different and a rewrite is needed
+        expect(hasSameSearchTerms(base, next)).toBe(false);
+    });
+
+    it("treats changed keywords as different", () => {
+        // GIVEN a previously collected entry
+        const next = structuredClone(base);
+        next[0].keywords = ["dark", "system"];
+
+        // WHEN the keywords change
+        // THEN the entries compare as different and a rewrite is needed
+        expect(hasSameSearchTerms(base, next)).toBe(false);
+    });
+
+    it("treats a changed id as different", () => {
+        // GIVEN a previously collected entry
+        const next = structuredClone(base);
+        next[0].id = "view-mode";
+
+        // WHEN the id changes
+        // THEN the entries compare as different and a rewrite is needed
+        expect(hasSameSearchTerms(base, next)).toBe(false);
+    });
+
+    it("treats an added setting as different", () => {
+        // GIVEN a previously collected entry
+        const next = structuredClone(base);
+        next.push({ ...structuredClone(base[0]), id: "view-animation" });
+
+        // WHEN a setting is added
+        // THEN the entries compare as different and a rewrite is needed
+        expect(hasSameSearchTerms(base, next)).toBe(false);
+    });
+
+    it("treats a changed section label as different", () => {
+        // GIVEN a previously collected entry
+        const next = structuredClone(base);
+        next[0].sectionLabel = "Appearance";
+
+        // WHEN the section label changes
+        // THEN the entries compare as different and a rewrite is needed
+        expect(hasSameSearchTerms(base, next)).toBe(false);
     });
 });

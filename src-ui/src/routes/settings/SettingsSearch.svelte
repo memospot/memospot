@@ -128,6 +128,34 @@ function handleGlobalKeydown(event: KeyboardEvent) {
     focusSearchInput();
 }
 
+function handleDropdownKeydown(event: KeyboardEvent) {
+    if (event.key === "Escape") {
+        searchInputElement?.focus();
+        isSearchDropdownOpen = false;
+        return;
+    }
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+        return;
+    }
+    if (flatFuzzyResults.length === 0) {
+        return;
+    }
+    event.preventDefault();
+    const focusedKey = (event.currentTarget as HTMLElement | null)?.dataset?.searchResultKey;
+    const focusedIndex = flatFuzzyResults.findIndex(
+        (candidate) => getResultKey(candidate) === focusedKey
+    );
+    if (focusedIndex >= 0) {
+        highlightedResultIndex = focusedIndex;
+    }
+    searchInputElement?.focus();
+    highlightedResultIndex =
+        event.key === "ArrowDown"
+            ? (highlightedResultIndex + 1) % flatFuzzyResults.length
+            : (highlightedResultIndex - 1 + flatFuzzyResults.length) % flatFuzzyResults.length;
+    void scrollHighlightedResultIntoView();
+}
+
 function handleSearchKeydown(event: KeyboardEvent) {
     if (!isSearchDropdownOpen && event.key !== "Escape") {
         isSearchDropdownOpen = searchQuery.trim().length > 0;
@@ -301,6 +329,7 @@ async function handleSearchSubmit(event: SubmitEvent) {
                   onclick={async () => {
                       await selectResult(result);
                   }}
+                  onkeydown={handleDropdownKeydown}
                   onmouseenter={() => {
                       handleResultHover(result);
                   }}

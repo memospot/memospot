@@ -8,7 +8,11 @@
  * sections never enter the index.
  */
 
-import { collectSettingsEntries, type SettingSearchEntry } from "./settingsSearch";
+import {
+    collectSettingsEntries,
+    hasSameSearchTerms,
+    type SettingSearchEntry
+} from "./settingsSearch";
 
 export type SectionLabel = {
     id: string;
@@ -23,13 +27,6 @@ export type SettingsSearchIndex = {
     /** (Re)collects the entries of one rendered section. Skips no-op writes. */
     collectForSection(sectionId: string, root: ParentNode | undefined): void;
 };
-
-function sameEntryIds(current: SettingSearchEntry[], next: SettingSearchEntry[]): boolean {
-    return (
-        current.length === next.length &&
-        current.every((entry, index) => entry.id === next[index].id)
-    );
-}
 
 export function createSettingsSearchIndex(
     findSection: (id: string) => SectionLabel | undefined
@@ -49,7 +46,7 @@ export function createSettingsSearchIndex(
 
             const entries = collectSettingsEntries(section.id, section.label, root);
             const current = entriesBySection[sectionId];
-            if (current && sameEntryIds(current, entries)) return;
+            if (current && hasSameSearchTerms(current, entries)) return;
             entriesBySection[sectionId] = entries;
         }
     } as SettingsSearchIndex;

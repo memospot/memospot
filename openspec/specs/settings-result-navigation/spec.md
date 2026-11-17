@@ -2,18 +2,18 @@
 
 ## Purpose
 
-TBD
+Open the setting selected from search and make it easy to find.
 
 ## Requirements
 
 ### Requirement: Navigate to matching control with highlight
 
-The search experience SHALL switch to the matching section, scroll the target setting into view, and apply a short-lived highlight when the user selects a result.
+The search experience SHALL switch to the matching section, scroll the target setting into view, focus its control, and apply a short-lived highlight when the user selects a result.
 
 #### Scenario: Selecting a result
 
 - **WHEN** the user hits Enter on a highlighted dropdown entry
-- **THEN** the sidebar activates the result's section, the content pane scrolls to the matching row, and a temporary highlight animation runs on the row before fading
+- **THEN** the sidebar activates the result's section, the content pane scrolls to the matching row, focus moves to the row's control, and a temporary highlight animation runs on the row before fading
 
 #### Scenario: Rapid selection changes
 
@@ -22,7 +22,7 @@ The search experience SHALL switch to the matching section, scroll the target se
 
 ### Requirement: Dropdown respects keyboard shortcuts
 
-The dropdown SHALL honor ArrowDown/ArrowUp to change the selection, Enter to confirm, and Escape to close/clear the dropdown.
+The dropdown SHALL honor ArrowDown/ArrowUp to change the selection, Enter to confirm, and Escape to close the dropdown.
 
 #### Scenario: Keyboard navigation
 
@@ -31,5 +31,5 @@ The dropdown SHALL honor ArrowDown/ArrowUp to change the selection, Enter to con
 
 #### Scenario: Closing dropdown with Escape
 
-- **WHEN** the dropdown has focus and the user presses Escape
-- **THEN** the dropdown closes, focus returns to the search input, and no navigation occurs
+- **WHEN** the user presses Escape while the search input or a search result has focus
+- **THEN** the dropdown closes, focus moves to the search input, and no navigation occurs

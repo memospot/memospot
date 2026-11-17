@@ -1,15 +1,26 @@
-## ADDED Requirements
+# settings-action-topbar Specification
 
-### Requirement: Fixed top action bar with search
+## Purpose
 
-The settings screen SHALL pin a top action bar that contains the global action buttons (save, reload, defaults) next to the sidebar search input so the actions remain visible while scrolling through the content area.
+Keep the settings search and global actions visible while the user scrolls through the settings content.
 
-#### Scenario: Scrolling content keeps buttons visible
+## Requirements
+
+### Requirement: Persistent settings header
+
+The settings screen SHALL pin the search input, the window-close control, and the global action buttons (save, reload, defaults) in a header that remains visible while the content scrolls.
+
+#### Scenario: Scrolling content keeps actions visible
 
 - **WHEN** the user scrolls down a long settings page
-- **THEN** the top action bar stays fixed at the top of the viewport and the action buttons remain clickable without needing to scroll back to the bottom
+- **THEN** the header stays at the top of the viewport and the action buttons remain clickable without scrolling back
 
-#### Scenario: Action buttons indicate dirty state
+#### Scenario: Action buttons indicate pending changes
 
 - **WHEN** the user makes changes that require saving
-- **THEN** the Save button becomes enabled (and optionally shows a badge) while the action bar stays visible, guiding the user toward persistence before leaving the page
+- **THEN** the Save button becomes enabled and visually distinguished while the header stays visible
+
+#### Scenario: No pending changes
+
+- **WHEN** no changes require saving
+- **THEN** the Save button is disabled while the header stays visible

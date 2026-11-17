@@ -514,9 +514,6 @@ Write-Host "`nMemos server successfully updated to $tagName" -f Green
   $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
 
-if ($args.Count -gt 0) {
-  main -Version $args[0]
-}
-else {
-  main
-}
+$version = "latest"
+if ($args.Count -gt 0) { $version = $args[0] }
+main -Version $version

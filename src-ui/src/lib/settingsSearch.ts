@@ -14,6 +14,27 @@ function parseKeywords(raw: string | undefined): string[] {
         .filter((value) => value.length > 0);
 }
 
+/** Index-aligned comparison: arrays must be in the same order and lengths equal, and keyword order is significant. */
+export function hasSameSearchTerms(
+    current: SettingSearchEntry[],
+    next: SettingSearchEntry[]
+): boolean {
+    return (
+        current.length === next.length &&
+        current.every(
+            (entry, index) =>
+                entry.id === next[index].id &&
+                entry.label === next[index].label &&
+                entry.sectionId === next[index].sectionId &&
+                entry.sectionLabel === next[index].sectionLabel &&
+                entry.keywords.length === next[index].keywords.length &&
+                entry.keywords.every(
+                    (keyword, keywordIndex) => keyword === next[index].keywords[keywordIndex]
+                )
+        )
+    );
+}
+
 export function collectSettingsEntries(
     sectionId: string,
     sectionLabel: string,

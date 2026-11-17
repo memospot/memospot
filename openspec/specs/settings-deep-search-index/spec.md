@@ -2,29 +2,29 @@
 
 ## Purpose
 
-TBD
+Make each setting discoverable by label and keywords without a manual index update.
 
 ## Requirements
 
-### Requirement: Build a dynamic settings index
+### Requirement: Rendered settings become searchable
 
-The search subsystem SHALL construct its index from metadata emitted by each settings control so adding/removing settings does not require manual index updates.
+Every rendered settings row SHALL be findable through search by its label, and by its keywords when supplied, without a manual index update.
 
-#### Scenario: Indexing a new control
+#### Scenario: New setting is searchable
 
-- **WHEN** a settings row renders with `data-setting-id`, `data-setting-label`, and optional `data-setting-aliases`
-- **THEN** the shared index collector registers an entry with the row's label, aliases, owning section ID, and selector reference
+- **WHEN** a section renders a settings row with a label and keywords
+- **THEN** the row is findable through search using those terms
 
-#### Scenario: Removing a control
+#### Scenario: Returning to a visited section
 
-- **WHEN** a settings row unmounts because the user navigated away or the control is removed
-- **THEN** the index automatically drops the entry so stale matches do not appear in future searches
+- **WHEN** the user returns to a previously visited section
+- **THEN** search reflects that section's current settings
 
-### Requirement: Keep index scoped to visible sections (configurable)
+### Requirement: Search covers visited sections
 
-The system SHALL allow building the index lazily (per section) to avoid indexing dozens of hidden rows while still supporting instant search once the section renders.
+Search results SHALL include only settings from sections visited in the session.
 
-#### Scenario: Lazy indexing
+#### Scenario: Unvisited section
 
-- **WHEN** a section is never visited during a session
-- **THEN** its rows are not added to the index until the section renders, but once visited the entries become available immediately
+- **WHEN** a section has never been visited during a session
+- **THEN** its settings are not searchable until the section is visited, after which they become findable immediately

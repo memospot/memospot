@@ -1,4 +1,10 @@
-## ADDED Requirements
+# runtime-configuration Specification
+
+## Purpose
+
+Prepare the startup environment: configuration file, data directories, logging, database preparation, and server environment.
+
+## Requirements
 
 ### Requirement: Ensure Config File Exists
 
@@ -8,6 +14,11 @@ The system SHALL ensure `memospot.yaml` exists and is writable during startup.
 
 - **WHEN** startup initialization runs and the config file does not exist
 - **THEN** Memospot creates a default configuration file
+
+#### Scenario: Config path cannot be used
+
+- **WHEN** the config path is a directory or the file is not writable
+- **THEN** startup reports the error
 
 ### Requirement: Recover From Malformed Config
 
@@ -19,14 +30,19 @@ The system SHALL support user-mediated recovery when the config file cannot be p
 - **THEN** Memospot asks the user whether to reset configuration
 - **AND** on confirmation, backs up the broken file with a timestamped extension and resets to defaults
 
-### Requirement: Persist Runtime Config Changes
+### Requirement: Startup Directories Are Prepared
 
-The system SHALL persist in-app configuration changes made through the settings UI.
+The system SHALL ensure the Memospot data directory exists and is writable; a missing directory is created and a non-writable directory is reported.
 
-#### Scenario: Settings update
+#### Scenario: Data directory is missing
 
-- **WHEN** a valid config patch is applied through the command interface
-- **THEN** runtime config is updated and saved back to `memospot.yaml`
+- **WHEN** the Memospot data directory does not exist
+- **THEN** it is created
+
+#### Scenario: Data directory is not writable
+
+- **WHEN** the Memospot data directory is not writable
+- **THEN** startup reports the error
 
 ### Requirement: Optional Database Backup Before Migration
 
@@ -44,4 +60,23 @@ The system SHALL initialize logging only when enabled and repair invalid logger 
 #### Scenario: Logging enabled with invalid `log.yaml`
 
 - **WHEN** logger initialization fails with logging enabled
-- **THEN** Memospot rewrites `log.yaml` from the embedded default template and retries initialization
+- **THEN** Memospot rewrites `log.yaml` from the default configuration and retries initialization
+
+### Requirement: Startup Server Environment Is Resolved
+
+The system SHALL resolve the Memos data directory and server binary and prepare the server environment before starting the server. Port selection is specified in desktop-client (see desktop-client).
+
+#### Scenario: Default data location
+
+- **WHEN** the Memos data setting is empty or a dot
+- **THEN** the Memospot data directory is used
+
+#### Scenario: A configured data path is invalid
+
+- **WHEN** the configured Memos data directory resolves to a location that is not an existing directory
+- **THEN** startup reports the error
+
+#### Scenario: Binary path is empty or invalid
+
+- **WHEN** no valid Memos binary path is configured
+- **THEN** the standard installation locations are searched and the first existing binary is used

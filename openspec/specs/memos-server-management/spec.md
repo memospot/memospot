@@ -1,13 +1,19 @@
-## ADDED Requirements
+# memos-server-management Specification
+
+## Purpose
+
+Run the managed local Memos server, keep it clean across restarts, gate loading on API readiness, and update the server binary safely.
+
+## Requirements
 
 ### Requirement: Spawn Managed Memos Server
 
-When running in standalone mode (no remote server configured), the system SHALL spawn the bundled `memos` binary as a child process.
+When running in standalone mode (no remote server configured), the system SHALL spawn the resolved Memos server binary as a child process (see runtime-configuration).
 
 #### Scenario: App launch
 
 - **WHEN** Memospot is launched
-- **THEN** it starts the `memos` binary with appropriate environment variables and working directory
+- **THEN** it starts the Memos binary with appropriate environment variables and working directory
 
 ### Requirement: Graceful Server Shutdown
 
@@ -21,12 +27,12 @@ The system SHALL stop managed Memos processes during app shutdown.
 
 ### Requirement: Kill Orphaned Processes
 
-The system SHALL ensure no orphaned `memos` processes remain running from previous unclean shutdowns.
+The system SHALL ensure no orphaned Memos processes remain running from previous unclean shutdowns.
 
 #### Scenario: Unclean previous shutdown
 
 - **WHEN** Memospot starts and detects an existing PID file for a Memos server
-- **THEN** it pings the server and kills the process if it's an orphaned instance
+- **THEN** it pings the server and kills the process if it is an orphaned instance
 
 ### Requirement: Check API Readiness
 
@@ -68,31 +74,30 @@ Both updater scripts SHALL back up the existing server binary and database files
 #### Scenario: Updating an existing installation
 
 - **WHEN** the script detects an existing Memos server binary or database file before extraction
-- **THEN** the script creates backup archives in `server-updater-backups`
+- **THEN** the script creates timestamped backup archives in `server-updater-backups`
 - **AND** database backups include `memos_prod.db` plus `-wal`/`-shm` files when present
-- **AND** archive format may differ by platform/script implementation
 
 ### Requirement: Safe Execution for Partially Streamed Scripts
 
-Both updater scripts SHALL contain safety guards to prevent a partially downloaded or incomplete script from executing.
+Both updater scripts SHALL NOT perform installation side effects when the script download is incomplete.
 
-#### Scenario: Script block execution validation
+#### Scenario: Partially downloaded script
 
-- **WHEN** configuring the updater script for direct streaming execution (e.g., via `Invoke-Expression` or `bash -c`)
-- **THEN** the script must include safeguard blocks (e.g., wrapping all logic in a main block or function called at the very end) so that no side effects occur if the download is cut short
+- **WHEN** a copy of either script truncated at a line boundary before its last line is executed directly
+- **THEN** no server files are replaced or deleted
 
-### Requirement: Optimized Download Progress
+### Requirement: Unthrottled Download Progress
 
-The Windows PowerShell script SHALL retain its optimized progress printing mechanism to ensure download speeds are not throttled.
+The Windows PowerShell script SHALL NOT let progress display throttle download throughput.
 
 #### Scenario: Downloading the Memos binary via PowerShell
 
-- **WHEN** `memos-server-updater.ps1` invokes `Invoke-WebRequest`
-- **THEN** the progress indicator hack (`$ProgressPreference = 'SilentlyContinue'`) must be applied to ensure maximum download speed
+- **WHEN** `memos-server-updater.ps1` downloads the binary
+- **THEN** the download completes at full network speed regardless of progress display
 
 ### Requirement: Installation Guardrails
 
-Both updater scripts SHALL include robust error handling to prevent continuing the installation or overwriting the current binary if a critical step fails.
+Both updater scripts SHALL abort without replacing the current binary if a critical step fails.
 
 #### Scenario: Download or extraction failure
 

@@ -2,19 +2,20 @@
 
 ## Purpose
 
-Native Tauri webview hosting for the Memos frontend, including polyfill injection and window state.
+Host the Memos frontend in the native desktop window, including startup loading, user agent, page-load behavior, window state, and single-instance handling.
 
 ## Requirements
 
 ### Requirement: Native Desktop Window
 
-The system SHALL run the Memos frontend within a native desktop window powered by Tauri.
+The system SHALL run the Memos frontend within a native desktop window.
 
 #### Scenario: Normal execution
 
 - **WHEN** the app starts
-- **THEN** the main webview loads an internal loader route first
-- **AND** the loader redirects to the runtime Memos URL after readiness checks
+- **THEN** the app shows a loading screen
+- **AND** loads the runtime Memos URL once the server is ready (see memos-server-management)
+- **AND** in release builds the window becomes visible only after theme and locale initialization
 
 ### Requirement: Custom User Agent
 
@@ -30,14 +31,15 @@ The system SHALL configure a webview User-Agent for all server requests.
 - **WHEN** remote mode is enabled and `memospot.remote.user_agent` is non-empty
 - **THEN** the configured override value is used as the webview User-Agent
 
-### Requirement: Shortcut Polyfill Injection
+### Requirement: Navigation behavior
 
-The system SHALL inject a keyboard shortcut polyfill on each page load completion.
+The system SHALL keep app-level shortcuts and the reduce-animation preference working after navigation to the Memos frontend.
 
-#### Scenario: Page load finished
+#### Scenario: Navigation finished
 
 - **WHEN** a webview page finishes loading
-- **THEN** shortcut JavaScript is injected so app-level shortcuts continue to work even when native menu accelerators are unavailable
+- **THEN** app-level shortcuts continue to work even when native menu accelerators are unavailable
+- **AND** the reduce-animation preference is applied when enabled
 
 ### Requirement: Main Window State Persistence
 
@@ -46,12 +48,18 @@ The system SHALL restore and persist main window state through configuration.
 #### Scenario: Main window starts
 
 - **WHEN** the main window is created
-- **THEN** position, size, and maximized/fullscreen-related settings are restored from configuration
+- **THEN** position, size, resizable, centered, maximized, and fullscreen settings are restored from configuration
 
 #### Scenario: Main window moved or resized
 
-- **WHEN** the main window move/resize events occur
-- **THEN** the current window position and size are persisted to runtime configuration for later save
+- **WHEN** the main window moves or resizes while not maximized
+- **THEN** the window position and size are written to the configuration file on shutdown (see configuration-state)
+- **AND** the last unmaximized geometry is kept while the window is maximized
+
+#### Scenario: Main window maximized state changes
+
+- **WHEN** the main window's maximized state changes
+- **THEN** the maximized state is recorded and written to the configuration file on shutdown (see configuration-state)
 
 ### Requirement: Single-Instance Focus
 

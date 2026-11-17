@@ -1,4 +1,10 @@
-## ADDED Requirements
+# desktop-client Specification
+
+## Purpose
+
+Run the Memos frontend against either the managed local Memos server or a configured remote server, with validated URLs and app-wide zoom controls.
+
+## Requirements
 
 ### Requirement: Resolve Startup Server Mode
 
@@ -7,7 +13,8 @@ The system SHALL resolve the runtime Memos URL from configuration and determine 
 #### Scenario: Remote server not enabled
 
 - **WHEN** `memospot.remote.enabled` is not `true` or `memospot.remote.url` is empty
-- **THEN** Memospot uses `http://localhost:<memos.port>/` as its runtime URL and starts the managed local Memos server
+- **THEN** Memospot uses `http://localhost:<port>/` as its runtime URL, where `<port>` is the configured Memos port or a free port chosen when the configured port is busy
+- **AND** starts the managed local Memos server (see memos-server-management)
 
 #### Scenario: Remote server enabled with URL
 
@@ -69,5 +76,5 @@ The system SHALL clamp zoom changes to a safe range.
 
 #### Scenario: Repeated zoom in/out
 
-- **WHEN** zoom operations exceed configured limits
+- **WHEN** the user keeps pressing zoom-in past 500% or zoom-out past 20%
 - **THEN** zoom is clamped to the range `0.2` through `5.0`

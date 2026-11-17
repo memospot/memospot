@@ -2,27 +2,13 @@
 
 ## Purpose
 
-The settings UI SHALL expose a search input at the top of the left sidebar that filters the visible section entries and quickly scrolls to matching controls when a query is submitted.
+Find individual settings across visited sections from the settings header search.
 
 ## Requirements
 
-### Requirement: Sidebar search filters settings
+### Requirement: Fuzzy search results grouped by section
 
-The settings UI SHALL expose a search input at the top of the left sidebar that filters the visible section entries and quickly scrolls to matching controls when a query is submitted.
-
-#### Scenario: Filtering sections by name
-
-- **WHEN** the user types "Memos" into the sidebar search box
-- **THEN** only the sections whose display name matches "Memos" remain visible in the sidebar and the first matching section scrolls into view when the user presses Enter or selects a suggested result
-
-#### Scenario: Clearing the search restores all sections
-
-- **WHEN** the search input is cleared
-- **THEN** the sidebar immediately shows all sections again with their default ordering and focus returns to the previously selected item
-
-### Requirement: Provide fuzzy search results grouped by section
-
-The search dropdown SHALL perform fuzzy matching (e.g., Fuse.js) over the dynamically generated index, grouping matches by section while ranking results by relevance to the query.
+The search SHALL perform approximate matching over the visited settings, grouping matches by section while ranking results by relevance to the query (see settings-deep-search-index).
 
 #### Scenario: Abbreviated query
 
@@ -32,11 +18,11 @@ The search dropdown SHALL perform fuzzy matching (e.g., Fuse.js) over the dynami
 #### Scenario: No matches
 
 - **WHEN** the query yields no matches
-- **THEN** the dropdown displays a "No results" message while still allowing the user to fall back to section filtering
+- **THEN** the dropdown displays a "No results" message while the section list remains available
 
 ### Requirement: Dropdown is anchored to the fixed search input
 
-The dropdown SHALL appear below the fixed header's search input, follow it across screen sizes, and stay visible while the header is pinned.
+The dropdown SHALL appear below the fixed header's search input, follow it across screen sizes, and stay visible while the header is pinned (see settings-action-topbar).
 
 #### Scenario: Sticky header scrolling
 

@@ -3,16 +3,6 @@ set -euo pipefail
 
 platform=$(uname -ms)
 
-if [[ ${OS:-} = Windows_NT ]]; then
-    if [[ $platform != MINGW64* ]]; then
-        powershell -c "Set-ExecutionPolicy Bypass -Scope Process -Force; irm https://raw.githubusercontent.com/memospot/memospot/main/memos-server-updater.ps1|iex"
-        exit $?
-    else
-        echo "Cygwin is not supported by this script."
-        exit 1
-    fi
-fi
-
 # Reset
 Color_Off=''
 
@@ -127,6 +117,16 @@ cpu_supports_popcnt() {
 
 ################################################################################
 main() {
+
+    if [[ ${OS:-} = Windows_NT ]]; then
+        if [[ $platform != MINGW64* ]]; then
+            powershell -c "Set-ExecutionPolicy Bypass -Scope Process -Force; irm https://raw.githubusercontent.com/memospot/memospot/main/memos-server-updater.ps1|iex"
+            exit $?
+        else
+            echo "Cygwin is not supported by this script."
+            exit 1
+        fi
+    fi
 
     banner=$(
         cat <<"EOF"
