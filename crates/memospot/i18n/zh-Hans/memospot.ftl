@@ -38,6 +38,8 @@ error-invalid-server-url =
     请检查设置。
 helpmenu = 帮助
 helpmenu-documentation = 文档
+helpmenu-memos-documentation = Memos 文档
+helpmenu-memos-release-notes = Memos 发布说明
 helpmenu-memos-version = Memos 版本
 helpmenu-memospot-version = &Memospot 版本
 helpmenu-release-notes = &发布说明
