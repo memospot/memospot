@@ -38,6 +38,8 @@ error-invalid-server-url =
     Überprüfen Sie die Einstellungen.
 helpmenu = &Hilfe
 helpmenu-documentation = &Dokumentation
+helpmenu-memos-documentation = Memos Dokumentation
+helpmenu-memos-release-notes = Memos Versionshinweise
 helpmenu-memos-version = Memos Version
 helpmenu-memospot-version = &Memospot-Version
 helpmenu-release-notes = &Versionshinweise
