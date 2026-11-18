@@ -198,20 +198,28 @@ EOF
     GITHUB=${GITHUB-"https://github.com"}
     REPO=${REPO-"memospot/memos-builds"}
     repo_url="$GITHUB/$REPO"
-    latest_tag=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | jq -r '.tag_name') || error "Failed to fetch latest tag from GitHub."
     requested_tag=${1:-latest}
+    latest_tag=""
     if [[ $requested_tag = latest ]]; then
+        latest_tag=$(curl -s --fail "https://api.github.com/repos/$REPO/releases/latest" | jq -r '.tag_name') || error "Failed to fetch latest tag from GitHub."
+        [[ -n $latest_tag && $latest_tag != null ]] || error "Failed to fetch latest tag from GitHub."
         install_tag=$latest_tag
     else
         install_tag=$requested_tag
     fi
     download_file=memos-$install_tag-$target.tar.gz
-    sha256sums_uri=$(curl -s "https://api.github.com/repos/$REPO/releases/tags/$install_tag" | jq -r '.assets[] | select(.name|endswith(".txt")) | .browser_download_url') || error "Failed to fetch tag $install_tag from GitHub."
+    sha256sums_uri=$(curl -s --fail "https://api.github.com/repos/$REPO/releases/tags/$install_tag" | jq -r '.assets[] | select(.name|endswith(".txt")) | .browser_download_url') || error "Failed to fetch tag $install_tag from GitHub."
     memos_uri=$repo_url/releases/download/$install_tag/$download_file
 
     INSTALL_DIR=${INSTALL_DIR-"/usr/bin"}
     SUDO_USER=${SUDO_USER-"$USER"}
-    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+    if command -v getent >/dev/null 2>&1; then
+        USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6 || true)
+    else
+        # macOS has no getent; read the home directory via Directory Service.
+        USER_HOME=$(dscl . -read "/Users/$SUDO_USER" NFSHomeDirectory 2>/dev/null | cut -d' ' -f2- || true)
+    fi
+    [[ -n $USER_HOME && -d $USER_HOME ]] || error "Unable to determine home directory for user: $SUDO_USER"
     legacy_data_dir="$USER_HOME/.memospot"
     xdg_data_dir=${XDG_CONFIG_HOME:-$USER_HOME/.config}/memospot
 
@@ -246,7 +254,9 @@ EOF
 
     terminate_user_processes "$SUDO_USER"
 
-    msg "· Latest Memos' release found: $Bold_White$latest_tag"
+    if [[ $requested_tag = latest ]]; then
+        msg "· Latest Memos' release found: $Bold_White$latest_tag"
+    fi
     msg "· Selected tag: $Bold_Cyan$install_tag$Dim (You may pass a different tag as an argument to this script)"
     msg "· Repository URL: $Bold_White$repo_url"
     info "· Release URL: $Bold_White$memos_uri"
@@ -340,4 +350,12 @@ EOF
     success "Update complete."
 }
 
+# A complete copy ends with a newline. Refuse to run from a copy truncated
+# mid-line: only regular files are checked, so piped input still works.
+if [[ -f $0 ]]; then
+    [[ -z $(tail -c 1 "$0" 2>/dev/null) ]] || error "Refusing to run: this copy appears truncated (missing trailing newline)."
+fi
+
+# This invocation MUST remain the last line of this file: the truncation
+# guarantee in openspec/specs/memos-server-management depends on it.
 main "$@" || exit 1

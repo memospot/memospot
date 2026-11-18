@@ -516,4 +516,9 @@ Write-Host "`nMemos server successfully updated to $tagName" -f Green
 
 $version = "latest"
 if ($args.Count -gt 0) { $version = $args[0] }
+# A complete copy ends with a newline. Refuse to run from a copy truncated
+# mid-line; in-memory invocation has no file path and still works.
+if ($PSCommandPath -and -not [System.IO.File]::ReadAllText($PSCommandPath).EndsWith("`n")) { Write-Host "Refusing to run: this copy appears truncated (missing trailing newline)." -f Red; exit 1 }
+# This invocation MUST remain the last line of this file: the truncation
+# guarantee in openspec/specs/memos-server-management depends on it.
 main -Version $version
