@@ -85,3 +85,27 @@ An existing valid `memospot.yaml` SHALL load without the file being rewritten on
 
 - **WHEN** Memospot starts with an existing valid `memospot.yaml`
 - **THEN** the file is accepted as-is and its fields are recognized
+
+### Requirement: Settings updates are accepted only from the settings window
+
+A request to change persisted configuration through the generic settings-update interface SHALL be accepted only from the settings window. A request from the main Memos window, a cloned main window, or any other window SHALL be rejected without applying or persisting any part of the change.
+
+#### Scenario: Settings window saves a change
+
+- **WHEN** the settings window submits a valid settings update
+- **THEN** the update is applied and persisted
+
+#### Scenario: Main Memos window attempts a settings update
+
+- **WHEN** the main Memos window submits a settings update
+- **THEN** the request is rejected, the caller receives an error, and the saved configuration is unchanged
+
+#### Scenario: Cloned main window attempts a settings update
+
+- **WHEN** a cloned main window submits a settings update
+- **THEN** the request is rejected and the saved configuration is unchanged
+
+#### Scenario: Rejected update has no side effects
+
+- **WHEN** a settings update is rejected because it came from a window other than the settings window
+- **THEN** no locale change, restart notice, or configuration file rewrite occurs

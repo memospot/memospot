@@ -97,6 +97,8 @@ export async function getDefaultAppConfig(): Promise<Config> {
 /**
  * Set the configuration.
  *
+ * Only the settings window may call this command.
+ *
  * Takes a JSON Patch (RFC 6902) as the argument.
  *
  * Rejects invalid patches and persistence failures instead of resolving false.
