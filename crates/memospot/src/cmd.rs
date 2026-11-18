@@ -6,12 +6,13 @@
 //! The TypeScript/JavaScript API is defined in `src-ui/src/lib/tauri.ts`.
 
 use crate::runtime_config::{AppState, ConfigUpdateResult};
+use crate::window::Window;
 use crate::{i18n, memos_api, menu};
 use config::Config;
 use i18n_embed::LanguageLoader;
 use json_patch::Patch;
-use log::{debug, error};
-use tauri::{AppHandle, Runtime, State, command};
+use log::{debug, error, warn};
+use tauri::{AppHandle, Runtime, State, Webview, command};
 
 fn apply_locale<R: Runtime>(app: &AppHandle<R>, state: &AppState) {
     let current_locale = state
@@ -164,14 +165,25 @@ pub async fn get_default_config() -> Result<Config, String> {
 
 /// Apply a configuration patch.
 ///
-/// The patch is validated and persisted through the managed configuration
-/// store. Invalid patches and persistence failures are returned as errors.
+/// Only the settings window may call this command; any other caller is rejected
+/// with an error before the patch is interpreted as a configuration change. The
+/// patch is validated and persisted through the managed configuration store.
+/// Invalid patches and persistence failures are returned as errors.
 #[command]
 pub async fn set_config<R: Runtime>(
+    webview: Webview<R>,
     app: AppHandle<R>,
     state: State<'_, AppState>,
     patch: serde_json::Value,
 ) -> Result<ConfigUpdateResult, String> {
+    let caller = webview.label();
+    if caller != Window::Settings.as_str() {
+        warn!("rejected configuration update from window `{caller}`");
+        return Err(
+            "configuration updates are only accepted from the settings window".to_string(),
+        );
+    }
+
     debug!("applying configuration patch: {patch:?}");
 
     let deserialized_patch: Patch = match serde_json::from_value(patch) {

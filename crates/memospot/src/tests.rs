@@ -4,14 +4,20 @@ mod configuration_state_tests {
     use crate::runtime_config::{
         ActiveServer, AppState, ConfigStore, RuntimeContext, RuntimePaths,
     };
+    use crate::window::Window;
     use config::Config;
     use i18n_embed::LanguageLoader;
-    use serde_json::json;
-    use std::path::PathBuf;
+    use serde_json::{Value, json};
+    use std::path::{Path, PathBuf};
     use std::sync::{Arc, RwLock};
-    use tauri::Manager;
-    use tauri::test::{mock_builder, mock_context, noop_assets};
+    use tauri::ipc::{CallbackFn, InvokeBody, InvokeResponseBody};
+    use tauri::test::{
+        INVOKE_KEY, MockRuntime, get_ipc_response, mock_builder, mock_context, noop_assets,
+    };
+    use tauri::webview::InvokeRequest;
+    use tauri::{App, Manager, WebviewWindow, WebviewWindowBuilder};
     use tempfile::TempDir;
+    use url::Url;
 
     fn runtime_context() -> RuntimeContext {
         RuntimeContext {
@@ -33,6 +39,68 @@ mod configuration_state_tests {
         }
     }
 
+    fn app_state(store: &ConfigStore) -> AppState {
+        let maximized = store
+            .snapshot()
+            .current
+            .memospot
+            .window
+            .maximized
+            .unwrap_or_default();
+        AppState {
+            runtime: runtime_context(),
+            config: store.clone(),
+            memos_version: Arc::new(RwLock::new(None)),
+            zoom_level: Arc::new(RwLock::new(1.0)),
+            window_states: crate::window_state::WindowStateQueue::new(store.clone(), maximized),
+        }
+    }
+
+    fn build_app(store: ConfigStore) -> App<MockRuntime> {
+        mock_builder()
+            .invoke_handler(tauri::generate_handler![cmd::set_config])
+            .manage(app_state(&store))
+            .build(mock_context(noop_assets()))
+            .expect("mock app should build")
+    }
+
+    fn seed_config_file(config: &Config, path: &Path) {
+        tauri::async_runtime::block_on(config.save_to_file(path)).expect("config should save");
+    }
+
+    fn create_webview(app: &App<MockRuntime>, label: &str) -> WebviewWindow<MockRuntime> {
+        WebviewWindowBuilder::new(app, label, Default::default())
+            .build()
+            .expect("mock webview should build")
+    }
+
+    fn local_request_url() -> Url {
+        let url = if cfg!(any(windows, target_os = "android")) {
+            "https://tauri.localhost"
+        } else {
+            "tauri://localhost"
+        };
+        url.parse().expect("local URL should parse")
+    }
+
+    fn invoke_set_config(
+        webview: &WebviewWindow<MockRuntime>,
+        patch: Value,
+    ) -> Result<InvokeResponseBody, Value> {
+        get_ipc_response(
+            webview,
+            InvokeRequest {
+                cmd: "set_config".into(),
+                callback: CallbackFn(0),
+                error: CallbackFn(1),
+                url: local_request_url(),
+                body: InvokeBody::Json(json!({ "patch": patch })),
+                headers: Default::default(),
+                invoke_key: INVOKE_KEY.to_string(),
+            },
+        )
+    }
+
     /// The live locale path: persistence and localization reload,
     /// exercised through the real `set_locale` command on a mock app
     /// without constructing a full webview application.
@@ -48,23 +116,9 @@ mod configuration_state_tests {
         let config_file = dir.path().join("memospot.yaml");
         let config = Config::default();
         let store = ConfigStore::new(config.clone(), config, config_file.clone());
-        let maximized = store
-            .snapshot()
-            .current
-            .memospot
-            .window
-            .maximized
-            .unwrap_or_default();
-        let app_state = AppState {
-            runtime: runtime_context(),
-            config: store.clone(),
-            memos_version: Arc::new(RwLock::new(None)),
-            zoom_level: Arc::new(RwLock::new(1.0)),
-            window_states: crate::window_state::WindowStateQueue::new(store.clone(), maximized),
-        };
 
         let app = mock_builder()
-            .manage(app_state)
+            .manage(app_state(&store))
             .build(mock_context(noop_assets()))
             .expect("mock app should build");
 
@@ -96,21 +150,97 @@ mod configuration_state_tests {
         assert!(app.menu().is_some());
         #[cfg(target_os = "macos")]
         assert!(app.menu().is_none());
+    }
 
-        let patch = json!([{
+    fn settings_patch(value: &str) -> Value {
+        json!([{
             "op": "replace",
-            "path": "/memospot/window/locale",
-            "value": "de-DE",
-        }]);
-        cmd::set_config(app.handle().clone(), app.state::<AppState>(), patch)
-            .await
-            .expect("generic locale patch should succeed");
+            "path": "/memospot/window/theme",
+            "value": value,
+        }])
+    }
 
-        assert_eq!(i18n::LOCALE_LOADER.current_language().to_string(), "de-DE");
+    fn assert_rejected(error: Value) {
         assert_eq!(
-            store.snapshot().current.memospot.window.locale.as_deref(),
-            Some("de-DE")
+            error,
+            json!("configuration updates are only accepted from the settings window")
         );
+    }
+
+    #[test]
+    fn set_config_persists_from_settings_window() {
+        // GIVEN a mock app with a settings webview and a seeded config file
+        let dir = TempDir::new().expect("tempdir");
+        let config_file = dir.path().join("memospot.yaml");
+        let config = Config::default();
+        seed_config_file(&config, &config_file);
+        let store = ConfigStore::new(config.clone(), config, config_file.clone());
+        let app = build_app(store);
+        let webview = create_webview(&app, Window::Settings.as_str());
+
+        // WHEN the settings window submits a theme update
+        let response = invoke_set_config(&webview, settings_patch("dark"))
+            .expect("settings update should succeed");
+
+        // THEN the update is reported without a restart and persisted.
+        let result: Value = response
+            .deserialize()
+            .expect("update result should deserialize");
+        assert_eq!(result["restart_required"], json!(false));
+        let on_disk: Config = serde_saphyr::from_str(
+            &std::fs::read_to_string(&config_file).expect("config file should exist"),
+        )
+        .expect("on-disk config should parse");
+        assert_eq!(on_disk.memospot.window.theme.as_deref(), Some("dark"));
+    }
+
+    fn assert_config_update_rejected(label: &str) {
+        // GIVEN a mock app with a non-settings webview and a seeded config file
+        let dir = TempDir::new().expect("tempdir");
+        let config_file = dir.path().join("memospot.yaml");
+        let config = Config::default();
+        seed_config_file(&config, &config_file);
+        let before_file =
+            std::fs::read_to_string(&config_file).expect("config file should exist");
+        let store = ConfigStore::new(config.clone(), config, config_file.clone());
+        let before_config = store.snapshot().current;
+        let app = build_app(store.clone());
+        let webview = create_webview(&app, label);
+
+        // WHEN the non-settings window submits a theme update
+        let error = match invoke_set_config(&webview, settings_patch("dark")) {
+            Ok(_) => panic!("configuration update from `{label}` should be rejected"),
+            Err(error) => error,
+        };
+
+        // THEN the request is rejected and neither memory nor disk changed.
+        assert_rejected(error);
+        assert_eq!(*store.snapshot().current, *before_config);
+        let after_file =
+            std::fs::read_to_string(&config_file).expect("config file should still exist");
+        assert_eq!(after_file, before_file);
+
+        // AND removing the file proves rejection does not rewrite it.
+        std::fs::remove_file(&config_file).expect("config file should be removable");
+        let error = match invoke_set_config(&webview, settings_patch("dark")) {
+            Ok(_) => panic!("configuration update from `{label}` should be rejected"),
+            Err(error) => error,
+        };
+        assert_rejected(error);
+        assert!(
+            !config_file.exists(),
+            "rejected update must not rewrite the config file"
+        );
+    }
+
+    #[test]
+    fn set_config_rejects_main_window() {
+        assert_config_update_rejected(Window::Main.as_str());
+    }
+
+    #[test]
+    fn set_config_rejects_cloned_main_window() {
+        assert_config_update_rejected("3f0c9a2e-7b1d-4c8a-9e2f-1a2b3c4d5e6f");
     }
 }
 

@@ -10,6 +10,7 @@ crates/memospot/gen/schemas/
 *.gz
 crates/memospot/bindings/
 tmp
+openspec/changes/
 
 # is-stale build script
 *.task

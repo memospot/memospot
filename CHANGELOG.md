@@ -28,6 +28,10 @@ Security: in case of vulnerabilities.
   server uses HTTPS or a loopback address; plain-HTTP remote servers
   stay unsupported for app-assisted image paste.
 
+### Security
+
+- Settings updates are now accepted only from the settings window.
+
 ## [1.0.5] - 2026-10-10
 
 ### Added
