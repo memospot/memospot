@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import * as Bun from "bun";
 import {
     CROSS_COMPILE_PLATFORMS,
     getDownloadFilesGlob,
     getRequestedTag,
+    getTagAlternatives,
     RUST2GO,
     SUPPORTED_BUILDS
 } from "../bin/download-memos";
@@ -135,56 +135,122 @@ describe("match assets according to environment", async () => {
 
 describe("test getRequestedTag", async () => {
     test("env prefixed", () => {
-        process.env.MEMOS_VERSION = "v1.2.3";
-        const tag = getRequestedTag();
+        // GIVEN a `v`-prefixed SemVer version in the environment
+        // WHEN the requested tag is read
+        const tag = getRequestedTag(["download-memos.ts"], "v1.2.3");
 
+        // THEN the tag is preserved as-is for old SemVer releases
         expect(tag).toBe("v1.2.3");
     });
 
     test("env no prefix", () => {
-        process.env.MEMOS_VERSION = "1.2.3";
-        const tag = getRequestedTag();
+        // GIVEN a bare SemVer version in the environment
+        // WHEN the requested tag is read
+        const tag = getRequestedTag(["download-memos.ts"], "1.2.3");
 
-        expect(tag).toBe("v1.2.3");
+        // THEN the tag is preserved as-is and resolved via alternatives at fetch time
+        expect(tag).toBe("1.2.3");
+    });
+
+    test("env CalVer no prefix", () => {
+        // GIVEN a bare CalVer version in the environment
+        // WHEN the requested tag is read
+        const tag = getRequestedTag(["download-memos.ts"], "26.11.1");
+
+        // THEN the tag is preserved as-is for new CalVer releases
+        expect(tag).toBe("26.11.1");
+    });
+
+    test("env CalVer prefixed", () => {
+        // GIVEN a `v`-prefixed CalVer version in the environment
+        // WHEN the requested tag is read
+        const tag = getRequestedTag(["download-memos.ts"], "v26.11.1");
+
+        // THEN the tag is preserved as-is and resolved via alternatives at fetch time
+        expect(tag).toBe("v26.11.1");
     });
 
     test("env undefined", () => {
-        process.env.MEMOS_VERSION = undefined;
-        const tag = getRequestedTag();
+        // GIVEN no version in the environment and no CLI flag
+        // WHEN the requested tag is read
+        const tag = getRequestedTag(["download-memos.ts"], undefined);
 
+        // THEN no tag is requested
         expect(tag).toBe(null);
     });
 
     test("argv prefixed", () => {
-        const mockArgs = ["download-memos.ts", "--tag=v1.2.3"];
-        Object.defineProperty(Bun, "argv", {
-            value: mockArgs
-        });
+        // GIVEN a `v`-prefixed SemVer tag on the command line
+        // WHEN the requested tag is read
+        const tag = getRequestedTag(["download-memos.ts", "--tag=v1.2.3"], undefined);
 
-        const tag = getRequestedTag();
-
+        // THEN the tag is preserved as-is
         expect(tag).toBe("v1.2.3");
     });
 
     test("argv no prefix", () => {
-        const mockArgs = ["download-memos.ts", "--tag=1.2.3"];
-        Object.defineProperty(Bun, "argv", {
-            value: mockArgs
-        });
+        // GIVEN a bare SemVer tag on the command line
+        // WHEN the requested tag is read
+        const tag = getRequestedTag(["download-memos.ts", "--tag=1.2.3"], undefined);
 
-        const tag = getRequestedTag();
+        // THEN the tag is preserved as-is
+        expect(tag).toBe("1.2.3");
+    });
 
-        expect(tag).toBe("v1.2.3");
+    test("argv CalVer", () => {
+        // GIVEN a CalVer tag on the command line
+        // WHEN the requested tag is read
+        const tag = getRequestedTag(["download-memos.ts", "--tag=26.11.1"], undefined);
+
+        // THEN the CalVer tag is preserved as-is
+        expect(tag).toBe("26.11.1");
     });
 
     test("argv undefined", () => {
-        const mockArgs = ["download-memos.ts"];
-        Object.defineProperty(Bun, "argv", {
-            value: mockArgs
-        });
+        // GIVEN no CLI flag and no environment version
+        // WHEN the requested tag is read
+        const tag = getRequestedTag(["download-memos.ts"], undefined);
 
-        const tag = getRequestedTag();
-
+        // THEN no tag is requested
         expect(tag).toBe(null);
+    });
+
+    test("argv takes precedence over env", () => {
+        // GIVEN both CLI and environment versions
+        // WHEN the requested tag is read
+        const tag = getRequestedTag(["download-memos.ts", "--tag=26.11.1"], "v0.26.2");
+
+        // THEN the CLI flag wins
+        expect(tag).toBe("26.11.1");
+    });
+});
+
+describe("test getTagAlternatives", async () => {
+    test("SemVer with prefix tries bare alternative", () => {
+        // GIVEN an old SemVer tag with `v` prefix
+        // WHEN alternatives are listed
+        // THEN the bare form is tried second for compatibility
+        expect(getTagAlternatives("v0.26.2")).toEqual(["v0.26.2", "0.26.2"]);
+    });
+
+    test("SemVer bare tries prefixed alternative", () => {
+        // GIVEN an old SemVer tag without prefix
+        // WHEN alternatives are listed
+        // THEN the `v`-prefixed form is tried second
+        expect(getTagAlternatives("0.26.2")).toEqual(["0.26.2", "v0.26.2"]);
+    });
+
+    test("CalVer bare tries prefixed alternative", () => {
+        // GIVEN a new CalVer tag without prefix
+        // WHEN alternatives are listed
+        // THEN the `v`-prefixed form is tried second
+        expect(getTagAlternatives("26.11.1")).toEqual(["26.11.1", "v26.11.1"]);
+    });
+
+    test("CalVer prefixed tries bare alternative", () => {
+        // GIVEN a CalVer tag with `v` prefix
+        // WHEN alternatives are listed
+        // THEN the bare form is tried second
+        expect(getTagAlternatives("v26.11.1")).toEqual(["v26.11.1", "26.11.1"]);
     });
 });

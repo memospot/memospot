@@ -44,5 +44,8 @@ test("test getLatestReleaseTag", async () => {
     console.warn(`Latest release tag: ${tag}`);
 
     expect(tag).toBeDefined();
-    expect(tag).toMatch(/^v\d+\.\d+\.\d+$/);
+    // GIVEN Memos moved from SemVer (`v0.26.2`) to CalVer (`26.11.1`)
+    // WHEN the latest release is fetched
+    // THEN both old `v`-prefixed and new unprefixed tags are accepted
+    expect(tag).toMatch(/^v?\d+\.\d+\.\d+(-\S+)?$/);
 });

@@ -274,27 +274,52 @@ export function getDownloadFilesGlob(): string[] {
 /**
  *  Get the requested tag from the command line argument `--tag` or from the environment variable `MEMOS_VERSION`.
  *
+ * Supports both SemVer (`v0.26.2`, `0.26.2`) and CalVer (`26.11.1`, `v26.11.1`).
+ * Returns the tag as provided (trimmed), without forcing a `v` prefix, so
+ * both old `v`-prefixed SemVer releases and new unprefixed CalVer releases
+ * resolve. Use `getTagAlternatives` to resolve `v` variants when fetching.
+ *
+ * @param argv Command line arguments.
+ * @param memosVersion Fallback version from environment, `undefined` means absent.
  * @returns The requested tag or null if not specified.
  */
-export function getRequestedTag(): string | null {
+export function getRequestedTag(
+    argv: readonly string[],
+    memosVersion: string | undefined
+): string | null {
     const { values } = parseArgs({
-        args: Bun.argv,
+        args: [...argv],
         options: {
             tag: {
                 type: "string",
-                default: import.meta.env.MEMOS_VERSION
+                default: memosVersion
             }
         },
         allowPositionals: true
     });
 
-    const tag = values.tag;
+    const tag = values.tag?.trim();
     if (tag?.match(/^v?\d+\.\d+\.\d+(-\S+)?$/)) {
-        const version = tag.startsWith("v") ? tag.slice(1) : tag;
-        return `v${version}`;
+        return tag;
     }
 
     return null;
+}
+
+/**
+ * Get tag variants to try when fetching a GitHub release.
+ *
+ * Old SemVer releases use a `v` prefix (`v0.26.2`) while new CalVer releases
+ * do not (`26.11.1`). Returns the tag as-is first, then the `v` toggled
+ * alternative, so both forms resolve regardless of how the user typed them.
+ *
+ * @param tag The requested tag.
+ * @returns Ordered list of tags to try, deduplicated.
+ */
+export function getTagAlternatives(tag: string): string[] {
+    const trimmed = tag.trim();
+    const alternative = trimmed.startsWith("v") ? trimmed.slice(1) : `v${trimmed}`;
+    return [...new Set([trimmed, alternative])];
 }
 
 /**
@@ -324,15 +349,31 @@ export async function fetchAndParseSha256Sums(source: string): Promise<Record<st
     return parseSha256Sums(sha256Sums);
 }
 
-async function downloadMemos(downloadFilesGlob: string[], tag: string) {
-    const repoUrl = `https://api.github.com/repos/${RELEASE_REPOSITORY}/releases/tags/${tag}`;
-
-    // Fetch data from GitHub API.
-    const response = await fetchWithRateLimit(repoUrl);
-    if (!response?.ok) {
-        throw new Error(`Failed to fetch GitHub release ${tag}: ${response?.statusText}`);
+async function downloadMemos(downloadFilesGlob: string[], tag: string): Promise<string> {
+    // Old SemVer releases use a `v` prefix while new CalVer releases do not.
+    // Try the requested tag as-is first, then the `v` toggled alternative.
+    const candidates = getTagAlternatives(tag);
+    let ghRelease: GitHubRelease | null = null;
+    const attemptErrors: unknown[] = [];
+    for (const candidate of candidates) {
+        const repoUrl = `https://api.github.com/repos/${RELEASE_REPOSITORY}/releases/tags/${candidate}`;
+        try {
+            // Fetch data from GitHub API (`fetchWithRateLimit` throws on non-OK).
+            const response = await fetchWithRateLimit(repoUrl);
+            ghRelease = (await response.json()) as GitHubRelease;
+            break;
+        } catch (error) {
+            attemptErrors.push(error);
+        }
     }
-    const ghRelease = (await response.json()) as GitHubRelease;
+    if (!ghRelease) {
+        const details = attemptErrors
+            .map((error) => (error instanceof Error ? error.message : String(error)))
+            .join(" | ");
+        throw new Error(
+            `Failed to fetch GitHub release ${tag} (tried ${candidates.join(", ")}): ${details}`
+        );
+    }
     const releaseAssets = ghRelease.assets as GitHubAsset[];
 
     if (!releaseAssets || releaseAssets.length === 0) {
@@ -456,12 +497,13 @@ async function downloadMemos(downloadFilesGlob: string[], tag: string) {
         fs.rmSync(filePath);
     });
 
-    // Save tag to `./server-dist/MEMOS_VERSION.txt`.
+    // Save canonical tag to `./server-dist/MEMOS_VERSION.txt`.
     const versionFilePath = "./server-dist/MEMOS_VERSION.txt";
     if (fs.existsSync(versionFilePath)) {
         fs.rmSync(versionFilePath);
     }
-    fs.writeFileSync(versionFilePath, tag, { encoding: "utf8", mode: 0o644 });
+    fs.writeFileSync(versionFilePath, ghRelease.tag_name, { encoding: "utf8", mode: 0o644 });
+    return ghRelease.tag_name;
 }
 
 async function main() {
@@ -471,7 +513,7 @@ async function main() {
     console.log(`Repository root is \`${repoRoot}\``);
     process.chdir(repoRoot);
 
-    let requestedTag = getRequestedTag();
+    let requestedTag = getRequestedTag(Bun.argv, import.meta.env.MEMOS_VERSION);
     if (!requestedTag) {
         console.log(
             `${YELLOW}No tag specified, will use the latest release from ${RELEASE_REPOSITORY}${RESET}`
@@ -488,17 +530,20 @@ async function main() {
         `${BLACK}${BG_WHITE}|> Running script "Download Memos Builds for tag ${requestedTag}…" <|${RESET}`
     );
 
-    if (
-        import.meta.env.CI === "true" &&
-        import.meta.env.MEMOS_VERSION !== requestedTag &&
-        import.meta.env.GITHUB_ENV &&
-        fs.existsSync(import.meta.env.GITHUB_ENV)
-    ) {
-        console.log(
-            `${YELLOW}Running in CI environment, using GITHUB_ENV to set MEMOS_VERSION.${RESET}`
-        );
-        fs.appendFileSync(import.meta.env.GITHUB_ENV, `MEMOS_VERSION=${requestedTag}\n`);
-    }
+    const initialMemosVersion = import.meta.env.MEMOS_VERSION;
+    const exportTagToGithubEnv = (tagToExport: string) => {
+        if (
+            import.meta.env.CI === "true" &&
+            initialMemosVersion !== tagToExport &&
+            import.meta.env.GITHUB_ENV &&
+            fs.existsSync(import.meta.env.GITHUB_ENV)
+        ) {
+            console.log(
+                `${YELLOW}Running in CI environment, using GITHUB_ENV to set MEMOS_VERSION.${RESET}`
+            );
+            fs.appendFileSync(import.meta.env.GITHUB_ENV, `MEMOS_VERSION=${tagToExport}\n`);
+        }
+    };
 
     const serverDistDir = "./server-dist";
     const serverDistDirExists =
@@ -524,9 +569,10 @@ async function main() {
     });
 
     if (validBinaries) {
-        if (version === requestedTag) {
+        if (getTagAlternatives(requestedTag).includes(version)) {
             console.log(`Found all required binaries for ${GREEN}${version}${RESET}.`);
             console.log("Skipping download.");
+            exportTagToGithubEnv(version);
             return;
         }
         console.log(
@@ -545,7 +591,8 @@ async function main() {
     }
 
     const downloadFilesGlob = getDownloadFilesGlob();
-    await downloadMemos(downloadFilesGlob, requestedTag);
+    const installedTag = await downloadMemos(downloadFilesGlob, requestedTag);
+    exportTagToGithubEnv(installedTag);
 
     const endTime = performance.now();
     const timeElapsed = endTime - startTime;
