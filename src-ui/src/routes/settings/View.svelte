@@ -119,11 +119,11 @@ async function updateLocale(value: string) {
             window.location.reload();
         }
     } catch (_err) {
-        let committedLocale = baselineLocale;
+        let committedLocale = baselineLocale || "system";
         try {
             committedLocale = ((await getLocalePreference()) || "system") as Locale;
         } catch {
-            // keep existing baseline
+            // keep resolved fallback
         }
         section.commitLive("locale", committedLocale);
         toast.error(m.settingsConfigSaveFail());
