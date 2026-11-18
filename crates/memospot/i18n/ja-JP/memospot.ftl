@@ -38,6 +38,8 @@ error-invalid-server-url =
     設定を確認してください。
 helpmenu = ヘルプ (&H)
 helpmenu-documentation = ドキュメント(&D)
+helpmenu-memos-documentation = Memos ドキュメント
+helpmenu-memos-release-notes = Memos リリースノート
 helpmenu-memos-version = メモのバージョン
 helpmenu-memospot-version = メモポットのバージョン(&M)
 helpmenu-release-notes = リリースノート(&L)
