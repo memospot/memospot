@@ -41,25 +41,14 @@ The system SHALL keep app-level shortcuts and the reduce-animation preference wo
 - **THEN** app-level shortcuts continue to work even when native menu accelerators are unavailable
 - **AND** the reduce-animation preference is applied when enabled
 
-### Requirement: Main Window State Persistence
+### Requirement: Main Window State Restore
 
-The system SHALL restore and persist main window state through configuration.
+The system SHALL restore main window state from configuration at startup (see configuration-state for shutdown persistence).
 
 #### Scenario: Main window starts
 
 - **WHEN** the main window is created
 - **THEN** position, size, resizable, centered, maximized, and fullscreen settings are restored from configuration
-
-#### Scenario: Main window moved or resized
-
-- **WHEN** the main window moves or resizes while not maximized
-- **THEN** the window position and size are written to the configuration file on shutdown (see configuration-state)
-- **AND** the last unmaximized geometry is kept while the window is maximized
-
-#### Scenario: Main window maximized state changes
-
-- **WHEN** the main window's maximized state changes
-- **THEN** the maximized state is recorded and written to the configuration file on shutdown (see configuration-state)
 
 ### Requirement: Single-Instance Focus
 

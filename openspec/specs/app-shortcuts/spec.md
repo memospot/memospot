@@ -8,12 +8,17 @@ Make the menu-bar, settings, and search shortcuts available.
 
 ### Requirement: Menu-bar and settings shortcuts
 
-The application SHALL trigger the menu-bar action (see app-menu) on `Ctrl+H` (or `Cmd+H` on macOS) where the toggle is available, and trigger the settings action (see app-menu) on `Ctrl+,` (or `Cmd+,` on macOS). Zoom shortcuts are owned by desktop-client (see desktop-client); persistence after navigation is owned by webview-integration (see webview-integration).
+The application SHALL trigger the menu-bar action (see app-menu) on `Ctrl+H` on non-macOS where the toggle is available, and trigger the settings action (see app-menu) on `Ctrl+,` (or `Cmd+,` on macOS). Zoom shortcuts are owned by desktop-client (see desktop-client); persistence after navigation is owned by webview-integration (see webview-integration).
 
 #### Scenario: Toggle menu bar shortcut
 
-- **WHEN** the user presses the menu-bar shortcut where the toggle is available
+- **WHEN** the user presses the menu-bar shortcut where the toggle is available outside macOS
 - **THEN** the menu-bar action runs (see app-menu)
+
+#### Scenario: Menu-bar shortcut on macOS
+
+- **WHEN** the user presses `Ctrl+H` or `Cmd+H` on macOS
+- **THEN** no menu-bar visibility change occurs
 
 #### Scenario: Open settings shortcut
 

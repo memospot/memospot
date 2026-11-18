@@ -27,7 +27,7 @@ A valid settings change SHALL be written to `memospot.yaml` before the UI report
 
 ### Requirement: Restart impact is reported
 
-A save SHALL report that a restart is required while the saved configuration differs in a startup-only setting from the values when the app started, except for window fields recently changed by the window itself, which compare against the live window state.
+A save SHALL report that a restart is required while the saved configuration differs in a startup-only setting from the comparison values (the configuration as established at startup, including startup-resolved values, updated by window state the window itself changed). Moving, resizing, or maximizing the window SHALL NOT by itself cause a later save to report a restart.
 
 #### Scenario: Persisted update without restart impact
 
@@ -38,6 +38,11 @@ A save SHALL report that a restart is required while the saved configuration dif
 
 - **WHEN** the saved configuration differs in a startup-only setting from the comparison values, including after an earlier restart-required change
 - **THEN** the update reports success with a restart required and the restart notice is presented
+
+#### Scenario: Window changes do not force a restart
+
+- **WHEN** the window moves, resizes, or maximizes and the user then saves an unrelated setting
+- **THEN** the update reports success with no restart required for the window changes
 
 ### Requirement: Live settings apply immediately
 
@@ -55,12 +60,22 @@ Live settings SHALL apply without a restart. Saving SHALL not automatically rest
 
 ### Requirement: Window state is saved without losing settings
 
-Window move and resize SHALL update the saved geometry without losing a concurrent settings change. Quitting SHALL persist changed window state.
+Window move, resize, and maximize SHALL update the saved window state without losing a concurrent settings change. Geometry reported while maximized SHALL NOT overwrite the saved geometry, and events without a maximized toggle SHALL leave the saved maximized preference unchanged. Quitting SHALL persist changed window state.
 
 #### Scenario: Window state moves during a settings change
 
 - **WHEN** the window moves while a settings save is in progress
 - **THEN** both the settings change and the window state are present in the saved configuration
+
+#### Scenario: Maximizing is recorded and persisted
+
+- **WHEN** the window toggles to maximized and the configuration is saved on shutdown
+- **THEN** the saved configuration records the maximized state and the saved geometry is unchanged
+
+#### Scenario: Stale maximized events keep the saved preference
+
+- **WHEN** maximized window events arrive without a maximized toggle after the saved preference changed via settings
+- **THEN** the saved maximized preference is unchanged
 
 ### Requirement: Existing configuration remains compatible
 

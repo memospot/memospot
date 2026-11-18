@@ -22,6 +22,12 @@ Security: in case of vulnerabilities.
 
 ## [Unreleased]
 
+### Fixed
+
+- (Linux) Pasting an image into the editor now works on X11 when the
+  server uses HTTPS or a loopback address; plain-HTTP remote servers
+  stay unsupported for app-assisted image paste.
+
 ## [1.0.5] - 2026-10-10
 
 ### Added

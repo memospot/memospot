@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Run the managed local Memos server, keep it clean across restarts, gate loading on API readiness, and update the server binary safely. The shell updater supports Linux, macOS, and Windows via Git Bash excluding Cygwin; the PowerShell updater supports Windows. PowerShell updater download progress output is suppressed because it can throttle downloads.
+Run the managed local Memos server, keep it clean across restarts, gate loading on API readiness, and update the server binary safely. The shell updater supports Linux, macOS, and Windows via Git Bash excluding Cygwin; the PowerShell updater supports Windows. The PowerShell updater suppresses download progress output because it can throttle downloads.
 
 ## Requirements
 
@@ -67,6 +67,20 @@ Both updater scripts on their supported platforms SHALL accept an optional comma
 - **WHEN** the user executes the script and explicitly provides a version string argument (e.g., `v0.25.0`)
 - **THEN** the script downloads and installs that exact version rather than the latest version
 
+### Requirement: Shell Argument Validation
+
+The shell updater script SHALL reject more than one version argument and version tags containing characters outside letters, digits, `.`, `_`, and `-` without replacing server files.
+
+#### Scenario: Too many arguments
+
+- **WHEN** the user executes the shell script with more than one argument
+- **THEN** the script reports an error, exits without replacing server files, and does not continue with download steps
+
+#### Scenario: Invalid version tag
+
+- **WHEN** the user executes the shell script with a version tag containing other characters
+- **THEN** the script reports an invalid version tag error, exits without replacing server files, and does not continue with download steps
+
 ### Requirement: Server Binary and Database Backups
 
 Both updater scripts on their supported platforms SHALL back up the existing server binary and database files before replacement.
@@ -77,14 +91,19 @@ Both updater scripts on their supported platforms SHALL back up the existing ser
 - **THEN** the script creates timestamped backup archives in `server-updater-backups`
 - **AND** database backups include `memos_prod.db` plus `-wal`/`-shm` files when present
 
-### Requirement: Safe Execution for Partially Streamed Scripts
+### Requirement: Safe Execution for Truncated Copies
 
-Both updater scripts on their supported platforms SHALL NOT replace or delete server files when the download is interrupted before installation begins.
+Both updater scripts on their supported platforms SHALL replace or delete no server files when executed directly from a truncated saved copy, whether the truncation lands on a line boundary or mid-line. Piped or streamed execution is outside this guarantee.
 
 #### Scenario: Partially downloaded script
 
-- **WHEN** a copy of either script from an interrupted download is executed directly
+- **WHEN** a copy of either script truncated at a line boundary before its last line is executed directly
 - **THEN** no server files are replaced or deleted
+
+#### Scenario: Mid-line truncated script
+
+- **WHEN** a copy of either script truncated mid-line, without a trailing newline, is executed directly
+- **THEN** the script exits without running the installer and no server files are replaced or deleted
 
 ### Requirement: Progress Output
 
@@ -101,7 +120,7 @@ Both updater scripts on their supported platforms SHALL abort without replacing 
 
 #### Scenario: Download or extraction failure
 
-- **WHEN** the download of the Memos asset fails, the SHA256 sum is mismatched, or extraction validation fails
+- **WHEN** the release lookup fails, the download of the Memos asset fails, the SHA256 sum is mismatched, or extraction validation fails
 - **THEN** the script aborts the update process and does not continue with replacement steps
 
 ### Requirement: Verify Download Integrity
