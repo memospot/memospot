@@ -33,6 +33,8 @@ error-invalid-server-url = URL de serveur distant invalide :
     Vérifiez les paramètres.
 helpmenu = &Aide
 helpmenu-documentation = &Documentation
+helpmenu-memos-documentation = Documentation Memos
+helpmenu-memos-release-notes = Notes de version Memos
 helpmenu-memos-version = Version des mémos
 helpmenu-memospot-version = Version &Memospot
 helpmenu-release-notes = &Notes de version

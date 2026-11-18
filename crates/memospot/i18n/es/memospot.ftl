@@ -33,6 +33,8 @@ error-invalid-server-url = URL del servidor remoto no válida:
     Revise la configuración.
 helpmenu = &Ayuda
 helpmenu-documentation = &Documentación
+helpmenu-memos-documentation = Documentación de Memos
+helpmenu-memos-release-notes = Notas de la versión de Memos
 helpmenu-memos-version = Versión de Memos
 helpmenu-memospot-version = &Versión de Memospot
 helpmenu-release-notes = &Notas de la versión

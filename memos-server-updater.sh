@@ -118,9 +118,17 @@ cpu_supports_popcnt() {
 ################################################################################
 main() {
 
+    if [[ $# -gt 1 ]]; then
+        error 'Too many arguments, only one is allowed. The allowed argument can be a specific tag of Memos to install. (e.g. "v0.22.0")'
+    fi
+
+    if [[ ${1:-latest} == *[!A-Za-z0-9._-]* ]]; then
+        error "Invalid version tag: ${1:-latest}"
+    fi
+
     if [[ ${OS:-} = Windows_NT ]]; then
-        if [[ $platform != MINGW64* ]]; then
-            powershell -c "Set-ExecutionPolicy Bypass -Scope Process -Force; irm https://raw.githubusercontent.com/memospot/memospot/main/memos-server-updater.ps1|iex"
+        if [[ $platform != CYGWIN* ]]; then
+            powershell -c "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; & ([ScriptBlock]::Create((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/memospot/memospot/main/memos-server-updater.ps1'))) '${1:-latest}'"
             exit $?
         else
             echo "Cygwin is not supported by this script."
@@ -150,10 +158,6 @@ EOF
         error "tar is required to extract Memos' updates"
     command -v jq >/dev/null ||
         error "jq is required to get latest Memos' tag"
-
-    if [[ $# -gt 1 ]]; then
-        error 'Too many arguments, only one is allowed. The allowed argument can be a specific tag of Memos to install. (e.g. "v0.22.0")'
-    fi
 
     case $platform in
     'Darwin x86_64')

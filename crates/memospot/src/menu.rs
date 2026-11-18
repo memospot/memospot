@@ -71,9 +71,9 @@ pub enum MainMenu {
     HelpMemospotReportIssue,
     #[strum(serialize = "helpmenu-memospot-version")]
     HelpMemospotVersion,
-    #[strum(serialize = "helpmenu-documentation")]
+    #[strum(serialize = "helpmenu-memos-documentation")]
     HelpMemosDocumentation,
-    #[strum(serialize = "helpmenu-release-notes")]
+    #[strum(serialize = "helpmenu-memos-release-notes")]
     HelpMemosReleaseNotes,
     #[strum(serialize = "helpmenu-memos-version")]
     HelpMemosVersion,

@@ -121,7 +121,7 @@ async function updateLocale(value: string) {
     } catch (_err) {
         let committedLocale = baselineLocale;
         try {
-            committedLocale = (await getLocalePreference()) as Locale;
+            committedLocale = ((await getLocalePreference()) || "system") as Locale;
         } catch {
             // keep existing baseline
         }

@@ -33,6 +33,8 @@ error-invalid-server-url = Invalid remote server URL:
     Check the settings.
 helpmenu = &Help
 helpmenu-documentation = &Documentation
+helpmenu-memos-documentation = Memos Documentation
+helpmenu-memos-release-notes = Memos Release Notes
 helpmenu-memos-version = Memos version
 helpmenu-memospot-version = &Memospot version
 helpmenu-release-notes = &Release Notes

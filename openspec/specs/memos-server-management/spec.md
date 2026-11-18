@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Run the managed local Memos server, keep it clean across restarts, gate loading on API readiness, and update the server binary safely.
+Run the managed local Memos server, keep it clean across restarts, gate loading on API readiness, and update the server binary safely. The shell updater supports Linux, macOS, and Windows via Git Bash excluding Cygwin; the PowerShell updater supports Windows. PowerShell updater download progress output is suppressed because it can throttle downloads.
 
 ## Requirements
 
@@ -51,16 +51,16 @@ The system SHALL probe API readiness during startup and before loader redirect.
 
 ### Requirement: Default to Latest Version
 
-The updater scripts (`memos-server-updater.sh` and `memos-server-updater.ps1`) SHALL download and install the latest stable release of the Memos server when executed without any arguments.
+Both updater scripts on their supported platforms SHALL download and install the latest stable release of the Memos server when executed without any arguments.
 
 #### Scenario: Running scripts without arguments
 
-- **WHEN** the user executes either updater script without passing a version argument
+- **WHEN** the user executes either updater script on its supported platform without passing a version argument
 - **THEN** the script fetches the latest tag from the GitHub API and proceeds to install that version
 
 ### Requirement: Specific Version Installation
 
-Both updater scripts SHALL accept an optional command-line argument to explicitly specify the Memos version to install.
+Both updater scripts on their supported platforms SHALL accept an optional command-line argument to explicitly specify the Memos version to install.
 
 #### Scenario: Running scripts with a target version argument
 
@@ -69,7 +69,7 @@ Both updater scripts SHALL accept an optional command-line argument to explicitl
 
 ### Requirement: Server Binary and Database Backups
 
-Both updater scripts SHALL back up the existing server binary and database files before replacement.
+Both updater scripts on their supported platforms SHALL back up the existing server binary and database files before replacement.
 
 #### Scenario: Updating an existing installation
 
@@ -79,25 +79,25 @@ Both updater scripts SHALL back up the existing server binary and database files
 
 ### Requirement: Safe Execution for Partially Streamed Scripts
 
-Both updater scripts SHALL NOT perform installation side effects when the script download is incomplete.
+Both updater scripts on their supported platforms SHALL NOT replace or delete server files when the download is interrupted before installation begins.
 
 #### Scenario: Partially downloaded script
 
-- **WHEN** a copy of either script truncated at a line boundary before its last line is executed directly
+- **WHEN** a copy of either script from an interrupted download is executed directly
 - **THEN** no server files are replaced or deleted
 
-### Requirement: Unthrottled Download Progress
+### Requirement: Progress Output
 
-The Windows PowerShell script SHALL NOT let progress display throttle download throughput.
+The Windows PowerShell script SHALL NOT show download progress output.
 
 #### Scenario: Downloading the Memos binary via PowerShell
 
 - **WHEN** `memos-server-updater.ps1` downloads the binary
-- **THEN** the download completes at full network speed regardless of progress display
+- **THEN** the download completes without progress output
 
 ### Requirement: Installation Guardrails
 
-Both updater scripts SHALL abort without replacing the current binary if a critical step fails.
+Both updater scripts on their supported platforms SHALL abort without replacing the current binary if a critical step fails.
 
 #### Scenario: Download or extraction failure
 
@@ -106,7 +106,7 @@ Both updater scripts SHALL abort without replacing the current binary if a criti
 
 ### Requirement: Verify Download Integrity
 
-Both updater scripts SHALL verify release checksums before installation.
+Both updater scripts on their supported platforms SHALL verify release checksums before installation.
 
 #### Scenario: Release asset downloaded
 

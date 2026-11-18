@@ -71,6 +71,11 @@ A live-applied field SHALL NOT appear pending or be resent by a later save (see 
 - **WHEN** the user selects a locale
 - **THEN** the section reports no pending change for it
 
+#### Scenario: Locale application fails
+
+- **WHEN** the live locale application is rejected or unsuccessful
+- **THEN** the locale field shows the committed backend value and a failure notification is shown
+
 #### Scenario: Theme saves through the section save
 
 - **WHEN** the user changes the theme and then saves
