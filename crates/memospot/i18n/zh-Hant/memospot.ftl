@@ -38,6 +38,8 @@ error-invalid-server-url =
     檢查設置。
 helpmenu = &幫助
 helpmenu-documentation = &文檔
+helpmenu-memos-documentation = Memos 文檔
+helpmenu-memos-release-notes = Memos 發佈說明
 helpmenu-memos-version = Memos 版本
 helpmenu-memospot-version = &Memospot 版本
 helpmenu-release-notes = &發佈說明
