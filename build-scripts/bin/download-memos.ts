@@ -5,14 +5,14 @@
  * Downloads Memos binaries from GitHub and unpacks them into the `./server-dist`
  * directory using the naming convention required by Tauri for bundling.
  *
- * - Will download the latest release if `--tag` is not
- *   specified or `MEMOS_VERSION` env var is not set.
+ * - Will download the latest release if `--tag` is not specified, is `latest`,
+ *   or `MEMOS_VERSION` env var is not set. An explicit invalid tag fails fast.
  * - Skips downloading if current files are up-to-date.
  * - Uses GITHUB_TOKEN for higher rate limit.
  * - Retries with backoff on rate limit errors.
  *
  * Usage:
- *  bun run ./build-scripts/bin/download-memos.ts [--all]
+ *  bun run ./build-scripts/bin/download-memos.ts [--all] [--tag=<version|latest>] [--rust-target=<triple[,triple]>] [--cross-compile] [--CI]
  */
 
 import fs from "node:fs";
@@ -77,16 +77,20 @@ export const CROSS_COMPILE_PLATFORMS = {
 
 /**
  * Parse command-line arguments and environment variables.
+ *
+ * Single owner of the script's CLI surface; both asset matching and tag
+ * resolution read through here so a new flag cannot drift into one parser only.
  */
-interface ParsedArgs {
+interface CliArgs {
     getAll: boolean;
     crossCompile: boolean;
     rustTarget: string | undefined;
+    tag: string | undefined;
 }
 
-function parseDownloadArgs(): ParsedArgs {
+function parseCliArgs(argv: readonly string[], memosVersion?: string): CliArgs {
     const { values } = parseArgs({
-        args: Bun.argv,
+        args: [...argv],
         options: {
             all: { type: "boolean", default: toBool(import.meta.env.DOWNLOAD_ALL) },
             CI: { type: "boolean", default: toBool(import.meta.env.CI) },
@@ -94,7 +98,8 @@ function parseDownloadArgs(): ParsedArgs {
                 type: "boolean",
                 default: toBool(import.meta.env.CROSS_COMPILE)
             },
-            "rust-target": { type: "string", default: import.meta.env.RUST_TARGET }
+            "rust-target": { type: "string", default: import.meta.env.RUST_TARGET },
+            tag: { type: "string", default: memosVersion }
         },
         allowPositionals: true,
         strict: true
@@ -103,7 +108,8 @@ function parseDownloadArgs(): ParsedArgs {
     return {
         getAll: values.all ?? false,
         crossCompile: (values.CI ?? false) || (values["cross-compile"] ?? false),
-        rustTarget: values["rust-target"] as string | undefined
+        rustTarget: values["rust-target"] as string | undefined,
+        tag: values.tag as string | undefined
     };
 }
 
@@ -245,10 +251,11 @@ function getPlatformAssets(currentTriplet: string): string[] {
 /**
  * Get the list of files to download based on command line arguments and environment variables.
  *
+ * @param argv Command line arguments, defaults to the current process arguments.
  * @returns An array of file globs to download.
  */
-export function getDownloadFilesGlob(): string[] {
-    const args = parseDownloadArgs();
+export function getDownloadFilesGlob(argv: readonly string[] = Bun.argv): string[] {
+    const args = parseCliArgs(argv);
     console.log(`${MAGENTA}Matching assets…${RESET}`);
 
     if (args.getAll) {
@@ -274,36 +281,39 @@ export function getDownloadFilesGlob(): string[] {
 /**
  *  Get the requested tag from the command line argument `--tag` or from the environment variable `MEMOS_VERSION`.
  *
- * Supports both SemVer (`v0.26.2`, `0.26.2`) and CalVer (`26.11.1`, `v26.11.1`).
+ * Supports both SemVer (`v0.26.2`, `0.26.2`) and CalVer (`26.11.1`, `v26.11.1`),
+ * plus explicit `latest` and the CI `NOT_SET` sentinel for the latest release.
  * Returns the tag as provided (trimmed), without forcing a `v` prefix, so
  * both old `v`-prefixed SemVer releases and new unprefixed CalVer releases
  * resolve. Use `getTagAlternatives` to resolve `v` variants when fetching.
+ * An explicitly provided but malformed tag throws instead of silently
+ * falling back to the latest release.
  *
  * @param argv Command line arguments.
  * @param memosVersion Fallback version from environment, `undefined` means absent.
- * @returns The requested tag or null if not specified.
+ * @returns The requested tag, or null when latest, the `NOT_SET`/empty placeholder, or nothing was specified.
  */
 export function getRequestedTag(
     argv: readonly string[],
     memosVersion: string | undefined
 ): string | null {
-    const { values } = parseArgs({
-        args: [...argv],
-        options: {
-            tag: {
-                type: "string",
-                default: memosVersion
-            }
-        },
-        allowPositionals: true
-    });
+    const { tag: rawTag } = parseCliArgs(argv, memosVersion);
 
-    const tag = values.tag?.trim();
-    if (tag?.match(/^v?\d+\.\d+\.\d+(-\S+)?$/)) {
+    if (rawTag === undefined) {
+        return null;
+    }
+
+    const tag = rawTag.trim();
+    if (tag === "" || tag === "latest" || tag === "NOT_SET") {
+        return null;
+    }
+    if (tag.match(/^v?\d+\.\d+\.\d+(-\S+)?$/)) {
         return tag;
     }
 
-    return null;
+    throw new Error(
+        `Invalid tag "${rawTag}" (from --tag or MEMOS_VERSION). Expected a version like "26.11.1" or "v0.26.2", or "latest".`
+    );
 }
 
 /**
