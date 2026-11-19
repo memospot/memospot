@@ -1,5 +1,9 @@
 import { describe, expect, it } from "bun:test";
-import { collectSettingsEntries, hasSameSearchTerms } from "./settingsSearch";
+import {
+    collectSettingsEntries,
+    collectSettingsEntriesBySection,
+    hasSameSearchTerms
+} from "./settingsSearch";
 
 type RowSpec = {
     id?: string;
@@ -217,5 +221,75 @@ describe("hasSameSearchTerms", () => {
         // WHEN the section label changes
         // THEN the entries compare as different and a rewrite is needed
         expect(hasSameSearchTerms(base, next)).toBe(false);
+    });
+});
+
+describe("collectSettingsEntriesBySection", () => {
+    function sectionRoot(sectionId: string | undefined, rows: FakeRow[]) {
+        return {
+            dataset: { sectionRoot: sectionId },
+            querySelectorAll: () => rows
+        };
+    }
+
+    function rootWithSections(sections: ReturnType<typeof sectionRoot>[]) {
+        return {
+            querySelectorAll: () => sections
+        } as unknown as ParentNode;
+    }
+
+    const findSection = (id: string) => {
+        const sections: Record<string, { id: string; label: string }> = {
+            view: { id: "view", label: "View" },
+            memos: { id: "memos", label: "Memos" }
+        };
+        return sections[id];
+    };
+
+    it("collects every section without visiting each one first", () => {
+        // GIVEN a settings screen with two mounted section containers
+        const root = rootWithSections([
+            sectionRoot("view", [rowElement({ id: "view-theme", label: "Theme" })]),
+            sectionRoot("memos", [rowElement({ id: "memos-mode", label: "Mode" })])
+        ]);
+
+        // WHEN all sections are collected on load
+        const grouped = collectSettingsEntriesBySection(root, findSection);
+
+        // THEN both sections contribute entries immediately
+        expect(Object.keys(grouped).toSorted()).toEqual(["memos", "view"]);
+        expect(grouped.view).toEqual([
+            {
+                id: "view-theme",
+                label: "Theme",
+                keywords: [],
+                sectionId: "view",
+                sectionLabel: "View"
+            }
+        ]);
+        expect(grouped.memos).toEqual([
+            {
+                id: "memos-mode",
+                label: "Mode",
+                keywords: [],
+                sectionId: "memos",
+                sectionLabel: "Memos"
+            }
+        ]);
+    });
+
+    it("skips containers without a known section", () => {
+        // GIVEN one known section alongside unknown and unlabeled containers
+        const root = rootWithSections([
+            sectionRoot("view", [rowElement({ id: "view-theme", label: "Theme" })]),
+            sectionRoot("unknown", [rowElement({ id: "unknown-row", label: "Unknown" })]),
+            sectionRoot(undefined, [rowElement({ id: "stray-row", label: "Stray" })])
+        ]);
+
+        // WHEN all sections are collected
+        const grouped = collectSettingsEntriesBySection(root, findSection);
+
+        // THEN only the known section enters the index
+        expect(Object.keys(grouped)).toEqual(["view"]);
     });
 });
