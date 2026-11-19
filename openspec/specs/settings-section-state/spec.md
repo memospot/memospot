@@ -8,7 +8,7 @@ Keep editing behavior consistent across settings sections: unsaved changes are v
 
 ### Requirement: Sections show unsaved changes
 
-Each editable settings section SHALL indicate when a value differs from the last saved configuration.
+Each editable settings section SHALL indicate when a value differs from the last saved configuration and SHALL retain pending edits while the user switches sections.
 
 #### Scenario: A value is edited
 
@@ -24,6 +24,11 @@ Each editable settings section SHALL indicate when a value differs from the last
 
 - **WHEN** the user discards pending changes
 - **THEN** the values return to the last saved configuration and no changes are reported pending
+
+#### Scenario: Switching sections preserves pending edits
+
+- **WHEN** the user edits a value, switches to another section, and returns
+- **THEN** the edited value and pending indication are preserved
 
 ### Requirement: Saving persists only changed values
 

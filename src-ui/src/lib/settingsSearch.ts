@@ -76,3 +76,35 @@ export function collectSettingsEntries(
 
     return entries;
 }
+
+export type SettingsSectionLabel = {
+    id: string;
+    label: string;
+};
+
+/**
+ * Collects search entries grouped by owning section.
+ *
+ * Scans `root` for `[data-section-root]` containers, resolves each container
+ * to its section, and collects that container's rows only. Containers without
+ * a known section are skipped so stray markup never enters the index.
+ */
+export function collectSettingsEntriesBySection(
+    root: ParentNode,
+    findSection: (id: string) => SettingsSectionLabel | undefined
+): Record<string, SettingSearchEntry[]> {
+    const sectionRoots = Array.from(root.querySelectorAll<HTMLElement>("[data-section-root]"));
+    const grouped: Record<string, SettingSearchEntry[]> = {};
+
+    for (const sectionRoot of sectionRoots) {
+        const sectionId = sectionRoot.dataset.sectionRoot?.trim() ?? "";
+        if (!sectionId) continue;
+
+        const section = findSection(sectionId);
+        if (!section) continue;
+
+        grouped[section.id] = collectSettingsEntries(section.id, section.label, sectionRoot);
+    }
+
+    return grouped;
+}

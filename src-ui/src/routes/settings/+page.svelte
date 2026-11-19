@@ -75,7 +75,7 @@ async function updateSectionWithOptions(
         contentPane?.scrollTo({ top: 0, behavior: reduceAnimation ? "auto" : "smooth" });
     }
     await tick();
-    searchIndex.collectForSection(sectionId, contentPane);
+    searchIndex.collectAllSections(contentPane);
     if ((options.animate ?? true) && !reduceAnimation) await animateSectionTransition();
 }
 
@@ -119,9 +119,17 @@ function setContentPane(node: HTMLElement) {
     // Runs inside the attach effect: keep everything untracked so the
     // attach effect never subscribes to the state it writes. Collecting only
     // writes on real change, so the pipeline settles instead of looping.
+    // Every section stays mounted under its own [data-section-root] wrapper,
+    // so one deferred pass after mount indexes all sections immediately.
     untrack(() => {
         contentPane = node;
-        searchIndex.collectForSection(activeSection, node);
+        void tick().then(() => {
+            untrack(() => {
+                if (contentPane === node) {
+                    searchIndex.collectAllSections(node);
+                }
+            });
+        });
     });
 
     return () => {
@@ -190,9 +198,9 @@ function setContentPane(node: HTMLElement) {
         class="relative isolate min-h-0 overflow-y-auto pl-1 pr-4"
       >
         {#each sections as section (section.id)}
-          {#if activeSection === section.id}
+          <div data-section-root={section.id} hidden={activeSection !== section.id}>
             <section.component onActionsChange={reporterForSection(section.id)} />
-          {/if}
+          </div>
         {/each}
       </main>
     </div>

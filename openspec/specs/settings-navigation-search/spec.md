@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Find individual settings across visited sections from the settings header search.
+Find individual settings across sections from the settings header search.
 
 ## Requirements
 
 ### Requirement: Fuzzy search results grouped by section
 
-The search SHALL perform approximate matching over the visited settings, grouping matches by section while ranking results by relevance to the query (see settings-deep-search-index).
+The search SHALL perform approximate matching over all settings, grouping matches by section while ranking results by relevance to the query (see settings-deep-search-index).
 
 #### Scenario: Abbreviated query
 

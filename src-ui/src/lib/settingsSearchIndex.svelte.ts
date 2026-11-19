@@ -2,30 +2,27 @@
  * Settings-page search orchestration.
  *
  * Scans the rendered settings DOM for `data-setting-row` entries and keeps
- * them grouped by owning section. Indexing stays lazy: a section is
- * collected only after it renders (the page calls `collectForSection` from
- * its content-pane attach callback and on section switches), so unvisited
- * sections never enter the index.
+ * them grouped by owning section. Every section stays mounted inside its own
+ * `[data-section-root]` container (inactive sections are hidden), so the page
+ * collects all sections on load and search covers every section immediately.
  */
 
 import {
-    collectSettingsEntries,
+    collectSettingsEntriesBySection,
     hasSameSearchTerms,
-    type SettingSearchEntry
+    type SettingSearchEntry,
+    type SettingsSectionLabel
 } from "./settingsSearch";
 
-export type SectionLabel = {
-    id: string;
-    label: string;
-};
+export type SectionLabel = SettingsSectionLabel;
 
 export type SettingsSearchIndex = {
     /** Flat view of every collected entry, for the search input. */
     readonly allEntries: SettingSearchEntry[];
     /** Sections that already contributed entries. */
     readonly collectedSectionIds: string[];
-    /** (Re)collects the entries of one rendered section. Skips no-op writes. */
-    collectForSection(sectionId: string, root: ParentNode | undefined): void;
+    /** (Re)collects every section rooted under `root`. Skips no-op writes. */
+    collectAllSections(root: ParentNode | undefined): void;
 };
 
 export function createSettingsSearchIndex(
@@ -40,14 +37,20 @@ export function createSettingsSearchIndex(
         get collectedSectionIds() {
             return Object.keys(entriesBySection);
         },
-        collectForSection(sectionId: string, root: ParentNode | undefined) {
-            const section = findSection(sectionId);
-            if (!section || !root) return;
+        collectAllSections(root: ParentNode | undefined) {
+            if (!root) return;
 
-            const entries = collectSettingsEntries(section.id, section.label, root);
-            const current = entriesBySection[sectionId];
-            if (current && hasSameSearchTerms(current, entries)) return;
-            entriesBySection[sectionId] = entries;
+            const grouped = collectSettingsEntriesBySection(root, findSection);
+            for (const [sectionId, entries] of Object.entries(grouped)) {
+                const current = entriesBySection[sectionId];
+                if (current && hasSameSearchTerms(current, entries)) continue;
+                entriesBySection[sectionId] = entries;
+            }
+            for (const sectionId of Object.keys(entriesBySection)) {
+                if (!(sectionId in grouped)) {
+                    delete entriesBySection[sectionId];
+                }
+            }
         }
     } as SettingsSearchIndex;
 }

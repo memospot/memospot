@@ -293,7 +293,7 @@ useSectionActions(
     bind:state={section.input.envVarsEnabled}
   >
     <textarea
-      id="env"
+      id="memos-env"
       rows="5"
       class="p-2 rounded-md border bg-input min-w-max w-full font-mono leading-tight"
       bind:value={section.input.envVars}

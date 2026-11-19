@@ -17,10 +17,10 @@ The settings screen SHALL pin the search input, the window-close control, and th
 
 #### Scenario: Action buttons indicate pending changes
 
-- **WHEN** the user makes changes that require saving
+- **WHEN** the user makes changes in the active section that require saving
 - **THEN** the Save button becomes enabled and visually distinguished while the header stays visible
 
 #### Scenario: No pending changes
 
-- **WHEN** no changes require saving
+- **WHEN** no changes in the active section require saving
 - **THEN** the Save button is disabled while the header stays visible
