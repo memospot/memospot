@@ -53,6 +53,7 @@ mod configuration_state_tests {
             memos_version: Arc::new(RwLock::new(None)),
             zoom_level: Arc::new(RwLock::new(1.0)),
             window_states: crate::window_state::WindowStateQueue::new(store.clone(), maximized),
+            paste: crate::runtime_config::PasteImageState::default(),
         }
     }
 

@@ -1,0 +1,98 @@
+# App command permissions.
+#
+# Declaring any app permission creates an app ACL manifest, which gates every
+# app command (see docs/adr/paste-image-app-acl.md). Each command below maps
+# to one `allow-<command>` entry referenced from a capability file. The
+# paste-image read stays Linux-only (see capabilities/paste-image.toml);
+# every other command is re-allowed for local pages in
+# capabilities/default.toml.
+
+[[permission]]
+identifier = "allow-get-memos-url"
+description = "Enables the get_memos_url command."
+commands.allow = ["get_memos_url"]
+
+[[permission]]
+identifier = "allow-get-theme"
+description = "Enables the get_theme command."
+commands.allow = ["get_theme"]
+
+[[permission]]
+identifier = "allow-get-reduce-animation-status"
+description = "Enables the get_reduce_animation_status command."
+commands.allow = ["get_reduce_animation_status"]
+
+[[permission]]
+identifier = "allow-get-locale-preference"
+description = "Enables the get_locale_preference command."
+commands.allow = ["get_locale_preference"]
+
+[[permission]]
+identifier = "allow-get-effective-locale"
+description = "Enables the get_effective_locale command."
+commands.allow = ["get_effective_locale"]
+
+[[permission]]
+identifier = "allow-set-locale"
+description = "Enables the set_locale command."
+commands.allow = ["set_locale"]
+
+[[permission]]
+identifier = "allow-ping-memos"
+description = "Enables the ping_memos command."
+commands.allow = ["ping_memos"]
+
+[[permission]]
+identifier = "allow-get-env"
+description = "Enables the get_env command."
+commands.allow = ["get_env"]
+
+[[permission]]
+identifier = "allow-get-config"
+description = "Enables the get_config command."
+commands.allow = ["get_config"]
+
+[[permission]]
+identifier = "allow-get-default-config"
+description = "Enables the get_default_config command."
+commands.allow = ["get_default_config"]
+
+[[permission]]
+identifier = "allow-set-config"
+description = "Enables the set_config command."
+commands.allow = ["set_config"]
+
+[[permission]]
+identifier = "allow-path-exists"
+description = "Enables the path_exists command."
+commands.allow = ["path_exists"]
+
+[[permission]]
+identifier = "allow-zoom-in"
+description = "Enables the zoom_in command."
+commands.allow = ["zoom_in"]
+
+[[permission]]
+identifier = "allow-zoom-out"
+description = "Enables the zoom_out command."
+commands.allow = ["zoom_out"]
+
+[[permission]]
+identifier = "allow-reset-zoom"
+description = "Enables the reset_zoom command."
+commands.allow = ["reset_zoom"]
+
+[[permission]]
+identifier = "allow-toggle-menu-bar"
+description = "Enables the toggle_menu_bar command."
+commands.allow = ["toggle_menu_bar"]
+
+[[permission]]
+identifier = "allow-open-settings"
+description = "Enables the open_settings command."
+commands.allow = ["open_settings"]
+
+[[permission]]
+identifier = "allow-request-paste-image"
+description = "Enables the request_paste_image command (Linux only)."
+commands.allow = ["request_paste_image"]

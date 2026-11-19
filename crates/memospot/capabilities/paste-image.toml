@@ -1,0 +1,16 @@
+#:schema ../gen/schemas/desktop-schema.json
+identifier = "paste-image"
+description = "Allow the configured server page to request a clipboard image read on Linux."
+windows = ["*"]
+platforms = ["linux"]
+local = false
+permissions = ["allow-request-paste-image"]
+
+[remote]
+urls = [
+    "https://*",
+    "https://*:*",
+    "http://localhost:*",
+    "http://127.0.0.1:*",
+    'http://[\:\:1]:*',
+]

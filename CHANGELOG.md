@@ -24,9 +24,10 @@ Security: in case of vulnerabilities.
 
 ### Fixed
 
-- (Linux) Pasting an image into the editor now works on X11 when the
-  server uses HTTPS or a loopback address; plain-HTTP remote servers
-  stay unsupported for app-assisted image paste.
+- (Linux) Pasting an image from the clipboard into the editor now
+  works under X11 when the server uses HTTPS or runs on your own machine.
+  Images over 10 MiB are skipped, and plain-HTTP remote servers stay
+  unsupported.
 
 ### Security
 

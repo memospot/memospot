@@ -6,6 +6,10 @@ mod memos_api;
 mod memos_log;
 mod memos_process;
 mod menu;
+#[cfg(target_os = "linux")]
+mod paste_image;
+#[cfg(target_os = "linux")]
+mod paste_image_gtk;
 mod route;
 mod runtime_config;
 mod sqlite;
@@ -181,6 +185,7 @@ pub fn run() {
         memos_version: Arc::new(RwLock::new(None)),
         zoom_level: Arc::new(RwLock::new(1.0)),
         window_states: crate::window_state::WindowStateQueue::new(config, maximized),
+        paste: crate::runtime_config::PasteImageState::default(),
     };
 
     if app_state.runtime.active_server.managed {
@@ -246,7 +251,9 @@ pub fn run() {
             cmd::zoom_out,
             cmd::reset_zoom,
             cmd::toggle_menu_bar,
-            cmd::open_settings
+            cmd::open_settings,
+            #[cfg(target_os = "linux")]
+            paste_image::request_paste_image,
         ])
         .on_page_load(move |webview, payload| {
             // Register shortcuts via JS injected on each page load.
@@ -257,6 +264,9 @@ pub fn run() {
                 static POLYFILL: &str =
                     include_str!(concat!(env!("OUT_DIR"), "/shortcut_polyfill.js"));
                 webview.eval(POLYFILL).ok();
+
+                #[cfg(target_os = "linux")]
+                crate::paste_image::inject_polyfill(webview);
 
                 let inject_reduce_animation_polyfill = config_store
                     .snapshot()
