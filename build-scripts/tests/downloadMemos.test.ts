@@ -131,6 +131,30 @@ describe("match assets according to environment", async () => {
         const expected = go_targets;
         expect(downloadFilesGlob).toEqual(expected);
     });
+
+    test("--tag does not affect glob", () => {
+        // GIVEN any ambient environment shared by both calls
+        // WHEN the file glob is read with and without `--tag`
+        const base = getDownloadFilesGlob(["bun", "download-memos.ts"]);
+        const withTag = getDownloadFilesGlob(["bun", "download-memos.ts", "--tag=26.11.1"]);
+
+        // THEN the tag is tolerated and ignored for asset matching
+        expect(withTag).toEqual(base);
+    });
+
+    test("--all with --tag returns all builds", () => {
+        // GIVEN `--all` combined with `--tag`
+        // WHEN the file glob is read
+        const downloadFilesGlob = getDownloadFilesGlob([
+            "bun",
+            "download-memos.ts",
+            "--all",
+            "--tag=26.11.1"
+        ]);
+
+        // THEN all supported builds are matched without a parse error
+        expect(downloadFilesGlob).toEqual([...SUPPORTED_BUILDS].sort());
+    });
 });
 
 describe("test getRequestedTag", async () => {
@@ -222,6 +246,91 @@ describe("test getRequestedTag", async () => {
 
         // THEN the CLI flag wins
         expect(tag).toBe("26.11.1");
+    });
+
+    test("argv tolerates --all alongside --tag", () => {
+        // GIVEN `--tag` combined with the documented `--all` flag
+        // WHEN the requested tag is read
+        const tag = getRequestedTag(["download-memos.ts", "--all", "--tag=26.11.1"], undefined);
+
+        // THEN the tag is returned instead of throwing on the sibling flag
+        expect(tag).toBe("26.11.1");
+    });
+
+    test("argv tolerates --rust-target and --cross-compile", () => {
+        // GIVEN `--tag` combined with other script flags
+        // WHEN the requested tag is read
+        const tag = getRequestedTag(
+            [
+                "download-memos.ts",
+                "--rust-target=x86_64-unknown-linux-gnu",
+                "--cross-compile",
+                "--tag=v0.26.2"
+            ],
+            undefined
+        );
+
+        // THEN the tag is returned instead of throwing on sibling flags
+        expect(tag).toBe("v0.26.2");
+    });
+
+    test("argv with only sibling flags returns null", () => {
+        // GIVEN only sibling flags and no tag
+        // WHEN the requested tag is read
+        const tag = getRequestedTag(["download-memos.ts", "--all"], undefined);
+
+        // THEN no tag is requested instead of throwing
+        expect(tag).toBe(null);
+    });
+
+    test("argv bare --tag throws", () => {
+        // GIVEN `--tag` without a value
+        // WHEN the requested tag is read
+        // THEN parsing fails fast instead of silently falling back to latest
+        expect(() => getRequestedTag(["download-memos.ts", "--tag"], undefined)).toThrow();
+    });
+
+    test("argv unknown flag throws", () => {
+        // GIVEN a misspelled flag
+        // WHEN the requested tag is read
+        // THEN parsing fails fast instead of silently falling back to latest
+        expect(() =>
+            getRequestedTag(["download-memos.ts", "--tagg=26.11.1"], undefined)
+        ).toThrow();
+    });
+
+    test("argv invalid tag value throws", () => {
+        // GIVEN explicitly malformed `--tag` values
+        // WHEN the requested tag is read
+        // THEN a descriptive error names the bad value instead of using latest
+        expect(() => getRequestedTag(["download-memos.ts", "--tag=foo"], undefined)).toThrow(
+            /Invalid tag "foo"/
+        );
+        expect(() => getRequestedTag(["download-memos.ts", "--tag=v0.26"], undefined)).toThrow(
+            /Invalid tag "v0.26"/
+        );
+    });
+
+    test("argv latest resolves to latest", () => {
+        // GIVEN an explicit `latest` alias via flag or environment,
+        // or the CI `NOT_SET`/empty placeholder
+        // WHEN the requested tag is read
+        // THEN null signals the latest release without an error
+        expect(getRequestedTag(["download-memos.ts", "--tag=latest"], undefined)).toBe(null);
+        expect(getRequestedTag(["download-memos.ts"], "latest")).toBe(null);
+        expect(getRequestedTag(["download-memos.ts", "--tag=NOT_SET"], undefined)).toBe(null);
+        expect(getRequestedTag(["download-memos.ts"], "NOT_SET")).toBe(null);
+        expect(getRequestedTag(["download-memos.ts"], "")).toBe(null);
+        expect(getRequestedTag(["download-memos.ts", "--tag="], undefined)).toBe(null);
+    });
+
+    test("env invalid throws", () => {
+        // GIVEN a malformed `MEMOS_VERSION` and no CLI flag
+        // WHEN the requested tag is read
+        // THEN a descriptive error names the bad value
+        expect(() => getRequestedTag(["download-memos.ts"], "foo")).toThrow(
+            /Invalid tag "foo"/
+        );
     });
 });
 
