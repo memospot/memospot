@@ -74,10 +74,7 @@ pub(crate) fn sniff_mime(bytes: &[u8]) -> Option<Mime> {
         Some(Mime::Png)
     } else if bytes.len() >= 3 && bytes[..3] == [0xFF, 0xD8, 0xFF] {
         Some(Mime::Jpeg)
-    } else if bytes.len() >= 12
-        && bytes[..4] == [b'R', b'I', b'F', b'F']
-        && bytes[8..12] == [b'W', b'E', b'B', b'P']
-    {
+    } else if bytes.len() >= 12 && bytes[..4] == *b"RIFF" && bytes[8..12] == *b"WEBP" {
         Some(Mime::Webp)
     } else {
         None
@@ -511,6 +508,10 @@ mod tests {
     use tauri::{App, WebviewWindow, WebviewWindowBuilder};
     use tempfile::TempDir;
 
+    /// Fixed test fixture, not a secret: the page-load nonce is
+    /// defense-in-depth only (origin is the trust anchor) and is minted per
+    /// load in production via `Uuid::new_v4`; tests pin one value for
+    /// deterministic assertions.
     const NONCE: &str = "0123456789abcdef0123456789abcdef";
 
     fn runtime_url() -> Url {
