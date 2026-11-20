@@ -136,7 +136,7 @@ test-tauri:
 [script('bun')]
 test-ts: deps-ts
     import fs from "node:fs";
-    const dirs = ["./build-scripts", "./src-ui"];
+    const dirs = ["./build-scripts", "./src-ui", "./.github/actions/merge-clippy-sarif"];
     let results = [];
     for (const dir of dirs) {
         const files = fs.readdirSync(dir, {recursive: true}).filter(fn => fn.endsWith('.test.ts'));

@@ -1,0 +1,32 @@
+name: "Merge clippy SARIF"
+description: "Merges per-platform clippy SARIF artifacts and reports missing platforms. Requires Bun on PATH."
+inputs:
+  artifact-dir:
+    description: "Directory containing clippy-results-<target>.sarif"
+    required: true
+  expected:
+    description: "Comma-separated list of expected Rust targets"
+    required: true
+  output:
+    description: "Merged SARIF file to write"
+    required: true
+  missing-file:
+    description: "File listing missing or unreadable targets"
+    required: false
+    default: "missing-platforms.txt"
+runs:
+  using: "composite"
+  steps:
+    - name: Merge clippy SARIF
+      shell: bash
+      env:
+        ARTIFACT_DIR: ${{ inputs.artifact-dir }}
+        EXPECTED: ${{ inputs.expected }}
+        MISSING_FILE: ${{ inputs.missing-file }}
+        OUTPUT: ${{ inputs.output }}
+      run: |
+        bun run "${{ github.action_path }}/merge-clippy-sarif.ts" \
+          --artifact-dir "$ARTIFACT_DIR" \
+          --expected "$EXPECTED" \
+          --output "$OUTPUT" \
+          --missing-file "$MISSING_FILE"

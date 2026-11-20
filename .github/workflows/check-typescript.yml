@@ -10,6 +10,7 @@ on:
       - "**/biome.jsonc"
       - "**/*.svelte"
       - "**/*.ts"
+      - ".github/actions/merge-clippy-sarif/**"
   push:
     paths:
       - "**/check-typescript.yml"
@@ -18,6 +19,7 @@ on:
       - "**/biome.jsonc"
       - "**/*.svelte"
       - "**/*.ts"
+      - ".github/actions/merge-clippy-sarif/**"
     tags-ignore: ["*"]
   workflow_dispatch:
 
@@ -84,3 +86,4 @@ jobs:
         run: |
           pushd ./build-scripts; bun test; popd
           pushd ./src-ui; bun test; popd
+          pushd ./.github/actions/merge-clippy-sarif; bun test; popd
