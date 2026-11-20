@@ -163,7 +163,13 @@ async fn remove_pid_file(memospot_data: &Path) {
 async fn kill_pid(pid: u32) {
     let time_start = tokio::time::Instant::now();
     let timeout = tokio::time::Duration::from_secs(5);
-    let sys = System::new_all();
+    let sys = match System::new_all() {
+        Ok(sys) => sys,
+        Err(e) => {
+            warn!("unable to initialize system information: {e}. Unable to kill pid {pid}");
+            return;
+        }
+    };
     let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
     loop {
         interval.tick().await;
@@ -274,7 +280,15 @@ pub async fn shutdown(runtime: &RuntimeContext) {
                 break;
             }
 
-            let sys = System::new_all();
+            let sys = match System::new_all() {
+                Ok(sys) => sys,
+                Err(e) => {
+                    warn!(
+                        "unable to initialize system information: {e}. Unable to check pid {pid}"
+                    );
+                    break;
+                }
+            };
             if let Some(proc) = sys.process(pid) {
                 match proc.status() {
                     ProcessStatus::Run => {
