@@ -305,6 +305,10 @@ where
         return;
     };
 
+    if matches!(event, WindowEvent::Destroyed) {
+        app.state::<AppState>().paste.remove(&label);
+    }
+
     let Ok(window) = Window::from_str(&label) else {
         // Main window duplicates use UUID as label, and
         // they don't need to be handled individually.

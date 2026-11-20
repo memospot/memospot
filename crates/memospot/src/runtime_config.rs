@@ -6,8 +6,9 @@
 use config::Config;
 use json_patch::Patch;
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 use ts_rs::TS;
 
 /// Runtime paths used throughout the app.
@@ -277,6 +278,91 @@ pub struct AppState {
     /// Merges through the configuration store's serialized path and drains
     /// before shutdown persistence.
     pub window_states: crate::window_state::WindowStateQueue,
+    /// Linux paste-image gate state: per-webview nonces, epoch, and
+    /// single-flight tracking (see `paste_image`).
+    ///
+    /// Plain synchronized collections only, so every platform carries the
+    /// field while only Linux fills it.
+    pub paste: PasteImageState,
+}
+
+/// Synchronized Linux paste-image gate state.
+///
+/// Holds the per-webview page-load token `(nonce, epoch)`, the monotonically
+/// increasing injection epoch, and the set of webview labels with a clipboard
+/// read in flight. All mutation passes through the interior mutexes, so
+/// holders never see a partially updated entry.
+#[derive(Clone, Default)]
+pub struct PasteImageState {
+    tokens: Arc<Mutex<HashMap<String, (String, u64)>>>,
+    epoch: Arc<std::sync::atomic::AtomicU64>,
+    inflight: Arc<Mutex<HashSet<String>>>,
+}
+
+/// Guard releasing one webview's single-flight claim on drop.
+///
+/// The claim always releases on completion, timeout, or error, so one stuck
+/// read can never disable paste until reload.
+pub struct PasteInflightGuard {
+    state: Arc<Mutex<HashSet<String>>>,
+    label: String,
+}
+
+impl Drop for PasteInflightGuard {
+    fn drop(&mut self) {
+        if let Ok(mut inflight) = self.state.lock() {
+            inflight.remove(&self.label);
+        }
+    }
+}
+
+// The token API is live only on Linux (the paste feature is Linux-only),
+// but the state itself stays cross-platform so `AppState` is uniform;
+// allow the resulting never-used methods off Linux rather than
+// cfg-splitting the struct and every construction site.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+impl PasteImageState {
+    /// Mint the next injection epoch, starting at 1.
+    pub fn next_epoch(&self) -> u64 {
+        self.epoch
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+            .saturating_add(1)
+    }
+
+    /// Record the page-load token for a webview, replacing any previous one.
+    pub fn store_token(&self, label: &str, nonce: String, epoch: u64) {
+        if let Ok(mut tokens) = self.tokens.lock() {
+            tokens.insert(label.to_string(), (nonce, epoch));
+        }
+    }
+
+    /// Read the current page-load token for a webview, if any.
+    pub fn token_for(&self, label: &str) -> Option<(String, u64)> {
+        self.tokens
+            .lock()
+            .ok()
+            .and_then(|tokens| tokens.get(label).cloned())
+    }
+
+    /// Forget a webview's token, e.g. after its window is destroyed.
+    pub fn remove(&self, label: &str) {
+        if let Ok(mut tokens) = self.tokens.lock() {
+            tokens.remove(label);
+        }
+    }
+
+    /// Claim the single-flight slot for a webview, or [`None`] when a read
+    /// for that webview is already running.
+    pub fn try_acquire(&self, label: &str) -> Option<PasteInflightGuard> {
+        let mut inflight = self.inflight.lock().ok()?;
+        if !inflight.insert(label.to_string()) {
+            return None;
+        }
+        Some(PasteInflightGuard {
+            state: Arc::clone(&self.inflight),
+            label: label.to_string(),
+        })
+    }
 }
 
 /// Apply a JSON Patch to a configuration, producing a validated candidate.
@@ -651,5 +737,63 @@ mod tests {
             .expect("patch should succeed");
 
         assert!(!result.result.restart_required);
+    }
+
+    #[test]
+    fn paste_tokens_are_scoped_per_webview_label() {
+        // GIVEN a fresh paste state
+        let state = PasteImageState::default();
+        let first = "a".repeat(32);
+        let second = "b".repeat(32);
+
+        // WHEN tokens are stored for two labels
+        state.store_token("main", first.clone(), 1);
+        state.store_token("settings", second.clone(), 2);
+
+        // THEN each label reads its own token
+        assert_eq!(state.token_for("main"), Some((first, 1)));
+        assert_eq!(state.token_for("settings"), Some((second.clone(), 2)));
+
+        // AND overwriting one label leaves the other alone
+        let third = "c".repeat(32);
+        state.store_token("main", third.clone(), 3);
+        assert_eq!(state.token_for("main"), Some((third, 3)));
+        assert_eq!(state.token_for("settings"), Some((second, 2)));
+
+        // AND removing one label forgets only that token
+        state.remove("main");
+        assert_eq!(state.token_for("main"), None);
+        assert!(state.token_for("settings").is_some());
+    }
+
+    #[test]
+    fn paste_single_flight_releases_on_drop() {
+        // GIVEN a fresh paste state
+        let state = PasteImageState::default();
+
+        // WHEN a claim is held for one label
+        let guard = state.try_acquire("main").expect("first claim should hold");
+
+        // THEN a second claim for the same label fails while another label succeeds
+        assert!(state.try_acquire("main").is_none());
+        let _other = state
+            .try_acquire("settings")
+            .expect("other labels are independent");
+
+        // AND dropping the guard frees the slot
+        drop(guard);
+        assert!(state.try_acquire("main").is_some());
+    }
+
+    #[test]
+    fn paste_epoch_increases_monotonically() {
+        // GIVEN a fresh paste state
+        let state = PasteImageState::default();
+
+        // WHEN epochs are minted THEN each exceeds the last, starting at 1
+        let first = state.next_epoch();
+        let second = state.next_epoch();
+        assert_eq!(first, 1);
+        assert!(second > first);
     }
 }

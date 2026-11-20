@@ -61,7 +61,7 @@ tokio = { workspace = true }
 tokio-util = { workspace = true }
 ts-rs = { workspace = true }
 url = { workspace = true, features = ["serde"] }
-uuid = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }
 
 # i18n
 i18n-embed = { workspace = true, features = [
@@ -86,6 +86,9 @@ tauri-utils = { workspace = true }
 [target.'cfg(windows)'.dependencies]
 tempfile = { workspace = true }
 winreg = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = { workspace = true } # Reads clipboard images that WebKitGTK withholds from paste events.
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = { workspace = true }
