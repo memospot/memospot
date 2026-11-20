@@ -4,8 +4,10 @@
 //! - This migration does data manipulation.
 
 use log::{debug, info};
-use sea_orm::IdenStatic as _;
-use sea_orm::*;
+use sea_orm::{
+    ActiveValue::Set, ColumnTrait, EntityName, EntityTrait, IdenStatic, QueryFilter,
+    TransactionTrait,
+};
 use sea_orm_migration::prelude::*;
 
 mod system_setting {

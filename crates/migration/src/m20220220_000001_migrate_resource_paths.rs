@@ -12,8 +12,10 @@
 //! - As of sea-orm 0.12.15 it's not possible to rename a previous migration without breaking all migrator functionality.
 
 use log::{LevelFilter, debug, info};
-use sea_orm::IdenStatic as _;
-use sea_orm::*;
+use sea_orm::{
+    ColumnTrait, EntityName, EntityTrait, IdenStatic, QueryFilter, QuerySelect,
+    TransactionTrait,
+};
 use sea_orm_migration::prelude::*;
 
 use crate::resource_path;

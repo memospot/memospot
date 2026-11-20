@@ -7,11 +7,13 @@
 //! Notes:
 //! - This migration does data manipulation.
 //! - Migrating 300k resources takes about 20 seconds on a modern NVMe SSD and a decent CPU.
-//! - Valid from Memos v0.22.0 onwards.
+//! - Valid from Memos v0.22.0 onward.
 
 use log::{LevelFilter, debug, info};
-use sea_orm::IdenStatic as _;
-use sea_orm::*;
+use sea_orm::{
+    ColumnTrait, EntityName, EntityTrait, IdenStatic, QueryFilter, QuerySelect,
+    TransactionTrait,
+};
 use sea_orm_migration::prelude::*;
 
 use crate::resource_path::{self};
