@@ -316,6 +316,11 @@ impl Drop for PasteInflightGuard {
     }
 }
 
+// The token API is live only on Linux (the paste feature is Linux-only),
+// but the state itself stays cross-platform so `AppState` is uniform;
+// allow the resulting never-used methods off Linux rather than
+// cfg-splitting the struct and every construction site.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 impl PasteImageState {
     /// Mint the next injection epoch, starting at 1.
     pub fn next_epoch(&self) -> u64 {
