@@ -60,7 +60,7 @@ jobs:
         uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8
         with:
           repo: dprint/dprint
-          tag: 0.52.0
+          tag: 0.65.0
           cache: enable
 
       - name: Cache dprint plugins

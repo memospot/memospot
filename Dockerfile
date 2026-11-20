@@ -110,7 +110,7 @@ RUN \
       cargo-edit@0.13.8
       cargo-sweep@0.8.0
       cargo-xwin@0.20.2
-      dprint@0.50.2
+      dprint@0.65.0
       just@1.58.0
       tauri-cli@2.9.5
       -y

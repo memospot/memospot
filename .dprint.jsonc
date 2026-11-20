@@ -27,19 +27,19 @@
     // DO NOT USE PRETTIER WASM. It bypasses the include rules and will mess things up.
     //
     // https://github.com/dprint/dprint-plugin-biome/releases
-    "npm:@dprint/biome@0.13.13@f67adf82fa88d26d6e1c9225ab96850ee3e81ea1ab5e44224e457128faedfb8e",
+    "npm:@dprint/biome@0.15.7@de09c91f3feddb8a7997c6a0f2e4878ba04168e5b7ffefb53e4975f79a52f653",
     // https://github.com/dprint/dprint-plugin-exec/releases
-    "npm:@dprint/exec@0.7.3/plugin.json@704701df449dd7e942a71144773778ac529d68c2e4657bfc236d393b898b9a67",
+    "npm:@dprint/exec@0.9.0/plugin.json@d4f708dc00798b51013ca4e7c26a86656bfb31e7255cdcde28a487f86813e34d",
     // https://github.com/g-plane/malva/releases
-    "npm:dprint-plugin-malva@0.16.0@c7071f3db5faabdcd0faffc08823a678de939763321b54a05ce108d082f54989",
+    "npm:dprint-plugin-malva@0.16.1@fec6fc1cd5f3f26141fa81670a7f5fa1448c68e372fd1b48890fe3087e75f63d",
     // https://github.com/dprint/dprint-plugin-markdown/releases
-    "npm:@dprint/markdown@0.26.0@f22d576befb4511ba5d19ddd41414cb00a007db37e70cf0b27ece82b511f6caf",
+    "npm:@dprint/markdown@0.29.0@d67ef8fb344b3e50ccc12c246f577303cad49eb0f7a7210731d59684504d72db",
     // https://github.com/g-plane/markup_fmt/releases
-    "npm:dprint-plugin-markup@0.27.5@7005946a1e1b468430fa688babfb7765af1ed638e598290b795bdf6268f0acac",
+    "npm:dprint-plugin-markup@0.28.0@e011a6bdf3e84ca8870748478499f971d819022f62b48c6806aecdb3434a796c",
     // https://github.com/g-plane/pretty_yaml/releases
     "npm:dprint-plugin-yaml@0.6.0@aee3873f443c9f749521ea171cd38ed381491123aa4530684dd0d6e3deb6727b",
     // https://github.com/dprint/dprint-plugin-toml/releases
-    "npm:@dprint/toml@0.9.0@2cac97483311ab7e36373e02592b9757f9619f6aa2f7e232bb0a6bd143a75caa"
+    "npm:@dprint/toml@0.10.0@b263aee1b268a05bfa84a0ddad2a4a7df403431fbe2df61a42deef1305645f1a"
   ],
   "exec": {
     "commands": [
