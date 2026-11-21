@@ -80,7 +80,7 @@ BASH
 # Toolchain image with Rust, Bun, and Tauri dependencies.
 FROM tauri-base AS toolchain
 ARG RUST_TOOLCHAIN
-ENV PATH="/home/linuxbrew/.linuxbrew/bin:/root/.cargo/bin:/usr/local/bin:${PATH}"
+ENV PATH="/root/.cargo/bin:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/opt/rustup/bin:/usr/local/bin:${PATH}"
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 RUN \
 --mount=type=cache,target=/root/.cargo/git \
@@ -95,12 +95,13 @@ RUN \
 
   brew install \
     cargo-binstall \
-    rustup-init \
+    rustup \
     oven-sh/bun/bun \
     --force
   brew cleanup
 
-  rustup-init -y
+  rustup toolchain install "${RUST_TOOLCHAIN:-stable}" --profile minimal
+  rustup default "${RUST_TOOLCHAIN:-stable}"
 
   binstall_cmd=(
     cargo binstall
@@ -109,7 +110,7 @@ RUN \
       --targets="$(rustc -vV | sed -n 's|host: ||p')"
       cargo-edit@0.13.8
       cargo-sweep@0.8.0
-      cargo-xwin@0.20.2
+      cargo-xwin@0.23.1
       dprint@0.65.0
       just@1.58.0
       tauri-cli@2.9.5
@@ -180,6 +181,7 @@ SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 RUN \
 --mount=type=secret,id=TAURI_SIGNING_PRIVATE_KEY \
 --mount=type=secret,id=TAURI_SIGNING_PRIVATE_KEY_PASSWORD \
+--mount=type=secret,id=GITHUB_TOKEN \
 --mount=type=cache,target=/root/.bun/install/cache \
 --mount=type=cache,target=/root/.cargo/git \
 --mount=type=cache,target=/root/.cargo/registry \
@@ -187,6 +189,12 @@ RUN \
 --mount=type=cache,target=/builder/server-dist \
 --mount=type=cache,target=/builder/target \
 <<"BASH"
+
+  if [ -s /run/secrets/GITHUB_TOKEN ]; then
+    mapfile -n1 -t gh_token < /run/secrets/GITHUB_TOKEN
+    export GITHUB_TOKEN="${gh_token}"
+    echo -e "\033[0;32mUsing GitHub token for Memos download.\033[0m"
+  fi
 
   rustup target add ${RUST_TARGET}
   runner="cargo"
