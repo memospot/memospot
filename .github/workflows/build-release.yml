@@ -95,6 +95,9 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
 
+      - name: Install JS dependencies
+        run: bun install --frozen-lockfile
+
       #> Memos
       # Allows to bundle a specific Memos version when running the workflow manually.
       - if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.memos-version != ''  }}
@@ -136,3 +139,4 @@ jobs:
           uploadUpdaterJson: true
           updaterJsonPreferNsis: true
           retryAttempts: 2
+          tauriScript: bun run tauri

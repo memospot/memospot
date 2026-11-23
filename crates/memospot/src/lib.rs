@@ -2,6 +2,8 @@ mod cmd;
 mod event;
 mod i18n;
 mod init;
+#[cfg(test)]
+mod installer_invariants;
 mod memos_api;
 mod memos_log;
 mod memos_process;
@@ -42,6 +44,13 @@ use tauri::{Listener, Manager, async_runtime};
 use tauri_utils::config::WindowConfig;
 use window_ext::WindowConfigExt;
 
+/// Directory name for the Memospot data directory.
+///
+/// Notes live here. The Windows uninstaller can recursively delete paths
+/// derived from the bundle identifier, so this name must never equal the
+/// identifier.
+pub const APP_DATA_DIR_NAME: &str = "memospot";
+
 #[warn(unused_extern_crates)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -49,7 +58,7 @@ pub fn run() {
 
     init::ensure_webview();
 
-    let memospot_data = init::data_path("memospot");
+    let memospot_data = init::data_path(APP_DATA_DIR_NAME);
     let config_path = memospot_data.join("memospot.yaml");
     let mut current_config = init::config(&config_path);
     let initial_config = current_config.clone();

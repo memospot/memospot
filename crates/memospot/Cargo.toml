@@ -101,6 +101,9 @@ serde-saphyr = { workspace = true } # Used in tests to assert on-disk configurat
 tauri = { workspace = true, features = [
     "test",
 ] } # Enables `tauri::test` mock app for unit tests.
+tauri-utils = { workspace = true, features = [
+    "config-toml",
+] } # Reads Tauri.toml in the installer invariant test.
 tempfile = { workspace = true }
 
 [features]

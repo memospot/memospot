@@ -74,8 +74,15 @@ default:
 
 validate: lint test
 
-@gate:
-    just validate >/dev/null 2>&1 && echo "[OK] All validations passed." || echo "[ERROR] Run 'just validate' for more details."
+[no-exit-message]
+[script('bash')]
+gate:
+    if just validate >/dev/null 2>&1; then
+        echo "[OK] All validations passed."
+    else
+        echo "[ERROR] Run 'just validate' for more details." >&2
+        exit 1
+    fi
 
 [private]
 deps-ts:
@@ -157,8 +164,8 @@ test-ts: deps-ts
     process.exit(allPassed ? 0 : 1);
 
 [doc('Run app in development mode')]
-dev: dev-killprocesses
-    cargo tauri dev
+dev: dev-killprocesses deps-ts
+    bun run tauri dev
     just dev-killprocesses
 
 [private]
@@ -224,7 +231,7 @@ upgrade-bun:
 
 [doc('Generate app icons, if needed')]
 [script]
-gen-icons:
+gen-icons: deps-ts
     [ "$CI" = "true" ] && exit 0
     src_icon="assets/app-icon-lossless.webp"
     task="crates/memospot/icons/gen-icons.task"
@@ -234,7 +241,7 @@ gen-icons:
         -g src-ui/static/favicon.ico \
         ; then
         echo "{{YELLOW}}Source icon changed, regenerating icons…{{NORMAL}}"
-        if cargo tauri icon "$src_icon"; then
+        if bun run tauri icon "$src_icon"; then
             cp -f "./crates/memospot/icons/icon.ico" "./src-ui/static/favicon.ico"
             {{IS_STALE}} $task --update
         else
@@ -280,9 +287,9 @@ build-ui:
 
 [doc('Build app')]
 [script('bash')]
-build TARGET='all':
+build TARGET='all': deps-ts
     if [ "{{TARGET}}" = "no-bundle" ]; then
-        cargo tauri build --no-bundle
+        bun run tauri build --no-bundle
         just postbuild
         exit 0
     fi
@@ -293,9 +300,9 @@ build TARGET='all':
     fi
     if [ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ] || [ -z "${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}" ]; then
         echo -e "{{YELLOW}}Environment not fully configured. Building without updater.{{NORMAL}}"
-        cargo tauri build -c '{"bundle": {"targets": "{{TARGET}}" }, "plugins": {"updater": {}}}'
+        bun run tauri build -c '{"bundle": {"targets": "{{TARGET}}" }, "plugins": {"updater": {}}}'
     else
-        cargo tauri build -c '{"bundle": {"targets": "{{TARGET}}" }}'
+        bun run tauri build -c '{"bundle": {"targets": "{{TARGET}}" }}'
     fi
     just postbuild
 
