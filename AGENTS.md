@@ -104,5 +104,5 @@ Toolchain and profile values live in config; change the config, not this file.
 ## Known Gotchas
 
 - Dev mode (`just dev`) auto-kills leftover `memospot`/`memos` processes on start and exit.
-- The root `package.json` has no scripts: build tooling runs as `bun run ./build-scripts/bin/<file>.ts` from the root; frontend scripts run as `bun --cwd=src-ui run <script>`.
+- The root `package.json` exposes only the `tauri` script; build tooling runs as `bun run ./build-scripts/bin/<file>.ts` from the root; frontend scripts run as `bun --cwd=src-ui run <script>`.
 - `just bumpversion` updates `Cargo.toml` and `package.json` versions; see the recipe.
