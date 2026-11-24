@@ -9,6 +9,8 @@ import { CommandError, runSync } from "../lib/command";
 import { findRepositoryRoot } from "../lib/repository";
 import { makeTripletFromFileName } from "../lib/util";
 
+const realpathSync = fs.realpathSync.native ?? fs.realpathSync;
+
 describe("runSync()", () => {
     test("validate error on invalid command", () => {
         expect(() => {
@@ -127,7 +129,7 @@ describe("findRepositoryRoot()", async () => {
             // WHEN resolving from a nested directory
             const resolved = findRepositoryRoot(deep);
             // THEN the marker root is returned, not the broken gitdir target
-            expect(resolved).toBe(fs.realpathSync(root));
+            expect(resolved).toBe(realpathSync(root));
         } finally {
             fs.rmSync(root, { recursive: true, force: true });
         }
@@ -142,7 +144,7 @@ describe("findRepositoryRoot()", async () => {
             // WHEN resolving from the symlinked path
             const resolved = findRepositoryRoot(link);
             // THEN the canonical marker root is returned
-            expect(resolved).toBe(fs.realpathSync(root));
+            expect(resolved).toBe(realpathSync(root));
         } finally {
             fs.rmSync(link, { recursive: true, force: true });
             fs.rmSync(root, { recursive: true, force: true });

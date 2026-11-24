@@ -16,13 +16,18 @@ export interface RepositoryRoot {
     root: string;
 }
 
+const realpathSync = fs.realpathSync.native ?? fs.realpathSync;
+
 /**
  * Resolve `target` to a canonical path, preserving the lexical path when it no
  * longer exists.
+ *
+ * The native resolver expands Windows 8.3 aliases, so a short temp path and a
+ * long git-reported root compare as the same repository.
  */
 export function resolveExistingPath(target: string): string {
     try {
-        return fs.realpathSync(target);
+        return realpathSync(target);
     } catch (error) {
         if ((error as NodeJS.ErrnoException).code === "ENOENT") {
             return path.resolve(target);
