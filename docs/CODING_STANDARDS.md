@@ -50,7 +50,8 @@ Canonical coding standards for AI agents working on this codebase.
 
 ### Tests
 
-- Add only high-value tests that prevent regressions or verify correctness. Cover success, failure, and practical (never theoretical) edge cases for new behavior.
+- Prefer deep interface and integration coverage through public seams; keep unit tests only for pure domain logic that needs no I/O.
+- Add only high-value tests that prevent regressions or validate correctness. Cover success, failure, and practical (never theoretical) edge cases for new behavior.
 - Add no tests for statically defined values and no negative tests for removed logic.
 - Test public contracts and behavior only with deep equality over whole objects. Do not test private helpers directly and do not duplicate implementation logic in the test.
 - Never change tests to match a wrong implementation. Double-check implementation and expected behavior first and grill the user when expected behavior is unclear. Never weaken existing assertions unless expected behavior genuinely changed and the reason is clear.

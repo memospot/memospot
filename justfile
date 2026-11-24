@@ -124,19 +124,19 @@ test: test-ts test-crates test-rs test-tauri
 [group('test')]
 [doc('Run all crate tests')]
 test-crates:
-    cargo test --workspace --exclude memospot --lib -- --nocapture
+    cargo test --workspace --exclude memospot --tests -- --nocapture
 
 [group('test')]
 [doc('Run all Rust tests')]
 [script]
 test-rs:
     export CARGO_PROFILE_TEST_BUILD_OVERRIDE_DEBUG=true
-    cargo test --workspace --lib -- --nocapture
+    cargo test --workspace --tests -- --nocapture
 
 [group('test')]
 [doc('Run all Tauri tests')]
 test-tauri:
-    cargo test --package memospot --lib -- --nocapture
+    cargo test --package memospot --tests -- --nocapture
 
 [group('test')]
 [doc('Run all TypeScript tests')]

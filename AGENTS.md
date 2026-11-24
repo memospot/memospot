@@ -29,7 +29,7 @@ When sources disagree: specs for intent, code/config for current behavior, this 
 - Do NOT add general product or user-facing documentation to the docs/ folder — `docs/` holds only redirects to the separate `memospot.github.io` repository plus `docs/CODING_STANDARDS.md`, `docs/SECURITY.md`, and future `docs/GLOSSARY.md`/`docs/adr/` when created per the Specs gate.
 - When running long commands (e.g. `just test`) be patient and never kill them via PID. Rust lock contention can slow execution — this is expected.
 - Tests and features must support Linux, macOS, and Windows unless the feature is explicitly OS-specific.
-- Prefer unit tests close to code and integration tests under `tests/`.
+- Prefer deep interface and integration coverage through public seams; keep unit tests only for pure domain logic. Rust integration lives in `crates/<name>/tests/` exercising the crate public API with real temp dirs; Tauri-command integration stays in the `memospot` package via `MockRuntime` as in `crates/memospot/src/tests.rs`; TypeScript integration exercises real logic and mocks only at the system boundary.
 
 ## Coding Standards
 
