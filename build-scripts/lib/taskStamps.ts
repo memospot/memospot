@@ -1,6 +1,8 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as Bun from "bun";
+import { findExecutable, sanitizedGitEnv } from "./command";
+import { resolveExistingPath, resolveRepositoryRoot } from "./repository";
 import { sha256File } from "./util";
 
 type EntryKind = "directory" | "file";
@@ -8,6 +10,10 @@ type EntryKind = "directory" | "file";
 export interface TaskStampArgs {
     cwd?: string;
     generates?: string[];
+    /**
+     * Skip gitignore filtering. Structural directories that never contain task
+     * sources or generated outputs are still pruned from the walk.
+     */
     noGitignore?: boolean;
     sources: string[];
     stampFile: string;
@@ -83,17 +89,6 @@ function normalizeRelativePath(relativePath: string): string {
     return relativePath.split(path.sep).join(path.posix.sep);
 }
 
-async function resolveExistingPath(targetPath: string): Promise<string> {
-    try {
-        return await fs.realpath(targetPath);
-    } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-            return path.resolve(targetPath);
-        }
-        throw error;
-    }
-}
-
 function toRepoRelativePath(targetPath: string, repositoryRoot: string): string {
     const relativePath = normalizeRelativePath(path.relative(repositoryRoot, targetPath));
     if (relativePath === "" || relativePath === ".") {
@@ -105,24 +100,14 @@ function toRepoRelativePath(targetPath: string, repositoryRoot: string): string 
     return relativePath;
 }
 
-async function runGit(
+function runGit(
     args: string[],
     cwd: string,
     acceptedExitCodes = [0],
     stdinData?: string
-): Promise<GitCommandResult> {
-    const env = { ...process.env };
-    delete env.GIT_ALTERNATE_OBJECT_DIRECTORIES;
-    delete env.GIT_CEILING_DIRECTORIES;
-    delete env.GIT_COMMON_DIR;
-    delete env.GIT_DIR;
-    delete env.GIT_INDEX_FILE;
-    delete env.GIT_OBJECT_DIRECTORY;
-    delete env.GIT_WORK_TREE;
-
-    const gitExecutable = Bun.which("git", {
-        PATH: env.PATH ?? ""
-    });
+): GitCommandResult {
+    const env = sanitizedGitEnv();
+    const gitExecutable = findExecutable("git", env);
     if (!gitExecutable) {
         const gitResult = {
             exitCode: 127,
@@ -158,10 +143,16 @@ async function runGit(
     return gitResult;
 }
 
-async function findRepositoryRoot(cwd: string): Promise<string> {
-    const result = await runGit(["rev-parse", "--show-toplevel"], cwd);
-    return resolveExistingPath(result.stdout.trim());
-}
+// These directories are excluded from every task walk. No current task uses
+// them as sources or generated outputs; revisit if that changes. Skipping them
+// keeps Docker and local walks bounded.
+const UNSEARCHED_DIRECTORY_NAMES = new Set([
+    ".dprint",
+    ".flatpak-builder",
+    "node_modules",
+    "server-dist",
+    "target"
+]);
 
 async function walkDirectory(rootDirectory: string, relativeDirectory = ""): Promise<Entry[]> {
     const absoluteDirectory = path.join(rootDirectory, relativeDirectory);
@@ -169,6 +160,10 @@ async function walkDirectory(rootDirectory: string, relativeDirectory = ""): Pro
     const resolvedEntries = await Promise.all(
         entries.map(async (entry) => {
             if (entry.name === ".git") {
+                return [];
+            }
+
+            if (entry.isDirectory() && UNSEARCHED_DIRECTORY_NAMES.has(entry.name)) {
                 return [];
             }
 
@@ -215,7 +210,7 @@ async function getIgnoredRepoRelativePaths(
         toRepoRelativePath(entry.absolutePath, repositoryRoot)
     );
 
-    const result = await runGit(
+    const result = runGit(
         ["check-ignore", "-z", "--stdin"],
         repositoryRoot,
         [0, 1],
@@ -225,16 +220,108 @@ async function getIgnoredRepoRelativePaths(
     return new Set(result.stdout.split("\0").filter(Boolean));
 }
 
+interface DockerIgnoreRule {
+    directoryOnly: boolean;
+    globs: Bun.Glob[];
+    negated: boolean;
+}
+
+const warnedMissingDockerIgnore = new Set<string>();
+
+async function readDockerIgnoreRules(repositoryRoot: string): Promise<DockerIgnoreRule[]> {
+    let contents: string;
+    try {
+        contents = await fs.readFile(path.join(repositoryRoot, ".dockerignore"), "utf8");
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+            if (!warnedMissingDockerIgnore.has(repositoryRoot)) {
+                warnedMissingDockerIgnore.add(repositoryRoot);
+                console.warn(
+                    `No .dockerignore found at ${repositoryRoot}; task-stamp digests will not use ignore filtering.`
+                );
+            }
+            return [];
+        }
+        throw error;
+    }
+
+    return contents
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0 && !line.startsWith("#"))
+        .map((line) => {
+            const negated = line.startsWith("!");
+            const pattern = normalizePattern(line).replace(/\/+$/, "");
+            const directoryPattern = pattern.endsWith("/**") ? pattern.slice(0, -3) : undefined;
+            return {
+                directoryOnly: line.endsWith("/") || directoryPattern !== undefined,
+                globs: [pattern, directoryPattern]
+                    .filter((value): value is string => Boolean(value))
+                    .map((value) => new Bun.Glob(value)),
+                negated
+            };
+        });
+}
+
+function dockerIgnoreMatches(
+    relativePath: string,
+    kind: EntryKind,
+    rules: DockerIgnoreRule[]
+): boolean {
+    const segments = relativePath.split("/");
+    for (let index = 0; index < segments.length; index++) {
+        const candidate = segments.slice(0, index + 1).join("/");
+        const isLast = index === segments.length - 1;
+        let isIgnored = false;
+        for (const rule of rules) {
+            if (rule.directoryOnly && isLast && kind !== "directory") {
+                continue;
+            }
+            if (rule.globs.some((glob) => glob.match(candidate))) {
+                isIgnored = !rule.negated;
+            }
+        }
+        // Docker does not allow re-including a path under an excluded parent.
+        if (isIgnored) {
+            return true;
+        }
+    }
+    return false;
+}
+
+async function getDockerIgnoredRepoRelativePaths(
+    entries: Entry[],
+    repositoryRoot: string
+): Promise<Set<string>> {
+    const rules = await readDockerIgnoreRules(repositoryRoot);
+    if (rules.length === 0) {
+        return new Set();
+    }
+
+    const ignored = new Set<string>();
+    for (const entry of entries) {
+        const relativePath = toRepoRelativePath(entry.absolutePath, repositoryRoot);
+        if (dockerIgnoreMatches(relativePath, entry.kind, rules)) {
+            ignored.add(relativePath);
+        }
+    }
+    return ignored;
+}
+
 async function listWorkspaceEntries(cwd: string, noGitignore = false): Promise<Entry[]> {
     const entries = await walkDirectory(cwd);
     if (noGitignore) {
         return entries;
     }
 
-    const repositoryRoot = await findRepositoryRoot(cwd);
-    const ignoredRepoRelativePaths = await getIgnoredRepoRelativePaths(entries, repositoryRoot);
+    const { gitResolved, root } = resolveRepositoryRoot(cwd, () =>
+        runGit(["rev-parse", "--show-toplevel"], cwd).stdout.trim()
+    );
+    const ignoredRepoRelativePaths = gitResolved
+        ? await getIgnoredRepoRelativePaths(entries, root)
+        : await getDockerIgnoredRepoRelativePaths(entries, root);
     return entries.filter((entry) => {
-        const repoRelativePath = toRepoRelativePath(entry.absolutePath, repositoryRoot);
+        const repoRelativePath = toRepoRelativePath(entry.absolutePath, root);
         return !ignoredRepoRelativePaths.has(repoRelativePath);
     });
 }
@@ -383,7 +470,7 @@ function toTaskStampArgsFromFile(
 }
 
 async function resolveTaskEntries(args: TaskStampArgs) {
-    const cwd = await resolveExistingPath(path.resolve(args.cwd ?? process.cwd()));
+    const cwd = resolveExistingPath(path.resolve(args.cwd ?? process.cwd()));
     const resolvedStampPath = path.resolve(cwd, args.stampFile);
     const ignoredPaths = new Set([
         normalizeRelativePath(path.relative(cwd, resolvedStampPath))

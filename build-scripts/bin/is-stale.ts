@@ -46,6 +46,8 @@ const USAGE = `Usage:
 
 Notes:
   Store stamp files as .task files, typically under .build-stamps/.
+  Structural directories (node_modules, target, server-dist, tool caches) are
+  never traversed, even with --no-gitignore.
 
 Exit codes:
   0 stale in check mode, or update completed successfully

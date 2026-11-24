@@ -3,7 +3,13 @@ import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { findRepositoryRoot, makeTripletFromFileName, runSync } from "../lib/util";
+import { pathToFileURL } from "node:url";
+import * as Bun from "bun";
+import { CommandError, runSync } from "../lib/command";
+import { findRepositoryRoot } from "../lib/repository";
+import { makeTripletFromFileName } from "../lib/util";
+
+const realpathSync = fs.realpathSync.native ?? fs.realpathSync;
 
 describe("runSync()", () => {
     test("validate error on invalid command", () => {
@@ -12,6 +18,15 @@ describe("runSync()", () => {
         }).toThrowError(/failed to execute/i);
     });
 });
+
+function makeRepositoryFixture(): string {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "memospot-repository-"));
+    fs.writeFileSync(path.join(root, ".git"), `gitdir: ${path.join(root, "missing-gitdir")}\n`);
+    fs.writeFileSync(path.join(root, ".gitattributes"), "");
+    fs.writeFileSync(path.join(root, "Cargo.toml"), "");
+    fs.writeFileSync(path.join(root, "package.json"), "{}");
+    return root;
+}
 
 describe("findRepositoryRoot()", async () => {
     const repoRoot = findRepositoryRoot();
@@ -29,11 +44,111 @@ describe("findRepositoryRoot()", async () => {
         expect(path.isAbsolute(repoRoot)).toBeTrue();
     });
 
-    test("validate error on non-repo cwd", async () => {
-        expect(() => {
-            const cwd = os.tmpdir();
-            findRepositoryRoot(cwd);
-        }).toThrowError(/Command exited with code 128/i);
+    test("rejects a broken git file without repository markers", () => {
+        // GIVEN a directory with a broken .git pointer and no marker files
+        const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "memospot-non-repo-"));
+        fs.writeFileSync(
+            path.join(cwd, ".git"),
+            `gitdir: ${path.join(cwd, "missing-gitdir")}\n`
+        );
+        try {
+            // WHEN resolving the repository root
+            let caught: unknown;
+            try {
+                findRepositoryRoot(cwd);
+            } catch (error) {
+                caught = error;
+            }
+
+            // THEN the original 128 failure is rethrown
+            expect(caught).toBeInstanceOf(CommandError);
+            expect((caught as CommandError).exitCode).toBe(128);
+        } finally {
+            fs.rmSync(cwd, { recursive: true, force: true });
+        }
+    });
+
+    test("rejects repository markers without git metadata", () => {
+        // GIVEN a directory with markers but no .git entry
+        const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "memospot-vcs-less-"));
+        fs.writeFileSync(path.join(cwd, ".gitattributes"), "");
+        fs.writeFileSync(path.join(cwd, "Cargo.toml"), "");
+        fs.writeFileSync(path.join(cwd, "package.json"), "{}");
+        try {
+            // WHEN resolving the repository root
+            let caught: unknown;
+            try {
+                findRepositoryRoot(cwd);
+            } catch (error) {
+                caught = error;
+            }
+            // THEN the original git failure is rethrown
+            expect(caught).toBeInstanceOf(CommandError);
+            expect((caught as CommandError).exitCode).toBe(128);
+        } finally {
+            fs.rmSync(cwd, { recursive: true, force: true });
+        }
+    });
+
+    test("keeps a missing git executable fatal", () => {
+        // GIVEN a repository with a broken gitdir pointer and no git in PATH
+        const root = makeRepositoryFixture();
+        const repositoryPath = path.resolve(import.meta.dir, "..", "lib", "repository.ts");
+        const script = [
+            `import { findRepositoryRoot } from ${JSON.stringify(
+                pathToFileURL(repositoryPath).href
+            )};`,
+            `try { findRepositoryRoot(${JSON.stringify(root)}); process.exit(0); }`,
+            "catch (error) {",
+            "  console.error(error instanceof Error ? error.message : String(error));",
+            "  process.exit(2);",
+            "}"
+        ].join("\n");
+        const env = { ...process.env, PATH: "" };
+        try {
+            // WHEN git cannot be spawned
+            const result = Bun.spawnSync([process.execPath, "--eval", script], {
+                env,
+                stderr: "pipe",
+                stdout: "pipe"
+            });
+            // THEN the spawn failure is not swallowed by the marker fallback
+            expect(result.exitCode).toBe(2);
+            expect(result.stderr.toString()).toContain("Failed to execute");
+        } finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
+
+    test("resolves a marker root when the worktree gitdir pointer is unavailable", () => {
+        // GIVEN a checkout whose .git file points outside the available tree
+        const root = makeRepositoryFixture();
+        const deep = path.join(root, "src", "deep");
+        fs.mkdirSync(deep, { recursive: true });
+        try {
+            // WHEN resolving from a nested directory
+            const resolved = findRepositoryRoot(deep);
+            // THEN the marker root is returned, not the broken gitdir target
+            expect(resolved).toBe(realpathSync(root));
+        } finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
+
+    test("canonicalizes a symlinked marker root", () => {
+        // GIVEN a repository reached through a symlink
+        const root = makeRepositoryFixture();
+        const link = `${root}-link`;
+        try {
+            fs.symlinkSync(root, link, process.platform === "win32" ? "junction" : "dir");
+            // WHEN resolving from the symlinked path
+            const resolved = findRepositoryRoot(link);
+            // THEN the canonical marker root is returned
+            expect(resolved).toBe(realpathSync(root));
+        } finally {
+            fs.rmSync(link, { recursive: true, force: true });
+            fs.rmSync(root, { recursive: true, force: true });
+        }
     });
 });
 

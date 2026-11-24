@@ -18,7 +18,7 @@ The main window SHALL present an application menu with settings, browse, update-
 #### Scenario: Menu shows versions
 
 - **WHEN** the application starts
-- **THEN** the help menu shows the application version and the Memos version once known
+- **THEN** the help menu shows the application version, including the short revision or `unknown` when unavailable, and the Memos version once known
 
 ### Requirement: Menu actions perform their function
 

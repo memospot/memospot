@@ -173,8 +173,10 @@ BASH
 
 FROM source AS build
 ARG CARGO_SWEEP_DAYS
+ARG GIT_HASH
 ARG RUST_TARGET="x86_64-unknown-linux-gnu"
 ARG NO_BUNDLE
+ENV GIT_HASH=${GIT_HASH}
 ENV RUST_TARGET=${RUST_TARGET}
 ENV XWIN_CACHE_DIR="/tmp/xwin-cache"
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]

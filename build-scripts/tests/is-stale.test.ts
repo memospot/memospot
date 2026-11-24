@@ -46,6 +46,22 @@ async function makeFixture(): Promise<string> {
     return cwd;
 }
 
+async function makeBrokenGitFixture(): Promise<string> {
+    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "memospot-task-stamps-"));
+    await fs.mkdir(path.join(cwd, "src-ui/src/lib"), { recursive: true });
+    await fs.mkdir(path.join(cwd, "src-ui/build/assets"), { recursive: true });
+
+    await Bun.write(path.join(cwd, ".gitattributes"), "");
+    await Bun.write(path.join(cwd, "Cargo.toml"), "");
+    await Bun.write(path.join(cwd, "package.json"), "{}");
+    await Bun.write(path.join(cwd, ".git"), `gitdir: ${path.join(cwd, "missing-gitdir")}\n`);
+    await Bun.write(path.join(cwd, "src-ui/src/app.html"), "<main />\n");
+    await Bun.write(path.join(cwd, "src-ui/src/lib/keep.ts"), "export const keep = true;\n");
+    await Bun.write(path.join(cwd, "src-ui/build/index.html"), "<main />\n");
+    await Bun.write(path.join(cwd, "src-ui/build/assets/app.js"), "console.log('ok');\n");
+    return cwd;
+}
+
 async function setMtime(targetPath: string, mtimeMs: number) {
     const time = new Date(mtimeMs);
     await fs.utimes(targetPath, time, time);
@@ -136,7 +152,11 @@ describe("getTaskStaleness", () => {
     test("accepts a symlinked cwd when git reports the canonical repository path", async () => {
         const actualCwd = await makeFixture();
         const symlinkCwd = `${actualCwd}-link`;
-        await fs.symlink(actualCwd, symlinkCwd, "dir");
+        await fs.symlink(
+            actualCwd,
+            symlinkCwd,
+            process.platform === "win32" ? "junction" : "dir"
+        );
 
         const result = await getTaskStaleness({
             cwd: symlinkCwd,
@@ -615,6 +635,141 @@ describe("is-stale CLI exit codes", () => {
             { PATH: "" }
         );
 
+        expect(result.exitCode).toBe(2);
+        expect(result.stderr).toContain("git");
+        expect(result.stderr).toContain("Command: git");
+    });
+
+    test("resolves a marker root when the worktree gitdir pointer is unavailable", async () => {
+        // GIVEN a checkout whose .git file points outside the available tree
+        const cwd = await makeBrokenGitFixture();
+        const args = {
+            cwd,
+            generates: ["src-ui/build"],
+            sources: ["src-ui/src"],
+            stampFile: ".build-stamps/src-ui.task"
+        };
+
+        // WHEN computing staleness without usable git metadata
+        const initial = await getTaskStaleness(args);
+        // THEN the marker root is used and the task bootstraps normally
+        expect(initial).toEqual({ isStale: true, stampInitialized: true });
+
+        await updateTaskStamp({ cwd, stampFile: args.stampFile });
+        const fresh = await getTaskStaleness(args);
+        expect(fresh).toEqual({ isStale: false, stampInitialized: false });
+    });
+
+    test("includes gitignored files when git metadata is unavailable", async () => {
+        // GIVEN a gitignored source file under the build-ui source glob
+        const cwd = await makeBrokenGitFixture();
+        await Bun.write(path.join(cwd, ".gitignore"), "src-ui/src/lib/keep.ts\n");
+        const args = {
+            cwd,
+            generates: ["src-ui/build"],
+            sources: ["src-ui/src"],
+            stampFile: ".build-stamps/src-ui.task"
+        };
+
+        await getTaskStaleness(args);
+        await updateTaskStamp({ cwd, stampFile: args.stampFile });
+        expect(await getTaskStaleness(args)).toEqual({
+            isStale: false,
+            stampInitialized: false
+        });
+
+        // WHEN the gitignored file changes
+        await Bun.write(
+            path.join(cwd, "src-ui/src/lib/keep.ts"),
+            "export const keep = false;\n"
+        );
+        // THEN the task is stale, proving the fallback uses an unfiltered superset
+        expect(await getTaskStaleness(args)).toEqual({
+            isStale: true,
+            stampInitialized: false
+        });
+    });
+
+    test("filters dockerignored paths when git metadata is unavailable", async () => {
+        // GIVEN a gitless checkout with generated paths
+        const cwd = await makeBrokenGitFixture();
+        await Bun.write(
+            path.join(cwd, ".dockerignore"),
+            [
+                "# generated paths",
+                "src-ui/.svelte-kit/",
+                "src-ui/generated/**",
+                "!src-ui/generated/keep.ts",
+                "src-ui/**/project.inlang/cache",
+                "src-ui/**/logs",
+                ""
+            ].join("\n")
+        );
+        await fs.mkdir(path.join(cwd, "src-ui/.svelte-kit"), { recursive: true });
+        await fs.mkdir(path.join(cwd, "src-ui/generated"), { recursive: true });
+        await fs.mkdir(path.join(cwd, "src-ui/project.inlang/cache"), { recursive: true });
+        await fs.mkdir(path.join(cwd, "src-ui/logs"), { recursive: true });
+        await Bun.write(path.join(cwd, "src-ui/.svelte-kit/cache.ts"), "one\n");
+        await Bun.write(path.join(cwd, "src-ui/generated/drop.ts"), "one\n");
+        await Bun.write(path.join(cwd, "src-ui/generated/keep.ts"), "one\n");
+        await Bun.write(path.join(cwd, "src-ui/project.inlang/cache/cache.ts"), "one\n");
+        await Bun.write(path.join(cwd, "src-ui/logs/app.log"), "one\n");
+        const args = {
+            cwd,
+            generates: ["src-ui/build"],
+            sources: ["src-ui/**"],
+            stampFile: ".build-stamps/src-ui.task"
+        };
+
+        await getTaskStaleness(args);
+        await updateTaskStamp({ cwd, stampFile: args.stampFile });
+        expect(await getTaskStaleness(args)).toEqual({
+            isStale: false,
+            stampInitialized: false
+        });
+
+        // WHEN only dockerignored paths change
+        await Bun.write(path.join(cwd, "src-ui/.svelte-kit/cache.ts"), "two\n");
+        await Bun.write(path.join(cwd, "src-ui/generated/drop.ts"), "two\n");
+        // Docker cannot re-include a file under an excluded parent.
+        await Bun.write(path.join(cwd, "src-ui/generated/keep.ts"), "two\n");
+        await Bun.write(path.join(cwd, "src-ui/project.inlang/cache/cache.ts"), "two\n");
+        await Bun.write(path.join(cwd, "src-ui/logs/app.log"), "two\n");
+        // THEN the task stays fresh
+        expect(await getTaskStaleness(args)).toEqual({
+            isStale: false,
+            stampInitialized: false
+        });
+
+        // WHEN a real source file changes
+        await Bun.write(
+            path.join(cwd, "src-ui/src/lib/keep.ts"),
+            "export const keep = false;\n"
+        );
+        // THEN the task is stale
+        expect(await getTaskStaleness(args)).toEqual({
+            isStale: true,
+            stampInitialized: false
+        });
+    });
+
+    test("keeps missing git fatal when repository markers exist", async () => {
+        // GIVEN a marker root but no git executable
+        const cwd = await makeBrokenGitFixture();
+
+        const result = runCli(
+            [
+                ".build-stamps/task.task",
+                "--sources",
+                "src-ui/src/**",
+                "--generates",
+                "src-ui/build/**"
+            ],
+            cwd,
+            { PATH: "" }
+        );
+
+        // THEN the missing-git error is not swallowed by the marker fallback
         expect(result.exitCode).toBe(2);
         expect(result.stderr).toContain("git");
         expect(result.stderr).toContain("Command: git");

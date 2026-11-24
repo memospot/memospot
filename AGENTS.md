@@ -79,7 +79,7 @@ Toolchain and profile values live in config; change the config, not this file.
 - TypeScript types are generated from Rust structs via `ts-rs`. Output goes to `src-ui/src/lib/types/gen/` and IS committed to the repo — commit regenerated bindings together with the Rust changes that produced them. Do NOT hand-edit `gen/*`; change the Rust source and regenerate instead.
 - Do NOT hand-edit `src-ui/src/lib/paraglide/`; it is gitignored and rebuilt by the vite paraglide plugin.
 - Regenerate: `just gen-bindings` (runs `cargo test export_bindings` inside `crates/memospot`), or `cargo test export_bindings` with the justfile's `TS_RS_EXPORT_DIR` env var set. Without it, ts-rs writes to the default, gitignored `crates/memospot/bindings/` instead of `src-ui/src/lib/types/gen/`.
-- `gen-bindings` only regenerates when it detects git changes in `crates/config/**/*` or `crates/memospot/src/runtime_config.rs`.
+- `gen-bindings` regenerates when it detects git changes under `crates/config` or `crates/memospot/src/runtime_config.rs`. When git metadata is unavailable, it regenerates and reports the condition.
 
 ### SvelteKit Frontend
 
