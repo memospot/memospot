@@ -17,24 +17,37 @@
   },
   "languages": {
     "TypeScript": {
-      "language_servers": ["biome", "!eslint", "!prettier"],
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true
+      },
       "formatter": {
         "external": {
           "command": "biome",
           "arguments": ["format", "--stdin-file-path", "{buffer_path}"]
         }
       },
-      "code_actions_on_format": {
-        "source.fixAll.biome": true
-      }
+      "prettier": { "allowed": false }
     },
     "Svelte": {
       "code_actions_on_format": {
-        "source.fixAll.biome": true
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true
       }
     }
   },
-  "language_servers": ["dprint", "json-language-server", "just-lsp", "markdownlint", "..."],
+  "language_servers": [
+    "!eslint",
+    "!prettier",
+    "biome",
+    "dprint",
+    "json-language-server",
+    "just-lsp",
+    "markdownlint",
+    "svelte",
+    "vtsls",
+    "..."
+  ],
   "lsp": {
     "markdownlint": {
       "settings": {
