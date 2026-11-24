@@ -26,6 +26,7 @@ import {
     fetchWithRateLimit,
     getLatestReleaseTag
 } from "../lib/github";
+import { findRepositoryRoot } from "../lib/repository";
 import {
     BG_WHITE,
     BLACK,
@@ -38,7 +39,6 @@ import {
     YELLOW
 } from "../lib/terminal";
 import {
-    findRepositoryRoot,
     makeTripletFromFileName,
     parseSha256Sums,
     sha256File,

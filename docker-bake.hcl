@@ -1,4 +1,5 @@
 variable "CARGO_SWEEP_DAYS" { default = "7" }
+variable "GIT_HASH" { default = "" }
 variable "NO_BUNDLE" { default = "" }
 variable "RUST_TARGET" { default = "x86_64-unknown-linux-gnu" }
 variable "RUST_TOOLCHAIN" { default = "stable" }
@@ -37,8 +38,9 @@ target "build" {
   inherits = ["base-config"]
   target   = "artifacts"
   args = {
+    GIT_HASH    = "${GIT_HASH}"
     RUST_TARGET = "${RUST_TARGET}"
-    NO_BUNDLE    = "${NO_BUNDLE}"
+    NO_BUNDLE   = "${NO_BUNDLE}"
   }
   secret = [
     { "env": "TAURI_SIGNING_PRIVATE_KEY", "id": "TAURI_SIGNING_PRIVATE_KEY", "type": "env" },

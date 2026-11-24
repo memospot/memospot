@@ -256,15 +256,24 @@ gen-bindings:
     mkdir -p "$TS_RS_EXPORT_DIR"
     # Files listed here may affect the frontend bindings.
     check_files=(
-        "crates/config/**/*"
+        "crates/config"
         "crates/memospot/src/runtime_config.rs"
     )
     for file in "${check_files[@]}"; do
-        if ! git diff --quiet --exit-code HEAD -- "$file"; then
-            echo -e "{{YELLOW}}${file} was modified since last commit, regenerating TypeScript bindings…{{NORMAL}}"
-            pushd crates/memospot; cargo test export_bindings; popd
-            exit 0
+        if git diff --quiet --exit-code HEAD -- "$file" 2>/dev/null; then
+            continue
+        else
+            status=$?
         fi
+        if [ "$status" -eq 1 ]; then
+            echo -e "{{YELLOW}}${file} was modified since last commit, regenerating TypeScript bindings…{{NORMAL}}"
+        elif [ "$status" -eq 128 ]; then
+            echo -e "{{YELLOW}}Git metadata is unavailable for ${file}; regenerating TypeScript bindings…{{NORMAL}}"
+        else
+            echo -e "{{YELLOW}}Git could not determine changes for ${file} (exit ${status}); regenerating TypeScript bindings…{{NORMAL}}"
+        fi
+        (cd crates/memospot && cargo test export_bindings) || exit 1
+        exit 0
     done
     echo -e "{{CYAN}}Skipping TypeScript bindings regeneration, no changes detected.{{NORMAL}}"
 
@@ -349,12 +358,31 @@ uninstall:
 [group('Docker Bake')]
 [script]
 bake ACTION='':
+    set -o pipefail
     if [ "{{ACTION}}" = "prune" ]; then
         docker builder du
         docker builder prune -a
     else
-        docker buildx bake {{ACTION}}
-        test -d "./build" && sudo chown -R $(id -u):$(id -g) ./build
+        export GIT_HASH="${GIT_HASH:-$(git rev-parse --verify HEAD 2>/dev/null || true)}"
+        case "{{ACTION}}" in
+            ""|lint|test)
+                docker buildx bake {{ACTION}}
+                ;;
+            *)
+                build_dir="${REPO_ROOT}/build"
+                if [ -L "$build_dir" ] && [ ! -d "$build_dir" ]; then
+                    echo -e "{{RED}}Build output path is a dangling symlink: ${build_dir}{{NORMAL}}" >&2
+                    exit 1
+                fi
+                if [ -e "$build_dir" ] && [ ! -d "$build_dir" ]; then
+                    echo -e "{{RED}}Build output path is not a directory: ${build_dir}{{NORMAL}}" >&2
+                    exit 1
+                fi
+                mkdir -p "$build_dir" || exit 1
+                docker buildx bake {{ACTION}} --set 'build.output=type=tar,dest=-' \
+                    | tar -xf - -C "$build_dir" --no-same-owner
+                ;;
+        esac
     fi
 
 [linux]

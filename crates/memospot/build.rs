@@ -35,7 +35,14 @@ fn main() {
     let manifest_dir = env::var("CARGO_MANIFEST_DIR")
         .expect("CARGO_MANIFEST_DIR is required while running the build script");
     let manifest_dir = PathBuf::from(manifest_dir);
-    emit_build_metadata(&manifest_dir);
+    let git_hash_override = env::var("GIT_HASH").ok();
+    let mut build_metadata = std::io::stdout();
+    emit_build_metadata(
+        &manifest_dir,
+        git_hash_override.as_deref(),
+        &mut build_metadata,
+    )
+    .expect("failed to emit build metadata");
 
     let workspace_root = find_workspace_root_from(&manifest_dir)
         .expect("failed to detect workspace root from CARGO_MANIFEST_DIR");
